@@ -9,6 +9,9 @@ const isFullBleed = (pathname: string) =>
   pathname.startsWith("/candidate/explore") ||
   pathname.startsWith("/candidate/onboarding");
 
+const hideMobileNav = (pathname: string) =>
+  pathname.startsWith("/candidate/onboarding");
+
 const isOnboardingExempt = (pathname: string) =>
   pathname.startsWith("/candidate/onboarding") ||
   pathname.startsWith("/candidate/settings");
@@ -51,6 +54,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
         homeHref="/candidate/home"
         profileHref="/candidate/profile"
         isFullBleed={isFullBleed}
+        hideMobileNav={hideMobileNav}
       >
         <OnboardingGate>{children}</OnboardingGate>
       </AppShell>

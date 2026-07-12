@@ -18,6 +18,7 @@ export function AppShell({
   homeHref,
   profileHref,
   isFullBleed,
+  hideMobileNav,
   children,
 }: {
   items: AppNavItem[];
@@ -25,10 +26,13 @@ export function AppShell({
   profileHref: string;
   /** Routes that own the full viewport (e.g. chat / split views). */
   isFullBleed?: (pathname: string) => boolean;
+  /** Hide the fixed mobile bottom nav (e.g. onboarding). */
+  hideMobileNav?: (pathname: string) => boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const fullBleed = isFullBleed?.(pathname) ?? false;
+  const noMobileNav = hideMobileNav?.(pathname) ?? false;
 
   return (
     <SidebarProvider
@@ -47,13 +51,19 @@ export function AppShell({
           className={cn(
             "flex w-full min-h-0 min-w-0 max-w-full flex-1 flex-col",
             fullBleed
-              ? "h-[calc(100dvh-3.5rem-4rem)] max-h-[calc(100dvh-3.5rem-4rem)] overflow-hidden p-0 pt-14 md:h-dvh md:max-h-dvh md:pt-0"
+              ? cn(
+                  "overflow-hidden p-0 pt-14 md:h-dvh md:max-h-dvh md:pt-0",
+                  // border-box: pt-14 clears the fixed top bar; subtract bottom nav only when shown.
+                  noMobileNav
+                    ? "h-dvh max-h-dvh"
+                    : "h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)]",
+                )
               : "p-4 pt-[calc(3.5rem+1rem)] pb-24 md:p-8 lg:p-10",
           )}
         >
           {children}
         </main>
-        <AppBottomNav items={items} />
+        {noMobileNav ? null : <AppBottomNav items={items} />}
       </SidebarInset>
     </SidebarProvider>
   );

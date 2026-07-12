@@ -16,14 +16,34 @@ import {
   UploadIcon,
   Volume2Icon,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   startVadLoop,
   type VadController,
 } from "@/components/candidate/interviews/vad";
 import { speakText } from "@/lib/voice/speak";
 import { cn } from "@/lib/utils";
+
+type ActionCue = {
+  label: string;
+  hint: string;
+  tone: "start" | "speak" | "listen" | "wait" | "done" | "error";
+};
+
+const CUE_STYLES: Record<ActionCue["tone"], string> = {
+  start:
+    "border-amber-400/70 bg-amber-500/10 text-amber-700 dark:border-amber-500/50 dark:text-amber-300",
+  speak:
+    "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
+  listen:
+    "border-sky-400/70 bg-sky-500/10 text-sky-700 dark:border-sky-500/50 dark:text-sky-300",
+  wait:
+    "border-orange-400/70 bg-orange-500/10 text-orange-700 dark:border-orange-500/50 dark:text-orange-300",
+  done:
+    "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
+  error: "border-destructive/60 bg-destructive/10 text-destructive",
+};
 
 export function OnboardingAgent() {
   const router = useRouter();
@@ -57,6 +77,35 @@ export function OnboardingAgent() {
   const isStreaming =
     chatStatus === "submitted" || chatStatus === "streaming";
   streamingRef.current = isStreaming;
+
+  const actionCue: ActionCue = (() => {
+    if (done) {
+      return { label: "DONE", hint: "All set", tone: "done" };
+    }
+    if (micError) {
+      return { label: "FIX MIC", hint: "Allow access", tone: "error" };
+    }
+    if (!micReady) {
+      return { label: "START", hint: "Enable mic", tone: "start" };
+    }
+    if (uploading) {
+      return { label: "WAIT", hint: "Reading PDF", tone: "wait" };
+    }
+    if (listening) {
+      return { label: "LISTENING", hint: "Keep talking", tone: "listen" };
+    }
+    if (
+      isStreaming ||
+      status.startsWith("Thinking") ||
+      status.startsWith("Transcribing") ||
+      status.startsWith("Speaking") ||
+      status.startsWith("Starting") ||
+      status.startsWith("Calibrating")
+    ) {
+      return { label: "WAIT", hint: "Hold — don’t speak", tone: "wait" };
+    }
+    return { label: "SPEAK NOW", hint: "Your turn", tone: "speak" };
+  })();
 
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -216,14 +265,17 @@ export function OnboardingAgent() {
   };
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col overflow-hidden md:h-dvh md:max-h-dvh">
-      <header className="border-border shrink-0 border-b px-4 py-2">
-        <h1 className="text-foreground text-xl font-semibold tracking-tight">
+    <div className="bg-background fixed inset-x-0 top-14 bottom-0 z-30 mx-auto flex w-full max-w-5xl flex-col overflow-hidden md:static md:inset-auto md:top-auto md:bottom-auto md:z-auto md:h-full md:min-h-0">
+      <header className="border-border flex w-full shrink-0 items-center border-b px-4 pt-3 pb-3">
+        <Badge
+          variant="outline"
+          className="border-primary/40 bg-primary/10 text-primary h-auto w-full justify-center px-3 py-1 text-sm font-semibold"
+        >
           Candidate onboarding
-        </h1>
+        </Badge>
       </header>
 
-      <ScrollArea className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-4 py-5">
           {messages.map((message) => {
             const text = message.parts
@@ -257,17 +309,17 @@ export function OnboardingAgent() {
           })}
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
 
-      <footer className="border-border shrink-0 space-y-3 border-t px-4 py-4">
-        <div className="border-border bg-card space-y-3 border p-3">
+      <footer className="border-border shrink-0 space-y-3 border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="border-border bg-card space-y-3 rounded-none border p-3">
           <p className="text-muted-foreground flex items-center gap-2 text-xs">
             <Volume2Icon className="size-3.5 shrink-0" />
             {status}
           </p>
           {micReady ? (
             <>
-              <div className="bg-muted h-2 overflow-hidden rounded-full">
+              <div className="bg-muted h-2 overflow-hidden rounded-none">
                 <div
                   className={cn(
                     "h-full transition-all duration-100",
@@ -278,12 +330,43 @@ export function OnboardingAgent() {
                   }}
                 />
               </div>
-              <p className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-                <MicIcon className="size-3.5" />
-                {listening ? "Listening" : "Idle"}
-              </p>
+              <div className="flex items-end justify-between gap-2">
+                <p className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+                  <MicIcon className="size-3.5" />
+                  {listening ? "Listening" : "Idle"}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-auto gap-1.5 px-3 py-1 text-sm font-bold tracking-wide uppercase",
+                    CUE_STYLES[actionCue.tone],
+                  )}
+                  aria-live="polite"
+                >
+                  {actionCue.label}
+                  <span className="font-semibold normal-case tracking-normal opacity-90">
+                    · {actionCue.hint}
+                  </span>
+                </Badge>
+              </div>
             </>
-          ) : null}
+          ) : (
+            <div className="flex justify-end">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "h-auto gap-1.5 px-3 py-1 text-sm font-bold tracking-wide uppercase",
+                  CUE_STYLES[actionCue.tone],
+                )}
+                aria-live="polite"
+              >
+                {actionCue.label}
+                <span className="font-semibold normal-case tracking-normal opacity-90">
+                  · {actionCue.hint}
+                </span>
+              </Badge>
+            </div>
+          )}
         </div>
 
         {!micReady ? (
