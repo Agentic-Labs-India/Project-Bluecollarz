@@ -47,15 +47,6 @@ export interface InterviewDocument {
   updatedAt: Date;
 }
 
-export const INTERVIEW_INDEX_SPECS = [
-  {
-    key: { applicantId: 1, jobId: 1, stageId: 1 },
-    options: { unique: true },
-  },
-  { key: { jobId: 1, stageId: 1, status: 1 }, options: {} },
-  { key: { applicantId: 1, status: 1, updatedAt: -1 }, options: {} },
-] as const;
-
 export const interviewStartSchema = z.object({
   jobId: z.string().trim().min(1),
   stageId: z.enum(INTERVIEW_STAGE_IDS),

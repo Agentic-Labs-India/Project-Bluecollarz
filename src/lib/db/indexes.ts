@@ -1,8 +1,26 @@
 import type { Collection, CreateIndexesOptions, IndexSpecification } from "mongodb";
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
-import { JOB_INDEX_SPECS } from "@/lib/jobs";
-import { APPLICATION_INDEX_SPECS } from "@/lib/jobs/applications";
-import { INTERVIEW_INDEX_SPECS } from "@/lib/interviews";
+
+/** Kept here (not in @/lib/jobs) so ensureIndexes never pulls rich-text → jsdom. */
+const JOB_INDEX_SPECS = [
+  { key: { ownerId: 1, status: 1, createdAt: -1 } },
+  { key: { status: 1, tab: 1, createdAt: -1 } },
+  { key: { status: 1, createdAt: -1 } },
+] as const;
+
+const APPLICATION_INDEX_SPECS = [
+  { key: { applicantId: 1, jobId: 1 }, options: { unique: true } },
+  { key: { jobId: 1, createdAt: -1 }, options: {} },
+] as const;
+
+const INTERVIEW_INDEX_SPECS = [
+  {
+    key: { applicantId: 1, jobId: 1, stageId: 1 },
+    options: { unique: true },
+  },
+  { key: { jobId: 1, stageId: 1, status: 1 }, options: {} },
+  { key: { applicantId: 1, status: 1, updatedAt: -1 }, options: {} },
+] as const;
 
 let ensured = false;
 

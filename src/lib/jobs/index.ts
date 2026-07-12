@@ -350,8 +350,3 @@ export function buildJobDocument(
   };
 }
 
-export const JOB_INDEX_SPECS = [
-  { key: { ownerId: 1, status: 1, createdAt: -1 } },
-  { key: { status: 1, tab: 1, createdAt: -1 } },
-  { key: { status: 1, createdAt: -1 } },
-] as const;

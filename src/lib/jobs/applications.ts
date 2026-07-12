@@ -25,12 +25,6 @@ export interface CandidateApplicationStats {
   total: number;
 }
 
-export const APPLICATION_INDEX_SPECS = [
-  // One application per user per job.
-  { key: { applicantId: 1, jobId: 1 }, options: { unique: true } },
-  { key: { jobId: 1, createdAt: -1 }, options: {} },
-] as const;
-
 /** Compact interview scores for the applicants table. */
 export interface ApplicantInterviewScore {
   stageId: InterviewStageId;
