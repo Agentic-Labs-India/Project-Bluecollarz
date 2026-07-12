@@ -1,3 +1,4 @@
+import type { Collection, CreateIndexesOptions, IndexSpecification } from "mongodb";
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 import { JOB_INDEX_SPECS } from "@/lib/jobs";
 import { APPLICATION_INDEX_SPECS } from "@/lib/jobs/applications";
@@ -5,19 +6,57 @@ import { INTERVIEW_INDEX_SPECS } from "@/lib/interviews";
 
 let ensured = false;
 
+/** Mongo auto-name for a key pattern, e.g. { a: 1, b: -1 } → "a_1_b_-1". */
+function defaultIndexName(key: IndexSpecification): string {
+  return Object.entries(key)
+    .map(([field, direction]) => `${field}_${direction}`)
+    .join("_");
+}
+
+/**
+ * createIndex, dropping a same-name/same-key index first when options diverge
+ * (e.g. non-unique → unique). Other failures are rethrown for the caller to soft-fail.
+ */
+async function ensureIndex(
+  collection: Collection,
+  key: IndexSpecification,
+  options: CreateIndexesOptions = {},
+) {
+  try {
+    await collection.createIndex(key, options);
+  } catch (error) {
+    const code = (error as { code?: number }).code;
+    // 85 IndexOptionsConflict, 86 IndexKeySpecsConflict — same name/keys, different options.
+    if (code !== 85 && code !== 86) throw error;
+
+    const name =
+      (typeof options.name === "string" && options.name) || defaultIndexName(key);
+    await collection.dropIndex(name);
+    await collection.createIndex(key, options);
+  }
+}
+
 /** Create the indexes the app relies on. Runs once per process. */
 export async function ensureIndexes() {
   if (ensured) return;
   const db = client.db(DB_NAME);
   const tasks = [
     ...JOB_INDEX_SPECS.map((spec) =>
-      db.collection(COLLECTIONS.JOBS).createIndex(spec.key),
+      ensureIndex(db.collection(COLLECTIONS.JOBS), spec.key),
     ),
     ...APPLICATION_INDEX_SPECS.map((spec) =>
-      db.collection(COLLECTIONS.APPLICATIONS).createIndex(spec.key, spec.options),
+      ensureIndex(
+        db.collection(COLLECTIONS.APPLICATIONS),
+        spec.key,
+        spec.options,
+      ),
     ),
     ...INTERVIEW_INDEX_SPECS.map((spec) =>
-      db.collection(COLLECTIONS.INTERVIEWS).createIndex(spec.key, spec.options),
+      ensureIndex(
+        db.collection(COLLECTIONS.INTERVIEWS),
+        spec.key,
+        spec.options,
+      ),
     ),
   ];
   // Don't fail the process if a unique index can't build over legacy duplicates.

@@ -1,5 +1,4 @@
 import {
-  Bot,
   Briefcase,
   Home,
   LucideIcon,
@@ -27,7 +26,6 @@ export const HIRE_NAV: AppNavItem[] = [
   { title: "Profile", url: "/hire/profile", icon: User },
   { title: "Roles", url: "/hire/roles", icon: Briefcase },
   { title: "Settings", url: "/hire/settings", icon: Settings },
-  { title: "Agent", url: "/hire/ai-agent", icon: Bot },
 ];
 
 /** Base path for each profile area; everything under these requires auth. */
