@@ -1,5 +1,6 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
+/** Tags TipTap emits for job overviews — keep display/storage locked to this set. */
 const ALLOWED_TAGS = [
   "p",
   "br",
@@ -18,14 +19,21 @@ const ALLOWED_TAGS = [
   "a",
 ];
 
-const ALLOWED_ATTR = ["href", "target", "rel"];
-
-/** Sanitize job overview HTML for storage / display. */
+/** Sanitize job overview HTML for storage / display (no DOM / jsdom). */
 export function sanitizeRichTextHtml(html: string): string {
-  return DOMPurify.sanitize(html ?? "", {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
+  return sanitizeHtml(html ?? "", {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+    allowProtocolRelative: false,
+    // TipTap often emits target=_blank; force safe rel when present.
+    transformTags: {
+      a: sanitizeHtml.simpleTransform("a", {
+        rel: "noopener noreferrer",
+      }),
+    },
   }).trim();
 }
 

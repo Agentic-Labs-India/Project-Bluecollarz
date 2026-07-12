@@ -1,7 +1,7 @@
 import type { Collection, CreateIndexesOptions, IndexSpecification } from "mongodb";
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 
-/** Kept here (not in @/lib/jobs) so ensureIndexes never pulls rich-text → jsdom. */
+/** Kept here (not in @/lib/jobs) so ensureIndexes stays free of app domain imports. */
 const JOB_INDEX_SPECS = [
   { key: { ownerId: 1, status: 1, createdAt: -1 } },
   { key: { status: 1, tab: 1, createdAt: -1 } },
