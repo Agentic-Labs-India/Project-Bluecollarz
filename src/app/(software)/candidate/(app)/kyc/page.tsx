@@ -1,9 +1,6 @@
-import { headers } from "next/headers";
 import { KycVerification } from "@/components/candidate/kyc/kyc-verification";
-import { auth } from "@/lib/auth/auth";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
-import type { JobDocument } from "@/lib/jobs";
-import { ensureIndexes } from "@/lib/db/indexes";
+import { isId } from "@/lib/db";
+import { getPublishedJobTitle } from "@/lib/candidate/queries";
 
 export default async function KycPage({
   searchParams,
@@ -12,24 +9,10 @@ export default async function KycPage({
 }) {
   const { jobId: rawJobId } = await searchParams;
   const jobId = typeof rawJobId === "string" && isId(rawJobId) ? rawJobId : null;
-
-  let jobTitle: string | null = null;
-  if (jobId) {
-    const session = await auth.api.getSession({ headers: await headers() });
-    const userId = (session?.user as { id?: string } | undefined)?.id;
-    if (userId) {
-      await ensureIndexes();
-      const db = client.db(DB_NAME);
-      const job = await db.collection<JobDocument>(COLLECTIONS.JOBS).findOne({
-        _id: matchId(jobId) as never,
-        status: "published",
-      });
-      if (job) jobTitle = job.title;
-    }
-  }
+  const jobTitle = jobId ? await getPublishedJobTitle(jobId) : null;
 
   return (
-    <div className="px-4">
+    <div className="px-4 py-6 md:px-6 md:py-8">
       <KycVerification jobId={jobId} jobTitle={jobTitle} />
     </div>
   );

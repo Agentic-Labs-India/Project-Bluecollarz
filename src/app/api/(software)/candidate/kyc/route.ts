@@ -16,8 +16,8 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid user" }, { status: 400 });
     }
 
-    const db = client.db(DB_NAME);
-    const user = await db
+    const user = await client
+      .db(DB_NAME)
       .collection<KycFields>(COLLECTIONS.USERS_COLLECTION)
       .findOne(
         { _id: matchId(auth.user.id) as never },
@@ -37,7 +37,7 @@ export async function GET() {
       kyc: toKycPublicState(user),
     });
   } catch (error) {
-    console.error("GET /api/kyc:", error);
+    console.error("GET /api/candidate/kyc:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

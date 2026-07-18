@@ -159,7 +159,7 @@ export function KycVerification({
     setLoading(true);
     setLoadError("");
     try {
-      const res = await fetch("/api/kyc");
+      const res = await fetch("/api/candidate/kyc");
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || "Failed to load KYC status");
       setKyc(json.kyc as KycPublicState);
@@ -221,7 +221,7 @@ export function KycVerification({
         form.append(slot, file);
       }
 
-      const res = await fetch("/api/kyc/verify", {
+      const res = await fetch("/api/candidate/kyc/verify", {
         method: "POST",
         body: form,
       });

@@ -92,8 +92,7 @@ export async function POST(req: NextRequest) {
     });
 
     const now = new Date();
-    const db = client.db(DB_NAME);
-    const users = db.collection(COLLECTIONS.USERS_COLLECTION);
+    const users = client.db(DB_NAME).collection(COLLECTIONS.USERS_COLLECTION);
     const userFilter = { _id: matchId(auth.user.id) as never };
 
     if (!analysis.overallAuthentic) {
@@ -160,7 +159,7 @@ export async function POST(req: NextRequest) {
       uploaded: true,
     });
   } catch (error) {
-    console.error("POST /api/kyc/verify:", error);
+    console.error("POST /api/candidate/kyc/verify:", error);
     return NextResponse.json(
       {
         error:

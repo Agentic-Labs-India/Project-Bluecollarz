@@ -7,10 +7,10 @@ import {
   CircleXIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CandidateApplicationsList } from "@/components/candidate/candidate-applications-list";
+import { CandidateApplicationsList } from "@/components/candidate/applications-list";
 import { StatCard } from "@/components/shared/stat-card";
 import { auth } from "@/lib/auth/auth";
-import { getCandidateDashboard } from "@/lib/jobs/queries";
+import { getCandidateDashboard } from "@/lib/candidate/queries";
 import type { CandidateApplicationListItem } from "@/lib/jobs/applications";
 
 export default async function HomePage() {
