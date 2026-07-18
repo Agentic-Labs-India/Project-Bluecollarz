@@ -166,14 +166,36 @@ function Sidebar({
   if (collapsible === "none") {
     return (
       <div
+        className="group peer hidden text-sidebar-foreground md:block"
         data-slot="sidebar"
-        className={cn(
-          "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
-          className
-        )}
-        {...props}
+        data-state="expanded"
+        data-collapsible=""
+        data-variant={variant}
+        data-side={side}
       >
-        {children}
+        {/* Spacer so main content clears the fixed rail */}
+        <div
+          data-slot="sidebar-gap"
+          className="relative w-(--sidebar-width) bg-transparent"
+        />
+        <div
+          data-slot="sidebar-container"
+          data-side={side}
+          className={cn(
+            "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) md:flex",
+            side === "left" ? "left-0" : "right-0",
+            className
+          )}
+          {...props}
+        >
+          <div
+            data-sidebar="sidebar"
+            data-slot="sidebar-inner"
+            className="flex size-full flex-col bg-sidebar text-sidebar-foreground"
+          >
+            {children}
+          </div>
+        </div>
       </div>
     )
   }

@@ -40,7 +40,7 @@ export function AppRailSidebar({
   return (
     <Sidebar
       collapsible="none"
-      className="hidden h-svh shrink-0 border-sidebar-border border-e md:flex"
+      className="border-sidebar-border border-e"
       {...props}
     >
       <SidebarHeader className="flex items-center justify-center px-2 py-5">
