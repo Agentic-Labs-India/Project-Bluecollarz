@@ -55,13 +55,13 @@ const ENVIRONMENT = [
   "Quiet, well-lit room with a plain background",
   "Stable Wi‑Fi or ethernet — avoid hotspot switching",
   "Laptop, tablet, or PC with camera and mic",
-  "Allow camera, mic, and screen share in the browser",
+  "Allow camera, mic, and entire-screen share in the browser",
 ];
 
 const GUIDELINES = [
   "Sit alone in a quiet room. No one else should be present — the AI may reject your application if another person is detected.",
   "Keep your face clearly visible on camera for the entire session.",
-  "Share your screen for the full interview. Ending share early can invalidate the session.",
+  "Share your entire screen (not a window or tab) for the full interview. Ending share early can invalidate the session.",
   "Speak clearly in your own words. Do not read notes or get help from others.",
   "Do not switch tabs, mute yourself, or leave this screen until finished.",
   "Close other apps using your camera or microphone before you start.",
@@ -337,7 +337,7 @@ export function InterviewReadyPanel({
                     state.status === "fail" && "bg-destructive/5",
                   )}
                 >
-                  <span className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center">
+                  <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center">
                     <Icon className="size-4" strokeWidth={1.75} />
                   </span>
                   <div className="min-w-0 flex-1">

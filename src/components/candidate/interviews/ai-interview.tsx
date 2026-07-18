@@ -74,7 +74,7 @@ export function AiInterview({
     "permissions" | "live" | "finalizing" | "done" | "error"
   >("permissions");
   const [status, setStatus] = useState(
-    "Allow camera, microphone, and screen share to begin.",
+    "Allow camera, microphone, and entire-screen share to begin.",
   );
   const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
@@ -146,7 +146,7 @@ export function AiInterview({
 
   const beginSession = useCallback(async () => {
     setError("");
-    setStatus("Turning on camera, then screen share…");
+    setStatus("Turning on camera, then entire-screen share…");
     try {
       readyPanelRef.current?.releaseDevices();
       await startScreen();
@@ -500,8 +500,8 @@ export function AiInterview({
               </Button>
               <p className="text-muted-foreground text-xs leading-relaxed">
                 {checksReady
-                  ? "All checks passed. Starting will turn on camera, microphone, and screen share. Speak naturally — after a pause, your answer is sent."
-                  : "Complete every system check on the left before you can start. Screen share will be requested when you begin."}
+                  ? "All checks passed. Starting will turn on camera, microphone, and entire-screen share. Speak naturally — after a pause, your answer is sent."
+                  : "Complete every system check on the left before you can start. Entire-screen share will be requested when you begin."}
               </p>
             </div>
           ) : null}

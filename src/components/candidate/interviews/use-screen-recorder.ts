@@ -84,10 +84,29 @@ export function useScreenRecorder() {
         },
       });
 
+      // Prefer / require the full monitor — window or browser-tab share is rejected.
       const display = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: 15 },
+        video: {
+          frameRate: 15,
+          displaySurface: "monitor",
+        } as MediaTrackConstraints,
         audio: true,
-      });
+        // Chromium hints: keep the picker on entire-screen surfaces.
+        preferCurrentTab: false,
+        selfBrowserSurface: "exclude",
+        surfaceSwitching: "exclude",
+        monitorTypeSurfaces: "include",
+      } as DisplayMediaStreamOptions);
+
+      const screenTrack = display.getVideoTracks()[0];
+      const surface = screenTrack?.getSettings()?.displaySurface;
+      if (surface && surface !== "monitor") {
+        display.getTracks().forEach((t) => t.stop());
+        camera.getTracks().forEach((t) => t.stop());
+        throw new Error(
+          "Please share your entire screen (not a window or browser tab).",
+        );
+      }
 
       const screenVideo = createHiddenVideo(display);
       const cameraVideo = createHiddenVideo(camera);
