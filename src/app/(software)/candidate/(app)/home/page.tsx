@@ -10,25 +10,20 @@ import { Button } from "@/components/ui/button";
 import { CandidateApplicationsList } from "@/components/candidate/candidate-applications-list";
 import { StatCard } from "@/components/shared/stat-card";
 import { auth } from "@/lib/auth/auth";
-import {
-  getCandidateApplicationStats,
-  getCandidateApplications,
-} from "@/lib/jobs/queries";
+import { getCandidateDashboard } from "@/lib/jobs/queries";
+import type { CandidateApplicationListItem } from "@/lib/jobs/applications";
 
 export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as { id?: string; name?: string } | undefined;
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  const [stats, applications] = user?.id
-    ? await Promise.all([
-        getCandidateApplicationStats(user.id),
-        getCandidateApplications(user.id),
-      ])
-    : [
-        { active: 0, selected: 0, closed: 0, total: 0 },
-        [] as Awaited<ReturnType<typeof getCandidateApplications>>,
-      ];
+  const { stats, applications } = user?.id
+    ? await getCandidateDashboard(user.id)
+    : {
+        stats: { active: 0, selected: 0, closed: 0, total: 0 },
+        applications: [] as CandidateApplicationListItem[],
+      };
 
   const cards = [
     { label: "Active applications", value: stats.active, icon: BriefcaseIcon },

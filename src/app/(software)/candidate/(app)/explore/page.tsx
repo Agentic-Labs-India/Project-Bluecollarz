@@ -33,6 +33,7 @@ export default async function ExplorePage({
       viewerProfileType: normalizeProfileType(user.profileType),
       page: 1,
       limit: 50,
+      pinJobId: initialJobId,
     });
     initialOpportunities = result.items;
     initialApplicationStatuses = result.applicationStatuses;

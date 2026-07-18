@@ -334,8 +334,11 @@ export function ApplicantSheet({
   applicantId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Called after select/reject so the applicants table can refresh. */
-  onStatusChanged?: () => void;
+  /** Called after select/reject with the new status (table can update locally). */
+  onStatusChanged?: (
+    applicantId: string,
+    status: ApplicationStatus,
+  ) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -391,18 +394,19 @@ export function ApplicantSheet({
       );
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || "Failed to update status");
+      const nextStatus = json.application.status as ApplicationStatus;
       setData((prev) =>
         prev
           ? {
               ...prev,
               application: {
                 ...prev.application,
-                status: json.application.status as ApplicationStatus,
+                status: nextStatus,
               },
             }
           : prev,
       );
-      onStatusChanged?.();
+      onStatusChanged?.(applicantId, nextStatus);
     } catch (e: unknown) {
       setActionError(
         e instanceof Error ? e.message : "Failed to update status",

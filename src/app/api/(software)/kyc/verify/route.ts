@@ -93,38 +93,23 @@ export async function POST(req: NextRequest) {
 
     const now = new Date();
     const db = client.db(DB_NAME);
+    const users = db.collection(COLLECTIONS.USERS_COLLECTION);
+    const userFilter = { _id: matchId(auth.user.id) as never };
 
     if (!analysis.overallAuthentic) {
       const status: KycStatus = "failed";
-      await db.collection(COLLECTIONS.USERS_COLLECTION).updateOne(
-        { _id: matchId(auth.user.id) as never },
-        {
-          $set: {
-            kycStatus: status,
-            kycAnalysis: analysis,
-            kycUpdatedAt: now,
-          },
-          $unset: { kycDocuments: "", kycVerifiedAt: "" },
-        },
-      );
-
-      const user = await db
-        .collection<KycFields>(COLLECTIONS.USERS_COLLECTION)
-        .findOne(
-          { _id: matchId(auth.user.id) as never },
-          {
-            projection: {
-              kycStatus: 1,
-              kycDocuments: 1,
-              kycAnalysis: 1,
-              kycVerifiedAt: 1,
-              kycUpdatedAt: 1,
-            },
-          },
-        );
+      const fields: KycFields = {
+        kycStatus: status,
+        kycAnalysis: analysis,
+        kycUpdatedAt: now,
+      };
+      await users.updateOne(userFilter, {
+        $set: fields,
+        $unset: { kycDocuments: "", kycVerifiedAt: "" },
+      });
 
       return NextResponse.json({
-        kyc: toKycPublicState(user),
+        kyc: toKycPublicState(fields),
         uploaded: false,
       });
     }
@@ -161,36 +146,17 @@ export async function POST(req: NextRequest) {
     );
 
     const status: KycStatus = "verified";
-    await db.collection(COLLECTIONS.USERS_COLLECTION).updateOne(
-      { _id: matchId(auth.user.id) as never },
-      {
-        $set: {
-          kycStatus: status,
-          kycDocuments: uploaded,
-          kycAnalysis: analysis,
-          kycVerifiedAt: now,
-          kycUpdatedAt: now,
-        },
-      },
-    );
-
-    const user = await db
-      .collection<KycFields>(COLLECTIONS.USERS_COLLECTION)
-      .findOne(
-        { _id: matchId(auth.user.id) as never },
-        {
-          projection: {
-            kycStatus: 1,
-            kycDocuments: 1,
-            kycAnalysis: 1,
-            kycVerifiedAt: 1,
-            kycUpdatedAt: 1,
-          },
-        },
-      );
+    const fields: KycFields = {
+      kycStatus: status,
+      kycDocuments: uploaded,
+      kycAnalysis: analysis,
+      kycVerifiedAt: now,
+      kycUpdatedAt: now,
+    };
+    await users.updateOne(userFilter, { $set: fields });
 
     return NextResponse.json({
-      kyc: toKycPublicState(user),
+      kyc: toKycPublicState(fields),
       uploaded: true,
     });
   } catch (error) {

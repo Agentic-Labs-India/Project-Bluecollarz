@@ -276,6 +276,8 @@ export function ExploreOpportunities({
   const isMobile = useIsMobile();
   /** Skip the first fetch — the server already seeded the default view. */
   const seededDefault = useRef(true);
+  /** Skip clearing selection on the initial workType mount. */
+  const workTypeReady = useRef(false);
 
   useEffect(() => {
     if (
@@ -444,44 +446,23 @@ export function ExploreOpportunities({
     setSelectedId(opportunities[selectedIndex + 1].id);
   };
 
-  // Deep-link from ?jobId=: open that role (fetch + prepend if missing from the list).
+  // Deep-link: server already pins the job into the seed list when possible.
   useEffect(() => {
     if (!initialJobId) return;
     setSelectedId(initialJobId);
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/jobs/${initialJobId}?format=opportunity`,
-        );
-        if (!res.ok) return;
-        const json = (await res.json()) as { item?: Opportunity };
-        const item = json.item;
-        if (cancelled || !item?.id) return;
-        setOpportunities((prev) =>
-          prev.some((o) => o.id === item.id) ? prev : [item, ...prev],
-        );
-        setSelectedId(item.id);
-      } catch {
-        // ignore — user can still browse the list
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [initialJobId]);
 
   useEffect(() => {
     if (selectedId && !opportunities.some((item) => item.id === selectedId)) {
-      // Keep deep-link selection while the job is still being fetched in.
-      if (selectedId === initialJobId) return;
       setSelectedId(null);
     }
-  }, [opportunities, selectedId, initialJobId]);
+  }, [opportunities, selectedId]);
 
   useEffect(() => {
+    if (!workTypeReady.current) {
+      workTypeReady.current = true;
+      return;
+    }
     setSelectedId(null);
   }, [workType]);
 

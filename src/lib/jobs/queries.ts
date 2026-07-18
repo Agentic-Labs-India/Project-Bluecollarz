@@ -102,6 +102,8 @@ export async function getPublishedOpportunities(opts: {
   priority?: string;
   page?: number;
   limit?: number;
+  /** Ensure this published job is in the result set (deep-link from home). */
+  pinJobId?: string | null;
 }): Promise<OpportunitiesResult> {
   await ensureIndexes();
   const page = Math.max(1, opts.page ?? 1);
@@ -130,11 +132,56 @@ export async function getPublishedOpportunities(opts: {
 
   const db = client.db(DB_NAME);
   const collection = db.collection<JobDocument>(COLLECTIONS.JOBS);
+  const isWorkViewer =
+    opts.viewerProfileType === "work" && Boolean(opts.viewerId);
 
-  const [docs, total] = await Promise.all([
-    collection.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+  const [docs, total, userDoc, pinnedDoc] = await Promise.all([
+    collection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
     collection.countDocuments(query),
+    isWorkViewer
+      ? db
+          .collection<CandidateProfileFields & KycFields>(
+            COLLECTIONS.USERS_COLLECTION,
+          )
+          .findOne(
+            { _id: matchId(opts.viewerId) as never },
+            {
+              projection: {
+                phoneNumber: 1,
+                headline: 1,
+                location: 1,
+                yearsExperience: 1,
+                skills: 1,
+                workAuthorization: 1,
+                summary: 1,
+                education: 1,
+                workExperience: 1,
+                languages: 1,
+                kycStatus: 1,
+              },
+            },
+          )
+      : Promise.resolve(null),
+    opts.pinJobId
+      ? collection.findOne({
+          _id: matchId(opts.pinJobId) as never,
+          status: "published",
+        })
+      : Promise.resolve(null),
   ]);
+
+  let mergedDocs = docs;
+  if (pinnedDoc) {
+    const pinId = idHex(pinnedDoc._id);
+    if (!docs.some((d) => idHex(d._id) === pinId)) {
+      mergedDocs = [pinnedDoc, ...docs];
+    }
+  }
 
   let appliedJobIds: string[] = [];
   let applicationStatuses: Record<string, ApplicationStatus> = {};
@@ -142,19 +189,14 @@ export async function getPublishedOpportunities(opts: {
   let kycVerified = false;
   let completedByJob = new Map<string, Set<string>>();
 
-  if (opts.viewerProfileType === "work" && opts.viewerId) {
-    const userDoc = await db
-      .collection<CandidateProfileFields & KycFields>(
-        COLLECTIONS.USERS_COLLECTION,
-      )
-      .findOne({ _id: matchId(opts.viewerId) as never });
+  if (isWorkViewer) {
     profileComplete = isCandidateProfileComplete(
       toCandidateProfileData(userDoc),
     );
     kycVerified = userDoc?.kycStatus === "verified";
 
-    if (docs.length) {
-      const jobIdHexes = docs.map((doc) => idHex(doc._id)).filter(Boolean);
+    if (mergedDocs.length) {
+      const jobIdHexes = mergedDocs.map((doc) => idHex(doc._id)).filter(Boolean);
       const [applied, stages] = await Promise.all([
         db
           .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
@@ -181,7 +223,7 @@ export async function getPublishedOpportunities(opts: {
   }
 
   return {
-    items: docs.map((doc) => {
+    items: mergedDocs.map((doc) => {
       const jobId = idHex(doc._id);
       return toOpportunity(doc, {
         profileComplete,
@@ -199,6 +241,27 @@ export async function getPublishedOpportunities(opts: {
   };
 }
 
+function statsFromApplications(
+  applications: CandidateApplicationListItem[],
+): CandidateApplicationStats {
+  const stats: CandidateApplicationStats = {
+    active: 0,
+    selected: 0,
+    closed: 0,
+    total: applications.length,
+  };
+  for (const app of applications) {
+    if (app.status === "selected") {
+      stats.selected += 1;
+    } else if (app.status === "applied" && app.jobStatus === "published") {
+      stats.active += 1;
+    } else {
+      stats.closed += 1;
+    }
+  }
+  return stats;
+}
+
 /**
  * All applications for a candidate, with job details + AI interview progress.
  * Newest applications first.
@@ -213,6 +276,7 @@ export async function getCandidateApplications(
   const applications = await db
     .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
     .find({ applicantId: matchId(userId) })
+    .project({ jobId: 1, status: 1, createdAt: 1 })
     .sort({ createdAt: -1 })
     .toArray();
 
@@ -243,7 +307,7 @@ export async function getCandidateApplications(
         jobId: 1,
         stageId: 1,
         status: 1,
-        analysis: 1,
+        "analysis.overall": 1,
       })
       .toArray(),
   ]);
@@ -313,55 +377,22 @@ export async function getCandidateApplications(
   });
 }
 
+/** One DB pass for candidate home: applications list + derived stat cards. */
+export async function getCandidateDashboard(userId: string): Promise<{
+  applications: CandidateApplicationListItem[];
+  stats: CandidateApplicationStats;
+}> {
+  const applications = await getCandidateApplications(userId);
+  return {
+    applications,
+    stats: statsFromApplications(applications),
+  };
+}
+
 /** Aggregate a candidate's application counts (active / selected / closed). */
 export async function getCandidateApplicationStats(
   userId: string,
 ): Promise<CandidateApplicationStats> {
-  await ensureIndexes();
-  if (!userId) {
-    return { active: 0, selected: 0, closed: 0, total: 0 };
-  }
-
-  const db = client.db(DB_NAME);
-
-  const applications = await db
-    .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
-    .find({ applicantId: matchId(userId) })
-    .project<{ status: ApplicationDocument["status"]; jobId: unknown }>({
-      status: 1,
-      jobId: 1,
-    })
-    .toArray();
-
-  const jobIdHexes = applications.map((app) => idHex(app.jobId)).filter(Boolean);
-
-  const jobs = jobIdHexes.length
-    ? await db
-        .collection<JobDocument>(COLLECTIONS.JOBS)
-        .find({ _id: { $in: matchIds(jobIdHexes) as never } })
-        .project<{ _id: unknown; status: JobDocument["status"] }>({ status: 1 })
-        .toArray()
-    : [];
-
-  const jobStatusById = new Map(jobs.map((job) => [idHex(job._id), job.status]));
-
-  const stats: CandidateApplicationStats = {
-    active: 0,
-    selected: 0,
-    closed: 0,
-    total: applications.length,
-  };
-
-  for (const app of applications) {
-    const jobStatus = jobStatusById.get(idHex(app.jobId));
-    if (app.status === "selected") {
-      stats.selected += 1;
-    } else if (app.status === "applied" && jobStatus === "published") {
-      stats.active += 1;
-    } else {
-      stats.closed += 1;
-    }
-  }
-
+  const { stats } = await getCandidateDashboard(userId);
   return stats;
 }
