@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CandidateApplicationsList } from "@/components/candidate/applications-list";
+import { AppPage } from "@/components/layout/app-page";
 import { StatCard } from "@/components/shared/stat-card";
 import { auth } from "@/lib/auth/auth";
 import { getCandidateDashboard } from "@/lib/candidate/queries";
@@ -32,7 +33,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <AppPage>
       <header className="mb-10">
         <p className="text-muted-foreground mb-2 text-sm">Welcome back</p>
         <h1 className="text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
@@ -70,6 +71,6 @@ export default async function HomePage() {
           </Link>
         </Button>
       </section>
-    </div>
+    </AppPage>
   );
 }

@@ -9,9 +9,10 @@ import {
   ShieldAlertIcon,
   XCircleIcon,
 } from "lucide-react";
+import { AppPage } from "@/components/layout/app-page";
+import { KycPageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
 import {
   KYC_DOC_GROUP_LABELS,
   KYC_DOC_GROUPS,
@@ -254,21 +255,17 @@ export function KycVerification({
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Spinner className="size-6" />
-      </div>
-    );
+    return <KycPageSkeleton />;
   }
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-5xl py-10">
+      <AppPage className="py-10">
         <p className="text-destructive text-sm">{loadError}</p>
         <Button className="mt-4" variant="outline" onClick={() => void load()}>
           Retry
         </Button>
-      </div>
+      </AppPage>
     );
   }
 
@@ -276,7 +273,7 @@ export function KycVerification({
   const failed = kyc?.status === "failed";
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <AppPage>
       <header className="mb-8">
         <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
           KYC verification
@@ -338,7 +335,7 @@ export function KycVerification({
 
       {!verified ? (
         <>
-          <div className="flex flex-row gap-3">
+          <div className="flex flex-col gap-3 md:flex-row">
             {KYC_DOC_GROUPS.map((group) => {
               const slots = GROUP_SLOTS[group];
               const groupRejected = slots.some((slot) =>
@@ -349,7 +346,7 @@ export function KycVerification({
                 <div
                   key={group}
                   className={cn(
-                    "border-border bg-card flex min-w-0 flex-1 flex-col gap-3 border p-3",
+                    "border-border bg-card flex w-full min-w-0 flex-1 flex-col gap-3 border p-3",
                     failed && groupRejected && "border-destructive/40",
                   )}
                 >
@@ -366,7 +363,9 @@ export function KycVerification({
                   <div
                     className={cn(
                       "flex gap-2",
-                      group === "aadhaar" ? "flex-row" : "flex-col",
+                      group === "aadhaar"
+                        ? "flex-col sm:flex-row"
+                        : "flex-col",
                     )}
                   >
                     {slots.map((slot) => (
@@ -407,11 +406,10 @@ export function KycVerification({
             disabled={!allSelected || verifying}
             onClick={() => void runVerify()}
           >
-            {verifying ? <Spinner /> : null}
             {verifying ? "Checking with AI…" : "Check with AI & submit"}
           </Button>
         </>
       ) : null}
-    </div>
+    </AppPage>
   );
 }

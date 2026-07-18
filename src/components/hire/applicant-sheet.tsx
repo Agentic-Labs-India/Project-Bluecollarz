@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import {
   Sheet,
   SheetContent,
@@ -529,30 +528,42 @@ export function ApplicantSheet({
               <Skeleton className="size-12 rounded-full" />
             )}
             <div className="min-w-0 flex-1">
-              <SheetTitle className="truncate text-base">
-                {profile?.name || "Candidate"}
-              </SheetTitle>
-              <SheetDescription className="truncate">
-                {profile?.email || "Profile, resume, and interview scores"}
-              </SheetDescription>
-              {data ? (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="capitalize">
-                    {data.application.status}
-                  </Badge>
-                  {data.kyc?.verified ? (
-                    <Badge>AI KYC Done</Badge>
-                  ) : (
-                    <Badge variant="outline" className="font-normal">
-                      KYC pending
-                    </Badge>
-                  )}
-                  <span className="text-muted-foreground text-xs">
-                    Applied{" "}
-                    {new Date(data.application.appliedAt).toLocaleDateString()}
-                  </span>
+              {loading || !profile ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-52" />
+                  <Skeleton className="mt-2 h-5 w-24" />
                 </div>
-              ) : null}
+              ) : (
+                <>
+                  <SheetTitle className="truncate text-base">
+                    {profile.name || "Candidate"}
+                  </SheetTitle>
+                  <SheetDescription className="truncate">
+                    {profile.email || "Profile, resume, and interview scores"}
+                  </SheetDescription>
+                  {data ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="capitalize">
+                        {data.application.status}
+                      </Badge>
+                      {data.kyc?.verified ? (
+                        <Badge>AI KYC Done</Badge>
+                      ) : (
+                        <Badge variant="outline" className="font-normal">
+                          KYC pending
+                        </Badge>
+                      )}
+                      <span className="text-muted-foreground text-xs">
+                        Applied{" "}
+                        {new Date(
+                          data.application.appliedAt,
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
         </SheetHeader>
@@ -696,8 +707,7 @@ export function ApplicantSheet({
               }
               onClick={() => void updateStatus("rejected")}
             >
-              {actionLoading === "rejected" ? <Spinner /> : null}
-              Reject
+              {actionLoading === "rejected" ? "Rejecting…" : "Reject"}
             </Button>
             <Button
               className="w-full flex-1"
@@ -708,8 +718,7 @@ export function ApplicantSheet({
               }
               onClick={() => void updateStatus("selected")}
             >
-              {actionLoading === "selected" ? <Spinner /> : null}
-              Select
+              {actionLoading === "selected" ? "Selecting…" : "Select"}
             </Button>
           </div>
         </SheetFooter>

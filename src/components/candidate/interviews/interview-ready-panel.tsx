@@ -10,7 +10,6 @@ import {
 import {
   CheckCircle2Icon,
   CircleAlertIcon,
-  Loader2Icon,
   MicIcon,
   MonitorIcon,
   SparklesIcon,
@@ -19,6 +18,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type CheckId = "internet" | "camera" | "voice" | "ai";
@@ -83,7 +83,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 function StatusIcon({ status }: { status: CheckStatus }) {
   if (status === "running") {
-    return <Loader2Icon className="text-muted-foreground size-3.5 animate-spin" />;
+    return <Skeleton className="size-3.5 shrink-0 rounded-full" />;
   }
   if (status === "pass") {
     return <CheckCircle2Icon className="text-primary size-3.5" />;

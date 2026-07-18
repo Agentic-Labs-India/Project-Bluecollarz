@@ -10,7 +10,6 @@ import {
   useState,
 } from "react";
 import {
-  Loader2Icon,
   MicIcon,
   MonitorIcon,
   VideoIcon,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useScreenRecorder } from "@/components/candidate/interviews/use-screen-recorder";
 import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
 import {
@@ -507,9 +507,10 @@ export function AiInterview({
           ) : null}
 
           {phase === "finalizing" ? (
-            <div className="text-muted-foreground inline-flex items-center gap-2 text-sm">
-              <Loader2Icon className="size-4 animate-spin" />
-              Finalizing…
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-full" />
+              <p className="text-muted-foreground text-sm">Finalizing…</p>
             </div>
           ) : null}
 

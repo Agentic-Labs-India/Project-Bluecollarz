@@ -11,9 +11,5 @@ export default async function KycPage({
   const jobId = typeof rawJobId === "string" && isId(rawJobId) ? rawJobId : null;
   const jobTitle = jobId ? await getPublishedJobTitle(jobId) : null;
 
-  return (
-    <div className="px-4 py-6 md:px-6 md:py-8">
-      <KycVerification jobId={jobId} jobTitle={jobTitle} />
-    </div>
-  );
+  return <KycVerification jobId={jobId} jobTitle={jobTitle} />;
 }

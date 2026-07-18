@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
+import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
 import type { InterviewStageId } from "@/lib/interviews";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import {
@@ -573,9 +574,11 @@ export function ExploreOpportunities({
             </div>
           ) : (
             <ScrollArea className={EXPLORE_GRID_SCROLL}>
-              <div className="mx-auto w-full max-w-5xl px-6 py-6 md:px-8 md:py-8 lg:px-10">
-                {listHeader(false)}
-                {gridBody}
+              <div className={cn(APP_PAGE_GUTTER, "py-6 md:py-8")}>
+                <AppPage>
+                  {listHeader(false)}
+                  {gridBody}
+                </AppPage>
               </div>
             </ScrollArea>
           )}

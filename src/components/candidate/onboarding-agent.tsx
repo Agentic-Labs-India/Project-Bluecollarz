@@ -11,13 +11,13 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Loader2Icon,
   MicIcon,
   UploadIcon,
   Volume2Icon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   startVadLoop,
   type VadController,
@@ -27,6 +27,7 @@ import {
   UserChatAvatar,
   useChatUserAvatar,
 } from "@/components/candidate/chat-avatars";
+import { APP_PAGE_MAX } from "@/components/layout/app-page";
 import { speakText } from "@/lib/voice/speak";
 import { transcribeBlob } from "@/lib/voice/transcribe";
 import { cn } from "@/lib/utils";
@@ -262,7 +263,12 @@ export function OnboardingAgent() {
   };
 
   return (
-    <div className="bg-background fixed inset-x-0 top-14 bottom-0 z-30 mx-auto flex w-full max-w-5xl flex-col overflow-hidden md:static md:inset-auto md:top-auto md:bottom-auto md:z-auto md:h-full md:min-h-0">
+    <div
+      className={cn(
+        "bg-background fixed inset-x-0 top-14 bottom-0 z-30 mx-auto flex w-full min-w-0 flex-col overflow-hidden md:static md:inset-auto md:top-auto md:bottom-auto md:z-auto md:h-full md:min-h-0",
+        APP_PAGE_MAX,
+      )}
+    >
       <header className="border-border flex w-full shrink-0 items-center border-b px-4 pt-3 pb-3">
         <Badge
           variant="outline"
@@ -308,8 +314,8 @@ export function OnboardingAgent() {
                   )}
                 >
                   {text || (
-                    <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-                      <Loader2Icon className="size-3 animate-spin" />
+                    <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
+                      <Skeleton className="h-3 w-3 shrink-0 rounded-full" />
                       Updating your profile…
                     </span>
                   )}
@@ -400,11 +406,11 @@ export function OnboardingAgent() {
               onClick={() => fileInputRef.current?.click()}
             >
               {uploading ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
+                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
               ) : (
                 <UploadIcon className="size-3.5" />
               )}
-              Upload PDF
+              {uploading ? "Uploading…" : "Upload PDF"}
             </Button>
             <input
               ref={fileInputRef}

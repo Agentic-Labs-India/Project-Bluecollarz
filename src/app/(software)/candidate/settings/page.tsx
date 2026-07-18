@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { AppPage } from "@/components/layout/app-page";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
 import { useTheme } from "next-themes";
 import { MoonIcon, SunIcon } from "lucide-react";
@@ -11,7 +12,7 @@ export default function CandidateSettingsPage() {
   const isDark = theme === "dark";
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <AppPage>
       <h1 className="text-foreground mb-8 text-3xl font-semibold tracking-tight md:text-4xl">
         Settings
       </h1>
@@ -37,6 +38,6 @@ export default function CandidateSettingsPage() {
         </p>
         <DeleteAccountSection profileType="work" />
       </section>
-    </div>
+    </AppPage>
   );
 }

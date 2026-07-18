@@ -29,8 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { AppPage } from "@/components/layout/app-page";
 import { StatCard } from "@/components/shared/stat-card";
 import type { HireOverview } from "@/lib/hire";
 import {
@@ -188,7 +188,7 @@ export function HireProfileView({
   const totalRoles = overview.roles.total;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl">
+    <AppPage>
       <div className="mb-6 md:mb-8">
         <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl">
           Hiring profile
@@ -437,7 +437,7 @@ export function HireProfileView({
               disabled={saving}
               onClick={() => void handleSave()}
             >
-              {saving ? <Spinner /> : "Save profile"}
+              {saving ? "Saving…" : "Save profile"}
             </Button>
             {savedFlash ? (
               <p className="text-muted-foreground text-sm">Saved</p>
@@ -554,6 +554,6 @@ export function HireProfileView({
           )}
         </section>
       </div>
-    </div>
+    </AppPage>
   );
 }

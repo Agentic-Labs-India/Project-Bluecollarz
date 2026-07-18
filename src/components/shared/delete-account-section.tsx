@@ -15,7 +15,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/auth-client";
 import type { ProfileType } from "@/lib/profile-types";
 import { getProfileIdLabel } from "@/lib/profile-types";
@@ -102,7 +101,7 @@ export function DeleteAccountSection({
                 void handleDelete();
               }}
             >
-              {loading ? <Spinner /> : "Yes, delete forever"}
+              {loading ? "Deleting…" : "Yes, delete forever"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

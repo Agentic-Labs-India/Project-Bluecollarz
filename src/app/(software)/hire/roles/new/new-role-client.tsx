@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JobForm, type JobFormValues } from "@/components/hire/job-form";
+import { AppPage } from "@/components/layout/app-page";
 import { normalizeJobLocation } from "@/lib/jobs";
 
 function buildJobPayload(values: JobFormValues, publish: boolean) {
@@ -51,7 +52,7 @@ export function NewRoleClient() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <AppPage>
       <Button
         type="button"
         variant="ghost"
@@ -72,6 +73,6 @@ export function NewRoleClient() {
         </p>
       </div>
       <JobForm submitLabel="Save draft" onSubmit={createJob} />
-    </div>
+    </AppPage>
   );
 }

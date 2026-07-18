@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import {
   APPLICATION_STAGE_OPTIONS,
   DEFAULT_APPLICATION_STEP_TEMPLATES,
@@ -345,7 +344,7 @@ export function JobForm({
 
       <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:flex-wrap">
         <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-          {loading ? <Spinner /> : submitLabel}
+          {loading ? "Saving…" : submitLabel}
         </Button>
         <Button
           type="button"
@@ -354,7 +353,7 @@ export function JobForm({
           className="w-full sm:w-auto"
           onClick={() => void handleSubmit(true)}
         >
-          {loading ? <Spinner /> : "Save & publish"}
+          {loading ? "Publishing…" : "Save & publish"}
         </Button>
         <Button
           type="button"

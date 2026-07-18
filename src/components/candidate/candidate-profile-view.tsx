@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AppPage } from "@/components/layout/app-page";
+import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -250,17 +251,13 @@ export function CandidateProfileView() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Spinner />
-      </div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   const initial = profile.name?.charAt(0) || "U";
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-10">
+    <AppPage className="space-y-8 pb-10">
       <h1 className="text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
         Profile
       </h1>
@@ -952,6 +949,6 @@ export function CandidateProfileView() {
       <Button disabled={saving} onClick={() => void save()}>
         {saving ? "Saving…" : "Save profile"}
       </Button>
-    </div>
+    </AppPage>
   );
 }

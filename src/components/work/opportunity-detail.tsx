@@ -15,6 +15,7 @@ import {
   Minimize2Icon,
   UsersIcon,
 } from "lucide-react";
+import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RichTextContent } from "@/components/ui/rich-text-content";
@@ -167,7 +168,8 @@ export function OpportunityDetail({
       )}
     >
       <header className="border-border/60 shrink-0 border-b">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 md:px-6">
+        <div className={cn(APP_PAGE_GUTTER, "py-3")}>
+          <AppPage className="flex items-center justify-between">
           <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"
@@ -221,6 +223,7 @@ export function OpportunityDetail({
               <Maximize2Icon className="size-4" />
             )}
           </Button>
+          </AppPage>
         </div>
       </header>
 
@@ -230,7 +233,8 @@ export function OpportunityDetail({
           scrollClassName,
         )}
       >
-        <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-6 md:py-8">
+        <div className={cn(APP_PAGE_GUTTER, "py-5 md:py-8")}>
+          <AppPage>
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h2 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
               {opportunity.title}
@@ -293,11 +297,13 @@ export function OpportunityDetail({
             <h3 className="text-foreground mb-3 text-base font-semibold">Overview</h3>
             <RichTextContent html={opportunity.overview} />
           </section>
+          </AppPage>
         </div>
       </ScrollArea>
 
       <footer className="border-border bg-background shrink-0 border-t">
-        <div className="mx-auto w-full max-w-5xl px-4 py-4 md:px-6">
+        <div className={cn(APP_PAGE_GUTTER, "py-4")}>
+          <AppPage>
           {cta.type === "rejected" ? (
             <div className="space-y-1">
               <p className="text-foreground text-sm font-medium">
@@ -377,6 +383,7 @@ export function OpportunityDetail({
                   : "Apply now"}
             </Button>
           )}
+          </AppPage>
         </div>
       </footer>
     </aside>

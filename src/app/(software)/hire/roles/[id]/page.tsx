@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ApplicantSheet } from "@/components/hire/applicant-sheet";
 import { RoleSheet } from "@/components/hire/role-sheet";
+import { AppPage } from "@/components/layout/app-page";
 import type {
   ApplicantInterviewScore,
   ApplicantListItem,
@@ -208,7 +209,7 @@ export default function RoleCandidatesPage() {
   );
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl">
+    <AppPage>
       <Button
         variant="ghost"
         size="sm"
@@ -352,6 +353,6 @@ export default function RoleCandidatesPage() {
         onOpenChange={setRoleSheetOpen}
         onChanged={() => void fetchApplicants()}
       />
-    </div>
+    </AppPage>
   );
 }
