@@ -21,6 +21,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useScreenRecorder } from "@/components/candidate/interviews/use-screen-recorder";
+import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
+import {
+  InterviewReadyPanel,
+  type InterviewReadyPanelHandle,
+} from "@/components/candidate/interviews/interview-ready-panel";
 import {
   startVadLoop,
   type VadController,
@@ -39,6 +44,7 @@ import {
 } from "@/components/candidate/chat-avatars";
 import { speakText } from "@/lib/voice/speak";
 import { transcribeBlob } from "@/lib/voice/transcribe";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 type LocalTurn = { role: "assistant" | "user"; text: string };
@@ -62,6 +68,7 @@ export function AiInterview({
   const stageLabel = interviewStageLabel(stageId);
   const stageTitle = interviewStageTitle(stageId);
   const chatUser = useChatUserAvatar();
+  const isMobile = useIsMobile();
 
   const [phase, setPhase] = useState<
     "permissions" | "live" | "finalizing" | "done" | "error"
@@ -72,6 +79,9 @@ export function AiInterview({
   const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
+  const [checksReady, setChecksReady] = useState(false);
+  const [checkCameraStream, setCheckCameraStream] =
+    useState<MediaStream | null>(null);
   const spokenIdsRef = useRef<Set<string>>(new Set());
   const startedChatRef = useRef(false);
   const pausedRef = useRef(true);
@@ -80,6 +90,8 @@ export function AiInterview({
   const bottomRef = useRef<HTMLDivElement>(null);
   const busyUtteranceRef = useRef(false);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
+  const checkCameraVideoRef = useRef<HTMLVideoElement>(null);
+  const readyPanelRef = useRef<InterviewReadyPanelHandle>(null);
 
   const {
     start: startScreen,
@@ -100,6 +112,18 @@ export function AiInterview({
       el.srcObject = null;
     };
   }, [cameraStream]);
+
+  useEffect(() => {
+    const el = checkCameraVideoRef.current;
+    if (!el) return;
+    el.srcObject = checkCameraStream;
+    if (checkCameraStream) {
+      void el.play().catch(() => undefined);
+    }
+    return () => {
+      el.srcObject = null;
+    };
+  }, [checkCameraStream]);
 
   const transport = useMemo(
     () =>
@@ -124,6 +148,7 @@ export function AiInterview({
     setError("");
     setStatus("Turning on camera, then screen share…");
     try {
+      readyPanelRef.current?.releaseDevices();
       await startScreen();
       setStatus("Calibrating microphone…");
       pausedRef.current = true;
@@ -303,6 +328,11 @@ export function AiInterview({
     };
   }, []);
 
+  // Phones can't reliably screen-share; require tablet / laptop / PC.
+  if (isMobile) {
+    return <InterviewDeviceGate onClose={onClose} />;
+  }
+
   return (
     <div className="bg-background fixed inset-0 z-50 flex flex-col">
       <header className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3 md:px-6">
@@ -328,48 +358,58 @@ export function AiInterview({
 
       <div className="relative flex min-h-0 flex-1 flex-col md:flex-row">
         <section className="border-border flex min-h-0 flex-1 flex-col border-b md:border-r md:border-b-0">
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-6 px-4 py-5 md:px-6">
-              {messages.map((message) => {
-                const text = message.parts
-                  .filter(isTextUIPart)
-                  .map((p) => p.text)
-                  .join("\n")
-                  .trim();
-                if (!text) return null;
-                const isUser = message.role === "user";
-                return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex max-w-[90%] items-start gap-2.5",
-                      isUser ? "ml-auto flex-row-reverse" : "mr-auto",
-                    )}
-                  >
-                    {isUser ? (
-                      <UserChatAvatar
-                        name={chatUser.name}
-                        image={chatUser.image}
-                      />
-                    ) : (
-                      <AssistantAvatar />
-                    )}
+          {phase === "permissions" || phase === "error" ? (
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <InterviewReadyPanel
+                ref={readyPanelRef}
+                onReadyChange={setChecksReady}
+                onCameraPreviewChange={setCheckCameraStream}
+              />
+            </div>
+          ) : (
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="space-y-6 px-4 py-5 md:px-6">
+                {messages.map((message) => {
+                  const text = message.parts
+                    .filter(isTextUIPart)
+                    .map((p) => p.text)
+                    .join("\n")
+                    .trim();
+                  if (!text) return null;
+                  const isUser = message.role === "user";
+                  return (
                     <div
+                      key={message.id}
                       className={cn(
-                        "text-sm leading-relaxed",
-                        isUser
-                          ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
-                          : "text-foreground/90 pt-0.5",
+                        "flex max-w-[90%] items-start gap-2.5",
+                        isUser ? "ml-auto flex-row-reverse" : "mr-auto",
                       )}
                     >
-                      {text}
+                      {isUser ? (
+                        <UserChatAvatar
+                          name={chatUser.name}
+                          image={chatUser.image}
+                        />
+                      ) : (
+                        <AssistantAvatar />
+                      )}
+                      <div
+                        className={cn(
+                          "text-sm leading-relaxed",
+                          isUser
+                            ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
+                            : "text-foreground/90 pt-0.5",
+                        )}
+                      >
+                        {text}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div ref={bottomRef} />
-            </div>
-          </ScrollArea>
+                  );
+                })}
+                <div ref={bottomRef} />
+              </div>
+            </ScrollArea>
+          )}
         </section>
 
         {/* Live camera PiP — also burned into the recorded screen share */}
@@ -390,6 +430,31 @@ export function AiInterview({
         ) : null}
 
         <aside className="flex w-full shrink-0 flex-col gap-4 p-4 md:w-80 md:p-6">
+          {(phase === "permissions" || phase === "error") && (
+            <div className="border-border relative aspect-video w-full overflow-hidden border bg-muted/20">
+              {checkCameraStream ? (
+                <>
+                  <video
+                    ref={checkCameraVideoRef}
+                    className="size-full -scale-x-100 object-cover"
+                    muted
+                    playsInline
+                    autoPlay
+                  />
+                  <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
+                    <VideoIcon className="size-3" />
+                    Camera preview
+                  </span>
+                </>
+              ) : (
+                <div className="text-muted-foreground flex size-full flex-col items-center justify-center gap-1.5 text-xs">
+                  <VideoIcon className="size-5 opacity-50" />
+                  Waiting for camera…
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="border-border bg-card space-y-3 border p-4">
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
               <Volume2Icon className="size-3.5" />
@@ -411,7 +476,7 @@ export function AiInterview({
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <VideoIcon className="size-3.5" />
-                {cameraStream ? "Camera on" : "Camera off"}
+                {cameraStream || checkCameraStream ? "Camera on" : "Camera off"}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <MonitorIcon className="size-3.5" />
@@ -425,14 +490,18 @@ export function AiInterview({
               {error ? (
                 <p className="text-destructive text-sm">{error}</p>
               ) : null}
-              <Button className="w-full" size="lg" onClick={() => void beginSession()}>
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={!checksReady}
+                onClick={() => void beginSession()}
+              >
                 Start interview
               </Button>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                You&apos;ll turn on your camera, share your screen, and allow
-                the microphone. Your face appears in the corner of the recording.
-                Speak naturally — when your voice rises, listening starts; after
-                a pause, your answer is sent.
+                {checksReady
+                  ? "All checks passed. Starting will turn on camera, microphone, and screen share. Speak naturally — after a pause, your answer is sent."
+                  : "Complete every system check on the left before you can start. Screen share will be requested when you begin."}
               </p>
             </div>
           ) : null}

@@ -19,6 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
+import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
 import type { InterviewStageId } from "@/lib/interviews";
 import {
   OPPORTUNITY_TABS,
@@ -26,6 +27,7 @@ import {
   type Opportunity,
   type OpportunityTab,
 } from "@/lib/opportunities";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 const EXPLORE_SHELL_HEIGHT =
@@ -255,12 +257,14 @@ export function ExploreOpportunities({
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [startingInterview, setStartingInterview] = useState(false);
+  const [showDeviceGate, setShowDeviceGate] = useState(false);
   const [activeInterview, setActiveInterview] = useState<{
     interviewId: string;
     jobId: string;
     jobTitle: string;
     stageId: InterviewStageId;
   } | null>(null);
+  const isMobile = useIsMobile();
   /** Skip the first fetch — the server already seeded the default view. */
   const seededDefault = useRef(true);
 
@@ -336,6 +340,11 @@ export function ExploreOpportunities({
     opportunity: Opportunity,
     stageId: InterviewStageId,
   ) => {
+    if (isMobile) {
+      setShowDeviceGate(true);
+      return;
+    }
+
     setStartingInterview(true);
     try {
       const res = await fetch("/api/interviews/start", {
@@ -568,6 +577,10 @@ export function ExploreOpportunities({
           </section>
         ) : null}
       </div>
+
+      {showDeviceGate ? (
+        <InterviewDeviceGate onClose={() => setShowDeviceGate(false)} />
+      ) : null}
 
       {activeInterview ? (
         <AiInterview
