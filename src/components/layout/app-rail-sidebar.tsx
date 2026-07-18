@@ -10,7 +10,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth/auth-client";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,8 +39,8 @@ export function AppRailSidebar({
 
   return (
     <Sidebar
-      collapsible="offcanvas"
-      className="border-sidebar-border border-e"
+      collapsible="none"
+      className="hidden h-svh shrink-0 border-sidebar-border border-e md:flex"
       {...props}
     >
       <SidebarHeader className="flex items-center justify-center px-2 py-5">
@@ -70,7 +69,6 @@ export function AppRailSidebar({
           }}
         />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }
