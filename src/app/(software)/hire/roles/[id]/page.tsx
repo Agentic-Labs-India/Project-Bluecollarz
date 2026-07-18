@@ -154,9 +154,14 @@ export default function RoleCandidatesPage() {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="text-foreground truncate font-medium">
-                {row.original.name ?? "Candidate"}
-              </p>
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="text-foreground truncate font-medium">
+                  {row.original.name ?? "Candidate"}
+                </p>
+                {row.original.kycVerified ? (
+                  <Badge className="shrink-0 font-normal">AI KYC Done</Badge>
+                ) : null}
+              </div>
               <p className="text-muted-foreground truncate text-xs">
                 {row.original.email}
               </p>

@@ -11,6 +11,7 @@ import {
   toCandidateProfileData,
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
+import { toKycPublicState, type KycFields } from "@/lib/kyc";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
 import { idHex } from "@/lib/utils";
@@ -64,15 +65,31 @@ export async function GET(_req: Request, context: RouteContext) {
 
     const user = await db
       .collection<
-        CandidateProfileFields & {
-          name?: string;
-          email?: string;
-          image?: string;
-        }
+        CandidateProfileFields &
+          KycFields & {
+            name?: string;
+            email?: string;
+            image?: string;
+          }
       >(COLLECTIONS.USERS_COLLECTION)
       .findOne({ _id: matchId(applicantId) as never });
 
     const profile = toCandidateProfileData(user);
+    const kycState = toKycPublicState(user);
+    // Hirers only see document URLs after AI KYC passed.
+    const kyc = kycState.verified
+      ? {
+          verified: true as const,
+          verifiedAt: kycState.verifiedAt,
+          documents: kycState.documents,
+          summary: kycState.analysis?.summary ?? null,
+        }
+      : {
+          verified: false as const,
+          verifiedAt: null,
+          documents: {} as typeof kycState.documents,
+          summary: null,
+        };
 
     const interviewDocs = await db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
@@ -117,6 +134,7 @@ export async function GET(_req: Request, context: RouteContext) {
         ...profile,
         email: profile.email || application.applicantEmail,
       },
+      kyc,
       interviews,
     });
   } catch (error) {

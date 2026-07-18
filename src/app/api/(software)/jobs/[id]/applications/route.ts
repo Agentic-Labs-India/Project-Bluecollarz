@@ -26,6 +26,7 @@ interface UserDoc {
   name?: string;
   email?: string;
   image?: string;
+  kycStatus?: string;
 }
 
 function scoreFromAnalysis(
@@ -102,7 +103,7 @@ async function enrichApplicants(
     db
       .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
       .find({ _id: { $in: matchIds(applicantHexes) as never } })
-      .project({ name: 1, email: 1, image: 1 })
+      .project({ name: 1, email: 1, image: 1, kycStatus: 1 })
       .toArray(),
     db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
@@ -148,6 +149,7 @@ async function enrichApplicants(
       status: doc.status,
       appliedAt: doc.createdAt.toISOString(),
       interviews: interviewsByApplicant.get(applicantHex) ?? [],
+      kycVerified: user?.kycStatus === "verified",
     };
   });
 }

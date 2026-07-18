@@ -25,6 +25,11 @@ import type { CandidateProfileData } from "@/lib/candidate/profile";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
+import {
+  KYC_UPLOAD_LABELS,
+  KYC_UPLOAD_SLOTS,
+  type KycUploadSlot,
+} from "@/lib/kyc";
 
 type InterviewDetail = {
   id: string;
@@ -38,10 +43,28 @@ type InterviewDetail = {
   completedAt: string | null;
 };
 
+type HireKycView = {
+  verified: boolean;
+  verifiedAt: string | null;
+  summary: string | null;
+  documents: Partial<
+    Record<
+      KycUploadSlot,
+      {
+        url: string;
+        pathname: string;
+        contentType: string;
+        uploadedAt: string;
+      }
+    >
+  >;
+};
+
 type ApplicantDetailResponse = {
   job: { id: string; title: string };
   application: { id: string; status: string; appliedAt: string };
   profile: CandidateProfileData;
+  kyc: HireKycView;
   interviews: InterviewDetail[];
 };
 
@@ -232,6 +255,68 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
           value={profile.partTimeCompensation}
         />
       </div>
+    </div>
+  );
+}
+
+function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
+  if (!kyc.verified) {
+    return (
+      <p className="text-sm">
+        AI KYC is not complete yet. Documents appear here after the candidate
+        passes verification.
+      </p>
+    );
+  }
+
+  const docs = KYC_UPLOAD_SLOTS.filter((slot) => kyc.documents[slot]?.url);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge>AI KYC Done</Badge>
+        {kyc.verifiedAt ? (
+          <span className="text-muted-foreground text-xs">
+            Verified {new Date(kyc.verifiedAt).toLocaleString()}
+          </span>
+        ) : null}
+      </div>
+      {kyc.summary ? <Field label="AI summary" value={kyc.summary} /> : null}
+      {docs.length ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {docs.map((slot) => {
+            const file = kyc.documents[slot]!;
+            const isImage = file.contentType.startsWith("image/");
+            return (
+              <a
+                key={slot}
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-border hover:bg-muted/40 block overflow-hidden rounded-md border transition-colors"
+              >
+                {isImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={file.url}
+                    alt={KYC_UPLOAD_LABELS[slot]}
+                    className="bg-muted aspect-[4/3] w-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-muted text-muted-foreground flex aspect-[4/3] w-full items-center justify-center text-sm">
+                    Open PDF
+                  </div>
+                )}
+                <p className="text-foreground px-3 py-2 text-sm font-medium">
+                  {KYC_UPLOAD_LABELS[slot]}
+                </p>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm">Verified, but no document files are on file.</p>
+      )}
     </div>
   );
 }
@@ -451,10 +536,17 @@ export function ApplicantSheet({
                 {profile?.email || "Profile, resume, and interview scores"}
               </SheetDescription>
               {data ? (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" className="capitalize">
                     {data.application.status}
                   </Badge>
+                  {data.kyc?.verified ? (
+                    <Badge>AI KYC Done</Badge>
+                  ) : (
+                    <Badge variant="outline" className="font-normal">
+                      KYC pending
+                    </Badge>
+                  )}
                   <span className="text-muted-foreground text-xs">
                     Applied{" "}
                     {new Date(data.application.appliedAt).toLocaleDateString()}
@@ -479,7 +571,12 @@ export function ApplicantSheet({
             ) : data && profile ? (
               <Accordion
                 type="multiple"
-                defaultValue={["resume", "ai-communication", "ai-domain"]}
+                defaultValue={[
+                  "resume",
+                  "kyc",
+                  "ai-communication",
+                  "ai-domain",
+                ]}
               >
                 <AccordionItem value="resume">
                   <AccordionTrigger>
@@ -494,6 +591,33 @@ export function ApplicantSheet({
                   </AccordionTrigger>
                   <AccordionContent>
                     <ResumeAccordionBody profile={profile} />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="kyc">
+                  <AccordionTrigger>
+                    <span className="flex items-center gap-2">
+                      AI KYC
+                      {data.kyc?.verified ? (
+                        <Badge>AI KYC Done</Badge>
+                      ) : (
+                        <Badge variant="outline" className="font-normal">
+                          Pending
+                        </Badge>
+                      )}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <KycAccordionBody
+                      kyc={
+                        data.kyc ?? {
+                          verified: false,
+                          verifiedAt: null,
+                          summary: null,
+                          documents: {},
+                        }
+                      }
+                    />
                   </AccordionContent>
                 </AccordionItem>
 

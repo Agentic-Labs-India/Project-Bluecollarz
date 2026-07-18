@@ -71,6 +71,8 @@ export interface ApplicantListItem {
   status: ApplicationDocument["status"];
   appliedAt: string;
   interviews: ApplicantInterviewScore[];
+  /** True when candidate passed AI KYC and docs are on file. */
+  kycVerified: boolean;
 }
 
 export interface PaginatedApplicantsResponse {
