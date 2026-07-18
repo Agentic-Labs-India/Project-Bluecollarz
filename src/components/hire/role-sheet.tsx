@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { JobForm, type JobFormValues } from "@/components/hire/job-form";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { JobListItem } from "@/lib/jobs";
 import { normalizeJobLocation } from "@/lib/jobs";
@@ -155,9 +158,9 @@ export function RoleSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full! gap-0 overflow-y-auto p-0 sm:max-w-2xl!"
+        className="w-full! gap-0 p-0 sm:max-w-2xl!"
       >
-        <SheetHeader className="border-b">
+        <SheetHeader className="shrink-0 border-b">
           <div className="mb-1 flex items-center gap-2">
             {item ? <Badge>{item.status}</Badge> : null}
             {item?.publishedAt ? (
@@ -170,9 +173,34 @@ export function RoleSheet({
           <SheetDescription>
             {item?.title ?? "Edit details, publish, close, or reopen this role."}
           </SheetDescription>
+        </SheetHeader>
 
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="p-4">
+            {loading ? (
+              <RoleFormSkeleton />
+            ) : error && !formValues ? (
+              <p className="text-destructive text-sm">{error}</p>
+            ) : formValues ? (
+              <>
+                {error ? (
+                  <div className="border-destructive/20 bg-destructive/10 text-destructive mb-6 rounded-lg border px-4 py-3 text-sm">
+                    {error}
+                  </div>
+                ) : null}
+                <JobForm
+                  initialValues={formValues}
+                  submitLabel="Save changes"
+                  onSubmit={updateJob}
+                />
+              </>
+            ) : null}
+          </div>
+        </ScrollArea>
+
+        <SheetFooter className="shrink-0 border-t sm:flex-row sm:flex-wrap sm:justify-end">
           {item ? (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <>
               {item.status === "draft" ? (
                 <Button
                   size="sm"
@@ -218,30 +246,15 @@ export function RoleSheet({
               >
                 Delete
               </Button>
-            </div>
-          ) : null}
-        </SheetHeader>
-
-        <div className="p-4">
-          {loading ? (
-            <RoleFormSkeleton />
-          ) : error && !formValues ? (
-            <p className="text-destructive text-sm">{error}</p>
-          ) : formValues ? (
-            <>
-              {error ? (
-                <div className="border-destructive/20 bg-destructive/10 text-destructive mb-6 rounded-lg border px-4 py-3 text-sm">
-                  {error}
-                </div>
-              ) : null}
-              <JobForm
-                initialValues={formValues}
-                submitLabel="Save changes"
-                onSubmit={updateJob}
-              />
             </>
-          ) : null}
-        </div>
+          ) : (
+            <SheetClose asChild>
+              <Button variant="outline" size="sm">
+                Close
+              </Button>
+            </SheetClose>
+          )}
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

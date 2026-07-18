@@ -332,6 +332,7 @@ export default function RoleCandidatesPage() {
         onOpenChange={(open) => {
           if (!open) setSelectedApplicantId(null);
         }}
+        onStatusChanged={() => void fetchApplicants()}
       />
 
       <RoleSheet

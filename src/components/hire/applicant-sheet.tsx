@@ -9,15 +9,20 @@ import {
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CandidateProfileData } from "@/lib/candidate/profile";
+import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
 
@@ -323,20 +328,28 @@ export function ApplicantSheet({
   applicantId,
   open,
   onOpenChange,
+  onStatusChanged,
 }: {
   jobId: string;
   applicantId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Called after select/reject so the applicants table can refresh. */
+  onStatusChanged?: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionLoading, setActionLoading] = useState<ApplicationStatus | null>(
+    null,
+  );
   const [data, setData] = useState<ApplicantDetailResponse | null>(null);
 
   const load = useCallback(async () => {
     if (!jobId || !applicantId) return;
     setLoading(true);
     setError("");
+    setActionError("");
     try {
       const res = await fetch(
         `/api/jobs/${jobId}/applications/${applicantId}`,
@@ -358,10 +371,49 @@ export function ApplicantSheet({
     } else if (!open) {
       setData(null);
       setError("");
+      setActionError("");
+      setActionLoading(null);
     }
   }, [open, applicantId, load]);
 
+  async function updateStatus(status: "selected" | "rejected") {
+    if (!jobId || !applicantId || !data) return;
+    setActionLoading(status);
+    setActionError("");
+    try {
+      const res = await fetch(
+        `/api/jobs/${jobId}/applications/${applicantId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        },
+      );
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Failed to update status");
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              application: {
+                ...prev.application,
+                status: json.application.status as ApplicationStatus,
+              },
+            }
+          : prev,
+      );
+      onStatusChanged?.();
+    } catch (e: unknown) {
+      setActionError(
+        e instanceof Error ? e.message : "Failed to update status",
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   const profile = data?.profile;
+  const currentStatus = data?.application.status;
   const communication = data?.interviews.find(
     (i) => i.stageId === "ai-communication",
   );
@@ -371,9 +423,9 @@ export function ApplicantSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full! gap-0 overflow-y-auto p-0 sm:max-w-2xl!"
+        className="w-full! gap-0 p-0 sm:max-w-2xl!"
       >
-        <SheetHeader className="border-b">
+        <SheetHeader className="shrink-0 border-b">
           <div className="flex items-start gap-3">
             {profile ? (
               <Avatar size="lg">
@@ -409,91 +461,130 @@ export function ApplicantSheet({
           </div>
         </SheetHeader>
 
-        <div className="px-4">
-          {loading ? (
-            <div className="space-y-4 py-6">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          ) : error ? (
-            <p className="text-destructive py-6 text-sm">{error}</p>
-          ) : data && profile ? (
-            <Accordion
-              type="multiple"
-              defaultValue={["resume", "ai-communication", "ai-domain"]}
-            >
-              <AccordionItem value="resume">
-                <AccordionTrigger>
-                  <span className="flex items-center gap-2">
-                    Resume / Profile
-                    {profile.candidateOnboardingComplete ? (
-                      <Badge variant="secondary" className="font-normal">
-                        Complete
-                      </Badge>
-                    ) : null}
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ResumeAccordionBody profile={profile} />
-                </AccordionContent>
-              </AccordionItem>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="px-4 py-2">
+            {loading ? (
+              <div className="space-y-4 py-6">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            ) : error ? (
+              <p className="text-destructive py-6 text-sm">{error}</p>
+            ) : data && profile ? (
+              <Accordion
+                type="multiple"
+                defaultValue={["resume", "ai-communication", "ai-domain"]}
+              >
+                <AccordionItem value="resume">
+                  <AccordionTrigger>
+                    <span className="flex items-center gap-2">
+                      Resume / Profile
+                      {profile.candidateOnboardingComplete ? (
+                        <Badge variant="secondary" className="font-normal">
+                          Complete
+                        </Badge>
+                      ) : null}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ResumeAccordionBody profile={profile} />
+                  </AccordionContent>
+                </AccordionItem>
 
-              <AccordionItem value="ai-communication">
-                <AccordionTrigger>
-                  <span className="flex items-center gap-2">
-                    {stageTitle("ai-communication")}
-                    {communication?.analysis?.overall != null ? (
-                      <Badge className="tabular-nums">
-                        {communication.analysis.overall}/10
-                      </Badge>
+                <AccordionItem value="ai-communication">
+                  <AccordionTrigger>
+                    <span className="flex items-center gap-2">
+                      {stageTitle("ai-communication")}
+                      {communication?.analysis?.overall != null ? (
+                        <Badge className="tabular-nums">
+                          {communication.analysis.overall}/10
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="font-normal">
+                          {communication
+                            ? communication.status
+                            : "Not started"}
+                        </Badge>
+                      )}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {communication ? (
+                      <InterviewAccordionBody interview={communication} />
                     ) : (
-                      <Badge variant="outline" className="font-normal">
-                        {communication ? communication.status : "Not started"}
-                      </Badge>
+                      <p className="text-sm">
+                        No communication interview for this role yet.
+                      </p>
                     )}
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  {communication ? (
-                    <InterviewAccordionBody interview={communication} />
-                  ) : (
-                    <p className="text-sm">
-                      No communication interview for this role yet.
-                    </p>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
+                  </AccordionContent>
+                </AccordionItem>
 
-              <AccordionItem value="ai-domain">
-                <AccordionTrigger>
-                  <span className="flex items-center gap-2">
-                    {stageTitle("ai-domain")}
-                    {domain?.analysis?.overall != null ? (
-                      <Badge className="tabular-nums">
-                        {domain.analysis.overall}/10
-                      </Badge>
+                <AccordionItem value="ai-domain">
+                  <AccordionTrigger>
+                    <span className="flex items-center gap-2">
+                      {stageTitle("ai-domain")}
+                      {domain?.analysis?.overall != null ? (
+                        <Badge className="tabular-nums">
+                          {domain.analysis.overall}/10
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="font-normal">
+                          {domain ? domain.status : "Not started"}
+                        </Badge>
+                      )}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {domain ? (
+                      <InterviewAccordionBody interview={domain} />
                     ) : (
-                      <Badge variant="outline" className="font-normal">
-                        {domain ? domain.status : "Not started"}
-                      </Badge>
+                      <p className="text-sm">
+                        No domain interview for this role yet.
+                      </p>
                     )}
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  {domain ? (
-                    <InterviewAccordionBody interview={domain} />
-                  ) : (
-                    <p className="text-sm">
-                      No domain interview for this role yet.
-                    </p>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : null}
+          </div>
+        </ScrollArea>
+
+        <SheetFooter className="shrink-0 border-t">
+          {actionError ? (
+            <p className="text-destructive text-sm sm:col-span-full">
+              {actionError}
+            </p>
           ) : null}
-        </div>
+          <div className="flex w-full gap-2">
+            <Button
+              className="w-full flex-1"
+              variant="destructive"
+              disabled={
+                !data ||
+                actionLoading !== null ||
+                currentStatus === "rejected"
+              }
+              onClick={() => void updateStatus("rejected")}
+            >
+              {actionLoading === "rejected" ? <Spinner /> : null}
+              Reject
+            </Button>
+            <Button
+              className="w-full flex-1"
+              disabled={
+                !data ||
+                actionLoading !== null ||
+                currentStatus === "selected"
+              }
+              onClick={() => void updateStatus("selected")}
+            >
+              {actionLoading === "selected" ? <Spinner /> : null}
+              Select
+            </Button>
+          </div>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

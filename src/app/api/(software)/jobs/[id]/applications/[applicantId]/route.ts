@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { JobDocument } from "@/lib/jobs";
-import type { ApplicationDocument } from "@/lib/jobs/applications";
+import {
+  APPLICATION_STATUSES,
+  type ApplicationDocument,
+  type ApplicationStatus,
+} from "@/lib/jobs/applications";
 import type { InterviewDocument } from "@/lib/interviews";
 import {
   toCandidateProfileData,
@@ -117,6 +121,81 @@ export async function GET(_req: Request, context: RouteContext) {
     });
   } catch (error) {
     console.error("GET /api/jobs/[id]/applications/[applicantId]:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+/**
+ * Hirer updates an applicant's status (selected / rejected / applied).
+ * Candidate dashboard stats read this same field.
+ */
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  try {
+    await ensureIndexes();
+
+    const hireAuth = await requireProfile("hire");
+    if (!hireAuth.ok) {
+      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+    }
+    if (!hireAuth.user.id) {
+      return NextResponse.json({ error: "Invalid user" }, { status: 400 });
+    }
+
+    const { id, applicantId } = await context.params;
+    if (!isId(id) || !isId(applicantId)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+
+    const body = await req.json().catch(() => null);
+    const status = body?.status as string | undefined;
+    if (
+      !status ||
+      !(APPLICATION_STATUSES as readonly string[]).includes(status)
+    ) {
+      return NextResponse.json(
+        { error: "status must be applied, selected, or rejected" },
+        { status: 400 },
+      );
+    }
+
+    const db = client.db(DB_NAME);
+    const job = await db.collection<JobDocument>(COLLECTIONS.JOBS).findOne({
+      _id: matchId(id) as never,
+      ownerId: matchId(hireAuth.user.id),
+    });
+    if (!job) {
+      return NextResponse.json({ error: "Role not found" }, { status: 404 });
+    }
+
+    const jobIdHex = idHex(job._id) || id;
+    const result = await db
+      .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
+      .findOneAndUpdate(
+        {
+          jobId: matchId(jobIdHex) as never,
+          applicantId: matchId(applicantId) as never,
+        },
+        { $set: { status: status as ApplicationStatus } },
+        { returnDocument: "after" },
+      );
+
+    const application = result ?? null;
+    if (!application) {
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      application: {
+        id: idHex(application._id),
+        status: application.status,
+        appliedAt: application.createdAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error("PATCH /api/jobs/[id]/applications/[applicantId]:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
