@@ -21,6 +21,7 @@ import { OpportunityDetail } from "@/components/work/opportunity-detail";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
 import type { InterviewStageId } from "@/lib/interviews";
+import type { ApplicationStatus } from "@/lib/jobs/applications";
 import {
   OPPORTUNITY_TABS,
   OPPORTUNITY_TAB_LABELS,
@@ -232,27 +233,35 @@ function ExploreFilters({
 
 export function ExploreOpportunities({
   initialOpportunities = [],
-  initialAppliedIds = [],
+  initialApplicationStatuses = {},
   initialProfileComplete = false,
+  initialKycVerified = false,
+  initialJobId = null,
 }: {
   initialOpportunities?: Opportunity[];
-  initialAppliedIds?: string[];
+  initialApplicationStatuses?: Record<string, ApplicationStatus>;
   initialProfileComplete?: boolean;
+  initialKycVerified?: boolean;
+  /** Deep-link from home / other pages: open this job in the detail panel. */
+  initialJobId?: string | null;
 } = {}) {
   const [search, setSearch] = useState("");
   const [priority, setPriority] = useState<"all" | "high" | "medium" | "low">(
     "all",
   );
   const [workType, setWorkType] = useState<WorkTypeFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialJobId ?? null,
+  );
   const [opportunities, setOpportunities] =
     useState<Opportunity[]>(initialOpportunities);
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(
-    new Set(initialAppliedIds),
-  );
+  const [applicationStatuses, setApplicationStatuses] = useState<
+    Record<string, ApplicationStatus>
+  >(initialApplicationStatuses);
   const [profileComplete, setProfileComplete] = useState(
     initialProfileComplete,
   );
+  const [kycVerified, setKycVerified] = useState(initialKycVerified);
   const [applying, setApplying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
@@ -300,13 +309,26 @@ export function ExploreOpportunities({
         if (!res.ok) throw new Error("Failed to load opportunities");
         const json = (await res.json()) as {
           items: Opportunity[];
+          applicationStatuses?: Record<string, ApplicationStatus>;
           appliedJobIds?: string[];
           profileComplete?: boolean;
+          kycVerified?: boolean;
         };
         setOpportunities(json.items ?? []);
-        setAppliedIds(new Set(json.appliedJobIds ?? []));
+        if (json.applicationStatuses) {
+          setApplicationStatuses(json.applicationStatuses);
+        } else if (json.appliedJobIds) {
+          const next: Record<string, ApplicationStatus> = {};
+          for (const id of json.appliedJobIds) next[id] = "applied";
+          setApplicationStatuses(next);
+        } else {
+          setApplicationStatuses({});
+        }
         if (typeof json.profileComplete === "boolean") {
           setProfileComplete(json.profileComplete);
+        }
+        if (typeof json.kycVerified === "boolean") {
+          setKycVerified(json.kycVerified);
         }
       } catch (e: unknown) {
         if (e instanceof Error && e.name === "AbortError") return;
@@ -328,7 +350,7 @@ export function ExploreOpportunities({
     try {
       const res = await fetch(`/api/jobs/${jobId}/apply`, { method: "POST" });
       if (!res.ok) throw new Error("apply failed");
-      setAppliedIds((prev) => new Set(prev).add(jobId));
+      setApplicationStatuses((prev) => ({ ...prev, [jobId]: "applied" }));
     } catch {
       // surfaced via button state; safe to retry
     } finally {
@@ -422,11 +444,42 @@ export function ExploreOpportunities({
     setSelectedId(opportunities[selectedIndex + 1].id);
   };
 
+  // Deep-link from ?jobId=: open that role (fetch + prepend if missing from the list).
+  useEffect(() => {
+    if (!initialJobId) return;
+    setSelectedId(initialJobId);
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/jobs/${initialJobId}?format=opportunity`,
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as { item?: Opportunity };
+        const item = json.item;
+        if (cancelled || !item?.id) return;
+        setOpportunities((prev) =>
+          prev.some((o) => o.id === item.id) ? prev : [item, ...prev],
+        );
+        setSelectedId(item.id);
+      } catch {
+        // ignore — user can still browse the list
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialJobId]);
+
   useEffect(() => {
     if (selectedId && !opportunities.some((item) => item.id === selectedId)) {
+      // Keep deep-link selection while the job is still being fetched in.
+      if (selectedId === initialJobId) return;
       setSelectedId(null);
     }
-  }, [opportunities, selectedId]);
+  }, [opportunities, selectedId, initialJobId]);
 
   useEffect(() => {
     setSelectedId(null);
@@ -561,9 +614,12 @@ export function ExploreOpportunities({
               onNext={goToNext}
               hasPrevious={hasPrevious}
               hasNext={hasNext}
-              applied={appliedIds.has(selectedOpportunity.id)}
+              applicationStatus={
+                applicationStatuses[selectedOpportunity.id] ?? null
+              }
               applying={applying}
               profileComplete={profileComplete}
+              kycVerified={kycVerified}
               startingInterview={startingInterview}
               onApply={() => applyToJob(selectedOpportunity.id)}
               onStartCommunicationInterview={() =>

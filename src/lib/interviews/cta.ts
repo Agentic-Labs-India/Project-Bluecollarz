@@ -1,3 +1,4 @@
+import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { Opportunity } from "@/lib/opportunities";
 
 export type OpportunityCta =
@@ -5,15 +6,23 @@ export type OpportunityCta =
   | { type: "communication" }
   | { type: "domain" }
   | { type: "apply" }
-  | { type: "applied" };
+  | { type: "applied" }
+  | { type: "rejected" }
+  | { type: "selected" }
+  | { type: "kyc_complete" };
 
-/** Decide the primary footer action from profile + stage progress. */
+/** Decide the primary footer action from profile + stage progress + application status. */
 export function resolveOpportunityCta(opts: {
   opportunity: Opportunity;
   profileComplete: boolean;
-  applied: boolean;
+  applicationStatus?: ApplicationStatus | null;
+  kycVerified?: boolean;
 }): OpportunityCta {
-  if (opts.applied) return { type: "applied" };
+  if (opts.applicationStatus === "rejected") return { type: "rejected" };
+  if (opts.applicationStatus === "selected") {
+    return opts.kycVerified ? { type: "kyc_complete" } : { type: "selected" };
+  }
+  if (opts.applicationStatus === "applied") return { type: "applied" };
 
   const steps = opts.opportunity.applicationSteps;
   const resumeDone =

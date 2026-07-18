@@ -3,6 +3,7 @@ import "server-only";
 import { del } from "@vercel/blob";
 import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import { isVercelBlobUrl } from "@/lib/blob/pathname";
+import { kycBlobUrls, type KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
 
 /** Best-effort delete of Vercel Blob URLs (never throws). */
@@ -34,14 +35,22 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
   const db = client.db(DB_NAME);
   const blobUrls: string[] = [];
 
-  // Profile resume (if stored as a Blob URL).
-  const user = await db.collection(COLLECTIONS.USERS_COLLECTION).findOne(
-    { _id: matchId(userId) as never },
-    { projection: { resumeUrl: 1 } },
-  );
+  // Profile resume + KYC docs (if stored as Blob URLs).
+  const user = await db
+    .collection<KycFields & { resumeUrl?: string }>(COLLECTIONS.USERS_COLLECTION)
+    .findOne(
+      { _id: matchId(userId) as never },
+      {
+        projection: {
+          resumeUrl: 1,
+          kycDocuments: 1,
+        },
+      },
+    );
   if (typeof user?.resumeUrl === "string") {
     blobUrls.push(user.resumeUrl);
   }
+  blobUrls.push(...kycBlobUrls(user));
 
   // Candidate-owned interviews + recordings.
   const ownInterviews = await db

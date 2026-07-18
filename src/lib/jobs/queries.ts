@@ -7,7 +7,10 @@ import {
 } from "@/lib/jobs";
 import type {
   ApplicationDocument,
+  ApplicationStatus,
+  CandidateApplicationListItem,
   CandidateApplicationStats,
+  CandidateInterviewStageStatus,
 } from "@/lib/jobs/applications";
 import type { Opportunity } from "@/lib/opportunities";
 import { asNumber, idHex } from "@/lib/utils";
@@ -17,7 +20,13 @@ import {
   toCandidateProfileData,
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
+import {
+  INTERVIEW_STAGE_IDS,
+  type InterviewDocument,
+  type InterviewStageId,
+} from "@/lib/interviews";
 import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
+import type { KycFields } from "@/lib/kyc";
 
 /** Published role card on the marketing landing page. */
 export interface LandingRole {
@@ -35,7 +44,11 @@ export interface OpportunitiesResult {
   limit: number;
   pageCount: number;
   appliedJobIds: string[];
+  /** Per-job application status for the signed-in candidate. */
+  applicationStatuses: Record<string, ApplicationStatus>;
   profileComplete: boolean;
+  /** True when the candidate has completed AI KYC identity verification. */
+  kycVerified: boolean;
 }
 
 /** Latest published roles for the marketing landing page (no auth). */
@@ -124,16 +137,21 @@ export async function getPublishedOpportunities(opts: {
   ]);
 
   let appliedJobIds: string[] = [];
+  let applicationStatuses: Record<string, ApplicationStatus> = {};
   let profileComplete = false;
+  let kycVerified = false;
   let completedByJob = new Map<string, Set<string>>();
 
   if (opts.viewerProfileType === "work" && opts.viewerId) {
     const userDoc = await db
-      .collection<CandidateProfileFields>(COLLECTIONS.USERS_COLLECTION)
+      .collection<CandidateProfileFields & KycFields>(
+        COLLECTIONS.USERS_COLLECTION,
+      )
       .findOne({ _id: matchId(opts.viewerId) as never });
     profileComplete = isCandidateProfileComplete(
       toCandidateProfileData(userDoc),
     );
+    kycVerified = userDoc?.kycStatus === "verified";
 
     if (docs.length) {
       const jobIdHexes = docs.map((doc) => idHex(doc._id)).filter(Boolean);
@@ -144,14 +162,20 @@ export async function getPublishedOpportunities(opts: {
             applicantId: matchId(opts.viewerId),
             jobId: { $in: matchIds(jobIdHexes) },
           })
-          .project({ jobId: 1 })
+          .project({ jobId: 1, status: 1 })
           .toArray(),
         getCompletedInterviewStagesByJob({
           applicantId: opts.viewerId,
           jobIds: jobIdHexes,
         }),
       ]);
-      appliedJobIds = applied.map((a) => idHex(a.jobId));
+      applicationStatuses = {};
+      for (const app of applied) {
+        const jobId = idHex(app.jobId);
+        if (!jobId) continue;
+        applicationStatuses[jobId] = app.status ?? "applied";
+      }
+      appliedJobIds = Object.keys(applicationStatuses);
       completedByJob = stages;
     }
   }
@@ -169,8 +193,124 @@ export async function getPublishedOpportunities(opts: {
     limit,
     pageCount: Math.ceil(total / limit) || 1,
     appliedJobIds,
+    applicationStatuses,
     profileComplete,
+    kycVerified,
   };
+}
+
+/**
+ * All applications for a candidate, with job details + AI interview progress.
+ * Newest applications first.
+ */
+export async function getCandidateApplications(
+  userId: string,
+): Promise<CandidateApplicationListItem[]> {
+  await ensureIndexes();
+  if (!userId) return [];
+
+  const db = client.db(DB_NAME);
+  const applications = await db
+    .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
+    .find({ applicantId: matchId(userId) })
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  if (!applications.length) return [];
+
+  const jobIdHexes = applications
+    .map((app) => idHex(app.jobId))
+    .filter(Boolean);
+
+  const [jobs, interviewDocs] = await Promise.all([
+    db
+      .collection<JobDocument>(COLLECTIONS.JOBS)
+      .find({ _id: { $in: matchIds(jobIdHexes) as never } })
+      .project<{
+        _id: unknown;
+        title: string;
+        pay: string;
+        status: JobDocument["status"];
+      }>({ title: 1, pay: 1, status: 1 })
+      .toArray(),
+    db
+      .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
+      .find({
+        applicantId: matchId(userId),
+        jobId: { $in: jobIdHexes },
+      } as never)
+      .project({
+        jobId: 1,
+        stageId: 1,
+        status: 1,
+        analysis: 1,
+      })
+      .toArray(),
+  ]);
+
+  const jobById = new Map(
+    jobs.map((job) => [
+      idHex(job._id),
+      {
+        title: job.title,
+        pay: job.pay,
+        status: job.status,
+      },
+    ]),
+  );
+
+  const interviewsByJob = new Map<
+    string,
+    Map<
+      InterviewStageId,
+      { status: CandidateInterviewStageStatus; overall: number | null }
+    >
+  >();
+
+  for (const doc of interviewDocs) {
+    const jobId = idHex(doc.jobId) || String(doc.jobId);
+    const byStage =
+      interviewsByJob.get(jobId) ??
+      new Map<
+        InterviewStageId,
+        { status: CandidateInterviewStageStatus; overall: number | null }
+      >();
+    byStage.set(doc.stageId, {
+      status: doc.status === "completed" ? "completed" : "in_progress",
+      overall:
+        doc.status === "completed" && doc.analysis?.overall != null
+          ? doc.analysis.overall
+          : null,
+    });
+    interviewsByJob.set(jobId, byStage);
+  }
+
+  return applications.map((app) => {
+    const jobId = idHex(app.jobId);
+    const job = jobById.get(jobId);
+    const byStage = interviewsByJob.get(jobId);
+
+    return {
+      id: idHex(app._id),
+      jobId,
+      jobTitle: job?.title ?? "Role unavailable",
+      jobPay: job?.pay ?? "—",
+      jobStatus: job?.status ?? "missing",
+      status: app.status ?? "applied",
+      appliedAt:
+        app.createdAt instanceof Date
+          ? app.createdAt.toISOString()
+          : String(app.createdAt),
+      interviews: INTERVIEW_STAGE_IDS.map((stageId) => {
+        const hit = byStage?.get(stageId);
+        return {
+          stageId,
+          status: hit?.status ?? "not_started",
+          overall: hit?.overall ?? null,
+        };
+      }),
+    };
+  });
 }
 
 /** Aggregate a candidate's application counts (active / selected / closed). */

@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RichTextContent } from "@/components/ui/rich-text-content";
+import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { Opportunity } from "@/lib/opportunities";
 import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import { formatJobPlaceLabel } from "@/lib/geo/places";
@@ -101,9 +102,10 @@ export function OpportunityDetail({
   onNext,
   hasPrevious,
   hasNext,
-  applied,
+  applicationStatus,
   applying,
   profileComplete,
+  kycVerified,
   startingInterview,
   onApply,
   onStartCommunicationInterview,
@@ -117,9 +119,10 @@ export function OpportunityDetail({
   onNext: () => void;
   hasPrevious: boolean;
   hasNext: boolean;
-  applied?: boolean;
+  applicationStatus?: ApplicationStatus | null;
   applying?: boolean;
   profileComplete?: boolean;
+  kycVerified?: boolean;
   startingInterview?: boolean;
   onApply?: () => void;
   onStartCommunicationInterview?: () => void;
@@ -131,7 +134,8 @@ export function OpportunityDetail({
   const cta = resolveOpportunityCta({
     opportunity,
     profileComplete: profileComplete === true,
-    applied: applied === true,
+    applicationStatus: applicationStatus ?? null,
+    kycVerified: kycVerified === true,
   });
 
   useEffect(() => {
@@ -262,7 +266,28 @@ export function OpportunityDetail({
             ) : null}
           </div>
 
-          <ApplicationProgress steps={opportunity.applicationSteps} />
+          {cta.type === "rejected" ||
+          cta.type === "selected" ||
+          cta.type === "kyc_complete" ? (
+            <section className="border-border/80 bg-card mb-6 rounded-none border p-5 shadow-sm">
+              <p className="text-foreground text-sm font-semibold">
+                {cta.type === "rejected"
+                  ? "Status: Not selected"
+                  : cta.type === "kyc_complete"
+                    ? "Status: Selected · KYC complete"
+                    : "Status: Selected"}
+              </p>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                {cta.type === "rejected"
+                  ? "We are really sorry — you were genuinely good. Please apply to other open roles; you can definitely get in elsewhere."
+                  : cta.type === "kyc_complete"
+                    ? "Identity verification is done. The hiring team will contact you with next steps."
+                    : "Please complete the next step: AI KYC identity verification (Aadhaar front & back, PAN, and Passport)."}
+              </p>
+            </section>
+          ) : (
+            <ApplicationProgress steps={opportunity.applicationSteps} />
+          )}
 
           <section className="pb-6">
             <h3 className="text-foreground mb-3 text-base font-semibold">Overview</h3>
@@ -273,7 +298,46 @@ export function OpportunityDetail({
 
       <footer className="border-border bg-background shrink-0 border-t">
         <div className="mx-auto w-full max-w-5xl px-4 py-4 md:px-6">
-          {cta.type === "profile" ? (
+          {cta.type === "rejected" ? (
+            <div className="space-y-1">
+              <p className="text-foreground text-sm font-medium">
+                Application not selected
+              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                We are really sorry — you were genuinely good, and we encourage
+                you to apply to other positions. You can definitely get in
+                elsewhere.
+              </p>
+            </div>
+          ) : cta.type === "selected" ? (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-foreground text-sm font-medium">
+                  You&apos;re selected — complete next steps
+                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Next step: AI identity verification (KYC). Upload your Aadhaar
+                  front and back, PAN, and Passport so we can confirm they are
+                  original and not AI-generated.
+                </p>
+              </div>
+              <Button asChild className="w-full" size="lg">
+                <Link href={`/candidate/kyc?jobId=${opportunity.id}`}>
+                  Start KYC verification
+                </Link>
+              </Button>
+            </div>
+          ) : cta.type === "kyc_complete" ? (
+            <div className="space-y-1">
+              <p className="text-foreground text-sm font-medium">
+                Selected · identity verified
+              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Your KYC is complete. The hiring team will reach out with the
+                next steps.
+              </p>
+            </div>
+          ) : cta.type === "profile" ? (
             <Button asChild className="w-full" size="lg" variant="default">
               <Link href="/candidate/profile">Update profile first</Link>
             </Button>

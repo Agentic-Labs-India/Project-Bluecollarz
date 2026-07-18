@@ -1,0 +1,43 @@
+import { NextResponse } from "next/server";
+import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import { requireProfile } from "@/lib/api/session";
+import { toKycPublicState, type KycFields } from "@/lib/kyc";
+
+/** Candidate KYC status (identity verification). */
+export async function GET() {
+  try {
+    await ensureIndexes();
+    const auth = await requireProfile("work");
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    if (!auth.user.id) {
+      return NextResponse.json({ error: "Invalid user" }, { status: 400 });
+    }
+
+    const db = client.db(DB_NAME);
+    const user = await db
+      .collection<KycFields>(COLLECTIONS.USERS_COLLECTION)
+      .findOne(
+        { _id: matchId(auth.user.id) as never },
+        {
+          projection: {
+            kycStatus: 1,
+            kycDocuments: 1,
+            kycAnalysis: 1,
+            kycVerifiedAt: 1,
+            kycUpdatedAt: 1,
+          },
+        },
+      );
+
+    return NextResponse.json({
+      userId: auth.user.id,
+      kyc: toKycPublicState(user),
+    });
+  } catch (error) {
+    console.error("GET /api/kyc:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

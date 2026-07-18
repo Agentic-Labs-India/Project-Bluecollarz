@@ -7,18 +7,28 @@ import {
   CircleXIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CandidateApplicationsList } from "@/components/candidate/candidate-applications-list";
 import { StatCard } from "@/components/shared/stat-card";
 import { auth } from "@/lib/auth/auth";
-import { getCandidateApplicationStats } from "@/lib/jobs/queries";
+import {
+  getCandidateApplicationStats,
+  getCandidateApplications,
+} from "@/lib/jobs/queries";
 
 export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as { id?: string; name?: string } | undefined;
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  const stats = user?.id
-    ? await getCandidateApplicationStats(user.id)
-    : { active: 0, selected: 0, closed: 0, total: 0 };
+  const [stats, applications] = user?.id
+    ? await Promise.all([
+        getCandidateApplicationStats(user.id),
+        getCandidateApplications(user.id),
+      ])
+    : [
+        { active: 0, selected: 0, closed: 0, total: 0 },
+        [] as Awaited<ReturnType<typeof getCandidateApplications>>,
+      ];
 
   const cards = [
     { label: "Active applications", value: stats.active, icon: BriefcaseIcon },
@@ -44,6 +54,10 @@ export default async function HomePage() {
             value={stat.value}
           />
         ))}
+      </div>
+
+      <div className="mb-8">
+        <CandidateApplicationsList applications={applications} />
       </div>
 
       <section className="border-border/80 bg-card rounded-none border p-6 shadow-sm">

@@ -25,6 +25,30 @@ export interface CandidateApplicationStats {
   total: number;
 }
 
+/** Per-stage interview progress on a candidate application. */
+export type CandidateInterviewStageStatus =
+  | "not_started"
+  | "in_progress"
+  | "completed";
+
+export interface CandidateApplicationInterviewStage {
+  stageId: InterviewStageId;
+  status: CandidateInterviewStageStatus;
+  overall: number | null;
+}
+
+/** One application row for the candidate home dashboard. */
+export interface CandidateApplicationListItem {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  jobPay: string;
+  jobStatus: "published" | "draft" | "closed" | "missing";
+  status: ApplicationStatus;
+  appliedAt: string;
+  interviews: CandidateApplicationInterviewStage[];
+}
+
 /** Compact interview scores for the applicants table. */
 export interface ApplicantInterviewScore {
   stageId: InterviewStageId;
