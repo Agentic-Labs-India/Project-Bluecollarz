@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -22,6 +23,13 @@ import { authClient } from "@/lib/auth/auth-client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import {
+  PreferenceDialog,
+  fetchUserPreferences,
+  patchUserPreferences,
+  type PreferenceKind,
+} from "@/components/layout/preference-dialog";
+import type { UserPreferences } from "@/lib/user/preferences";
 
 type AppUser = { name: string; email: string; avatar: string };
 
@@ -106,6 +114,46 @@ export function AppUserMenu({
   profileHref: string;
   className?: string;
 }) {
+  const [openKind, setOpenKind] = React.useState<PreferenceKind | null>(null);
+  const [prefs, setPrefs] = React.useState<UserPreferences>({
+    cookiesEnabled: true,
+    notificationsEnabled: true,
+  });
+  const [loaded, setLoaded] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+
+  const loadPreferences = React.useEffectEvent(async () => {
+    try {
+      const next = await fetchUserPreferences();
+      setPrefs(next);
+      setLoaded(true);
+    } catch {
+      setLoaded(true);
+    }
+  });
+
+  React.useEffect(() => {
+    if (openKind && !loaded) {
+      void loadPreferences();
+    }
+  }, [openKind, loaded]);
+
+  const handleToggle = async (kind: PreferenceKind, enabled: boolean) => {
+    const key =
+      kind === "cookies" ? "cookiesEnabled" : "notificationsEnabled";
+    const previous = prefs;
+    setPrefs((current) => ({ ...current, [key]: enabled }));
+    setSaving(true);
+    try {
+      const next = await patchUserPreferences({ [key]: enabled });
+      setPrefs(next);
+    } catch {
+      setPrefs(previous);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -117,6 +165,7 @@ export function AppUserMenu({
         type="button"
         className="text-muted-foreground hover:text-foreground rounded-lg p-2 transition-colors"
         aria-label="Cookie preferences"
+        onClick={() => setOpenKind("cookies")}
       >
         <CookieIcon className="size-4" strokeWidth={1.75} />
       </button>
@@ -125,11 +174,31 @@ export function AppUserMenu({
         type="button"
         className="text-muted-foreground hover:text-foreground rounded-lg p-2 transition-colors"
         aria-label="Notifications"
+        onClick={() => setOpenKind("notifications")}
       >
         <BellIcon className="size-4" strokeWidth={1.75} />
       </button>
 
       <UserMenuDropdown user={user} profileHref={profileHref} side="right" />
+
+      <PreferenceDialog
+        kind="cookies"
+        open={openKind === "cookies"}
+        onOpenChange={(open) => setOpenKind(open ? "cookies" : null)}
+        enabled={prefs.cookiesEnabled}
+        saving={saving}
+        onEnabledChange={(enabled) => void handleToggle("cookies", enabled)}
+      />
+      <PreferenceDialog
+        kind="notifications"
+        open={openKind === "notifications"}
+        onOpenChange={(open) => setOpenKind(open ? "notifications" : null)}
+        enabled={prefs.notificationsEnabled}
+        saving={saving}
+        onEnabledChange={(enabled) =>
+          void handleToggle("notifications", enabled)
+        }
+      />
     </div>
   );
 }

@@ -33,6 +33,18 @@ export const auth = betterAuth({
         defaultValue: "work",
         input: true,
       },
+      cookiesEnabled: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+        input: false,
+      },
+      notificationsEnabled: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+        input: false,
+      },
     },
     deleteUser: {
       enabled: true,
@@ -61,12 +73,14 @@ export const auth = betterAuth({
             (state as { additionalData?: { profileType?: string } } | null)
               ?.additionalData?.profileType;
 
-          if (!profileType) return { data: user };
-
           return {
             data: {
               ...user,
-              profileType: normalizeProfileType(profileType),
+              ...(profileType
+                ? { profileType: normalizeProfileType(profileType) }
+                : {}),
+              cookiesEnabled: true,
+              notificationsEnabled: true,
             },
           };
         },
