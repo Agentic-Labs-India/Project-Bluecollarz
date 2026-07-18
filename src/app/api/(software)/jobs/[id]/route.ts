@@ -9,6 +9,7 @@ import {
   sanitizeJobCreateBody,
   type JobDocument,
 } from "@/lib/jobs";
+import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireUser, requireProfile } from "@/lib/api/session";
 import { idHex } from "@/lib/utils";
@@ -144,6 +145,14 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
 
+    if (
+      existing.status === "published" ||
+      updated.status === "published" ||
+      existing.status !== updated.status
+    ) {
+      revalidatePublishedJobsCache();
+    }
+
     return NextResponse.json({ item: toJobListItem(updated) });
   } catch (error) {
     console.error("PATCH /api/jobs/[id]:", error);
@@ -172,6 +181,7 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
+    revalidatePublishedJobsCache();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/jobs/[id]:", error);

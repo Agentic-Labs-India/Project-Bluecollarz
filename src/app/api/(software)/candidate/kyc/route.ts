@@ -6,16 +6,17 @@ import { toKycPublicState, type KycFields } from "@/lib/kyc";
 
 /** Candidate KYC status (identity verification). */
 export async function GET() {
+  // Auth must stay outside try/catch so prerender aborts aren't logged as 500s.
+  const auth = await requireProfile("work");
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+  if (!auth.user.id) {
+    return NextResponse.json({ error: "Invalid user" }, { status: 400 });
+  }
+
   try {
     await ensureIndexes();
-    const auth = await requireProfile("work");
-    if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
-    }
-    if (!auth.user.id) {
-      return NextResponse.json({ error: "Invalid user" }, { status: 400 });
-    }
-
     const user = await client
       .db(DB_NAME)
       .collection<KycFields>(COLLECTIONS.USERS_COLLECTION)

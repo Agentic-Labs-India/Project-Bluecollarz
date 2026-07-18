@@ -12,7 +12,10 @@ import {
   JOB_PRIORITIES,
   type JobDocument,
 } from "@/lib/jobs";
-import { getPublishedOpportunities } from "@/lib/jobs/queries";
+import {
+  getPublishedOpportunities,
+  revalidatePublishedJobsCache,
+} from "@/lib/jobs/queries";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireUser, requireProfile } from "@/lib/api/session";
 import { getHireProfileComplete } from "@/lib/hire/queries";
@@ -133,6 +136,9 @@ export async function POST(req: NextRequest) {
 
     const db = client.db(DB_NAME);
     const result = await db.collection(COLLECTIONS.JOBS).insertOne(doc);
+    if (doc.status === "published") {
+      revalidatePublishedJobsCache();
+    }
 
     return NextResponse.json(
       {
