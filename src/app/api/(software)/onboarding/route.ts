@@ -281,7 +281,7 @@ Tell them briefly, then interview by voice for the mandatory fields one at a tim
   return new ToolLoopAgent({
     id: "candidate-onboarding",
     model: gatewayModel,
-    instructions: `You are Gulf Path's onboarding voice coach for candidates (workers).
+    instructions: `You are BlueCollarz's onboarding voice coach for candidates (workers).
 Speak in short, clear spoken English (1–3 sentences). The user answers by voice.
 ${VOICE_DELIVERY_PROMPT}
 ${resumeContext}

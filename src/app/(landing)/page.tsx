@@ -116,7 +116,7 @@ export default function Page() {
           Shape the frontier of AI
         </h1>
         <p className="mx-auto mt-6 max-w-[400px] text-foreground">
-          Gulf Path is organizing human intelligence
+          BlueCollarz is organizing human intelligence
           <br />
           to power the AI economy.
         </p>

@@ -5,9 +5,9 @@ import {
 } from "@/components/landing/marketing-page";
 
 export const metadata = {
-  title: "For Recruiters · Gulf Path",
+  title: "For Recruiters · BlueCollarz",
   description:
-    "Hire on Gulf Path — contact us for recruiter access. We share a private link when you’re ready.",
+    "Hire on BlueCollarz — contact us for recruiter access. We share a private link when you’re ready.",
 };
 
 export default function ForRecruitersPage() {
@@ -31,12 +31,12 @@ export default function ForRecruitersPage() {
       <MarketingSection title="How access works">
         <p>
           Recruiter / hirer accounts are not open for self-serve signup on this
-          site. If you’d like to hire through Gulf Path, contact us and we’ll
+          site. If you’d like to hire through BlueCollarz, contact us and we’ll
           share a private access link for your team.
         </p>
         <div className="border-canvas-soft bg-muted/30 mt-4 space-y-3 rounded-none border p-5">
           <p className="text-foreground font-medium">
-            Ready to hire with Gulf Path?
+            Ready to hire with BlueCollarz?
           </p>
           <p>
             Email{" "}
@@ -62,7 +62,7 @@ export default function ForRecruitersPage() {
         <p>
           Once you have access, you’ll complete your company profile, post
           roles, and manage candidates from your hiring workspace. Until then,
-          there’s no public “become a hirer” signup on Gulf Path.
+          there’s no public “become a hirer” signup on BlueCollarz.
         </p>
       </MarketingSection>
     </MarketingPage>

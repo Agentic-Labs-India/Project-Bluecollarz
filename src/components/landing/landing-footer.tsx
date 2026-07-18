@@ -52,7 +52,7 @@ export function LandingFooter() {
 
         <div className="mt-10 flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-row items-center gap-3">
-            <span className="text-sm text-mute">© 2026 Gulf Path</span>
+            <span className="text-sm text-mute">© 2026 BlueCollarz</span>
             <div className="flex flex-row items-center">
               <svg
                 stroke="currentColor"

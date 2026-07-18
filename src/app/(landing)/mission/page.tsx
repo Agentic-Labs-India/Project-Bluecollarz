@@ -1,8 +1,8 @@
 import { MarketingPage, MarketingSection } from "@/components/landing/marketing-page";
 
 export const metadata = {
-  title: "Mission · Gulf Path",
-  description: "Gulf Path’s mission: organize human intelligence for the AI economy.",
+  title: "Mission · BlueCollarz",
+  description: "BlueCollarz’s mission: organize human intelligence for the AI economy.",
 };
 
 export default function MissionPage() {

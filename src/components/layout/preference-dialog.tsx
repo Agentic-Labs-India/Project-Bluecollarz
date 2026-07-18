@@ -26,7 +26,7 @@ const COPY: Record<
   cookies: {
     title: "Cookie preferences",
     description:
-      "Cookies help Gulf Path stay signed in, remember your settings, and keep the product working smoothly.",
+      "Cookies help BlueCollarz stay signed in, remember your settings, and keep the product working smoothly.",
     details: [
       "Essential cookies keep you logged in and protect your account.",
       "Preference cookies remember choices like theme and layout.",

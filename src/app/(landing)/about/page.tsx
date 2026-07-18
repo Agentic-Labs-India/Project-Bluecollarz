@@ -1,21 +1,21 @@
 import { MarketingPage, MarketingSection } from "@/components/landing/marketing-page";
 
 export const metadata = {
-  title: "About · Gulf Path",
+  title: "About · BlueCollarz",
   description:
-    "Gulf Path connects skilled people with global opportunities through profiles, roles, and AI-assisted interviews.",
+    "BlueCollarz connects skilled people with global opportunities through profiles, roles, and AI-assisted interviews.",
 };
 
 export default function AboutPage() {
   return (
     <MarketingPage
       eyebrow="Company"
-      title="About Gulf Path"
+      title="About BlueCollarz"
       description="We organize human expertise so candidates and hiring teams can meet with clearer signal and less friction."
     >
       <MarketingSection title="What we build">
         <p>
-          Gulf Path is a hiring platform for candidates and companies. Candidates
+          BlueCollarz is a hiring platform for candidates and companies. Candidates
           build verified profiles, explore roles, and complete AI-assisted
           interviews. Hiring teams review applications with structured scores,
           summaries, and recordings — then decide who to move forward.
@@ -32,7 +32,7 @@ export default function AboutPage() {
 
       <MarketingSection title="Where we’re based">
         <p>
-          Gulf Path is rooted in Dubai, UAE, and built for cross-border talent
+          BlueCollarz is rooted in Dubai, UAE, and built for cross-border talent
           pathways across the Gulf and beyond.
         </p>
       </MarketingSection>

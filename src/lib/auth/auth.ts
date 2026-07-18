@@ -6,7 +6,7 @@ import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 import { normalizeProfileType } from "@/lib/profile-types";
 import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
 
-const APP_NAME = "Gulf Path";
+const APP_NAME = "BlueCollarz";
 
 export const auth = betterAuth({
   appName: APP_NAME,

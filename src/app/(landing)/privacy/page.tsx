@@ -1,9 +1,9 @@
 import { LegalDoc, LegalSection } from "@/components/landing/legal-doc";
 
 export const metadata = {
-  title: "Privacy Policy · Gulf Path",
+  title: "Privacy Policy · BlueCollarz",
   description:
-    "How Gulf Path collects, uses, and protects personal data for candidates and hirers.",
+    "How BlueCollarz collects, uses, and protects personal data for candidates and hirers.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <LegalDoc title="Privacy Policy" updated="July 12, 2026">
         <LegalSection title="1. Who we are">
           <p>
-            Gulf Path (“we”, “us”, “our”) operates a platform that connects
+            BlueCollarz (“we”, “us”, “our”) operates a platform that connects
             candidates with hirers, including profile management, job postings,
             applications, and AI-assisted interviews. This Privacy Policy
             explains what information we collect and how we use it.
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         </LegalSection>
 
         <LegalSection title="2. Information we collect">
-          <p>Depending on how you use Gulf Path, we may collect:</p>
+          <p>Depending on how you use BlueCollarz, we may collect:</p>
           <ul className="list-disc space-y-2 ps-5">
             <li>
               Account details such as name, email address, and profile photo
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
 
         <LegalSection title="9. International processing">
           <p>
-            Gulf Path may process and store information in countries other than
+            BlueCollarz may process and store information in countries other than
             where you live. By using the service, you understand that your
             information may be transferred to and processed in those locations.
           </p>
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
 
         <LegalSection title="10. Children">
           <p>
-            Gulf Path is not directed to children under 16, and we do not
+            BlueCollarz is not directed to children under 16, and we do not
             knowingly collect personal information from children.
           </p>
         </LegalSection>

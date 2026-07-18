@@ -8,7 +8,7 @@ import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
 const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
 
 function communicationInstructions(jobTitle: string): string {
-  return `You are Gulf Path's AI Communication Interviewer for the role "${jobTitle}".
+  return `You are BlueCollarz's AI Communication Interviewer for the role "${jobTitle}".
 Speak in short, clear spoken English (1–3 sentences). The candidate answers by voice.
 ${VOICE_DELIVERY_PROMPT}
 Goals: assess clarity, fluency, confidence, and professionalism — not deep domain expertise.
@@ -23,7 +23,7 @@ Never invent facts about the candidate. Keep questions practical and fair.`;
 function domainInstructions(jobTitle: string, jobOverview: string): string {
   const overview =
     htmlToPlainText(jobOverview).trim() || "No detailed overview was provided.";
-  return `You are Gulf Path's AI Domain Interviewer for the role "${jobTitle}".
+  return `You are BlueCollarz's AI Domain Interviewer for the role "${jobTitle}".
 Speak in short, clear spoken English (1–3 sentences). The candidate answers by voice.
 ${VOICE_DELIVERY_PROMPT}
 Goals: assess domain knowledge, practical judgment, and fit for what this role requires — based on the role overview below.

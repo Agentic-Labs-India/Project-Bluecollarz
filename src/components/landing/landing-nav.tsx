@@ -20,12 +20,12 @@ export function LandingNav() {
     <>
       <div
         id="TopNav"
-        className="fixed top-0 left-0 z-888 flex h-[68px] w-full flex-row items-center justify-between gap-4 bg-canvas px-6 text-[14px] duration-300 sm:px-6 md:px-5"
+        className="fixed top-0 left-0 z-888 flex h-[68px] w-full flex-row items-center justify-between gap-4 border-b border-canvas-soft bg-canvas px-6 text-[14px] duration-300 sm:px-6 md:px-5"
       >
         <Link className="relative z-10 w-[100px] shrink-0" href="/">
           <Image
             src="/logo.svg"
-            alt="Gulf Path logo"
+            alt="BlueCollarz logo"
             width={34}
             height={34}
             className="h-[30px] w-[30px] sm:h-[34px] sm:w-[34px]"

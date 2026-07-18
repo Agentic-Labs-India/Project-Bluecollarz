@@ -5,8 +5,8 @@ import {
 } from "@/components/landing/marketing-page";
 
 export const metadata = {
-  title: "Contact · Gulf Path",
-  description: "Contact Gulf Path for support, press, sales, or recruiter access.",
+  title: "Contact · BlueCollarz",
+  description: "Contact BlueCollarz for support, press, sales, or recruiter access.",
 };
 
 export default function ContactPage() {
@@ -14,7 +14,7 @@ export default function ContactPage() {
     <MarketingPage
       eyebrow="Company"
       title="Contact"
-      description="Reach the Gulf Path team for product support, partnerships, press, or recruiter access."
+      description="Reach the BlueCollarz team for product support, partnerships, press, or recruiter access."
     >
       <MarketingSection title="Support">
         <p>
@@ -30,7 +30,7 @@ export default function ContactPage() {
 
       <MarketingSection title="Sales & recruiter access">
         <p>
-          To hire on Gulf Path, contact sales — we share a private access link
+          To hire on BlueCollarz, contact sales — we share a private access link
           rather than open self-serve signup for hirers.
         </p>
         <p>

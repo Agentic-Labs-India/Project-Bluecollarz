@@ -8,7 +8,7 @@ export function AssistantAvatar({ className }: { className?: string }) {
     <Avatar className={className ?? "size-7 shrink-0"}>
       <AvatarImage
         src="/logo.svg"
-        alt="Gulf Path"
+        alt="BlueCollarz"
         className="object-contain p-1"
       />
       <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">

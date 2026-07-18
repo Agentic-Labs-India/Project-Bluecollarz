@@ -1,9 +1,9 @@
 import { MarketingPage, MarketingSection } from "@/components/landing/marketing-page";
 
 export const metadata = {
-  title: "Vision · Gulf Path",
+  title: "Vision · BlueCollarz",
   description:
-    "Gulf Path’s vision for a trusted global talent network powered by structured evaluation.",
+    "BlueCollarz’s vision for a trusted global talent network powered by structured evaluation.",
 };
 
 export default function VisionPage() {
@@ -15,7 +15,7 @@ export default function VisionPage() {
     >
       <MarketingSection title="The future we’re building">
         <p>
-          We envision Gulf Path as the trusted layer between skilled people and
+          We envision BlueCollarz as the trusted layer between skilled people and
           the companies that need them: portable profiles, interview evidence,
           and hiring workflows that scale without losing judgment.
         </p>
