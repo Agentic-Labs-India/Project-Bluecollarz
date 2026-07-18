@@ -4,7 +4,10 @@ import { auth } from "@/lib/auth/auth";
 
 export const maxDuration = 30;
 
-/** Sarvam speech-to-text (Saaras v3). Accepts multipart `audio` file. */
+/**
+ * Sarvam STT REST (Saaras v3) for short VAD clips (≤30s).
+ * REST accepts webm/opus directly — better on Vercel than WS + WAV convert.
+ */
 export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -27,8 +30,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Sarvam rejects MIME types with codec params (e.g. audio/webm;codecs=opus)
-    // even though base types like audio/webm are allowed.
-    const baseType = (audio.type || "audio/webm").split(";")[0].trim() || "audio/webm";
+    const baseType =
+      (audio.type || "audio/webm").split(";")[0].trim() || "audio/webm";
     const filename =
       audio.name && audio.name.includes(".")
         ? audio.name

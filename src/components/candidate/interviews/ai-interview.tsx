@@ -32,7 +32,13 @@ import {
   interviewStageTitle,
 } from "@/lib/interviews/labels";
 import type { InterviewStageId } from "@/lib/interviews";
+import {
+  AssistantAvatar,
+  UserChatAvatar,
+  useChatUserAvatar,
+} from "@/components/candidate/chat-avatars";
 import { speakText } from "@/lib/voice/speak";
+import { transcribeBlob } from "@/lib/voice/transcribe";
 import { cn } from "@/lib/utils";
 
 type LocalTurn = { role: "assistant" | "user"; text: string };
@@ -55,6 +61,7 @@ export function AiInterview({
 }) {
   const stageLabel = interviewStageLabel(stageId);
   const stageTitle = interviewStageTitle(stageId);
+  const chatUser = useChatUserAvatar();
 
   const [phase, setPhase] = useState<
     "permissions" | "live" | "finalizing" | "done" | "error"
@@ -135,22 +142,12 @@ export function AiInterview({
             busyUtteranceRef.current = true;
             setStatus("Transcribing…");
             try {
-              const form = new FormData();
-              form.append("audio", blob, "speech.webm");
-              form.append("language_code", "en-IN");
-              const res = await fetch("/api/voice/stt", {
-                method: "POST",
-                body: form,
-              });
-              const data = (await res.json()) as {
-                transcript?: string;
-                error?: string;
-              };
-              if (!res.ok || !data.transcript?.trim()) {
+              const data = await transcribeBlob(blob, "en-IN");
+              if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — try again.");
                 return;
               }
-              const text = data.transcript.trim();
+              const text = data.transcript;
               localTranscriptRef.current.push({ role: "user", text });
               pausedRef.current = true;
               setStatus("Thinking…");
@@ -332,7 +329,7 @@ export function AiInterview({
       <div className="relative flex min-h-0 flex-1 flex-col md:flex-row">
         <section className="border-border flex min-h-0 flex-1 flex-col border-b md:border-r md:border-b-0">
           <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-3 px-4 py-5 md:px-6">
+            <div className="space-y-6 px-4 py-5 md:px-6">
               {messages.map((message) => {
                 const text = message.parts
                   .filter(isTextUIPart)
@@ -340,17 +337,33 @@ export function AiInterview({
                   .join("\n")
                   .trim();
                 if (!text) return null;
+                const isUser = message.role === "user";
                 return (
                   <div
                     key={message.id}
                     className={cn(
-                      "max-w-[92%] rounded-none border px-3 py-2 text-sm leading-relaxed",
-                      message.role === "user"
-                        ? "border-primary/30 bg-primary/5 ml-auto"
-                        : "border-border bg-card mr-auto",
+                      "flex max-w-[90%] items-start gap-2.5",
+                      isUser ? "ml-auto flex-row-reverse" : "mr-auto",
                     )}
                   >
-                    {text}
+                    {isUser ? (
+                      <UserChatAvatar
+                        name={chatUser.name}
+                        image={chatUser.image}
+                      />
+                    ) : (
+                      <AssistantAvatar />
+                    )}
+                    <div
+                      className={cn(
+                        "text-sm leading-relaxed",
+                        isUser
+                          ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
+                          : "text-foreground/90 pt-0.5",
+                      )}
+                    >
+                      {text}
+                    </div>
                   </div>
                 );
               })}

@@ -20,6 +20,7 @@ import {
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
 import { auth } from "@/lib/auth/auth";
+import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
 
 export const maxDuration = 90;
 
@@ -282,6 +283,7 @@ Tell them briefly, then interview by voice for the mandatory fields one at a tim
     model: gatewayModel,
     instructions: `You are Gulf Path's onboarding voice coach for candidates (workers).
 Speak in short, clear spoken English (1–3 sentences). The user answers by voice.
+${VOICE_DELIVERY_PROMPT}
 ${resumeContext}
 
 Mandatory fields: phone number, headline/role, location, years of experience, skills, work authorization, professional summary, education (at least one entry), work experience (at least one entry), and languages.

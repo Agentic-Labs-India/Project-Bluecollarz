@@ -22,7 +22,13 @@ import {
   startVadLoop,
   type VadController,
 } from "@/components/candidate/interviews/vad";
+import {
+  AssistantAvatar,
+  UserChatAvatar,
+  useChatUserAvatar,
+} from "@/components/candidate/chat-avatars";
 import { speakText } from "@/lib/voice/speak";
+import { transcribeBlob } from "@/lib/voice/transcribe";
 import { cn } from "@/lib/utils";
 
 type ActionCue = {
@@ -47,6 +53,7 @@ const CUE_STYLES: Record<ActionCue["tone"], string> = {
 
 export function OnboardingAgent() {
   const router = useRouter();
+  const chatUser = useChatUserAvatar();
   const [status, setStatus] = useState("Allow the microphone to begin.");
   const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
@@ -142,24 +149,14 @@ export function OnboardingAgent() {
             pausedRef.current = true;
             setStatus("Transcribing…");
             try {
-              const form = new FormData();
-              form.append("audio", blob, "speech.webm");
-              form.append("language_code", "en-IN");
-              const res = await fetch("/api/voice/stt", {
-                method: "POST",
-                body: form,
-              });
-              const data = (await res.json()) as {
-                transcript?: string;
-                error?: string;
-              };
-              if (!res.ok || !data.transcript?.trim()) {
+              const data = await transcribeBlob(blob, "en-IN");
+              if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — speak again.");
                 pausedRef.current = false;
                 return;
               }
               setStatus("Thinking…");
-              await sendMessage({ text: data.transcript.trim() });
+              await sendMessage({ text: data.transcript });
             } catch {
               setStatus("Voice failed. Speak again when ready.");
               pausedRef.current = false;
@@ -276,7 +273,7 @@ export function OnboardingAgent() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="space-y-4 px-4 py-5">
+        <div className="space-y-6 px-4 py-5">
           {messages.map((message) => {
             const text = message.parts
               .filter(isTextUIPart)
@@ -288,22 +285,35 @@ export function OnboardingAgent() {
               const tools = message.parts.filter(isToolUIPart);
               if (!tools.length) return null;
             }
+            const isUser = message.role === "user";
             return (
               <div
                 key={message.id}
                 className={cn(
-                  "max-w-[90%] rounded-none border px-3 py-2 text-sm leading-relaxed",
-                  message.role === "user"
-                    ? "border-primary/30 bg-primary/5 ml-auto"
-                    : "border-border bg-card mr-auto",
+                  "flex max-w-[90%] items-start gap-2.5",
+                  isUser ? "ml-auto flex-row-reverse" : "mr-auto",
                 )}
               >
-                {text || (
-                  <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-                    <Loader2Icon className="size-3 animate-spin" />
-                    Updating your profile…
-                  </span>
+                {isUser ? (
+                  <UserChatAvatar name={chatUser.name} image={chatUser.image} />
+                ) : (
+                  <AssistantAvatar />
                 )}
+                <div
+                  className={cn(
+                    "text-sm leading-relaxed",
+                    isUser
+                      ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
+                      : "text-foreground/90 pt-0.5",
+                  )}
+                >
+                  {text || (
+                    <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+                      <Loader2Icon className="size-3 animate-spin" />
+                      Updating your profile…
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -311,99 +321,90 @@ export function OnboardingAgent() {
         </div>
       </div>
 
-      <footer className="border-border shrink-0 space-y-3 border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="border-border bg-card space-y-3 rounded-none border p-3">
-          <p className="text-muted-foreground flex items-center gap-2 text-xs">
-            <Volume2Icon className="size-3.5 shrink-0" />
-            {status}
-          </p>
-          {micReady ? (
-            <>
-              <div className="bg-muted h-2 overflow-hidden rounded-none">
-                <div
-                  className={cn(
-                    "h-full transition-all duration-100",
-                    listening ? "bg-primary" : "bg-primary/40",
-                  )}
-                  style={{
-                    width: `${Math.min(100, Math.round(level * 400))}%`,
-                  }}
-                />
-              </div>
-              <div className="flex items-end justify-between gap-2">
-                <p className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-                  <MicIcon className="size-3.5" />
-                  {listening ? "Listening" : "Idle"}
-                </p>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "h-auto gap-1.5 px-3 py-1 text-sm font-bold tracking-wide uppercase",
-                    CUE_STYLES[actionCue.tone],
-                  )}
-                  aria-live="polite"
-                >
-                  {actionCue.label}
-                  <span className="font-semibold normal-case tracking-normal opacity-90">
-                    · {actionCue.hint}
-                  </span>
-                </Badge>
-              </div>
-            </>
-          ) : (
-            <div className="flex justify-end">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "h-auto gap-1.5 px-3 py-1 text-sm font-bold tracking-wide uppercase",
-                  CUE_STYLES[actionCue.tone],
-                )}
-                aria-live="polite"
-              >
-                {actionCue.label}
-                <span className="font-semibold normal-case tracking-normal opacity-90">
-                  · {actionCue.hint}
-                </span>
-              </Badge>
-            </div>
-          )}
-        </div>
-
+      <footer className="border-border shrink-0 border-t bg-background px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {!micReady ? (
           <div className="space-y-2">
             {micError ? (
               <p className="text-destructive text-sm">{micError}</p>
             ) : null}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
+                <Volume2Icon className="size-3.5 shrink-0" />
+                <span className="truncate">{status}</span>
+              </p>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "h-auto shrink-0 gap-1 px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase",
+                  CUE_STYLES[actionCue.tone],
+                )}
+                aria-live="polite"
+              >
+                {actionCue.label}
+              </Badge>
+            </div>
             <Button
               type="button"
-              size="lg"
+              size="sm"
               className="w-full"
               onClick={() => void enableMic()}
             >
               <MicIcon className="size-4" />
               Enable microphone &amp; start
             </Button>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              Speak naturally — when your voice rises, listening starts; after a
-              pause, your answer is sent. No need to hold a button.
-            </p>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
+                  <Volume2Icon className="size-3.5 shrink-0" />
+                  <span className="truncate">{status}</span>
+                </p>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-auto shrink-0 gap-1 px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase",
+                    CUE_STYLES[actionCue.tone],
+                  )}
+                  aria-live="polite"
+                >
+                  {actionCue.label}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-[11px]">
+                  <MicIcon className="size-3" />
+                  {listening ? "Listening" : "Idle"}
+                </p>
+                <div className="bg-muted h-1.5 min-w-0 flex-1 overflow-hidden rounded-none">
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-100",
+                      listening ? "bg-primary" : "bg-primary/40",
+                    )}
+                    style={{
+                      width: `${Math.min(100, Math.round(level * 400))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
             <Button
               type="button"
               variant="outline"
-              size="lg"
-              className="flex-1"
+              size="sm"
+              className="shrink-0"
               disabled={uploading || isStreaming || done}
               onClick={() => fileInputRef.current?.click()}
             >
               {uploading ? (
-                <Loader2Icon className="size-4 animate-spin" />
+                <Loader2Icon className="size-3.5 animate-spin" />
               ) : (
-                <UploadIcon className="size-4" />
+                <UploadIcon className="size-3.5" />
               )}
-              Upload PDF resume
+              Upload PDF
             </Button>
             <input
               ref={fileInputRef}
