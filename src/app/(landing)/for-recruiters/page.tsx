@@ -1,3 +1,4 @@
+import { LoginButton } from "@/components/auth/login-button";
 import {
   MarketingCta,
   MarketingPage,
@@ -34,9 +35,12 @@ export default function ForRecruitersPage() {
           hiring workspace.
         </p>
         <div className="pt-2">
-          <MarketingCta href="/login?profileType=hire">
+          <LoginButton
+            profileType="hire"
+            className="bg-primary text-primary-foreground hover:bg-primary-active inline-flex items-center justify-center rounded-md px-6 py-2.5 text-sm font-medium transition-colors"
+          >
             Recruiter login
-          </MarketingCta>
+          </LoginButton>
         </div>
       </MarketingSection>
 
