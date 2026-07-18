@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LoginButton } from "@/components/auth/login-button";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import type { LandingRole } from "@/lib/jobs/queries";
 
@@ -99,13 +99,12 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
           <p className="text-muted-foreground text-sm">
             No open roles right now. Check back soon or sign in to get notified.
           </p>
-          <button
-            type="button"
-            onClick={() => void signInWithGoogle("work")}
+          <LoginButton
+            profileType="work"
             className="text-primary mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline"
           >
             Continue with Google
-          </button>
+          </LoginButton>
         </div>
       </section>
     );

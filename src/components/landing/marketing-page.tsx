@@ -65,16 +65,14 @@ export function MarketingSection({
 export function MarketingCta({
   href,
   children,
-  external,
 }: {
   href: string;
   children: ReactNode;
-  external?: boolean;
 }) {
   const className =
     "bg-primary text-primary-foreground hover:bg-primary-active inline-flex items-center justify-center rounded-md px-6 py-2.5 text-sm font-medium transition-colors";
 
-  if (external || href.startsWith("mailto:")) {
+  if (href.startsWith("mailto:")) {
     return (
       <a href={href} className={className}>
         {children}

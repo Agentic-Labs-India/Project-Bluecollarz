@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/auth-client";
-import { getSessionProfileType } from "@/lib/auth/auth-actions";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import {
   DEFAULT_PROFILE_TYPE,
@@ -33,8 +32,7 @@ export function LoginButton({
     onBeforeOpen?.();
 
     if (session?.user) {
-      const profile = await getSessionProfileType();
-      router.push(getProfileHomePath(profile));
+      router.push(getProfileHomePath(session.user.profileType));
       return;
     }
 

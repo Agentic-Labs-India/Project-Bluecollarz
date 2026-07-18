@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { ADMIN_EMAIL, PROFILE_BASE_ROUTES } from "@/lib/routes";
 import {
+  getProfileBasePath,
   getProfileHomePath,
   normalizeProfileType,
   type ProfileType,
@@ -80,13 +81,8 @@ async function isCandidateComplete(req: NextRequest): Promise<boolean> {
   }
 }
 
-function profileRoutePrefix(profileType: ProfileType): string {
-  if (profileType === "hire") return "/hire";
-  return "/candidate";
-}
-
 function isPathAllowedForProfile(pathname: string, profileType: ProfileType) {
-  const prefix = profileRoutePrefix(profileType);
+  const prefix = getProfileBasePath(profileType);
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
@@ -99,12 +95,6 @@ function clearSessionAndRedirect(req: NextRequest, to: string) {
     res.cookies.set(name, "", { path: "/", maxAge: 0 });
   }
   return res;
-}
-
-function nextWithPathname(req: NextRequest) {
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-pathname", req.nextUrl.pathname);
-  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export async function proxy(req: NextRequest) {
@@ -170,7 +160,7 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  return nextWithPathname(req);
+  return NextResponse.next();
 }
 
 export const config = {

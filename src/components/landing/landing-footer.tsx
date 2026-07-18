@@ -1,9 +1,16 @@
-import {
-  FooterLinks,
-  type FooterLinkItem,
-} from "@/components/landing/footer-links";
+"use client";
 
-const FOOTER_SECTIONS: { title: string; links: FooterLinkItem[] }[] = [
+import Link from "next/link";
+import { LoginButton } from "@/components/auth/login-button";
+import type { ProfileType } from "@/lib/profile-types";
+
+type FooterLink = {
+  label: string;
+  href?: string;
+  profileType?: ProfileType;
+};
+
+const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
   {
     title: "Company",
     links: [
@@ -44,7 +51,25 @@ export function LandingFooter() {
                 {section.title}
               </div>
               <div className="flex flex-col gap-1">
-                <FooterLinks links={section.links} />
+                {section.links.map((link) =>
+                  link.profileType ? (
+                    <LoginButton
+                      key={link.label}
+                      profileType={link.profileType}
+                      className="text-[15px] text-muted-foreground text-left duration-100 hover:text-mute"
+                    >
+                      {link.label}
+                    </LoginButton>
+                  ) : (
+                    <Link
+                      key={link.label}
+                      className="text-[15px] text-muted-foreground duration-100 hover:text-mute"
+                      href={link.href ?? "#"}
+                    >
+                      {link.label}
+                    </Link>
+                  ),
+                )}
               </div>
             </div>
           ))}

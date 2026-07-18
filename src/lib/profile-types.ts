@@ -28,6 +28,12 @@ export function normalizeProfileType(
   return DEFAULT_PROFILE_TYPE;
 }
 
+export function getProfileBasePath(
+  profileType: string | null | undefined,
+): string {
+  return normalizeProfileType(profileType) === "hire" ? "/hire" : "/candidate";
+}
+
 export function getProfileHomePath(
   profileType: string | null | undefined,
 ): string {
