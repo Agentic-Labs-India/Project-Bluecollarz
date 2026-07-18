@@ -1,17 +1,15 @@
-export type ProfileType = "work" | "hire" | "agents";
+export type ProfileType = "work" | "hire";
 
 export const DEFAULT_PROFILE_TYPE: ProfileType = "work";
 
 const PROFILE_HOMES: Record<ProfileType, string> = {
   work: "/candidate/home",
   hire: "/hire/roles",
-  agents: "/agents",
 };
 
 const PROFILE_ID_LABELS: Record<ProfileType, string> = {
   work: "Candidate",
   hire: "Recruiter",
-  agents: "RA",
 };
 
 export function getProfileIdLabel(
@@ -24,7 +22,7 @@ export function normalizeProfileType(
   value: string | null | undefined,
 ): ProfileType {
   const normalized = value?.toLowerCase().trim();
-  if (normalized === "hire" || normalized === "agents" || normalized === "work") {
+  if (normalized === "hire" || normalized === "work") {
     return normalized;
   }
   return DEFAULT_PROFILE_TYPE;

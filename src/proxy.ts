@@ -27,7 +27,6 @@ const isPublicRoute = createRouteMatcher([
   "/about",
   "/mission",
   "/vision",
-  "/for-ra",
   "/for-recruiters",
   "/contact",
   "/privacy",
@@ -83,7 +82,6 @@ async function isCandidateComplete(req: NextRequest): Promise<boolean> {
 
 function profileRoutePrefix(profileType: ProfileType): string {
   if (profileType === "hire") return "/hire";
-  if (profileType === "agents") return "/agents";
   return "/candidate";
 }
 

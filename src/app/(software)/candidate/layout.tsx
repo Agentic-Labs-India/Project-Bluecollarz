@@ -9,7 +9,7 @@ import {
 } from "@/lib/profile-types";
 
 /**
- * Candidate area: only `work` profiles. Hire/agents are sent to their home.
+ * Candidate area: only `work` profiles. Hire profiles are sent to their home.
  * Onboarding gate lives in `(app)/layout.tsx` so `/candidate/onboarding`
  * stays reachable while the rest of the app is locked.
  */

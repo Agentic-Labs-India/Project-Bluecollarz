@@ -59,7 +59,7 @@ export function DeleteAccountSection({
         <p className="text-foreground text-sm font-medium">Delete {label} profile</p>
         <p className="text-muted-foreground mt-1 text-sm">
           Permanently removes this account and related data. You can sign up again
-          later with Google as a Candidate, Recruiter, or RA.
+          later with Google as a Candidate or Recruiter.
         </p>
         {error ? (
           <p className="text-destructive mt-2 text-sm">{error}</p>

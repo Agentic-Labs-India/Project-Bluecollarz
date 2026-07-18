@@ -16,7 +16,6 @@ const FOOTER_SECTIONS: { title: string; links: FooterLinkItem[] }[] = [
   {
     title: "Programs",
     links: [
-      { label: "For RAs", href: "/for-ra" },
       { label: "For Recruiters", href: "/for-recruiters" },
       { label: "Find work", profileType: "work" },
     ],

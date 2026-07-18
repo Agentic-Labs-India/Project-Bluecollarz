@@ -3,7 +3,7 @@
 import { authClient } from "@/lib/auth/auth-client";
 import { getProfileHomePath, type ProfileType } from "@/lib/profile-types";
 
-/** Start Google OAuth for the given profile type (Candidate, Recruiter, RA). */
+/** Start Google OAuth for the given profile type (Candidate or Recruiter). */
 export async function signInWithGoogle(profileType: ProfileType) {
   await authClient.signIn.social({
     provider: "google",

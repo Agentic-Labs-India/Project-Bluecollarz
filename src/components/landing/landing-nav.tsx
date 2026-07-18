@@ -9,7 +9,6 @@ const NAV_LINKS = [
   { label: "About", href: "/about" },
   { label: "Mission", href: "/mission" },
   { label: "Vision", href: "/vision" },
-  { label: "For RAs", href: "/for-ra" },
   { label: "For Recruiters", href: "/for-recruiters" },
   { label: "Contact", href: "/contact" },
 ];

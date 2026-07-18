@@ -29,4 +29,4 @@ export const HIRE_NAV: AppNavItem[] = [
 ];
 
 /** Base path for each profile area; everything under these requires auth. */
-export const PROFILE_BASE_ROUTES = ["/candidate", "/hire", "/agents"] as const;
+export const PROFILE_BASE_ROUTES = ["/candidate", "/hire"] as const;
