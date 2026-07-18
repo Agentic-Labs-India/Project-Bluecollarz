@@ -156,9 +156,9 @@ export default function PrivacyPage() {
             Questions about privacy:{" "}
             <a
               className="text-foreground underline underline-offset-4"
-              href="mailto:support@gulfpath.com"
+              href="mailto:support@BlueCollarz.ai"
             >
-              support@gulfpath.com
+              support@BlueCollarz.ai
             </a>
             .
           </p>

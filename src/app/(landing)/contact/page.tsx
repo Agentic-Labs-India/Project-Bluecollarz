@@ -21,9 +21,9 @@ export default function ContactPage() {
           Product and account help:{" "}
           <a
             className="text-foreground underline underline-offset-4"
-            href="mailto:support@gulfpath.com"
+            href="mailto:support@BlueCollarz.ai"
           >
-            support@gulfpath.com
+            support@BlueCollarz.ai
           </a>
         </p>
       </MarketingSection>
@@ -36,13 +36,13 @@ export default function ContactPage() {
         <p>
           <a
             className="text-foreground underline underline-offset-4"
-            href="mailto:gtm@gulfpath.com?subject=Recruiter%20access%20request"
+            href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request"
           >
-            gtm@gulfpath.com
+            gtm@BlueCollarz.ai
           </a>
         </p>
         <div className="pt-2">
-          <MarketingCta href="mailto:gtm@gulfpath.com?subject=Recruiter%20access%20request">
+          <MarketingCta href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request">
             Request recruiter access
           </MarketingCta>
         </div>
@@ -53,9 +53,9 @@ export default function ContactPage() {
           Media inquiries:{" "}
           <a
             className="text-foreground underline underline-offset-4"
-            href="mailto:press@gulfpath.com"
+            href="mailto:press@BlueCollarz.ai"
           >
-            press@gulfpath.com
+            press@BlueCollarz.ai
           </a>
         </p>
       </MarketingSection>

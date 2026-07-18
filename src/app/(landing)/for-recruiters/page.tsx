@@ -28,6 +28,18 @@ export default function ForRecruitersPage() {
         </ul>
       </MarketingSection>
 
+      <MarketingSection title="Already a recruiter?">
+        <p>
+          If you already have hire access, sign in with Google to open your
+          hiring workspace.
+        </p>
+        <div className="pt-2">
+          <MarketingCta href="/login?profileType=hire">
+            Recruiter login
+          </MarketingCta>
+        </div>
+      </MarketingSection>
+
       <MarketingSection title="How access works">
         <p>
           Recruiter / hirer accounts are not open for self-serve signup on this
@@ -42,16 +54,16 @@ export default function ForRecruitersPage() {
             Email{" "}
             <a
               className="text-foreground underline underline-offset-4"
-              href="mailto:gtm@gulfpath.com?subject=Recruiter%20access%20request"
+              href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request"
             >
-              gtm@gulfpath.com
+              gtm@BlueCollarz.ai
             </a>{" "}
             or use the contact page. Tell us about your company and hiring needs
             — we’ll reply with the link and onboarding steps.
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
             <MarketingCta href="/contact">Contact us</MarketingCta>
-            <MarketingCta href="mailto:gtm@gulfpath.com?subject=Recruiter%20access%20request">
+            <MarketingCta href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request">
               Email sales
             </MarketingCta>
           </div>

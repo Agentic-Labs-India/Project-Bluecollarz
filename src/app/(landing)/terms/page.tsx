@@ -159,9 +159,9 @@ export default function TermsPage() {
             Questions about these Terms:{" "}
             <a
               className="text-foreground underline underline-offset-4"
-              href="mailto:support@gulfpath.com"
+              href="mailto:support@BlueCollarz.ai"
             >
-              support@gulfpath.com
+              support@BlueCollarz.ai
             </a>
             .
           </p>
