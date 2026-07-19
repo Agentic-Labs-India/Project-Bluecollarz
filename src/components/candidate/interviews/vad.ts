@@ -15,6 +15,12 @@ export async function startVadLoop(opts: {
   onSpeechStart: () => void;
   onSpeechEnd: (blob: Blob) => void;
   onLevel?: (level: number) => void;
+  /**
+   * Reuse an existing mic stream (e.g. from screen recorder) instead of
+   * opening a second getUserMedia. When provided, tracks are not stopped
+   * on teardown — the owner remains responsible.
+   */
+  stream?: MediaStream;
   /** 0–1 RMS-ish threshold. */
   threshold?: number;
   silenceMs?: number;
@@ -23,17 +29,27 @@ export async function startVadLoop(opts: {
   const threshold = opts.threshold ?? 0.045;
   const silenceMs = opts.silenceMs ?? 900;
   const speechMs = opts.speechMs ?? 280;
+  const ownsStream = !opts.stream;
 
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    },
-  });
+  const stream =
+    opts.stream ??
+    (await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    }));
+
+  // Record speech clips from audio tracks only (never pull video into VAD).
+  const audioOnly = new MediaStream(stream.getAudioTracks());
+  if (audioOnly.getAudioTracks().length === 0) {
+    if (ownsStream) stream.getTracks().forEach((t) => t.stop());
+    throw new Error("No microphone track available for voice detection.");
+  }
 
   const audioCtx = new AudioContext();
-  const source = audioCtx.createMediaStreamSource(stream);
+  const source = audioCtx.createMediaStreamSource(audioOnly);
   const analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048;
   source.connect(analyser);
@@ -43,6 +59,8 @@ export async function startVadLoop(opts: {
   let speechStartedAt = 0;
   let lastLoudAt = 0;
   let stopped = false;
+  let rafId = 0;
+  let lastLevelEmit = 0;
 
   let segmentRecorder: MediaRecorder | null = null;
   let segmentChunks: Blob[] = [];
@@ -54,9 +72,9 @@ export async function startVadLoop(opts: {
   const startSegment = () => {
     segmentChunks = [];
     try {
-      segmentRecorder = new MediaRecorder(stream, { mimeType: mime });
+      segmentRecorder = new MediaRecorder(audioOnly, { mimeType: mime });
     } catch {
-      segmentRecorder = new MediaRecorder(stream);
+      segmentRecorder = new MediaRecorder(audioOnly);
     }
     segmentRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) segmentChunks.push(e.data);
@@ -79,18 +97,23 @@ export async function startVadLoop(opts: {
     rec.stop();
   };
 
-  const tick = () => {
+  const tick = (now: number) => {
     if (stopped) return;
-    requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
 
     analyser.getByteTimeDomainData(data);
     let sum = 0;
     for (let i = 0; i < data.length; i++) {
-      const v = (data[i] - 128) / 128;
+      const v = (data[i]! - 128) / 128;
       sum += v * v;
     }
     const rms = Math.sqrt(sum / data.length);
-    opts.onLevel?.(rms);
+
+    // ~12 updates/sec — enough for the meter, fewer React renders.
+    if (opts.onLevel && now - lastLevelEmit >= 80) {
+      lastLevelEmit = now;
+      opts.onLevel(rms);
+    }
 
     if (opts.isPaused()) {
       if (speaking) {
@@ -100,7 +123,6 @@ export async function startVadLoop(opts: {
       return;
     }
 
-    const now = performance.now();
     const loud = rms >= threshold;
 
     if (loud) {
@@ -122,17 +144,20 @@ export async function startVadLoop(opts: {
   };
 
   void audioCtx.resume();
-  requestAnimationFrame(tick);
+  rafId = requestAnimationFrame(tick);
 
   return {
     stop: () => {
       stopped = true;
+      cancelAnimationFrame(rafId);
       try {
         segmentRecorder?.stop();
       } catch {
         // ignore
       }
-      stream.getTracks().forEach((t) => t.stop());
+      if (ownsStream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
       void audioCtx.close();
     },
   };

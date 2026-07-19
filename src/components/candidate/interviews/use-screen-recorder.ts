@@ -5,12 +5,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type RecorderState = {
   recorder: MediaRecorder | null;
   chunks: Blob[];
+  /** Source streams we own (stop these on teardown — not the derived mix). */
   ownedStreams: MediaStream[];
 };
 
+export type ScreenRecorderStartResult = {
+  camera: MediaStream;
+  /** Mic-only stream (same tracks as camera audio) for VAD. */
+  mic: MediaStream;
+};
+
 /**
- * Capture entire screen + mic. Camera stays as a UI preview in the interview
- * sidebar (picked up by the screen share) — no second burned-in PiP overlay.
+ * Capture entire screen + mic. Camera is a UI preview in the interview
+ * sidebar (picked up by the screen share) — no burned-in PiP overlay.
  */
 export function useScreenRecorder() {
   const stateRef = useRef<RecorderState>({
@@ -27,18 +34,22 @@ export function useScreenRecorder() {
       stream.getTracks().forEach((t) => t.stop());
     }
     stateRef.current.ownedStreams = [];
+    stateRef.current.recorder = null;
+    stateRef.current.chunks = [];
     setCameraStream(null);
+    setRecording(false);
   }, []);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (): Promise<ScreenRecorderStartResult> => {
     setError("");
     try {
-      // Camera for the live sidebar preview (also visible in the screen recording).
+      // One camera+mic grant: preview video in UI, mic for recording + VAD.
       const camera = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
           width: { ideal: 640 },
           height: { ideal: 480 },
+          frameRate: { ideal: 24, max: 30 },
         },
         audio: {
           echoCancellation: true,
@@ -54,7 +65,6 @@ export function useScreenRecorder() {
           displaySurface: "monitor",
         } as MediaTrackConstraints,
         audio: true,
-        // Chromium hints: keep the picker on entire-screen surfaces.
         preferCurrentTab: false,
         selfBrowserSurface: "exclude",
         surfaceSwitching: "exclude",
@@ -71,6 +81,7 @@ export function useScreenRecorder() {
         );
       }
 
+      // Record screen video + candidate mic (+ optional system audio from share).
       const mixed = new MediaStream([
         ...display.getVideoTracks(),
         ...camera.getAudioTracks(),
@@ -85,13 +96,15 @@ export function useScreenRecorder() {
 
       const recorder = new MediaRecorder(
         mixed,
-        mime ? { mimeType: mime } : undefined,
+        mime ? { mimeType: mime, videoBitsPerSecond: 1_500_000 } : {
+          videoBitsPerSecond: 1_500_000,
+        },
       );
 
       stateRef.current = {
         recorder,
         chunks: [],
-        ownedStreams: [display, camera, mixed],
+        ownedStreams: [display, camera],
       };
 
       recorder.ondataavailable = (e) => {
@@ -101,9 +114,20 @@ export function useScreenRecorder() {
       setCameraStream(camera);
       setRecording(true);
 
-      display.getVideoTracks()[0]?.addEventListener("ended", () => {
-        setRecording(false);
+      screenTrack?.addEventListener("ended", () => {
+        // User stopped sharing from the browser chrome.
+        try {
+          if (stateRef.current.recorder?.state === "recording") {
+            stateRef.current.recorder.stop();
+          }
+        } catch {
+          // ignore
+        }
+        stopTracks();
       });
+
+      const mic = new MediaStream(camera.getAudioTracks());
+      return { camera, mic };
     } catch (e) {
       stopTracks();
       setError(
@@ -119,7 +143,6 @@ export function useScreenRecorder() {
     const { recorder } = stateRef.current;
     if (!recorder || recorder.state === "inactive") {
       stopTracks();
-      setRecording(false);
       return null;
     }
 
@@ -133,17 +156,14 @@ export function useScreenRecorder() {
     const blob = await new Promise<Blob | null>((resolve) => {
       recorder.onstop = () => {
         const chunks = stateRef.current.chunks;
-        // Always use a clean container MIME — codecs params break server checks.
         const type = "video/webm";
         resolve(chunks.length ? new Blob(chunks, { type }) : null);
         stopTracks();
-        setRecording(false);
       };
       try {
         recorder.stop();
       } catch {
         stopTracks();
-        setRecording(false);
         resolve(null);
       }
     });

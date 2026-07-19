@@ -89,6 +89,7 @@ export function AiInterview({
   const localTranscriptRef = useRef<LocalTurn[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const busyUtteranceRef = useRef(false);
+  const closingRef = useRef(false);
   const sidebarCameraRef = useRef<HTMLVideoElement>(null);
   const readyPanelRef = useRef<InterviewReadyPanelHandle>(null);
 
@@ -111,11 +112,23 @@ export function AiInterview({
     el.srcObject = sidebarPreviewStream;
     if (sidebarPreviewStream) {
       void el.play().catch(() => undefined);
-    }
-    return () => {
+    } else {
       el.srcObject = null;
-    };
+    }
   }, [sidebarPreviewStream]);
+
+  // If the candidate stops screen share mid-interview, end cleanly.
+  useEffect(() => {
+    if (closingRef.current || phase !== "live") return;
+    if (screenRecording || cameraStream) return;
+    pausedRef.current = true;
+    vadRef.current?.stop();
+    vadRef.current = null;
+    setPhase("error");
+    setError(
+      "Screen share ended. Please restart the interview and keep sharing your entire screen until you finish.",
+    );
+  }, [phase, screenRecording, cameraStream]);
 
   const transport = useMemo(
     () =>
@@ -142,11 +155,13 @@ export function AiInterview({
     try {
       readyPanelRef.current?.releaseDevices();
       setCheckCameraStream(null);
-      await startScreen();
+      const { mic } = await startScreen();
       setStatus("Calibrating microphone…");
       pausedRef.current = true;
       vadRef.current?.stop();
+      // Reuse the same mic track as the screen recorder (no second getUserMedia).
       vadRef.current = await startVadLoop({
+        stream: mic,
         isPaused: () => pausedRef.current || busyUtteranceRef.current,
         onLevel: setLevel,
         onSpeechStart: () => {
@@ -232,6 +247,7 @@ export function AiInterview({
       busyUtteranceRef.current = false;
 
       if (finished) {
+        closingRef.current = true;
         setPhase("finalizing");
         setStatus(`Uploading recording and scoring ${stageLabel}…`);
         pausedRef.current = true;
@@ -407,22 +423,23 @@ export function AiInterview({
 
         <aside className="flex w-full shrink-0 flex-col gap-4 p-4 md:w-80 md:p-6">
           <div className="border-border relative aspect-video w-full overflow-hidden border bg-muted/20">
+            <video
+              ref={sidebarCameraRef}
+              className={cn(
+                "size-full -scale-x-100 object-cover",
+                !sidebarPreviewStream && "invisible",
+              )}
+              muted
+              playsInline
+              autoPlay
+            />
             {sidebarPreviewStream ? (
-              <>
-                <video
-                  ref={sidebarCameraRef}
-                  className="size-full -scale-x-100 object-cover"
-                  muted
-                  playsInline
-                  autoPlay
-                />
-                <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
-                  <VideoIcon className="size-3" />
-                  Camera
-                </span>
-              </>
+              <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
+                <VideoIcon className="size-3" />
+                Camera
+              </span>
             ) : (
-              <div className="text-muted-foreground flex size-full flex-col items-center justify-center gap-1.5 text-xs">
+              <div className="text-muted-foreground absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-xs">
                 <VideoIcon className="size-5 opacity-50" />
                 Waiting for camera…
               </div>
@@ -500,8 +517,10 @@ export function AiInterview({
               variant="outline"
               className="w-full"
               onClick={() => {
+                closingRef.current = true;
                 pausedRef.current = true;
                 vadRef.current?.stop();
+                vadRef.current = null;
                 void stopScreen();
                 onClose();
               }}
