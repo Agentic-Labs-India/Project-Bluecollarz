@@ -2,7 +2,8 @@ import { MarketingPage, MarketingSection } from "@/components/landing/marketing-
 
 export const metadata = {
   title: "Mission · BlueCollarz",
-  description: "BlueCollarz’s mission: organize human intelligence for the AI economy.",
+  description:
+    "BlueCollarz’s mission: help blue-collar workers find dream jobs worldwide.",
 };
 
 export default function MissionPage() {
@@ -10,22 +11,30 @@ export default function MissionPage() {
     <MarketingPage
       eyebrow="Company"
       title="Our mission"
-      description="Make high-signal hiring accessible — for people who want better work, and teams who need better matches."
+      description="Open real pathways for skilled workers — from hometown trade to the job they have been working toward."
     >
       <MarketingSection title="Why we exist">
         <p>
-          Global hiring still relies on noisy resumes, slow screening, and weak
-          proof of communication or domain skill. Our mission is to turn those
-          gaps into a clearer process: structured profiles, role-specific
-          interviews, and decision-ready insight for hiring teams.
+          Millions of electricians, welders, drivers, technicians, and facility
+          teams look for better work across borders every year. Too often they
+          face unclear postings, slow screening, and little chance to show what
+          they can actually do. Our mission is to fix that path.
+        </p>
+      </MarketingSection>
+
+      <MarketingSection title="What we believe">
+        <p>
+          Skill should travel. A strong hands-on worker in Delhi, Manila, Lagos,
+          or Kathmandu deserves a fair shot at roles in Dubai, Doha, Riyadh, and
+          beyond — with honest requirements and clear next steps.
         </p>
       </MarketingSection>
 
       <MarketingSection title="What success looks like">
         <p>
-          Candidates get a fair path to show ability. Companies get applicants
-          they can evaluate with confidence. Both sides spend less time guessing
-          and more time on the right conversations.
+          Workers get roles that match their craft and ambition. Employers get
+          candidates they can trust. Families see steadier income. That is the
+          dream job promise BlueCollarz is built to keep.
         </p>
       </MarketingSection>
     </MarketingPage>

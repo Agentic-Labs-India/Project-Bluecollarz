@@ -37,25 +37,25 @@ const STORIES = [
     href: "/stories/ruby/",
     image:
       "https://cdn.sanity.io/images/h6s14f4z/production/69254df8e63160e92bd324d713e0115718bda24c-884x884.jpg",
-    alt: "Ruby, Biotech research scientist",
-    title: "Meet Ruby: Biotech research scientist",
-    name: "Ruby",
+    alt: "Asha, Facilities electrician",
+    title: "Meet Asha: Facilities electrician",
+    name: "Asha",
   },
   {
     href: "/stories/jay-international-business-consultant/",
     image:
       "https://cdn.sanity.io/images/h6s14f4z/production/199834d5d15bf607aff6a6c1ea66d681a6c3e038-2586x1556.png",
-    alt: "Jay - Meet Jay: International business consultant",
-    title: "Meet Jay: International business consultant",
-    name: "Jay",
+    alt: "Ravi - Meet Ravi: Site welder abroad",
+    title: "Meet Ravi: Site welder abroad",
+    name: "Ravi",
   },
   {
     href: "/stories/mick-computer-information-systems/",
     image:
       "https://cdn.sanity.io/images/h6s14f4z/production/309640570646595dbd60e7b7c06bc15c970df64a-1421x720.jpg",
-    alt: "Mick - Meet Mick: Computer information systems expert",
-    title: "Meet Mick: Computer information systems expert",
-    name: "Mick",
+    alt: "Omar - Meet Omar: Heavy vehicle driver",
+    title: "Meet Omar: Heavy vehicle driver",
+    name: "Omar",
   },
 ];
 
@@ -85,40 +85,40 @@ export default function Page() {
           <div className="flex w-fit flex-row items-center justify-center gap-4 max-sm:gap-2">
             <p className="flex flex-row items-center gap-1.5 text-[14px] font-medium text-mute duration-200 max-sm:text-[12px]">
               <span className="text-center font-normal max-sm:text-left sm:translate-y-[-0.5px] sm:pr-4">
-                Average pay
+                Avg. monthly pay
               </span>
               <span className="text-foreground sm:translate-y-[-0.5px]">
-                $<span className="tabular-nums">225</span>/hr
+                $<span className="tabular-nums">2.8</span>k
               </span>
             </p>
             <div className="h-9 w-px bg-muted max-sm:h-9" />
             <p className="flex flex-row items-center gap-1.5 text-[14px] font-medium text-mute duration-200 max-sm:hidden max-sm:text-[12px]">
               <span className="text-center font-normal max-sm:text-left sm:translate-y-[-0.5px] sm:pr-4">
-                Roles created
+                Roles open
               </span>
               <span className="text-foreground sm:translate-y-[-0.5px]">
-                <span className="tabular-nums">266.4</span>k
+                <span className="tabular-nums">12</span>k+
               </span>
             </p>
             <div className="h-9 w-px bg-muted max-sm:hidden" />
             <p className="flex flex-row items-center gap-1.5 text-[14px] font-medium text-mute duration-200 max-sm:text-[12px]">
               <span className="text-center font-normal max-sm:text-left sm:translate-y-[-0.5px] sm:pr-4">
-                Daily payouts
+                Countries
               </span>
               <span className="text-foreground sm:translate-y-[-0.5px]">
-                $<span className="tabular-nums">3</span>M
+                <span className="tabular-nums">40</span>+
               </span>
             </p>
           </div>
         </section>
 
         <h1 className="mt-8 text-[38px] font-normal leading-[1.1] max-[480px]:text-[30px] sm:text-[42px] sm:leading-[1.1] md:text-5xl md:leading-[1.1]">
-          Shape the frontier of AI
+          Dream jobs for skilled hands
         </h1>
         <p className="mx-auto mt-6 max-w-[400px] text-foreground">
-          BlueCollarz is organizing human intelligence
+          BlueCollarz helps blue-collar workers
           <br />
-          to power the AI economy.
+          find the jobs they dream of, worldwide.
         </p>
         <div className="mt-6 flex w-full flex-row items-center justify-center gap-3 text-[15px]">
           <LoginButton
@@ -157,7 +157,7 @@ export default function Page() {
           <Link
             id="primary-testimonial"
             className="group top-[68px] @5xl:sticky @5xl:col-span-3 h-fit cursor-pointer duration-200"
-            href="/apex/"
+            href="/mission"
           >
             <div className="relative aspect-square w-full overflow-hidden rounded-lg sm:aspect-video">
               <div className="relative grid h-full w-full scale-[1.02] cursor-pointer place-items-center overflow-hidden duration-300 group-hover:scale-[1.1]">
@@ -170,17 +170,17 @@ export default function Page() {
               <div className="absolute inset-0 z-10 flex items-center justify-center font-medium duration-300 group-hover:scale-[1.02]">
                 <div className="flex flex-row gap-4">
                   <p className="max-sm:text-light flex flex-row items-center gap-2 text-6xl font-thin tracking-wide text-canvas sm:text-8xl">
-                    APEX
+                    WORK
                   </p>
                 </div>
               </div>
             </div>
             <div className="mt-4 text-3xl sm:mt-6 sm:text-5xl">
-              The AI Productivity Index
+              Built for blue-collar ambition
             </div>
             <div className="mt-4 flex flex-row items-center gap-3 text-sm sm:mt-6">
-              <div>Release</div>
-              <div className="text-mute">5 min read</div>
+              <div>Mission</div>
+              <div className="text-mute">Why BlueCollarz exists</div>
             </div>
           </Link>
 
