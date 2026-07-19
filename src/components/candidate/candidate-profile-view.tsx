@@ -264,7 +264,9 @@ export function CandidateProfileView() {
 
       <div className="border-border bg-card flex flex-col items-start gap-5 border p-6 sm:flex-row sm:items-center">
         <Avatar className="size-20">
-          <AvatarImage src={profile.image || ""} alt={profile.name || "User"} />
+          {profile.image ? (
+            <AvatarImage src={profile.image} alt={profile.name || "User"} />
+          ) : null}
           <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
             {initial}
           </AvatarFallback>

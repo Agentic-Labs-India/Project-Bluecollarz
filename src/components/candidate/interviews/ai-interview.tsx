@@ -89,8 +89,7 @@ export function AiInterview({
   const localTranscriptRef = useRef<LocalTurn[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const busyUtteranceRef = useRef(false);
-  const cameraPreviewRef = useRef<HTMLVideoElement>(null);
-  const checkCameraVideoRef = useRef<HTMLVideoElement>(null);
+  const sidebarCameraRef = useRef<HTMLVideoElement>(null);
   const readyPanelRef = useRef<InterviewReadyPanelHandle>(null);
 
   const {
@@ -101,29 +100,22 @@ export function AiInterview({
     cameraStream,
   } = useScreenRecorder();
 
-  useEffect(() => {
-    const el = cameraPreviewRef.current;
-    if (!el) return;
-    el.srcObject = cameraStream;
-    if (cameraStream) {
-      void el.play().catch(() => undefined);
-    }
-    return () => {
-      el.srcObject = null;
-    };
-  }, [cameraStream]);
+  const sidebarPreviewStream =
+    phase === "permissions" || phase === "error"
+      ? checkCameraStream
+      : cameraStream;
 
   useEffect(() => {
-    const el = checkCameraVideoRef.current;
+    const el = sidebarCameraRef.current;
     if (!el) return;
-    el.srcObject = checkCameraStream;
-    if (checkCameraStream) {
+    el.srcObject = sidebarPreviewStream;
+    if (sidebarPreviewStream) {
       void el.play().catch(() => undefined);
     }
     return () => {
       el.srcObject = null;
     };
-  }, [checkCameraStream]);
+  }, [sidebarPreviewStream]);
 
   const transport = useMemo(
     () =>
@@ -149,6 +141,7 @@ export function AiInterview({
     setStatus("Turning on camera, then entire-screen share…");
     try {
       readyPanelRef.current?.releaseDevices();
+      setCheckCameraStream(null);
       await startScreen();
       setStatus("Calibrating microphone…");
       pausedRef.current = true;
@@ -356,7 +349,7 @@ export function AiInterview({
         </Button>
       </header>
 
-      <div className="relative flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <section className="border-border flex min-h-0 flex-1 flex-col border-b md:border-r md:border-b-0">
           {phase === "permissions" || phase === "error" ? (
             <div className="min-h-0 flex-1 overflow-hidden">
@@ -412,48 +405,29 @@ export function AiInterview({
           )}
         </section>
 
-        {/* Live camera PiP — also burned into the recorded screen share */}
-        {cameraStream ? (
-          <div className="border-border bg-card pointer-events-none absolute right-4 bottom-4 z-10 overflow-hidden border shadow-lg md:right-[22rem] md:bottom-6">
-            <video
-              ref={cameraPreviewRef}
-              className="h-36 w-48 -scale-x-100 object-cover md:h-40 md:w-56"
-              muted
-              playsInline
-              autoPlay
-            />
-            <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
-              <VideoIcon className="size-3" />
-              Camera
-            </span>
-          </div>
-        ) : null}
-
         <aside className="flex w-full shrink-0 flex-col gap-4 p-4 md:w-80 md:p-6">
-          {(phase === "permissions" || phase === "error") && (
-            <div className="border-border relative aspect-video w-full overflow-hidden border bg-muted/20">
-              {checkCameraStream ? (
-                <>
-                  <video
-                    ref={checkCameraVideoRef}
-                    className="size-full -scale-x-100 object-cover"
-                    muted
-                    playsInline
-                    autoPlay
-                  />
-                  <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
-                    <VideoIcon className="size-3" />
-                    Camera preview
-                  </span>
-                </>
-              ) : (
-                <div className="text-muted-foreground flex size-full flex-col items-center justify-center gap-1.5 text-xs">
-                  <VideoIcon className="size-5 opacity-50" />
-                  Waiting for camera…
-                </div>
-              )}
-            </div>
-          )}
+          <div className="border-border relative aspect-video w-full overflow-hidden border bg-muted/20">
+            {sidebarPreviewStream ? (
+              <>
+                <video
+                  ref={sidebarCameraRef}
+                  className="size-full -scale-x-100 object-cover"
+                  muted
+                  playsInline
+                  autoPlay
+                />
+                <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
+                  <VideoIcon className="size-3" />
+                  Camera
+                </span>
+              </>
+            ) : (
+              <div className="text-muted-foreground flex size-full flex-col items-center justify-center gap-1.5 text-xs">
+                <VideoIcon className="size-5 opacity-50" />
+                Waiting for camera…
+              </div>
+            )}
+          </div>
 
           <div className="border-border bg-card space-y-3 border p-4">
             <div className="text-muted-foreground flex items-center gap-2 text-xs">

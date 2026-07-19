@@ -83,12 +83,18 @@ export async function GET(_req: Request, context: RouteContext) {
           verifiedAt: kycState.verifiedAt,
           documents: kycState.documents,
           summary: kycState.analysis?.summary ?? null,
+          deferred: kycState.deferred,
         }
       : {
           verified: false as const,
           verifiedAt: null,
           documents: {} as typeof kycState.documents,
           summary: null,
+          deferred: {
+            pan: false,
+            passport: false,
+            undertakingAcceptedAt: null,
+          },
         };
 
     const interviewDocs = await db

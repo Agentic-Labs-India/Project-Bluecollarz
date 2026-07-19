@@ -13,11 +13,13 @@ import { AppPage } from "@/components/layout/app-page";
 import { KycPageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   KYC_DOC_GROUP_LABELS,
   KYC_DOC_GROUPS,
+  KYC_UNDERTAKING_TEXT,
   KYC_UPLOAD_LABELS,
-  KYC_UPLOAD_SLOTS,
+  type KycDeferableSlot,
   type KycDocAnalysis,
   type KycDocGroup,
   type KycPublicState,
@@ -45,6 +47,10 @@ const GROUP_SLOTS: Record<KycDocGroup, KycUploadSlot[]> = {
   passport: ["passport"],
 };
 
+function isDeferable(group: KycDocGroup): group is "pan" | "passport" {
+  return group === "pan" || group === "passport";
+}
+
 function isRejected(row?: KycDocAnalysis | null): boolean {
   if (!row) return false;
   return (
@@ -60,6 +66,7 @@ function UploadSlot({
   verifying,
   rejectReason,
   rejected,
+  disabled,
   onPick,
 }: {
   slot: KycUploadSlot;
@@ -67,6 +74,7 @@ function UploadSlot({
   verifying: boolean;
   rejectReason?: string;
   rejected?: boolean;
+  disabled?: boolean;
   onPick: (slot: KycUploadSlot, file: File | null) => void;
 }) {
   return (
@@ -74,6 +82,7 @@ function UploadSlot({
       className={cn(
         "border-border flex min-w-0 flex-1 flex-col gap-2 border p-2",
         rejected && "border-destructive/40",
+        disabled && "opacity-50",
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -97,25 +106,27 @@ function UploadSlot({
         />
       ) : (
         <div className="border-border text-muted-foreground flex h-24 items-center justify-center border border-dashed text-center text-[11px]">
-          No preview
+          {disabled ? "Not available — submit later" : "No preview"}
         </div>
       )}
 
       <label
         className={cn(
           "border-border hover:bg-muted/40 flex cursor-pointer flex-col items-center gap-1 border border-dashed px-2 py-2.5 text-center transition-colors",
-          verifying && "pointer-events-none opacity-60",
+          (verifying || disabled) && "pointer-events-none opacity-60",
         )}
       >
         <FileUpIcon className="text-muted-foreground size-3.5 shrink-0" />
         <span className="text-muted-foreground w-full truncate text-[11px]">
-          {doc.file?.name || "Choose file"}
+          {disabled
+            ? "Upload disabled"
+            : doc.file?.name || "Choose file"}
         </span>
         <input
           type="file"
           accept={ACCEPT}
           className="sr-only"
-          disabled={verifying}
+          disabled={verifying || disabled}
           onChange={(e) => {
             const file = e.target.files?.[0] ?? null;
             onPick(slot, file);
@@ -152,6 +163,11 @@ export function KycVerification({
     pan: emptyDoc(),
     passport: emptyDoc(),
   });
+  const [deferred, setDeferred] = useState<Record<KycDeferableSlot, boolean>>({
+    pan: false,
+    passport: false,
+  });
+  const [undertakingAccepted, setUndertakingAccepted] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const previewUrls = useRef<string[]>([]);
@@ -179,6 +195,13 @@ export function KycVerification({
     };
   }, [load]);
 
+  function clearSlot(slot: KycUploadSlot) {
+    setDocs((prev) => ({
+      ...prev,
+      [slot]: emptyDoc(),
+    }));
+  }
+
   function onPick(slot: KycUploadSlot, file: File | null) {
     if (!file) return;
     if (!ACCEPT.split(",").includes(file.type)) {
@@ -205,21 +228,57 @@ export function KycVerification({
         error: "",
       },
     }));
+    if (slot === "pan" || slot === "passport") {
+      setDeferred((prev) => ({ ...prev, [slot]: false }));
+    }
     setVerifyError("");
   }
 
-  const allSelected = KYC_UPLOAD_SLOTS.every((slot) => docs[slot].file);
+  function setSlotDeferred(slot: KycDeferableSlot, value: boolean) {
+    setDeferred((prev) => ({ ...prev, [slot]: value }));
+    if (value) clearSlot(slot);
+    if (!value && !deferred.pan && !deferred.passport && slot) {
+      // keep undertaking until all deferrals cleared below
+    }
+    setVerifyError("");
+  }
+
+  const anyDeferred = deferred.pan || deferred.passport;
+  useEffect(() => {
+    if (!anyDeferred) setUndertakingAccepted(false);
+  }, [anyDeferred]);
+
+  const aadhaarReady = Boolean(
+    docs.aadhaarFront.file && docs.aadhaarBack.file,
+  );
+  const panReady = deferred.pan || Boolean(docs.pan.file);
+  const passportReady = deferred.passport || Boolean(docs.passport.file);
+  const canSubmit =
+    aadhaarReady &&
+    panReady &&
+    passportReady &&
+    (!anyDeferred || undertakingAccepted);
 
   async function runVerify() {
-    if (!allSelected) return;
+    if (!canSubmit) return;
     setVerifying(true);
     setVerifyError("");
     try {
       const form = new FormData();
-      for (const slot of KYC_UPLOAD_SLOTS) {
-        const file = docs[slot].file;
-        if (!file) throw new Error(`Missing ${KYC_UPLOAD_LABELS[slot]}`);
-        form.append(slot, file);
+      form.append("aadhaarFront", docs.aadhaarFront.file!);
+      form.append("aadhaarBack", docs.aadhaarBack.file!);
+      if (deferred.pan) {
+        form.append("deferPan", "1");
+      } else {
+        form.append("pan", docs.pan.file!);
+      }
+      if (deferred.passport) {
+        form.append("deferPassport", "1");
+      } else {
+        form.append("passport", docs.passport.file!);
+      }
+      if (anyDeferred && undertakingAccepted) {
+        form.append("undertakingAccepted", "1");
       }
 
       const res = await fetch("/api/candidate/kyc/verify", {
@@ -244,6 +303,8 @@ export function KycVerification({
           pan: emptyDoc(),
           passport: emptyDoc(),
         });
+        setDeferred({ pan: false, passport: false });
+        setUndertakingAccepted(false);
       }
     } catch (e: unknown) {
       setVerifyError(
@@ -271,6 +332,9 @@ export function KycVerification({
 
   const verified = kyc?.verified === true;
   const failed = kyc?.status === "failed";
+  const pendingDeferred =
+    verified &&
+    (kyc?.deferred.pan || kyc?.deferred.passport);
 
   return (
     <AppPage>
@@ -279,7 +343,10 @@ export function KycVerification({
           KYC verification
         </h1>
         <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-          Upload Aadhaar front and back, plus PAN and Passport.
+          Aadhaar front &amp; back are required. PAN and Passport can be marked
+          not available if you undertake to submit them later. AI checks
+          authenticity and that name, date of birth, and address match your
+          profile.
           {jobTitle ? (
             <>
               {" "}
@@ -300,6 +367,18 @@ export function KycVerification({
                 {kyc?.analysis?.summary ||
                   "Your documents passed authenticity checks. The hiring team can proceed."}
               </p>
+              {pendingDeferred ? (
+                <p className="text-muted-foreground mt-2 text-sm">
+                  Pending later submission:{" "}
+                  {[
+                    kyc?.deferred.pan ? "PAN" : null,
+                    kyc?.deferred.passport ? "Passport" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" and ")}
+                  .
+                </p>
+              ) : null}
             </div>
           </div>
           {jobId ? (
@@ -341,6 +420,8 @@ export function KycVerification({
               const groupRejected = slots.some((slot) =>
                 isRejected(kyc?.analysis?.[slot]),
               );
+              const deferable = isDeferable(group);
+              const isDeferred = deferable ? deferred[group] : false;
 
               return (
                 <div
@@ -350,15 +431,41 @@ export function KycVerification({
                     failed && groupRejected && "border-destructive/40",
                   )}
                 >
-                  <p className="text-foreground text-sm font-medium">
-                    {KYC_DOC_GROUP_LABELS[group]}
-                    {group === "aadhaar" ? (
-                      <span className="text-muted-foreground font-normal">
-                        {" "}
-                        (front & back)
-                      </span>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-foreground text-sm font-medium">
+                      {KYC_DOC_GROUP_LABELS[group]}
+                      {group === "aadhaar" ? (
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          (front & back)
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          (optional now)
+                        </span>
+                      )}
+                    </p>
+                    {deferable ? (
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Label
+                          htmlFor={`defer-${group}`}
+                          className="text-muted-foreground text-[11px] leading-tight"
+                        >
+                          Not available
+                        </Label>
+                        <Switch
+                          id={`defer-${group}`}
+                          size="sm"
+                          checked={isDeferred}
+                          disabled={verifying}
+                          onCheckedChange={(checked) =>
+                            setSlotDeferred(group, checked)
+                          }
+                        />
+                      </div>
                     ) : null}
-                  </p>
+                  </div>
 
                   <div
                     className={cn(
@@ -374,9 +481,16 @@ export function KycVerification({
                         slot={slot}
                         doc={docs[slot]}
                         verifying={verifying}
-                        rejected={failed && isRejected(kyc?.analysis?.[slot])}
+                        disabled={isDeferred}
+                        rejected={
+                          !isDeferred &&
+                          failed &&
+                          isRejected(kyc?.analysis?.[slot])
+                        }
                         rejectReason={
-                          failed ? kyc?.analysis?.[slot]?.notes : undefined
+                          !isDeferred && failed
+                            ? kyc?.analysis?.[slot]?.notes
+                            : undefined
                         }
                         onPick={onPick}
                       />
@@ -387,12 +501,34 @@ export function KycVerification({
             })}
           </div>
 
+          {anyDeferred ? (
+            <div className="border-border mt-6 space-y-3 border p-4">
+              <p className="text-foreground text-sm font-medium">Undertaking</p>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {KYC_UNDERTAKING_TEXT}
+              </p>
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="border-border text-primary mt-1 size-4 shrink-0 accent-primary"
+                  checked={undertakingAccepted}
+                  disabled={verifying}
+                  onChange={(e) => setUndertakingAccepted(e.target.checked)}
+                />
+                <span className="text-foreground text-sm leading-relaxed">
+                  I acknowledge this undertaking and will submit the missing
+                  document(s) later.
+                </span>
+              </label>
+            </div>
+          ) : null}
+
           <div className="border-border/60 bg-muted/40 text-muted-foreground mt-6 flex gap-2 border px-3 py-2.5 text-xs leading-relaxed">
             <ShieldAlertIcon className="mt-0.5 size-3.5 shrink-0" />
             <p>
-              Aadhaar needs both front and back. AI reviews all files before
-              anything is stored. Fake or AI-generated IDs are rejected and never
-              uploaded.
+              Aadhaar is always required. PAN and Passport may be deferred with
+              the undertaking above. AI checks authenticity and that submitted
+              IDs match your profile (name, DOB, address).
             </p>
           </div>
 
@@ -403,12 +539,21 @@ export function KycVerification({
           <Button
             className="mt-6 w-full"
             size="lg"
-            disabled={!allSelected || verifying}
+            disabled={!canSubmit || verifying}
             onClick={() => void runVerify()}
           >
             {verifying ? "Checking with AI…" : "Check with AI & submit"}
           </Button>
         </>
+      ) : null}
+
+      {verified && jobId ? (
+        <Button asChild variant="ghost" className="mt-4">
+          <Link href={`/candidate/explore?jobId=${jobId}`}>
+            <ArrowLeftIcon className="size-4" />
+            Back to role
+          </Link>
+        </Button>
       ) : null}
     </AppPage>
   );

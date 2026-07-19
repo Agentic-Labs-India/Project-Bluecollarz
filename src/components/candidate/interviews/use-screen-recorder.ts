@@ -5,72 +5,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type RecorderState = {
   recorder: MediaRecorder | null;
   chunks: Blob[];
-  /** All streams/tracks we own (screen, camera, mic, canvas). */
   ownedStreams: MediaStream[];
-  rafId: number | null;
-  canvas: HTMLCanvasElement | null;
-  screenVideo: HTMLVideoElement | null;
-  cameraVideo: HTMLVideoElement | null;
 };
 
-const PIP_WIDTH_RATIO = 0.22;
-const PIP_MARGIN = 24;
-
-function createHiddenVideo(stream: MediaStream): HTMLVideoElement {
-  const video = document.createElement("video");
-  video.srcObject = stream;
-  video.muted = true;
-  video.playsInline = true;
-  video.autoplay = true;
-  void video.play().catch(() => undefined);
-  return video;
-}
-
-/** Capture screen + camera (PiP corner) + mic into one recorded video. */
+/**
+ * Capture entire screen + mic. Camera stays as a UI preview in the interview
+ * sidebar (picked up by the screen share) — no second burned-in PiP overlay.
+ */
 export function useScreenRecorder() {
   const stateRef = useRef<RecorderState>({
     recorder: null,
     chunks: [],
     ownedStreams: [],
-    rafId: null,
-    canvas: null,
-    screenVideo: null,
-    cameraVideo: null,
   });
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState("");
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
-  const cleanupVisual = useCallback(() => {
-    const state = stateRef.current;
-    if (state.rafId != null) {
-      cancelAnimationFrame(state.rafId);
-      state.rafId = null;
-    }
-    if (state.screenVideo) {
-      state.screenVideo.srcObject = null;
-      state.screenVideo = null;
-    }
-    if (state.cameraVideo) {
-      state.cameraVideo.srcObject = null;
-      state.cameraVideo = null;
-    }
-    state.canvas = null;
-  }, []);
-
   const stopTracks = useCallback(() => {
-    cleanupVisual();
     for (const stream of stateRef.current.ownedStreams) {
       stream.getTracks().forEach((t) => t.stop());
     }
     stateRef.current.ownedStreams = [];
     setCameraStream(null);
-  }, [cleanupVisual]);
+  }, []);
 
   const start = useCallback(async () => {
     setError("");
     try {
-      // Camera is required so the candidate face is in the recording.
+      // Camera for the live sidebar preview (also visible in the screen recording).
       const camera = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
@@ -108,58 +71,8 @@ export function useScreenRecorder() {
         );
       }
 
-      const screenVideo = createHiddenVideo(display);
-      const cameraVideo = createHiddenVideo(camera);
-
-      // Wait until both videos have dimensions.
-      await Promise.all(
-        [screenVideo, cameraVideo].map(
-          (v) =>
-            new Promise<void>((resolve) => {
-              if (v.readyState >= 2 && v.videoWidth > 0) {
-                resolve();
-                return;
-              }
-              v.onloadedmetadata = () => resolve();
-            }),
-        ),
-      );
-
-      const width = screenVideo.videoWidth || 1280;
-      const height = screenVideo.videoHeight || 720;
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        camera.getTracks().forEach((t) => t.stop());
-        display.getTracks().forEach((t) => t.stop());
-        throw new Error("Could not start video compositor.");
-      }
-
-      const draw = () => {
-        ctx.drawImage(screenVideo, 0, 0, width, height);
-
-        const pipW = Math.round(width * PIP_WIDTH_RATIO);
-        const pipH = Math.round(
-          pipW *
-            ((cameraVideo.videoHeight || 3) / (cameraVideo.videoWidth || 4)),
-        );
-        const x = width - pipW - PIP_MARGIN;
-        const y = height - pipH - PIP_MARGIN;
-
-        // Soft frame behind the camera bubble.
-        ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(x - 4, y - 4, pipW + 8, pipH + 8);
-        ctx.drawImage(cameraVideo, x, y, pipW, pipH);
-
-        stateRef.current.rafId = requestAnimationFrame(draw);
-      };
-      draw();
-
-      const canvasStream = canvas.captureStream(15);
       const mixed = new MediaStream([
-        ...canvasStream.getVideoTracks(),
+        ...display.getVideoTracks(),
         ...camera.getAudioTracks(),
         ...display.getAudioTracks(),
       ]);
@@ -178,11 +91,7 @@ export function useScreenRecorder() {
       stateRef.current = {
         recorder,
         chunks: [],
-        ownedStreams: [display, camera, canvasStream, mixed],
-        rafId: stateRef.current.rafId,
-        canvas,
-        screenVideo,
-        cameraVideo,
+        ownedStreams: [display, camera, mixed],
       };
 
       recorder.ondataavailable = (e) => {

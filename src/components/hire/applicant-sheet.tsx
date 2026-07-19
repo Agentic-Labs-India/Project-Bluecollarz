@@ -46,6 +46,11 @@ type HireKycView = {
   verified: boolean;
   verifiedAt: string | null;
   summary: string | null;
+  deferred: {
+    pan: boolean;
+    passport: boolean;
+    undertakingAcceptedAt: string | null;
+  };
   documents: Partial<
     Record<
       KycUploadSlot,
@@ -269,11 +274,20 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
   }
 
   const docs = KYC_UPLOAD_SLOTS.filter((slot) => kyc.documents[slot]?.url);
+  const pendingLater = [
+    kyc.deferred?.pan ? "PAN" : null,
+    kyc.deferred?.passport ? "Passport" : null,
+  ].filter(Boolean);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge>AI KYC Done</Badge>
+        {pendingLater.length ? (
+          <Badge variant="outline" className="font-normal">
+            {pendingLater.join(" + ")} pending later
+          </Badge>
+        ) : null}
         {kyc.verifiedAt ? (
           <span className="text-muted-foreground text-xs">
             Verified {new Date(kyc.verifiedAt).toLocaleString()}
@@ -281,6 +295,14 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
         ) : null}
       </div>
       {kyc.summary ? <Field label="AI summary" value={kyc.summary} /> : null}
+      {pendingLater.length ? (
+        <p className="text-muted-foreground text-sm">
+          Candidate undertook to submit {pendingLater.join(" and ")} later.
+          {kyc.deferred?.undertakingAcceptedAt
+            ? ` Acknowledged ${new Date(kyc.deferred.undertakingAcceptedAt).toLocaleString()}.`
+            : null}
+        </p>
+      ) : null}
       {docs.length ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {docs.map((slot) => {
@@ -315,6 +337,20 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
         </div>
       ) : (
         <p className="text-sm">Verified, but no document files are on file.</p>
+      )}
+      {(kyc.deferred?.pan || kyc.deferred?.passport) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {kyc.deferred.pan && !kyc.documents.pan ? (
+            <div className="border-border bg-muted/30 flex aspect-[4/3] items-center justify-center border text-sm">
+              PAN — submit later
+            </div>
+          ) : null}
+          {kyc.deferred.passport && !kyc.documents.passport ? (
+            <div className="border-border bg-muted/30 flex aspect-[4/3] items-center justify-center border text-sm">
+              Passport — submit later
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );
@@ -530,6 +566,10 @@ export function ApplicantSheet({
             <div className="min-w-0 flex-1">
               {loading || !profile ? (
                 <div className="space-y-2">
+                  <SheetTitle className="sr-only">Applicant details</SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Loading candidate profile and interviews
+                  </SheetDescription>
                   <Skeleton className="h-5 w-40" />
                   <Skeleton className="h-4 w-52" />
                   <Skeleton className="mt-2 h-5 w-24" />
@@ -626,6 +666,11 @@ export function ApplicantSheet({
                           verifiedAt: null,
                           summary: null,
                           documents: {},
+                          deferred: {
+                            pan: false,
+                            passport: false,
+                            undertakingAcceptedAt: null,
+                          },
                         }
                       }
                     />

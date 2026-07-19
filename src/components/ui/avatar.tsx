@@ -27,11 +27,18 @@ function Avatar({
 
 function AvatarImage({
   className,
+  src,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+  // Empty src reloads the whole page in the browser — skip the image.
+  if (src == null || src === "") {
+    return null
+  }
+
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
+      src={src}
       className={cn(
         "aspect-square size-full rounded-full object-cover",
         className

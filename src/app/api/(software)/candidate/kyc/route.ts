@@ -27,6 +27,7 @@ export async function GET() {
             kycStatus: 1,
             kycDocuments: 1,
             kycAnalysis: 1,
+            kycDeferred: 1,
             kycVerifiedAt: 1,
             kycUpdatedAt: 1,
           },

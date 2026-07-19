@@ -32,7 +32,7 @@ export function UserChatAvatar({
 
   return (
     <Avatar className={className ?? "size-7 shrink-0"}>
-      <AvatarImage src={image || ""} alt={label} />
+      {image ? <AvatarImage src={image} alt={label} /> : null}
       <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
         {initial}
       </AvatarFallback>
@@ -45,6 +45,6 @@ export function useChatUserAvatar() {
   const { data: session } = authClient.useSession();
   return {
     name: session?.user?.name?.trim() || "You",
-    image: session?.user?.image || "",
+    image: session?.user?.image || undefined,
   };
 }
