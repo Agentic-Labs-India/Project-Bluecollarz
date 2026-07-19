@@ -23,6 +23,7 @@ import { authClient } from "@/lib/auth/auth-client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { HelpDialog, HelpMenuButton } from "@/components/help";
 import {
   PreferenceDialog,
   fetchUserPreferences,
@@ -115,6 +116,7 @@ export function AppUserMenu({
   className?: string;
 }) {
   const [openKind, setOpenKind] = React.useState<PreferenceKind | null>(null);
+  const [helpOpen, setHelpOpen] = React.useState(false);
   const [prefs, setPrefs] = React.useState<UserPreferences>({
     cookiesEnabled: true,
     notificationsEnabled: true,
@@ -161,6 +163,8 @@ export function AppUserMenu({
         className,
       )}
     >
+      <HelpMenuButton onClick={() => setHelpOpen(true)} />
+
       <button
         type="button"
         className="text-muted-foreground hover:text-foreground rounded-lg p-2 transition-colors"
@@ -180,6 +184,8 @@ export function AppUserMenu({
       </button>
 
       <UserMenuDropdown user={user} profileHref={profileHref} side="right" />
+
+      <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
 
       <PreferenceDialog
         kind="cookies"

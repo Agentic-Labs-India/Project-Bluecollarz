@@ -12,7 +12,7 @@ export function AssistantAvatar({ className }: { className?: string }) {
         className="object-contain p-1"
       />
       <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
-        GP
+        BC
       </AvatarFallback>
     </Avatar>
   );
