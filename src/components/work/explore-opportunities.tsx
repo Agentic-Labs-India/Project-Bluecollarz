@@ -65,11 +65,13 @@ function OpportunityCard({
   opportunity,
   selected,
   compact,
+  applicationStatus,
   onSelect,
 }: {
   opportunity: Opportunity;
   selected: boolean;
   compact: boolean;
+  applicationStatus?: ApplicationStatus | null;
   onSelect: () => void;
 }) {
   const {
@@ -78,6 +80,7 @@ function OpportunityCard({
     isNew,
     hiredThisMonth,
   } = opportunity;
+  const hasApplied = Boolean(applicationStatus);
 
   return (
     <article
@@ -112,7 +115,11 @@ function OpportunityCard({
         {pay}
       </p>
 
-      {selected && compact ? (
+      {hasApplied ? (
+        <span className="text-muted-foreground mt-2 inline-flex items-center gap-1 text-xs font-medium">
+          Applied
+        </span>
+      ) : selected && compact ? (
         <span className="text-primary mt-2 inline-flex items-center gap-1 text-xs font-medium">
           Apply
           <ExternalLinkIcon className="size-3" />
@@ -519,6 +526,7 @@ export function ExploreOpportunities({
       opportunity={opportunity}
       selected={selectedId === opportunity.id}
       compact={hasSelection}
+      applicationStatus={applicationStatuses[opportunity.id] ?? null}
       onSelect={() => setSelectedId(opportunity.id)}
     />
   ));
