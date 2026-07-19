@@ -4,6 +4,10 @@
  * Simple energy-based VAD on a mic stream.
  * When voice rises above threshold → onSpeechStart
  * After sustained silence → onSpeechEnd with the recorded audio blob
+ *
+ * Tuned for natural / slow speech: longer end-of-utterance silence,
+ * brief dips between words don't reset onset, and recording starts on
+ * the first loud frame so the opening words aren't chopped.
  */
 export type VadController = {
   stop: () => void;
@@ -23,12 +27,18 @@ export async function startVadLoop(opts: {
   stream?: MediaStream;
   /** 0–1 RMS-ish threshold. */
   threshold?: number;
+  /** Quiet time before we treat the answer as finished. */
   silenceMs?: number;
+  /** Continuous-ish speech needed before the utterance is “confirmed”. */
   speechMs?: number;
 }): Promise<VadController> {
-  const threshold = opts.threshold ?? 0.045;
-  const silenceMs = opts.silenceMs ?? 900;
-  const speechMs = opts.speechMs ?? 280;
+  // Softer threshold so quiet / slow talkers still register.
+  const threshold = opts.threshold ?? 0.028;
+  // Slow speakers often pause 1–1.5s between phrases — don't cut them off.
+  const silenceMs = opts.silenceMs ?? 1800;
+  const speechMs = opts.speechMs ?? 180;
+  /** Ignore single quiet frames during onset / between syllables. */
+  const onsetHangoverMs = 280;
   const ownsStream = !opts.stream;
 
   const stream =
@@ -56,8 +66,12 @@ export async function startVadLoop(opts: {
 
   const data = new Uint8Array(analyser.fftSize);
   let speaking = false;
+  /** Recorder running but utterance not confirmed yet (filters coughs/noise). */
+  let tentative = false;
   let speechStartedAt = 0;
   let lastLoudAt = 0;
+  let loudAccumMs = 0;
+  let lastTickAt = 0;
   let stopped = false;
   let rafId = 0;
   let lastLevelEmit = 0;
@@ -80,26 +94,54 @@ export async function startVadLoop(opts: {
       if (e.data.size > 0) segmentChunks.push(e.data);
     };
     segmentRecorder.start(200);
-    opts.onSpeechStart();
+  };
+
+  const cancelSegment = () => {
+    const rec = segmentRecorder;
+    segmentRecorder = null;
+    segmentChunks = [];
+    if (!rec || rec.state === "inactive") return;
+    rec.onstop = null;
+    try {
+      rec.stop();
+    } catch {
+      // ignore
+    }
   };
 
   const endSegment = () => {
     const rec = segmentRecorder;
     segmentRecorder = null;
     if (!rec || rec.state === "inactive") return;
+    try {
+      if (rec.state === "recording") rec.requestData();
+    } catch {
+      // ignore
+    }
     rec.onstop = () => {
       const blob = new Blob(segmentChunks, {
         type: rec.mimeType || "audio/webm",
       });
       segmentChunks = [];
-      if (blob.size > 400) opts.onSpeechEnd(blob);
+      // Accept shorter clips — slow one-word answers are still valid.
+      if (blob.size > 250) opts.onSpeechEnd(blob);
     };
     rec.stop();
+  };
+
+  const resetOnset = () => {
+    tentative = false;
+    speaking = false;
+    speechStartedAt = 0;
+    loudAccumMs = 0;
   };
 
   const tick = (now: number) => {
     if (stopped) return;
     rafId = requestAnimationFrame(tick);
+
+    const dt = lastTickAt ? Math.min(50, now - lastTickAt) : 16;
+    lastTickAt = now;
 
     analyser.getByteTimeDomainData(data);
     let sum = 0;
@@ -116,9 +158,9 @@ export async function startVadLoop(opts: {
     }
 
     if (opts.isPaused()) {
-      if (speaking) {
-        speaking = false;
-        endSegment();
+      if (speaking || tentative) {
+        cancelSegment();
+        resetOnset();
       }
       return;
     }
@@ -127,19 +169,32 @@ export async function startVadLoop(opts: {
 
     if (loud) {
       lastLoudAt = now;
-      if (!speaking) {
-        if (!speechStartedAt) speechStartedAt = now;
-        if (now - speechStartedAt >= speechMs) {
-          speaking = true;
-          startSegment();
-        }
+      loudAccumMs += dt;
+
+      // Start capturing on the first loud frame so opening words aren't lost.
+      if (!tentative && !speaking) {
+        tentative = true;
+        speechStartedAt = now;
+        loudAccumMs = dt;
+        startSegment();
       }
-    } else {
+
+      if (tentative && !speaking && loudAccumMs >= speechMs) {
+        speaking = true;
+        opts.onSpeechStart();
+      }
+    } else if (tentative && !speaking) {
+      // Brief quiet during onset is OK; longer quiet = false start (noise).
+      if (now - lastLoudAt >= onsetHangoverMs) {
+        cancelSegment();
+        resetOnset();
+      }
+    } else if (speaking && now - lastLoudAt >= silenceMs) {
+      speaking = false;
+      tentative = false;
       speechStartedAt = 0;
-      if (speaking && now - lastLoudAt >= silenceMs) {
-        speaking = false;
-        endSegment();
-      }
+      loudAccumMs = 0;
+      endSegment();
     }
   };
 
