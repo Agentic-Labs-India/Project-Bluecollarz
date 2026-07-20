@@ -7,21 +7,11 @@ import {
   isToolUIPart,
   lastAssistantMessageIsCompleteWithToolCalls,
 } from "ai";
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CheckIcon,
-  MicIcon,
-  UploadIcon,
-  Volume2Icon,
-} from "lucide-react";
+import { CheckIcon, MicIcon, UploadIcon, Volume2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -141,10 +131,8 @@ const CUE_STYLES: Record<ActionCue["tone"], string> = {
     "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
   listen:
     "border-sky-400/70 bg-sky-500/10 text-sky-700 dark:border-sky-500/50 dark:text-sky-300",
-  wait:
-    "border-orange-400/70 bg-orange-500/10 text-orange-700 dark:border-orange-500/50 dark:text-orange-300",
-  done:
-    "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
+  wait: "border-orange-400/70 bg-orange-500/10 text-orange-700 dark:border-orange-500/50 dark:text-orange-300",
+  done: "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
   error: "border-destructive/60 bg-destructive/10 text-destructive",
 };
 
@@ -166,9 +154,7 @@ export function OnboardingAgent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const spokenTextByIdRef = useRef<Map<string, string>>(new Map());
   /** Text on the language-picker message at pick time — don't TTS that; wait for the real reply. */
-  const langPickBaselineRef = useRef<{ id: string; text: string } | null>(
-    null,
-  );
+  const langPickBaselineRef = useRef<{ id: string; text: string } | null>(null);
   const startedRef = useRef(false);
   const pausedRef = useRef(true);
   const busyUtteranceRef = useRef(false);
@@ -191,14 +177,17 @@ export function OnboardingAgent() {
     [],
   );
 
-  const { messages, sendMessage, addToolOutput, status: chatStatus } =
-    useChat({
-      transport,
-      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    });
+  const {
+    messages,
+    sendMessage,
+    addToolOutput,
+    status: chatStatus,
+  } = useChat({
+    transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+  });
 
-  const isStreaming =
-    chatStatus === "submitted" || chatStatus === "streaming";
+  const isStreaming = chatStatus === "submitted" || chatStatus === "streaming";
   streamingRef.current = isStreaming;
 
   const awaitingLanguage = messages.some(
@@ -287,10 +276,7 @@ export function OnboardingAgent() {
             pausedRef.current = true;
             setStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(
-                blob,
-                voiceLanguageRef.current,
-              );
+              const data = await transcribeBlob(blob, voiceLanguageRef.current);
               if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — speak again.");
                 pausedRef.current = false;
@@ -440,10 +426,7 @@ export function OnboardingAgent() {
     }
   };
 
-  const onPickLanguage = (
-    toolCallId: string,
-    code: TtsLanguageCode,
-  ) => {
+  const onPickLanguage = (toolCallId: string, code: TtsLanguageCode) => {
     const host = messages.find(
       (m) =>
         m.role === "assistant" &&
@@ -478,14 +461,15 @@ export function OnboardingAgent() {
         APP_PAGE_MAX,
       )}
     >
-      <header className="border-border flex w-full shrink-0 items-center border-b px-4 pt-3 pb-3">
-        <Badge
-          variant="outline"
-          className="border-primary/40 bg-primary/10 text-primary h-auto w-full justify-center px-3 py-1 text-sm font-semibold"
+      <header className="flex w-full shrink-0 items-center">
+        <Banner
+          variant="rainbow"
+          changeLayout={false}
+          className="relative w-full bg-background"
         >
-          Candidate onboarding
+          🚀 Welcome, Let's get you onboarded!
           {voiceLanguage ? ` · ${languageLabel(voiceLanguage)}` : ""}
-        </Badge>
+        </Banner>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -638,9 +622,7 @@ export function OnboardingAgent() {
               variant="outline"
               size="sm"
               className="shrink-0"
-              disabled={
-                uploading || isStreaming || done || !voiceLanguage
-              }
+              disabled={uploading || isStreaming || done || !voiceLanguage}
               onClick={() => fileInputRef.current?.click()}
             >
               {uploading ? (
