@@ -165,6 +165,10 @@ export function OnboardingAgent() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const spokenTextByIdRef = useRef<Map<string, string>>(new Map());
+  /** Text on the language-picker message at pick time — don't TTS that; wait for the real reply. */
+  const langPickBaselineRef = useRef<{ id: string; text: string } | null>(
+    null,
+  );
   const startedRef = useRef(false);
   const pausedRef = useRef(true);
   const busyUtteranceRef = useRef(false);
@@ -326,13 +330,13 @@ export function OnboardingAgent() {
   };
 
   // Speak finished assistant text after language is locked.
-  // The language-picker bubble is never spoken; the greeting turn is.
   useEffect(() => {
     if (isStreaming || !micReady || doneRef.current) return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
     if (!last) return;
 
     if (needsLanguagePick(last)) {
+      pausedRef.current = true;
       setStatus("Pick a language in the chat to continue.");
       return;
     }
@@ -352,26 +356,18 @@ export function OnboardingAgent() {
       .join(" ")
       .trim();
 
-    const isLangMsg = langToolParts(last).length > 0;
-
-    // Picker message with no greeting text yet — wait (keep mic paused).
-    if (isLangMsg && !text) {
-      pausedRef.current = true;
-      setStatus("Language selected — continuing…");
-      return;
-    }
-
-    // Picker message: remember prompt text but do not TTS it.
-    if (isLangMsg) {
-      const prev = spokenTextByIdRef.current.get(last.id);
-      if (prev === undefined) {
-        spokenTextByIdRef.current.set(last.id, text);
+    const baseline = langPickBaselineRef.current;
+    if (baseline && baseline.id === last.id) {
+      // Still the picker message — wait until new greeting text appears.
+      if (!text || text === baseline.text) {
         pausedRef.current = true;
         setStatus("Language selected — continuing…");
         return;
       }
-      // Same message grew with a real reply after the tool result — speak new text.
-      if (prev === text) return;
+      langPickBaselineRef.current = null;
+    } else if (baseline && baseline.id !== last.id) {
+      // Greeting arrived as a new message — clear picker baseline.
+      langPickBaselineRef.current = null;
     }
 
     if (!text) return;
@@ -448,6 +444,21 @@ export function OnboardingAgent() {
     toolCallId: string,
     code: TtsLanguageCode,
   ) => {
+    const host = messages.find(
+      (m) =>
+        m.role === "assistant" &&
+        langToolParts(m).some((p) => p.toolCallId === toolCallId),
+    );
+    if (host) {
+      const existingText = host.parts
+        .filter(isTextUIPart)
+        .map((p) => p.text)
+        .join(" ")
+        .trim();
+      langPickBaselineRef.current = { id: host.id, text: existingText };
+    }
+
+    pausedRef.current = true;
     lockLanguage(code);
     void saveProfileVoiceLanguage(code).catch(() => undefined);
     void addToolOutput({
@@ -527,25 +538,23 @@ export function OnboardingAgent() {
                       Updating your profile…
                     </span>
                   ) : null}
-                  {langParts.map((part) => {
-                    const selected =
-                      part.state === "output-available" &&
-                      part.output?.language_code &&
-                      isTtsLanguageCode(part.output.language_code)
-                        ? part.output.language_code
-                        : null;
-                    return (
+                  {langParts
+                    .filter(
+                      (part) =>
+                        part.state === "input-available" ||
+                        part.state === "approval-requested",
+                    )
+                    .map((part) => (
                       <LanguagePickerInChat
                         key={part.toolCallId}
                         prompt={part.input?.prompt}
-                        selectedCode={selected}
+                        selectedCode={null}
                         disabled={isStreaming}
                         onSelect={(code) =>
                           onPickLanguage(part.toolCallId, code)
                         }
                       />
-                    );
-                  })}
+                    ))}
                 </div>
               </div>
             );
