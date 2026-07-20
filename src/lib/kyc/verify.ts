@@ -9,6 +9,7 @@ import {
   type KycDocAnalysis,
   type KycProfileMatchLevel,
 } from "@/lib/kyc";
+import { formatDateOnlyDisplay } from "@/lib/dates";
 
 const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
 
@@ -101,7 +102,7 @@ function profileBlock(profile: KycCandidateProfile): string {
 
   return `REGISTERED CANDIDATE PROFILE (must match the person on the documents):
 - Full name: ${profile.name.trim() || "(missing — reject)"}
-- Date of birth: ${profile.dateOfBirth.trim() || "(not on profile)"}
+- Date of birth: ${formatDateOnlyDisplay(profile.dateOfBirth) || "(not on profile)"}
 - Address / residence: ${address}`;
 }
 

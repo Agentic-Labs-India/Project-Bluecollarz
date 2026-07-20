@@ -21,6 +21,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CandidateProfileData } from "@/lib/candidate/profile";
+import { formatDateOnlyDisplay } from "@/lib/dates";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
@@ -162,9 +163,19 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
         <Field label="Headline" value={profile.headline} />
         <Field label="Phone" value={profile.phoneNumber} />
         <Field label="Location" value={profile.location} />
-        <Field label="Years of experience" value={profile.yearsExperience} />
+        <Field
+          label="Years of experience"
+          value={
+            profile.yearsExperience === null
+              ? ""
+              : String(profile.yearsExperience)
+          }
+        />
         <Field label="Work authorization" value={profile.workAuthorization} />
-        <Field label="Date of birth" value={profile.dateOfBirth} />
+        <Field
+          label="Date of birth"
+          value={formatDateOnlyDisplay(profile.dateOfBirth)}
+        />
       </div>
 
       <Field label="Summary" value={profile.summary} />
@@ -187,10 +198,15 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
                     "Education"}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  {[ed.school, [ed.startYear, ed.endYear].filter(Boolean).join("–")]
+                  {[
+                    ed.school,
+                    [ed.startYear, ed.endYear ?? "Present"]
+                      .filter((v) => v !== null && v !== "")
+                      .join("–"),
+                  ]
                     .filter(Boolean)
                     .join(" · ")}
-                  {ed.gpa ? ` · GPA ${ed.gpa}` : ""}
+                  {ed.gpa !== null ? ` · GPA ${ed.gpa}` : ""}
                 </p>
               </li>
             ))}
@@ -214,7 +230,9 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
                 </p>
                 <p className="text-muted-foreground text-xs">
                   {[
-                    [wx.startYear, wx.endYear].filter(Boolean).join("–"),
+                    [wx.startYear, wx.endYear ?? "Present"]
+                      .filter((v) => v !== null && v !== "")
+                      .join("–"),
                     [wx.city, wx.country].filter(Boolean).join(", "),
                   ]
                     .filter(Boolean)

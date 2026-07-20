@@ -5,6 +5,7 @@ import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
 import { blobPathname } from "@/lib/blob/pathname";
 import type { CandidateProfileFields } from "@/lib/candidate/profile";
+import { formatDateOnly } from "@/lib/dates";
 import {
   KYC_DEFERABLE_SLOTS,
   KYC_UPLOAD_LABELS,
@@ -164,7 +165,7 @@ export async function POST(req: NextRequest) {
       },
       {
         name: candidateName,
-        dateOfBirth: profileFields?.dateOfBirth ?? "",
+        dateOfBirth: formatDateOnly(profileFields?.dateOfBirth),
         residenceCity: profileFields?.residenceCity ?? "",
         residenceState: profileFields?.residenceState ?? "",
         residenceCountry: profileFields?.residenceCountry ?? "",

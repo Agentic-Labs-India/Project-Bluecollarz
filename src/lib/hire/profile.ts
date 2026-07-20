@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { asOptionalYear, formatZodError } from "@/lib/utils";
+import { formatZodError } from "@/lib/utils";
 
 export const COMPANY_SIZES = [
   "1-10",
@@ -63,10 +63,7 @@ const optionalTrimmed = (max: number) =>
     return String(val).trim();
   }, z.string().max(max));
 
-const optionalYear = z.preprocess((val) => {
-  if (val === "" || val === null || val === undefined) return undefined;
-  return asOptionalYear(val) ?? val;
-}, z.number().int().min(1900).max(2100).optional());
+const optionalYear = z.number().int().min(1900).max(2100).optional();
 
 const certificateSchema = z.object({
   id: z.string().trim().min(1).max(64),
@@ -90,12 +87,11 @@ export const hireProfileUpdateSchema = z.object({
 });
 
 function normalizeCertificate(cert: HireCertificate): HireCertificate {
-  const year = asOptionalYear(cert.year);
   return {
     id: cert.id,
     name: cert.name,
     ...(cert.issuer ? { issuer: cert.issuer } : {}),
-    ...(year !== undefined ? { year } : {}),
+    ...(typeof cert.year === "number" ? { year: cert.year } : {}),
   };
 }
 

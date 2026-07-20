@@ -35,7 +35,8 @@ const GEO_PLACE_PROMPT = `Places (must use country-state-city official English n
 - Before saving those fields, call listPlaceOptions to look up valid names.
 - preferredCountries: array of official country names only.
 - Residence flow: country → state (if listed) → city. Each value must appear in listPlaceOptions.
-- Postal code can be free text; place names cannot.`;
+- Postal code can be free text; place names cannot.
+- Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).`;
 
 const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
 
@@ -80,10 +81,10 @@ async function saveProfile(
   const preview = toCandidateProfileData({
     ...existing,
     ...mergedInput,
-    yearsExperience:
-      mergedInput.yearsExperience === ""
-        ? undefined
-        : Number(mergedInput.yearsExperience),
+    yearsExperience: mergedInput.yearsExperience,
+    fullTimeCompensation: mergedInput.fullTimeCompensation,
+    partTimeCompensation: mergedInput.partTimeCompensation,
+    dateOfBirth: mergedInput.dateOfBirth,
     resumeSource: mergedInput.resumeSource || undefined,
   });
   const complete = isCandidateProfileComplete(preview);
@@ -164,6 +165,15 @@ function asStringList(value: unknown): string[] {
     .filter(Boolean);
 }
 
+function asNullableNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asNullableInt(value: unknown): number | null {
+  const n = asNullableNumber(value);
+  return n === null ? null : Math.trunc(n);
+}
+
 function asEducationList(value: unknown) {
   if (!Array.isArray(value)) return [];
   return value.slice(0, 15).map((raw) => {
@@ -171,10 +181,10 @@ function asEducationList(value: unknown) {
     return {
       school: String(e.school ?? ""),
       degree: String(e.degree ?? ""),
-      startYear: String(e.startYear ?? ""),
-      endYear: String(e.endYear ?? ""),
+      startYear: asNullableInt(e.startYear),
+      endYear: asNullableInt(e.endYear),
       major: String(e.major ?? ""),
-      gpa: String(e.gpa ?? ""),
+      gpa: asNullableNumber(e.gpa),
     };
   });
 }
@@ -186,8 +196,8 @@ function asWorkList(value: unknown) {
     return {
       company: String(e.company ?? ""),
       role: String(e.role ?? ""),
-      startYear: String(e.startYear ?? ""),
-      endYear: String(e.endYear ?? ""),
+      startYear: asNullableInt(e.startYear),
+      endYear: asNullableInt(e.endYear),
       city: String(e.city ?? ""),
       country: String(e.country ?? ""),
       description: String(e.description ?? ""),
@@ -205,13 +215,13 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
           {
             type: "text",
             text: `Extract candidate profile JSON from this resume PDF. Return ONLY valid JSON with keys:
-phoneNumber, headline, location, yearsExperience (number), skills (string[]), workAuthorization, preferredCountries (string[]), summary (2-4 paragraphs),
-education (array of {school, degree, startYear, endYear, major, gpa}),
-workExperience (array of {company, role, startYear, endYear, city, country, description}),
+phoneNumber, headline, location, yearsExperience (number|null), skills (string[]), workAuthorization, preferredCountries (string[]), summary (2-4 paragraphs),
+education (array of {school, degree, startYear (number|null), endYear (number|null), major, gpa (number|null)}),
+workExperience (array of {company, role, startYear (number|null), endYear (number|null), city, country, description}),
 languages (string[]), hobbies (string[]), portfolioUrl, otherLinks (string[]),
-residenceCountry, residenceState, residenceCity, residencePostalCode, dateOfBirth,
-fullTimeCompensation, partTimeCompensation.
-Use empty string, [] when unknown. endYear may be "Present".
+residenceCountry, residenceState, residenceCity, residencePostalCode,
+fullTimeCompensation (number|null USD/year), partTimeCompensation (number|null USD/hour).
+Use "" / [] / null when unknown. endYear null means Present/ongoing. All numeric fields must be JSON numbers, never strings.
 For preferredCountries, residenceCountry, residenceState, and residenceCity: use official English geographic names only (e.g. "India", "Karnataka", "Bengaluru", "United Arab Emirates"). Do not use abbreviations like UAE/USA/UK.`,
           },
           {
@@ -247,7 +257,7 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
     phoneNumber: String(extracted.phoneNumber ?? ""),
     headline: String(extracted.headline ?? ""),
     location: String(extracted.location ?? ""),
-    yearsExperience: String(extracted.yearsExperience ?? ""),
+    yearsExperience: asNullableInt(extracted.yearsExperience),
     skills,
     workAuthorization: String(extracted.workAuthorization ?? ""),
     preferredCountries,
@@ -264,9 +274,8 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
     residenceState: String(extracted.residenceState ?? ""),
     residenceCity: String(extracted.residenceCity ?? ""),
     residencePostalCode: String(extracted.residencePostalCode ?? ""),
-    dateOfBirth: String(extracted.dateOfBirth ?? ""),
-    fullTimeCompensation: String(extracted.fullTimeCompensation ?? ""),
-    partTimeCompensation: String(extracted.partTimeCompensation ?? ""),
+    fullTimeCompensation: asNullableNumber(extracted.fullTimeCompensation),
+    partTimeCompensation: asNullableNumber(extracted.partTimeCompensation),
   });
 
   return { ok: true as const, ...result };

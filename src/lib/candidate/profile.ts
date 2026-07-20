@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { asOptionalNumber, formatZodError } from "@/lib/utils";
+import { formatZodError } from "@/lib/utils";
+import { formatDateOnly, parseDateOnly } from "@/lib/dates";
 import {
   normalizeCountryNames,
   normalizeResidencePlace,
@@ -10,17 +11,19 @@ import { TTS_LANGUAGE_CODES } from "@/lib/voice/languages";
 export interface CandidateEducationEntry {
   school?: string;
   degree?: string;
-  startYear?: string;
-  endYear?: string;
+  startYear?: number | null;
+  /** null = Present / ongoing */
+  endYear?: number | null;
   major?: string;
-  gpa?: string;
+  gpa?: number | null;
 }
 
 export interface CandidateWorkEntry {
   company?: string;
   role?: string;
-  startYear?: string;
-  endYear?: string;
+  startYear?: number | null;
+  /** null = Present / ongoing */
+  endYear?: number | null;
   city?: string;
   country?: string;
   description?: string;
@@ -30,7 +33,7 @@ export interface CandidateProfileFields {
   phoneNumber?: string;
   headline?: string;
   location?: string;
-  yearsExperience?: number;
+  yearsExperience?: number | null;
   skills?: string[];
   workAuthorization?: string;
   preferredCountries?: string[];
@@ -43,34 +46,37 @@ export interface CandidateProfileFields {
   portfolioUrl?: string;
   otherLinks?: string[];
   languages?: string[];
-  /** Sarvam voice locale for TTS/STT (e.g. hi-IN). Set in onboarding; editable on profile. */
+  /** Sarvam voice locale for TTS/STT (e.g. hi-IN). */
   voiceLanguage?: string;
   hobbies?: string[];
   residenceCountry?: string;
   residenceState?: string;
   residenceCity?: string;
   residencePostalCode?: string;
-  dateOfBirth?: string;
+  /** BSON Date (UTC midnight for the calendar day). */
+  dateOfBirth?: Date | null;
   workAuthConfirmed?: boolean;
   workAuthStayAgreed?: boolean;
-  fullTimeCompensation?: string;
-  partTimeCompensation?: string;
+  /** USD / year */
+  fullTimeCompensation?: number | null;
+  /** USD / hour */
+  partTimeCompensation?: number | null;
 }
 
 export interface EducationFormEntry {
   school: string;
   degree: string;
-  startYear: string;
-  endYear: string;
+  startYear: number | null;
+  endYear: number | null;
   major: string;
-  gpa: string;
+  gpa: number | null;
 }
 
 export interface WorkFormEntry {
   company: string;
   role: string;
-  startYear: string;
-  endYear: string;
+  startYear: number | null;
+  endYear: number | null;
   city: string;
   country: string;
   description: string;
@@ -83,7 +89,7 @@ export interface CandidateProfileData {
   phoneNumber: string;
   headline: string;
   location: string;
-  yearsExperience: string;
+  yearsExperience: number | null;
   skills: string[];
   workAuthorization: string;
   preferredCountries: string[];
@@ -96,18 +102,18 @@ export interface CandidateProfileData {
   portfolioUrl: string;
   otherLinks: string[];
   languages: string[];
-  /** Sarvam BCP-47 voice locale (en-IN, hi-IN, …). */
   voiceLanguage: string;
   hobbies: string[];
   residenceCountry: string;
   residenceState: string;
   residenceCity: string;
   residencePostalCode: string;
+  /** Wire `yyyy-MM-dd` (empty when unset). Mongo stores BSON Date. */
   dateOfBirth: string;
   workAuthConfirmed: boolean;
   workAuthStayAgreed: boolean;
-  fullTimeCompensation: string;
-  partTimeCompensation: string;
+  fullTimeCompensation: number | null;
+  partTimeCompensation: number | null;
 }
 
 export const CANDIDATE_MANDATORY_FIELDS = [
@@ -144,10 +150,10 @@ export function emptyEducationEntry(): EducationFormEntry {
   return {
     school: "",
     degree: "",
-    startYear: "",
-    endYear: "",
+    startYear: null,
+    endYear: null,
     major: "",
-    gpa: "",
+    gpa: null,
   };
 }
 
@@ -155,8 +161,8 @@ export function emptyWorkEntry(): WorkFormEntry {
   return {
     company: "",
     role: "",
-    startYear: "",
-    endYear: "",
+    startYear: null,
+    endYear: null,
     city: "",
     country: "",
     description: "",
@@ -170,7 +176,7 @@ const EMPTY: CandidateProfileData = {
   phoneNumber: "",
   headline: "",
   location: "",
-  yearsExperience: "",
+  yearsExperience: null,
   skills: [],
   workAuthorization: "",
   preferredCountries: [],
@@ -192,8 +198,8 @@ const EMPTY: CandidateProfileData = {
   dateOfBirth: "",
   workAuthConfirmed: false,
   workAuthStayAgreed: false,
-  fullTimeCompensation: "",
-  partTimeCompensation: "",
+  fullTimeCompensation: null,
+  partTimeCompensation: null,
 };
 
 const optionalTrimmed = (max: number) =>
@@ -222,20 +228,26 @@ const voiceLanguageSchema = z.preprocess((val) => {
   return String(val).trim();
 }, z.union([z.enum(TTS_LANGUAGE_CODES), z.literal("")]));
 
+const nullableYear = z.number().int().min(1900).max(2100).nullable();
+const nullableGpa = z.number().finite().min(0).max(10).nullable();
+const nullableYearsExperience = z.number().int().min(0).max(80).nullable();
+const nullableFullTimePay = z.number().finite().min(0).max(10_000_000).nullable();
+const nullablePartTimePay = z.number().finite().min(0).max(10_000).nullable();
+
 const educationEntrySchema = z.object({
   school: optionalTrimmed(200),
   degree: optionalTrimmed(120),
-  startYear: optionalTrimmed(10),
-  endYear: optionalTrimmed(10),
+  startYear: nullableYear,
+  endYear: nullableYear,
   major: optionalTrimmed(120),
-  gpa: optionalTrimmed(20),
+  gpa: nullableGpa,
 });
 
 const workEntrySchema = z.object({
   company: optionalTrimmed(200),
   role: optionalTrimmed(160),
-  startYear: optionalTrimmed(10),
-  endYear: optionalTrimmed(20),
+  startYear: nullableYear,
+  endYear: nullableYear,
   city: optionalTrimmed(120),
   country: optionalTrimmed(80),
   description: optionalTrimmed(4000),
@@ -251,20 +263,11 @@ const workListSchema = z.preprocess((val) => {
   return val.slice(0, 20);
 }, z.array(workEntrySchema).max(20));
 
-const boolSchema = z.preprocess((val) => {
-  if (val === true || val === "true" || val === 1 || val === "1") return true;
-  return false;
-}, z.boolean());
-
 export const candidateProfileUpdateSchema = z.object({
   phoneNumber: optionalTrimmed(40),
   headline: optionalTrimmed(200),
   location: optionalTrimmed(160),
-  yearsExperience: z.preprocess((val) => {
-    if (val === "" || val === null || val === undefined) return "";
-    const n = asOptionalNumber(val);
-    return n === undefined ? val : String(n);
-  }, z.union([z.string().max(10), z.literal("")])),
+  yearsExperience: nullableYearsExperience,
   skills: skillsSchema,
   workAuthorization: optionalTrimmed(200),
   preferredCountries: countriesSchema,
@@ -282,11 +285,11 @@ export const candidateProfileUpdateSchema = z.object({
   residenceState: optionalTrimmed(80),
   residenceCity: optionalTrimmed(80),
   residencePostalCode: optionalTrimmed(20),
-  dateOfBirth: optionalTrimmed(20),
-  workAuthConfirmed: boolSchema,
-  workAuthStayAgreed: boolSchema,
-  fullTimeCompensation: optionalTrimmed(40),
-  partTimeCompensation: optionalTrimmed(40),
+  dateOfBirth: z.preprocess((val) => parseDateOnly(val), z.date().nullable()),
+  workAuthConfirmed: z.boolean(),
+  workAuthStayAgreed: z.boolean(),
+  fullTimeCompensation: nullableFullTimePay,
+  partTimeCompensation: nullablePartTimePay,
 });
 
 export type CandidateProfileUpdateInput = z.infer<
@@ -326,6 +329,10 @@ export function sanitizeGeoProfileFields<
   return next;
 }
 
+function asNullableNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function mapEducation(
   list: CandidateEducationEntry[] | undefined,
 ): EducationFormEntry[] {
@@ -333,10 +340,10 @@ function mapEducation(
   return list.slice(0, 15).map((e) => ({
     school: e.school ?? "",
     degree: e.degree ?? "",
-    startYear: e.startYear ?? "",
-    endYear: e.endYear ?? "",
+    startYear: asNullableNumber(e.startYear),
+    endYear: asNullableNumber(e.endYear),
     major: e.major ?? "",
-    gpa: e.gpa ?? "",
+    gpa: asNullableNumber(e.gpa),
   }));
 }
 
@@ -345,8 +352,8 @@ function mapWork(list: CandidateWorkEntry[] | undefined): WorkFormEntry[] {
   return list.slice(0, 20).map((e) => ({
     company: e.company ?? "",
     role: e.role ?? "",
-    startYear: e.startYear ?? "",
-    endYear: e.endYear ?? "",
+    startYear: asNullableNumber(e.startYear),
+    endYear: asNullableNumber(e.endYear),
     city: e.city ?? "",
     country: e.country ?? "",
     description: e.description ?? "",
@@ -376,7 +383,6 @@ export function toCandidateProfileData(
       hobbies: [],
     };
   }
-  const years = doc.yearsExperience;
   return {
     name: doc.name ?? "",
     email: doc.email ?? "",
@@ -384,8 +390,7 @@ export function toCandidateProfileData(
     phoneNumber: doc.phoneNumber ?? "",
     headline: doc.headline ?? "",
     location: doc.location ?? "",
-    yearsExperience:
-      years === undefined || years === null ? "" : String(years),
+    yearsExperience: asNullableNumber(doc.yearsExperience),
     skills: doc.skills ?? [],
     workAuthorization: doc.workAuthorization ?? "",
     preferredCountries: doc.preferredCountries ?? [],
@@ -404,11 +409,11 @@ export function toCandidateProfileData(
     residenceState: doc.residenceState ?? "",
     residenceCity: doc.residenceCity ?? "",
     residencePostalCode: doc.residencePostalCode ?? "",
-    dateOfBirth: doc.dateOfBirth ?? "",
+    dateOfBirth: formatDateOnly(doc.dateOfBirth),
     workAuthConfirmed: Boolean(doc.workAuthConfirmed),
     workAuthStayAgreed: Boolean(doc.workAuthStayAgreed),
-    fullTimeCompensation: doc.fullTimeCompensation ?? "",
-    partTimeCompensation: doc.partTimeCompensation ?? "",
+    fullTimeCompensation: asNullableNumber(doc.fullTimeCompensation),
+    partTimeCompensation: asNullableNumber(doc.partTimeCompensation),
   };
 }
 
@@ -432,7 +437,7 @@ export function getMissingCandidateFields(
   if (!profile.phoneNumber.trim()) missing.push("phoneNumber");
   if (!profile.headline.trim()) missing.push("headline");
   if (!profile.location.trim()) missing.push("location");
-  if (profile.yearsExperience.trim() === "") missing.push("yearsExperience");
+  if (profile.yearsExperience === null) missing.push("yearsExperience");
   if (!profile.skills.length) missing.push("skills");
   if (!profile.workAuthorization.trim()) missing.push("workAuthorization");
   if (!profile.summary.trim() || profile.summary.trim().length < 40) {
@@ -467,6 +472,16 @@ export function formatCandidateProfileError(error: z.ZodError): string {
   return formatZodError(error);
 }
 
+function setNullableNumber(
+  $set: Record<string, unknown>,
+  $unset: Record<string, "">,
+  key: string,
+  value: number | null,
+) {
+  if (typeof value === "number" && Number.isFinite(value)) $set[key] = value;
+  else $unset[key] = "";
+}
+
 /** Build Mongo $set / $unset from a validated update payload. */
 export function candidateUpdateToMongo(
   data: CandidateProfileUpdateInput,
@@ -489,9 +504,6 @@ export function candidateUpdateToMongo(
     "residenceState",
     "residenceCity",
     "residencePostalCode",
-    "dateOfBirth",
-    "fullTimeCompensation",
-    "partTimeCompensation",
   ];
 
   for (const key of stringFields) {
@@ -499,6 +511,9 @@ export function candidateUpdateToMongo(
     if (typeof value === "string" && value.trim()) $set[key] = value.trim();
     else $unset[key] = "";
   }
+
+  if (data.dateOfBirth instanceof Date) $set.dateOfBirth = data.dateOfBirth;
+  else $unset.dateOfBirth = "";
 
   if (data.resumeSource) $set.resumeSource = data.resumeSource;
   else $unset.resumeSource = "";
@@ -515,9 +530,19 @@ export function candidateUpdateToMongo(
   $set.workAuthConfirmed = data.workAuthConfirmed;
   $set.workAuthStayAgreed = data.workAuthStayAgreed;
 
-  const years = asOptionalNumber(data.yearsExperience);
-  if (years !== undefined) $set.yearsExperience = years;
-  else $unset.yearsExperience = "";
+  setNullableNumber($set, $unset, "yearsExperience", data.yearsExperience);
+  setNullableNumber(
+    $set,
+    $unset,
+    "fullTimeCompensation",
+    data.fullTimeCompensation,
+  );
+  setNullableNumber(
+    $set,
+    $unset,
+    "partTimeCompensation",
+    data.partTimeCompensation,
+  );
 
   return { $set, $unset };
 }
@@ -530,15 +555,17 @@ export function mergeCandidateProfilePatch(
   const pickStr = (next: string | undefined, prev: string) =>
     next !== undefined && next.trim() ? next : prev;
 
+  const pickNum = (
+    next: number | null | undefined,
+    prev: number | null,
+  ): number | null => (next !== undefined ? next : prev);
+
   return candidateProfileUpdateSchema.parse(
     sanitizeGeoProfileFields({
       phoneNumber: pickStr(patch.phoneNumber, current.phoneNumber),
       headline: pickStr(patch.headline, current.headline),
       location: pickStr(patch.location, current.location),
-      yearsExperience:
-        patch.yearsExperience !== undefined && patch.yearsExperience !== ""
-          ? patch.yearsExperience
-          : current.yearsExperience,
+      yearsExperience: pickNum(patch.yearsExperience, current.yearsExperience),
       skills: patch.skills?.length ? patch.skills : current.skills,
       workAuthorization: pickStr(
         patch.workAuthorization,
@@ -580,7 +607,10 @@ export function mergeCandidateProfilePatch(
         patch.residencePostalCode,
         current.residencePostalCode,
       ),
-      dateOfBirth: pickStr(patch.dateOfBirth, current.dateOfBirth),
+      dateOfBirth:
+        patch.dateOfBirth !== undefined
+          ? patch.dateOfBirth
+          : current.dateOfBirth || null,
       workAuthConfirmed:
         patch.workAuthConfirmed !== undefined
           ? patch.workAuthConfirmed
@@ -589,11 +619,11 @@ export function mergeCandidateProfilePatch(
         patch.workAuthStayAgreed !== undefined
           ? patch.workAuthStayAgreed
           : current.workAuthStayAgreed,
-      fullTimeCompensation: pickStr(
+      fullTimeCompensation: pickNum(
         patch.fullTimeCompensation,
         current.fullTimeCompensation,
       ),
-      partTimeCompensation: pickStr(
+      partTimeCompensation: pickNum(
         patch.partTimeCompensation,
         current.partTimeCompensation,
       ),

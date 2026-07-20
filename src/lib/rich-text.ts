@@ -55,7 +55,3 @@ export function htmlToPlainText(html: string): string {
     .replace(/[ \t]{2,}/g, " ")
     .trim();
 }
-
-export function isRichTextEmpty(html: string): boolean {
-  return htmlToPlainText(html).length === 0;
-}

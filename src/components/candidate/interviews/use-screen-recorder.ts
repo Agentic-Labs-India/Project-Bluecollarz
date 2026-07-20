@@ -9,7 +9,7 @@ type RecorderState = {
   ownedStreams: MediaStream[];
 };
 
-export type ScreenRecorderStartResult = {
+type ScreenRecorderStartResult = {
   camera: MediaStream;
   /** Mic-only stream (same tracks as camera audio) for VAD. */
   mic: MediaStream;

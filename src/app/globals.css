@@ -19,17 +19,6 @@
   --color-warning: var(--warning);
   --color-negative: var(--negative);
 
-  /* Legacy aliases (software routes) */
-  --color-forest: var(--ink);
-  --color-moss: var(--body);
-  --color-fern: var(--positive);
-  --color-verify: var(--positive);
-  --color-success: var(--positive);
-  --color-sand: var(--canvas-soft);
-  --color-paper: var(--canvas);
-  --color-clay: var(--warning);
-  --color-gold: var(--primary);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);

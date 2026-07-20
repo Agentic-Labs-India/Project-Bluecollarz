@@ -7,7 +7,7 @@ import { kycBlobUrls, type KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
 
 /** Best-effort delete of Vercel Blob URLs (never throws). */
-export async function deleteBlobUrls(
+async function deleteBlobUrls(
   urls: Array<string | null | undefined>,
 ): Promise<void> {
   const unique = [

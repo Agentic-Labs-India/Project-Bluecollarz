@@ -8,7 +8,6 @@ export const BLOB_MAX_BYTES = 500 * 1024 * 1024; // 500 MB
 export const BLOB_MULTIPART_THRESHOLD = 4 * 1024 * 1024;
 
 export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client-upload";
-export const BLOB_DELETE_URL = "/api/blob/delete";
 
 export function getBlobRoot(): string {
   const name = process.env.DB_NAME?.trim();

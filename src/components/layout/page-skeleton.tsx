@@ -2,32 +2,6 @@ import { AppPage } from "@/components/layout/app-page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-/** Shared page-level loading placeholder (replaces spinner circles). */
-export function PageSkeleton({
-  className,
-  rows = 4,
-}: {
-  className?: string;
-  rows?: number;
-}) {
-  return (
-    <AppPage className={cn("space-y-6 py-2", className)}>
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-full max-w-md" />
-      </div>
-      <div className="space-y-4">
-        {Array.from({ length: rows }, (_, i) => (
-          <Skeleton
-            key={i}
-            className={cn("w-full", i % 2 === 0 ? "h-24" : "h-12")}
-          />
-        ))}
-      </div>
-    </AppPage>
-  );
-}
-
 /** Profile header + form fields skeleton. */
 export function ProfilePageSkeleton() {
   return (

@@ -31,30 +31,6 @@ export function asNumber(value: unknown, fallback = 0): number {
   return fallback;
 }
 
-/** number | string → finite number, or undefined if empty/invalid. */
-export function asOptionalNumber(value: unknown): number | undefined {
-  if (value === "" || value === null || value === undefined) return undefined;
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : undefined;
-  }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return undefined;
-    const n = Number(trimmed);
-    return Number.isFinite(n) ? n : undefined;
-  }
-  return undefined;
-}
-
-/** Calendar year from number | string. */
-export function asOptionalYear(value: unknown): number | undefined {
-  const n = asOptionalNumber(value);
-  if (n === undefined) return undefined;
-  const year = Math.trunc(n);
-  if (year < 1900 || year > 2100) return undefined;
-  return year;
-}
-
 /** Flatten a Zod error into a single message. */
 export function formatZodError(error: ZodError): string {
   const messages = error.issues.map((issue) => {

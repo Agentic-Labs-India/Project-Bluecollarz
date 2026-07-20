@@ -70,10 +70,10 @@ export async function PUT(req: NextRequest) {
     const merged = toCandidateProfileData({
       ...existing,
       ...data,
-      yearsExperience:
-        data.yearsExperience === ""
-          ? undefined
-          : Number(data.yearsExperience),
+      yearsExperience: data.yearsExperience,
+      fullTimeCompensation: data.fullTimeCompensation,
+      partTimeCompensation: data.partTimeCompensation,
+      dateOfBirth: data.dateOfBirth,
       resumeSource: data.resumeSource || undefined,
       education: data.education,
       workExperience: data.workExperience,

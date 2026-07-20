@@ -29,11 +29,23 @@ import { cn } from "@/lib/utils";
 
 const AUTOSAVE_DEBOUNCE_MS = 700;
 
+function readNullableInt(raw: string): number | null {
+  if (!raw.trim()) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
+function readNullableFloat(raw: string): number | null {
+  if (!raw.trim()) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 type ProfileSavePayload = {
   phoneNumber: string;
   headline: string;
   location: string;
-  yearsExperience: string;
+  yearsExperience: number | null;
   skills: string[];
   workAuthorization: string;
   preferredCountries: string[];
@@ -54,8 +66,8 @@ type ProfileSavePayload = {
   dateOfBirth: string;
   workAuthConfirmed: boolean;
   workAuthStayAgreed: boolean;
-  fullTimeCompensation: string;
-  partTimeCompensation: string;
+  fullTimeCompensation: number | null;
+  partTimeCompensation: number | null;
 };
 
 function buildProfileSavePayload(
@@ -98,7 +110,7 @@ const emptyProfile: CandidateProfileData = {
   phoneNumber: "",
   headline: "",
   location: "",
-  yearsExperience: "",
+  yearsExperience: null,
   skills: [],
   workAuthorization: "",
   preferredCountries: [],
@@ -120,8 +132,8 @@ const emptyProfile: CandidateProfileData = {
   dateOfBirth: "",
   workAuthConfirmed: false,
   workAuthStayAgreed: false,
-  fullTimeCompensation: "",
-  partTimeCompensation: "",
+  fullTimeCompensation: null,
+  partTimeCompensation: null,
 };
 
 function TagList({
@@ -454,10 +466,17 @@ export function CandidateProfileView() {
             <Label htmlFor="years">Years of experience</Label>
             <Input
               id="years"
+              type="number"
               inputMode="numeric"
-              value={profile.yearsExperience}
+              min={0}
+              max={80}
+              step={1}
+              value={profile.yearsExperience ?? ""}
               onChange={(e) =>
-                setProfile((p) => ({ ...p, yearsExperience: e.target.value }))
+                setProfile((p) => ({
+                  ...p,
+                  yearsExperience: readNullableInt(e.target.value),
+                }))
               }
             />
           </div>
@@ -572,29 +591,49 @@ export function CandidateProfileView() {
                 <div className="space-y-1.5">
                   <Label>Start year</Label>
                   <Input
+                    type="number"
                     inputMode="numeric"
-                    value={entry.startYear}
+                    min={1900}
+                    max={2100}
+                    step={1}
+                    value={entry.startYear ?? ""}
                     onChange={(e) =>
-                      updateEducation(index, { startYear: e.target.value })
+                      updateEducation(index, {
+                        startYear: readNullableInt(e.target.value),
+                      })
                     }
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>End year</Label>
                   <Input
+                    type="number"
                     inputMode="numeric"
-                    value={entry.endYear}
+                    min={1900}
+                    max={2100}
+                    step={1}
+                    placeholder="Blank = Present"
+                    value={entry.endYear ?? ""}
                     onChange={(e) =>
-                      updateEducation(index, { endYear: e.target.value })
+                      updateEducation(index, {
+                        endYear: readNullableInt(e.target.value),
+                      })
                     }
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>GPA</Label>
                   <Input
-                    value={entry.gpa}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={10}
+                    step={0.01}
+                    value={entry.gpa ?? ""}
                     onChange={(e) =>
-                      updateEducation(index, { gpa: e.target.value })
+                      updateEducation(index, {
+                        gpa: readNullableFloat(e.target.value),
+                      })
                     }
                   />
                 </div>
@@ -681,20 +720,33 @@ export function CandidateProfileView() {
                 <div className="space-y-1.5">
                   <Label>Start year</Label>
                   <Input
+                    type="number"
                     inputMode="numeric"
-                    value={entry.startYear}
+                    min={1900}
+                    max={2100}
+                    step={1}
+                    value={entry.startYear ?? ""}
                     onChange={(e) =>
-                      updateWork(index, { startYear: e.target.value })
+                      updateWork(index, {
+                        startYear: readNullableInt(e.target.value),
+                      })
                     }
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>End year</Label>
                   <Input
-                    placeholder="Present"
-                    value={entry.endYear}
+                    type="number"
+                    inputMode="numeric"
+                    min={1900}
+                    max={2100}
+                    step={1}
+                    placeholder="Blank = Present"
+                    value={entry.endYear ?? ""}
                     onChange={(e) =>
-                      updateWork(index, { endYear: e.target.value })
+                      updateWork(index, {
+                        endYear: readNullableInt(e.target.value),
+                      })
                     }
                   />
                 </div>
@@ -997,13 +1049,16 @@ export function CandidateProfileView() {
               <Input
                 id="ft-comp"
                 className="pl-6"
+                type="number"
                 inputMode="numeric"
+                min={0}
+                step={1}
                 placeholder="25000"
-                value={profile.fullTimeCompensation}
+                value={profile.fullTimeCompensation ?? ""}
                 onChange={(e) =>
                   setProfile((p) => ({
                     ...p,
-                    fullTimeCompensation: e.target.value,
+                    fullTimeCompensation: readNullableFloat(e.target.value),
                   }))
                 }
               />
@@ -1021,13 +1076,16 @@ export function CandidateProfileView() {
               <Input
                 id="pt-comp"
                 className="pl-6"
-                inputMode="numeric"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step={0.01}
                 placeholder="15"
-                value={profile.partTimeCompensation}
+                value={profile.partTimeCompensation ?? ""}
                 onChange={(e) =>
                   setProfile((p) => ({
                     ...p,
-                    partTimeCompensation: e.target.value,
+                    partTimeCompensation: readNullableFloat(e.target.value),
                   }))
                 }
               />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { format, isValid, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -10,24 +9,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  dateOnlyToLocalDate,
+  formatDateOnly,
+  formatDateOnlyDisplay,
+} from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-const DOB_FORMAT = "MM/dd/yyyy";
-
-function parseDob(value: string): Date | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  for (const fmt of [DOB_FORMAT, "yyyy-MM-dd", "dd/MM/yyyy"]) {
-    const parsed = parse(trimmed, fmt, new Date());
-    if (isValid(parsed)) return parsed;
-  }
-
-  const native = new Date(trimmed);
-  return isValid(native) ? native : undefined;
-}
-
-/** Calendar picker for profile date of birth (stores MM/dd/yyyy). */
+/** Calendar picker; value is `yyyy-MM-dd` (empty when unset). Persists as BSON Date. */
 export function DateOfBirthPicker({
   value,
   onChange,
@@ -38,7 +27,7 @@ export function DateOfBirthPicker({
   id?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const selected = parseDob(value);
+  const selected = dateOnlyToLocalDate(value);
   const today = new Date();
   const startMonth = new Date(today.getFullYear() - 100, 0, 1);
   const endMonth = today;
@@ -56,7 +45,7 @@ export function DateOfBirthPicker({
           )}
         >
           <CalendarIcon data-icon="inline-start" />
-          {selected ? format(selected, DOB_FORMAT) : "Pick date of birth"}
+          {value ? formatDateOnlyDisplay(value) : "Pick date of birth"}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -69,7 +58,7 @@ export function DateOfBirthPicker({
           endMonth={endMonth}
           disabled={{ after: today }}
           onSelect={(date) => {
-            onChange(date ? format(date, DOB_FORMAT) : "");
+            onChange(date ? formatDateOnly(date) : "");
             setOpen(false);
           }}
         />
