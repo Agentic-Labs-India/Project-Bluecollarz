@@ -94,7 +94,7 @@ function OpportunityCard({
         }
       }}
       className={cn(
-        "bg-card flex cursor-pointer flex-col rounded-none border p-4 transition-colors",
+        "bg-card flex w-full cursor-pointer flex-col rounded-none border p-4 transition-colors",
         selected
           ? "border-primary ring-primary/20 border-2 ring-1"
           : "border-border hover:border-primary/40",
@@ -152,7 +152,7 @@ function OpportunityCard({
 
 function OpportunityCardSkeleton() {
   return (
-    <div className="border-border bg-card flex flex-col rounded-none border p-4">
+    <div className="border-border bg-card flex w-full flex-col rounded-none border p-4">
       <div className="mb-2 flex items-start justify-between gap-2">
         <Skeleton className="h-4 w-3/5" />
         <Skeleton className="h-4 w-16" />
@@ -482,7 +482,7 @@ export function ExploreOpportunities({
   );
 
   const listSkeletons = (
-    <div className="flex flex-col gap-3 pr-3 pb-4">
+    <div className="flex w-full flex-col gap-3 pb-4">
       {Array.from({ length: 6 }).map((_, i) => (
         <OpportunityCardSkeleton key={i} />
       ))}
@@ -536,7 +536,7 @@ export function ExploreOpportunities({
   ) : opportunities.length === 0 ? (
     emptyState
   ) : (
-    <div className="flex flex-col gap-3 pr-3 pb-4">{cardItems}</div>
+    <div className="flex w-full flex-col gap-3 pb-4">{cardItems}</div>
   );
 
   const gridBody = loading ? (
