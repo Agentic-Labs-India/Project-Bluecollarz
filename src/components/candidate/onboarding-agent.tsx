@@ -85,6 +85,17 @@ function isClientPickerTool(type: string) {
   return type === LANG_TOOL || type === RESUME_TOOL;
 }
 
+/** Kickoff prompts are sent to the model but should not appear in the chat UI. */
+function isHiddenInChat(message: UIMessage) {
+  const meta = message.metadata;
+  return (
+    typeof meta === "object" &&
+    meta !== null &&
+    "hideInChat" in meta &&
+    (meta as { hideInChat?: boolean }).hideInChat === true
+  );
+}
+
 function LanguagePickerInChat({
   prompt,
   selectedCode,
@@ -164,7 +175,7 @@ function ResumePickerInChat({
   return (
     <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
       <p className="text-foreground text-sm leading-snug">
-        {prompt?.trim() || "Do you have a resume PDF?"}
+        {prompt?.trim() || ""}
       </p>
       <div
         role="listbox"
@@ -443,11 +454,13 @@ export function OnboardingAgent() {
           setStatus("Starting onboarding…");
           await sendMessage({
             text: "Hi — I just signed in as a candidate. My voice language is already on my profile, start onboarding in that language.",
+            metadata: { hideInChat: true },
           });
         } else {
           setStatus("Starting onboarding — pick your language in chat…");
           await sendMessage({
             text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then start onboarding in that language.",
+            metadata: { hideInChat: true },
           });
         }
       }
@@ -652,6 +665,7 @@ export function OnboardingAgent() {
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-6 px-4 py-5">
           {messages.map((message) => {
+            if (isHiddenInChat(message)) return null;
             const text = message.parts
               .filter(isTextUIPart)
               .map((p) => p.text)
