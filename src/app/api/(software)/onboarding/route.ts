@@ -63,7 +63,9 @@ async function saveProfile(
 ) {
   const db = client.db(DB_NAME);
   const filter = { _id: matchId(userId) as never };
-  const existing = await db.collection<UserDoc>(COLLECTIONS.USERS_COLLECTION).findOne(filter);
+  const existing = await db
+    .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
+    .findOne(filter);
   const current = toCandidateProfileData(existing);
   const mergedInput = mergeCandidateProfilePatch(current, patch);
 
@@ -79,10 +81,12 @@ async function saveProfile(
   const complete = isCandidateProfileComplete(preview);
   const { $set, $unset } = candidateUpdateToMongo(mergedInput, complete);
 
-  await db.collection(COLLECTIONS.USERS_COLLECTION).updateOne(
-    filter,
-    Object.keys($unset).length ? { $set, $unset } : { $set },
-  );
+  await db
+    .collection(COLLECTIONS.USERS_COLLECTION)
+    .updateOne(
+      filter,
+      Object.keys($unset).length ? { $set, $unset } : { $set },
+    );
 
   const updated = await loadProfile(userId);
   return {
@@ -146,7 +150,10 @@ function stripFileParts(messages: unknown[]): unknown[] {
 
 function asStringList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.map(String).map((s) => s.trim()).filter(Boolean);
+  return value
+    .map(String)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function asEducationList(value: unknown) {
@@ -281,17 +288,19 @@ Tell them briefly, then interview by voice for the mandatory fields one at a tim
       : `Flow:
 1. ${
           opts?.languageCode
-            ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language and ask if they already have a resume PDF.`
-            : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language and ask if they already have a resume PDF.`
+            ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language.`
+            : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
         }
-2. If YES: tell them to use the PDF button on screen. When they attach a PDF, it is parsed automatically — then call getCandidateProfile and ask only for missing fields.
-3. If NO: interview them by voice to build a resume summary. Ask one question at a time. Use updateCandidateProfile after each useful answer.
-4. When complete is true, congratulate them and say they will go to the dashboard. Call finishOnboarding.
+2. After greeting, say one short spoken sentence asking if they have a resume PDF to upload, then call selectResume (shows Upload / No resume buttons). Always speak that sentence — do not only call the tool silently. Wait for the picker result before continuing.
+3. If has_resume is true: a PDF is attached with their choice — it is parsed automatically. Call getCandidateProfile and ask only for missing mandatory fields, one at a time.
+4. If has_resume is false: interview them by voice to build the profile. Ask one question at a time. Use updateCandidateProfile after each useful answer.
+5. When complete is true, congratulate them and say they will go to the dashboard. Call finishOnboarding.
 ${
   opts?.languageCode
     ? "Do not call selectVoiceLanguage — language is already on the profile."
     : "Call selectVoiceLanguage at most once per session (only if voice language is not already on the profile)."
-}`;
+}
+Call selectResume at most once per session.`;
 
   return new ToolLoopAgent({
     id: "candidate-onboarding",
@@ -316,6 +325,17 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
             .max(200)
             .optional()
             .describe("Short question above the language buttons"),
+        }),
+      }),
+      selectResume: tool({
+        description:
+          "Show Upload / No resume buttons in chat. Call AFTER you speak a short question about having a resume PDF. Wait for their selection.",
+        inputSchema: z.object({
+          prompt: z
+            .string()
+            .max(200)
+            .optional()
+            .describe("Short question above the resume buttons"),
         }),
       }),
       getCandidateProfile: tool({
