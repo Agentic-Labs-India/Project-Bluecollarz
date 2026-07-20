@@ -26,8 +26,9 @@ import {
   type ApplicationStageId,
   type JobCreateInput,
 } from "@/lib/jobs";
-import { listCountries, listStatesForCountry } from "@/lib/geo/places";
+import { listCountries, listStatesForCountry, countryName, stateName } from "@/lib/geo/places";
 import { OPPORTUNITY_TAB_LABELS } from "@/lib/opportunities";
+import { JobOverviewAiMaker } from "@/components/hire/job-overview-ai-maker";
 import { LockIcon } from "lucide-react";
 
 export type JobFormValues = JobCreateInput;
@@ -76,6 +77,18 @@ export function JobForm({
     () => listStatesForCountry(values.countryCode ?? ""),
     [values.countryCode],
   );
+
+  const locationLabel = useMemo(() => {
+    const arrangement =
+      JOB_LOCATION_LABELS[normalizeJobLocation(values.location)];
+    const place = [
+      stateName(values.countryCode, values.stateCode),
+      countryName(values.countryCode),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return [arrangement, place].filter(Boolean).join(" · ");
+  }, [values.location, values.countryCode, values.stateCode]);
 
   const update = <K extends keyof JobFormValues>(key: K, value: JobFormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -284,7 +297,18 @@ export function JobForm({
       </section>
 
       <section className="space-y-2">
-        <Label htmlFor="overview">Overview</Label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Label htmlFor="overview">Overview</Label>
+          <JobOverviewAiMaker
+            context={{
+              title: values.title,
+              pay: values.pay,
+              locationLabel,
+              employmentType: OPPORTUNITY_TAB_LABELS[values.tab],
+            }}
+            onApply={(html) => update("overview", html)}
+          />
+        </div>
         <RichTextEditor
           id="overview"
           value={values.overview}
@@ -292,7 +316,8 @@ export function JobForm({
           placeholder="Describe the role, expectations, and ideal candidate profile…"
         />
         <p className="text-muted-foreground text-xs">
-          Rich text supported. Minimum 10 characters of content.
+          Rich text supported. Minimum 10 characters of content. Use AI overview
+          maker for a starting draft, then edit.
         </p>
       </section>
 

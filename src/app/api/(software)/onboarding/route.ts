@@ -1,6 +1,6 @@
 import {
   createAgentUIStreamResponse,
-  stepCountIs,
+  isStepCount,
   ToolLoopAgent,
   tool,
   generateText,
@@ -333,7 +333,7 @@ ${resumeContext}
 
 Mandatory fields: phone number, headline/role, location, years of experience, skills, work authorization, professional summary, education (at least one entry), work experience (at least one entry), and languages.
 Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.`,
-    stopWhen: stepCountIs(12),
+    stopWhen: isStepCount(12),
     tools: {
       selectVoiceLanguage: tool({
         description:

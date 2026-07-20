@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   const result = streamText({
     model: gatewayModel,
-    system: buildHelpSystemPrompt(auth.user.profileType, languageCode),
+    instructions: buildHelpSystemPrompt(auth.user.profileType, languageCode),
     messages: await convertToModelMessages(recent),
     temperature: 0.4,
   });

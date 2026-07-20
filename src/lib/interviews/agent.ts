@@ -1,4 +1,4 @@
-import { stepCountIs, ToolLoopAgent, tool } from "ai";
+import { isStepCount, ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
 import type { InterviewStageId } from "@/lib/interviews";
 
@@ -75,7 +75,7 @@ export function buildInterviewAgent(opts: {
     id: isDomain ? "ai-domain-interview" : "ai-communication-interview",
     model: gatewayModel,
     instructions,
-    stopWhen: stepCountIs(16),
+    stopWhen: isStepCount(16),
     tools: {
       finishInterview: tool({
         description: isDomain

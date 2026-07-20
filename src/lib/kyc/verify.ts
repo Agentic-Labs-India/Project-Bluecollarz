@@ -83,7 +83,7 @@ function asFilePart(
     return { type: "file", data: bytes, mediaType: "application/pdf" };
   }
   if (mediaType.startsWith("image/")) {
-    return { type: "image", image: bytes, mediaType };
+    return { type: "file", data: bytes, mediaType };
   }
   return { type: "file", data: bytes, mediaType };
 }
