@@ -5,6 +5,7 @@ import {
   candidateUpdateToMongo,
   formatCandidateProfileError,
   isCandidateProfileComplete,
+  sanitizeGeoProfileFields,
   toCandidateProfileData,
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
@@ -60,29 +61,31 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const data = sanitizeGeoProfileFields(parsed.data);
+
     const db = client.db(DB_NAME);
     const filter = { _id: matchId(auth.user.id) as never };
     const existing = await db.collection<UserDoc>(COLLECTIONS.USERS_COLLECTION).findOne(filter);
 
     const merged = toCandidateProfileData({
       ...existing,
-      ...parsed.data,
+      ...data,
       yearsExperience:
-        parsed.data.yearsExperience === ""
+        data.yearsExperience === ""
           ? undefined
-          : Number(parsed.data.yearsExperience),
-      resumeSource: parsed.data.resumeSource || undefined,
-      education: parsed.data.education,
-      workExperience: parsed.data.workExperience,
-      otherLinks: parsed.data.otherLinks,
-      languages: parsed.data.languages,
-      voiceLanguage: parsed.data.voiceLanguage || undefined,
-      hobbies: parsed.data.hobbies,
-      workAuthConfirmed: parsed.data.workAuthConfirmed,
-      workAuthStayAgreed: parsed.data.workAuthStayAgreed,
+          : Number(data.yearsExperience),
+      resumeSource: data.resumeSource || undefined,
+      education: data.education,
+      workExperience: data.workExperience,
+      otherLinks: data.otherLinks,
+      languages: data.languages,
+      voiceLanguage: data.voiceLanguage || undefined,
+      hobbies: data.hobbies,
+      workAuthConfirmed: data.workAuthConfirmed,
+      workAuthStayAgreed: data.workAuthStayAgreed,
     });
     const complete = isCandidateProfileComplete(merged);
-    const { $set, $unset } = candidateUpdateToMongo(parsed.data, complete);
+    const { $set, $unset } = candidateUpdateToMongo(data, complete);
 
     await db.collection(COLLECTIONS.USERS_COLLECTION).updateOne(
       filter,

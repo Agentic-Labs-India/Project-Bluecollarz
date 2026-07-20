@@ -18,7 +18,12 @@ import {
   type WorkFormEntry,
 } from "@/lib/candidate/profile";
 import { CountryMultiSelect } from "@/components/candidate/country-multi-select";
-import { normalizeCountryNames } from "@/lib/geo/places";
+import { DateOfBirthPicker } from "@/components/candidate/date-of-birth-picker";
+import { ResidencePlaceFields } from "@/components/candidate/residence-place-fields";
+import {
+  normalizeCountryNames,
+  normalizeResidencePlace,
+} from "@/lib/geo/places";
 import { BadgeCheckIcon, PlusIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -227,6 +232,14 @@ export function CandidateProfileView() {
         next.preferredCountries = normalizeCountryNames(
           next.preferredCountries ?? [],
         );
+        const place = normalizeResidencePlace({
+          country: next.residenceCountry,
+          state: next.residenceState,
+          city: next.residenceCity,
+        });
+        next.residenceCountry = place.country;
+        next.residenceState = place.state;
+        next.residenceCity = place.city;
         setProfile(next);
         lastSavedJsonRef.current = JSON.stringify(buildProfileSavePayload(next));
         readyRef.current = true;
@@ -854,40 +867,20 @@ export function CandidateProfileView() {
             Where you are based for most of the year. This might differ from
             citizenship.
           </p>
+          <ResidencePlaceFields
+            country={profile.residenceCountry}
+            state={profile.residenceState}
+            city={profile.residenceCity}
+            onChange={(place) =>
+              setProfile((p) => ({
+                ...p,
+                residenceCountry: place.country,
+                residenceState: place.state,
+                residenceCity: place.city,
+              }))
+            }
+          />
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Country</Label>
-              <Input
-                value={profile.residenceCountry}
-                onChange={(e) =>
-                  setProfile((p) => ({
-                    ...p,
-                    residenceCountry: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>State / Province / Region</Label>
-              <Input
-                value={profile.residenceState}
-                onChange={(e) =>
-                  setProfile((p) => ({
-                    ...p,
-                    residenceState: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>City</Label>
-              <Input
-                value={profile.residenceCity}
-                onChange={(e) =>
-                  setProfile((p) => ({ ...p, residenceCity: e.target.value }))
-                }
-              />
-            </div>
             <div className="space-y-1.5">
               <Label>Postal code</Label>
               <Input
@@ -911,13 +904,12 @@ export function CandidateProfileView() {
             Confirm your legally authorized work status.
           </p>
           <div className="space-y-1.5">
-            <Label htmlFor="dob">Date of birth (MM/DD/YYYY)</Label>
-            <Input
+            <Label htmlFor="dob">Date of birth</Label>
+            <DateOfBirthPicker
               id="dob"
-              placeholder="MM/DD/YYYY"
               value={profile.dateOfBirth}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, dateOfBirth: e.target.value }))
+              onChange={(dateOfBirth) =>
+                setProfile((p) => ({ ...p, dateOfBirth }))
               }
             />
           </div>

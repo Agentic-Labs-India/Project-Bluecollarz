@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { asOptionalNumber, formatZodError } from "@/lib/utils";
+import {
+  normalizeCountryNames,
+  normalizeResidencePlace,
+} from "@/lib/geo/places";
 import { TTS_LANGUAGE_CODES } from "@/lib/voice/languages";
 
 /** Candidate fields stored on the Users document (work profiles). */
@@ -289,6 +293,39 @@ export type CandidateProfileUpdateInput = z.infer<
   typeof candidateProfileUpdateSchema
 >;
 
+/** Coerce geo fields to official country-state-city names. */
+export function sanitizeGeoProfileFields<
+  T extends Partial<
+    Pick<
+      CandidateProfileUpdateInput,
+      | "preferredCountries"
+      | "residenceCountry"
+      | "residenceState"
+      | "residenceCity"
+    >
+  >,
+>(data: T): T {
+  const next = { ...data };
+  if (next.preferredCountries !== undefined) {
+    next.preferredCountries = normalizeCountryNames(next.preferredCountries);
+  }
+  if (
+    next.residenceCountry !== undefined ||
+    next.residenceState !== undefined ||
+    next.residenceCity !== undefined
+  ) {
+    const place = normalizeResidencePlace({
+      country: next.residenceCountry ?? "",
+      state: next.residenceState ?? "",
+      city: next.residenceCity ?? "",
+    });
+    next.residenceCountry = place.country;
+    next.residenceState = place.state;
+    next.residenceCity = place.city;
+  }
+  return next;
+}
+
 function mapEducation(
   list: CandidateEducationEntry[] | undefined,
 ): EducationFormEntry[] {
@@ -493,67 +530,73 @@ export function mergeCandidateProfilePatch(
   const pickStr = (next: string | undefined, prev: string) =>
     next !== undefined && next.trim() ? next : prev;
 
-  return candidateProfileUpdateSchema.parse({
-    phoneNumber: pickStr(patch.phoneNumber, current.phoneNumber),
-    headline: pickStr(patch.headline, current.headline),
-    location: pickStr(patch.location, current.location),
-    yearsExperience:
-      patch.yearsExperience !== undefined && patch.yearsExperience !== ""
-        ? patch.yearsExperience
-        : current.yearsExperience,
-    skills: patch.skills?.length ? patch.skills : current.skills,
-    workAuthorization: pickStr(
-      patch.workAuthorization,
-      current.workAuthorization,
-    ),
-    preferredCountries: patch.preferredCountries?.length
-      ? patch.preferredCountries
-      : current.preferredCountries,
-    summary: pickStr(patch.summary, current.summary),
-    resumeUrl:
-      patch.resumeUrl !== undefined ? patch.resumeUrl : current.resumeUrl,
-    resumeSource:
-      patch.resumeSource !== undefined && patch.resumeSource !== ""
-        ? patch.resumeSource
-        : current.resumeSource || "",
-    education: patch.education !== undefined ? patch.education : current.education,
-    workExperience:
-      patch.workExperience !== undefined
-        ? patch.workExperience
-        : current.workExperience,
-    portfolioUrl: pickStr(patch.portfolioUrl, current.portfolioUrl),
-    otherLinks:
-      patch.otherLinks !== undefined ? patch.otherLinks : current.otherLinks,
-    languages:
-      patch.languages !== undefined ? patch.languages : current.languages,
-    voiceLanguage:
-      patch.voiceLanguage !== undefined
-        ? patch.voiceLanguage
-        : current.voiceLanguage,
-    hobbies: patch.hobbies !== undefined ? patch.hobbies : current.hobbies,
-    residenceCountry: pickStr(patch.residenceCountry, current.residenceCountry),
-    residenceState: pickStr(patch.residenceState, current.residenceState),
-    residenceCity: pickStr(patch.residenceCity, current.residenceCity),
-    residencePostalCode: pickStr(
-      patch.residencePostalCode,
-      current.residencePostalCode,
-    ),
-    dateOfBirth: pickStr(patch.dateOfBirth, current.dateOfBirth),
-    workAuthConfirmed:
-      patch.workAuthConfirmed !== undefined
-        ? patch.workAuthConfirmed
-        : current.workAuthConfirmed,
-    workAuthStayAgreed:
-      patch.workAuthStayAgreed !== undefined
-        ? patch.workAuthStayAgreed
-        : current.workAuthStayAgreed,
-    fullTimeCompensation: pickStr(
-      patch.fullTimeCompensation,
-      current.fullTimeCompensation,
-    ),
-    partTimeCompensation: pickStr(
-      patch.partTimeCompensation,
-      current.partTimeCompensation,
-    ),
-  });
+  return candidateProfileUpdateSchema.parse(
+    sanitizeGeoProfileFields({
+      phoneNumber: pickStr(patch.phoneNumber, current.phoneNumber),
+      headline: pickStr(patch.headline, current.headline),
+      location: pickStr(patch.location, current.location),
+      yearsExperience:
+        patch.yearsExperience !== undefined && patch.yearsExperience !== ""
+          ? patch.yearsExperience
+          : current.yearsExperience,
+      skills: patch.skills?.length ? patch.skills : current.skills,
+      workAuthorization: pickStr(
+        patch.workAuthorization,
+        current.workAuthorization,
+      ),
+      preferredCountries: patch.preferredCountries?.length
+        ? patch.preferredCountries
+        : current.preferredCountries,
+      summary: pickStr(patch.summary, current.summary),
+      resumeUrl:
+        patch.resumeUrl !== undefined ? patch.resumeUrl : current.resumeUrl,
+      resumeSource:
+        patch.resumeSource !== undefined && patch.resumeSource !== ""
+          ? patch.resumeSource
+          : current.resumeSource || "",
+      education:
+        patch.education !== undefined ? patch.education : current.education,
+      workExperience:
+        patch.workExperience !== undefined
+          ? patch.workExperience
+          : current.workExperience,
+      portfolioUrl: pickStr(patch.portfolioUrl, current.portfolioUrl),
+      otherLinks:
+        patch.otherLinks !== undefined ? patch.otherLinks : current.otherLinks,
+      languages:
+        patch.languages !== undefined ? patch.languages : current.languages,
+      voiceLanguage:
+        patch.voiceLanguage !== undefined
+          ? patch.voiceLanguage
+          : current.voiceLanguage,
+      hobbies: patch.hobbies !== undefined ? patch.hobbies : current.hobbies,
+      residenceCountry: pickStr(
+        patch.residenceCountry,
+        current.residenceCountry,
+      ),
+      residenceState: pickStr(patch.residenceState, current.residenceState),
+      residenceCity: pickStr(patch.residenceCity, current.residenceCity),
+      residencePostalCode: pickStr(
+        patch.residencePostalCode,
+        current.residencePostalCode,
+      ),
+      dateOfBirth: pickStr(patch.dateOfBirth, current.dateOfBirth),
+      workAuthConfirmed:
+        patch.workAuthConfirmed !== undefined
+          ? patch.workAuthConfirmed
+          : current.workAuthConfirmed,
+      workAuthStayAgreed:
+        patch.workAuthStayAgreed !== undefined
+          ? patch.workAuthStayAgreed
+          : current.workAuthStayAgreed,
+      fullTimeCompensation: pickStr(
+        patch.fullTimeCompensation,
+        current.fullTimeCompensation,
+      ),
+      partTimeCompensation: pickStr(
+        patch.partTimeCompensation,
+        current.partTimeCompensation,
+      ),
+    }),
+  );
 }

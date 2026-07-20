@@ -26,8 +26,16 @@ import {
   TTS_LANGUAGE_CODES,
 } from "@/lib/voice/languages";
 import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
+import { lookupPlaceOptions } from "@/lib/geo/places";
 
 export const maxDuration = 90;
+
+const GEO_PLACE_PROMPT = `Places (must use country-state-city official English names):
+- residenceCountry, residenceState, residenceCity, and preferredCountries must match the geo library — never invent names or use nicknames (e.g. use "United Arab Emirates" not "UAE"; "United States" not "USA").
+- Before saving those fields, call listPlaceOptions to look up valid names.
+- preferredCountries: array of official country names only.
+- Residence flow: country → state (if listed) → city. Each value must appear in listPlaceOptions.
+- Postal code can be free text; place names cannot.`;
 
 const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
 
@@ -203,7 +211,8 @@ workExperience (array of {company, role, startYear, endYear, city, country, desc
 languages (string[]), hobbies (string[]), portfolioUrl, otherLinks (string[]),
 residenceCountry, residenceState, residenceCity, residencePostalCode, dateOfBirth,
 fullTimeCompensation, partTimeCompensation.
-Use empty string, [] when unknown. endYear may be "Present".`,
+Use empty string, [] when unknown. endYear may be "Present".
+For preferredCountries, residenceCountry, residenceState, and residenceCity: use official English geographic names only (e.g. "India", "Karnataka", "Bengaluru", "United Arab Emirates"). Do not use abbreviations like UAE/USA/UK.`,
           },
           {
             type: "file",
@@ -310,6 +319,7 @@ Speak in short, clear spoken sentences (1–3). The user answers by voice.
 ${voiceLanguagePrompt(opts?.languageCode)}
 ${VOICE_DELIVERY_PROMPT}
 ${VOICE_TOOL_DATA_PROMPT}
+${GEO_PLACE_PROMPT}
 ${resumeContext}
 
 Mandatory fields: phone number, headline/role, location, years of experience, skills, work authorization, professional summary, education (at least one entry), work experience (at least one entry), and languages.
@@ -338,6 +348,28 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
             .describe("Short question above the resume buttons"),
         }),
       }),
+      listPlaceOptions: tool({
+        description:
+          "Look up valid country / state / city names from the country-state-city library. Call before saving residenceCountry, residenceState, residenceCity, or preferredCountries. Omit country to list countries; pass country to list states (or cities if none); pass country+state to list cities. Optional query filters the list.",
+        inputSchema: z.object({
+          country: z
+            .string()
+            .max(80)
+            .optional()
+            .describe("Official country name or ISO code"),
+          state: z
+            .string()
+            .max(80)
+            .optional()
+            .describe("Official state/province name or code"),
+          query: z
+            .string()
+            .max(80)
+            .optional()
+            .describe("Optional substring filter for the returned names"),
+        }),
+        execute: async (input) => lookupPlaceOptions(input),
+      }),
       getCandidateProfile: tool({
         description: "Read the candidate's current profile and missing fields.",
         inputSchema: z.object({}),
@@ -353,7 +385,7 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed).",
+          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
           resumeSource: z.enum(["", "upload", "voice"]).optional(),
           skills: z.array(z.string()).optional(),
