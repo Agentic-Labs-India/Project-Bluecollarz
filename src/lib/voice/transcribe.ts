@@ -1,10 +1,20 @@
 "use client";
 
-/** Transcribe a short mic blob via `/api/voice/stt` (Sarvam REST). */
+export type TranscribeResult = {
+  ok: boolean;
+  transcript?: string;
+  language_code?: string | null;
+  error?: string;
+};
+
+/**
+ * Transcribe a short mic blob via `/api/voice/stt` (Sarvam REST).
+ * Pass the language the candidate selected in the voice language picker.
+ */
 export async function transcribeBlob(
   blob: Blob,
-  languageCode = "en-IN",
-): Promise<{ transcript?: string; error?: string; ok: boolean }> {
+  languageCode: string,
+): Promise<TranscribeResult> {
   try {
     const form = new FormData();
     const ext = blob.type.includes("wav")
@@ -17,6 +27,7 @@ export async function transcribeBlob(
     const res = await fetch("/api/voice/stt", { method: "POST", body: form });
     const data = (await res.json()) as {
       transcript?: string;
+      language_code?: string | null;
       error?: string;
     };
     if (!res.ok || !data.transcript?.trim()) {
@@ -25,7 +36,11 @@ export async function transcribeBlob(
         error: data.error || "Didn't catch that — speak again.",
       };
     }
-    return { ok: true, transcript: data.transcript.trim() };
+    return {
+      ok: true,
+      transcript: data.transcript.trim(),
+      language_code: data.language_code ?? null,
+    };
   } catch {
     return { ok: false, error: "Voice failed. Speak again when ready." };
   }

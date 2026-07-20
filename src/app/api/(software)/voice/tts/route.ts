@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
+import { resolveTtsLanguage } from "@/lib/voice/languages";
 import { sanitizeForTts, TTS_VOICE } from "@/lib/voice/style";
 
 export const maxDuration = 30;
@@ -33,10 +34,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing text" }, { status: 400 });
     }
 
-    const languageCode =
-      typeof body?.language_code === "string" && body.language_code
-        ? body.language_code
-        : TTS_VOICE.languageCode;
+    const languageCode = resolveTtsLanguage(
+      typeof body?.language_code === "string" ? body.language_code : null,
+      TTS_VOICE.languageCode,
+    );
 
     const upstream = await fetch("https://api.sarvam.ai/text-to-speech/stream", {
       method: "POST",

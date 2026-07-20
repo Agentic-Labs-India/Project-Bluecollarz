@@ -1,17 +1,12 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import {
-  DefaultChatTransport,
-  isTextUIPart,
-  type UIMessage,
-} from "ai";
+import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
 import {
   CircleHelpIcon,
   KeyboardIcon,
   MicIcon,
   SendIcon,
-  SparklesIcon,
   Volume2Icon,
 } from "lucide-react";
 import {
@@ -45,7 +40,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Markdown } from "@/components/ui/markdown";
-import { Marker, MarkerContent, MarkerIcon } from "@/components/ui/marker";
+import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
   Message,
   MessageAvatar,
@@ -60,11 +55,18 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import { authClient } from "@/lib/auth/auth-client";
 import {
   HELP_SUGGESTIONS,
   type HelpInputMode,
 } from "@/lib/help/prompt";
 import { speakText } from "@/lib/voice/speak";
+import {
+  fetchProfileVoiceLanguage,
+  languageLabel,
+  type TtsLanguageCode,
+} from "@/lib/voice/languages";
+import { TTS_VOICE } from "@/lib/voice/style";
 import { transcribeBlob } from "@/lib/voice/transcribe";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +86,9 @@ export function HelpDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const chatUser = useChatUserAvatar();
+  const { data: session } = authClient.useSession();
+  const profileType = session?.user?.profileType as string | undefined;
+
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<HelpInputMode>("text");
   const [voiceStatus, setVoiceStatus] = useState("Tap Enable mic to talk.");
@@ -91,20 +96,37 @@ export function HelpDialog({
   const [level, setLevel] = useState(0);
   const [micReady, setMicReady] = useState(false);
   const [micError, setMicError] = useState("");
+  const [voiceLanguage, setVoiceLanguage] = useState<TtsLanguageCode | null>(
+    null,
+  );
 
   const vadRef = useRef<VadController | null>(null);
   const pausedRef = useRef(true);
   const busyRef = useRef(false);
+  const streamingRef = useRef(false);
   const spokenIdsRef = useRef<Set<string>>(new Set());
   const modeRef = useRef<HelpInputMode>("text");
+  const languageReadyRef = useRef(false);
+  const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/help/chat" }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/help/chat",
+        body: () => ({
+          language_code: languageReadyRef.current
+            ? voiceLanguageRef.current
+            : null,
+        }),
+      }),
     [],
   );
 
-  const { messages, sendMessage, status, error } = useChat({ transport });
+  const { messages, sendMessage, status, error } = useChat({
+    transport,
+  });
   const isBusy = status === "submitted" || status === "streaming";
+  streamingRef.current = isBusy;
 
   useEffect(() => {
     modeRef.current = mode;
@@ -129,15 +151,26 @@ export function HelpDialog({
 
   const enableMic = async () => {
     setMicError("");
-    setVoiceStatus("Starting microphone…");
+    setVoiceStatus("Loading voice language…");
     try {
+      const code =
+        profileType === "hire"
+          ? ("en-IN" as TtsLanguageCode)
+          : ((await fetchProfileVoiceLanguage()) ?? "en-IN");
+      voiceLanguageRef.current = code;
+      languageReadyRef.current = true;
+      setVoiceLanguage(code);
+
+      setVoiceStatus("Starting microphone…");
       vadRef.current?.stop();
       pausedRef.current = true;
       vadRef.current = await startVadLoop({
         isPaused: () =>
           pausedRef.current ||
           busyRef.current ||
-          modeRef.current !== "voice",
+          streamingRef.current ||
+          modeRef.current !== "voice" ||
+          !languageReadyRef.current,
         onLevel: setLevel,
         onSpeechStart: () => {
           setListening(true);
@@ -146,12 +179,21 @@ export function HelpDialog({
         onSpeechEnd: (blob) => {
           setListening(false);
           void (async () => {
-            if (busyRef.current || modeRef.current !== "voice") return;
+            if (
+              busyRef.current ||
+              modeRef.current !== "voice" ||
+              !languageReadyRef.current
+            ) {
+              return;
+            }
             busyRef.current = true;
             pausedRef.current = true;
             setVoiceStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(blob, "en-IN");
+              const data = await transcribeBlob(
+                blob,
+                voiceLanguageRef.current,
+              );
               if (!data.ok || !data.transcript) {
                 setVoiceStatus(data.error || "Didn't catch that — try again.");
                 return;
@@ -176,20 +218,22 @@ export function HelpDialog({
     }
   };
 
-  // Speak assistant replies in voice mode.
+  // Speak each finished assistant message once in voice mode.
   useEffect(() => {
     if (!open || mode !== "voice" || isBusy) return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
     if (!last || spokenIdsRef.current.has(last.id)) return;
+
     const text = messageText(last);
     if (!text) return;
 
     spokenIdsRef.current.add(last.id);
+
     void (async () => {
       busyRef.current = true;
       pausedRef.current = true;
       setVoiceStatus("Speaking…");
-      await speakText(text);
+      await speakText(text, voiceLanguageRef.current);
       busyRef.current = false;
       if (modeRef.current === "voice" && micReady) {
         pausedRef.current = false;
@@ -208,6 +252,9 @@ export function HelpDialog({
   useEffect(() => {
     if (!open) {
       spokenIdsRef.current.clear();
+      languageReadyRef.current = false;
+      setVoiceLanguage(null);
+      voiceLanguageRef.current = TTS_VOICE.languageCode;
       setInput("");
       setMode("text");
       setMicError("");
@@ -229,6 +276,9 @@ export function HelpDialog({
               <DialogTitle className="flex items-center gap-2 text-base">
                 <CircleHelpIcon className="size-4" />
                 Help
+                {voiceLanguage && mode === "voice"
+                  ? ` · ${languageLabel(voiceLanguage)}`
+                  : ""}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-sm">
                 Ask anything about BlueCollarz — jobs, interviews, KYC, or
@@ -269,7 +319,7 @@ export function HelpDialog({
                     <div className="space-y-3">
                       <p className="text-muted-foreground text-sm leading-relaxed">
                         {mode === "voice"
-                          ? "Enable the mic, then ask out loud — or tap a prompt."
+                          ? "Enable the mic and ask out loud — or tap a prompt."
                           : "Try one of these, or type your own question below."}
                       </p>
                       <div className="flex flex-col gap-2">
@@ -321,10 +371,8 @@ export function HelpDialog({
                                 {text}
                               </div>
                             ) : (
-                              <div className="bg-card text-foreground border-border w-fit max-w-[min(100%,22rem)] border px-3.5 py-2">
-                                <Markdown>
-                                  {text || "_Thinking…_"}
-                                </Markdown>
+                              <div className="bg-card text-foreground border-border w-fit max-w-[min(100%,22rem)] space-y-2 border px-3.5 py-2">
+                                <Markdown>{text || "_Thinking…_"}</Markdown>
                               </div>
                             )}
                           </MessageContent>

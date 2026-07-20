@@ -16,7 +16,7 @@ export function interviewKickoffText(
   stageId: InterviewStageId,
   jobTitle: string,
 ): string {
-  return `Please start the ${interviewStageLabel(stageId)} interview for the role: ${jobTitle}.`;
+  return `Please start the ${interviewStageLabel(stageId)} interview for the role: ${jobTitle}. Use my profile voice language for the whole interview.`;
 }
 
 export function isInterviewKickoffText(text: string): boolean {

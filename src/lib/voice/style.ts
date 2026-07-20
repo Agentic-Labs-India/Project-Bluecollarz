@@ -1,3 +1,5 @@
+import type { TtsLanguageCode } from "@/lib/voice/languages";
+
 /** Shared TTS delivery settings — keep every utterance sounding the same. */
 export const TTS_VOICE = {
   model: "bulbul:v3",
@@ -5,7 +7,8 @@ export const TTS_VOICE = {
   /** Lower = steadier, less emotional swing (v3 range 0.01–2.0, default 0.6). */
   temperature: 0.15,
   pace: 1,
-  languageCode: "en-IN",
+  /** Fallback before Sarvam STT detects the candidate's language. */
+  languageCode: "en-IN" as TtsLanguageCode,
   outputAudioCodec: "mp3",
   outputAudioBitrate: "128k",
 } as const;

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { asOptionalNumber, formatZodError } from "@/lib/utils";
+import { TTS_LANGUAGE_CODES } from "@/lib/voice/languages";
 
 /** Candidate fields stored on the Users document (work profiles). */
 export interface CandidateEducationEntry {
@@ -38,6 +39,8 @@ export interface CandidateProfileFields {
   portfolioUrl?: string;
   otherLinks?: string[];
   languages?: string[];
+  /** Sarvam voice locale for TTS/STT (e.g. hi-IN). Set in onboarding; editable on profile. */
+  voiceLanguage?: string;
   hobbies?: string[];
   residenceCountry?: string;
   residenceState?: string;
@@ -89,6 +92,8 @@ export interface CandidateProfileData {
   portfolioUrl: string;
   otherLinks: string[];
   languages: string[];
+  /** Sarvam BCP-47 voice locale (en-IN, hi-IN, …). */
+  voiceLanguage: string;
   hobbies: string[];
   residenceCountry: string;
   residenceState: string;
@@ -174,6 +179,7 @@ const EMPTY: CandidateProfileData = {
   portfolioUrl: "",
   otherLinks: [],
   languages: [],
+  voiceLanguage: "",
   hobbies: [],
   residenceCountry: "",
   residenceState: "",
@@ -206,6 +212,11 @@ const countriesSchema = stringListSchema(20, 80);
 const languagesSchema = stringListSchema(20, 80);
 const hobbiesSchema = stringListSchema(30, 80);
 const otherLinksSchema = stringListSchema(10, 500);
+
+const voiceLanguageSchema = z.preprocess((val) => {
+  if (val === null || val === undefined) return "";
+  return String(val).trim();
+}, z.union([z.enum(TTS_LANGUAGE_CODES), z.literal("")]));
 
 const educationEntrySchema = z.object({
   school: optionalTrimmed(200),
@@ -261,6 +272,7 @@ export const candidateProfileUpdateSchema = z.object({
   portfolioUrl: optionalTrimmed(500),
   otherLinks: otherLinksSchema,
   languages: languagesSchema,
+  voiceLanguage: voiceLanguageSchema,
   hobbies: hobbiesSchema,
   residenceCountry: optionalTrimmed(80),
   residenceState: optionalTrimmed(80),
@@ -323,6 +335,7 @@ export function toCandidateProfileData(
       workExperience: [],
       otherLinks: [],
       languages: [],
+      voiceLanguage: "",
       hobbies: [],
     };
   }
@@ -348,6 +361,7 @@ export function toCandidateProfileData(
     portfolioUrl: doc.portfolioUrl ?? "",
     otherLinks: doc.otherLinks ?? [],
     languages: doc.languages ?? [],
+    voiceLanguage: doc.voiceLanguage ?? "",
     hobbies: doc.hobbies ?? [],
     residenceCountry: doc.residenceCountry ?? "",
     residenceState: doc.residenceState ?? "",
@@ -458,6 +472,8 @@ export function candidateUpdateToMongo(
   $set.workExperience = data.workExperience;
   $set.otherLinks = data.otherLinks;
   $set.languages = data.languages;
+  if (data.voiceLanguage) $set.voiceLanguage = data.voiceLanguage;
+  else $unset.voiceLanguage = "";
   $set.hobbies = data.hobbies;
   $set.workAuthConfirmed = data.workAuthConfirmed;
   $set.workAuthStayAgreed = data.workAuthStayAgreed;
@@ -510,6 +526,10 @@ export function mergeCandidateProfilePatch(
       patch.otherLinks !== undefined ? patch.otherLinks : current.otherLinks,
     languages:
       patch.languages !== undefined ? patch.languages : current.languages,
+    voiceLanguage:
+      patch.voiceLanguage !== undefined
+        ? patch.voiceLanguage
+        : current.voiceLanguage,
     hobbies: patch.hobbies !== undefined ? patch.hobbies : current.hobbies,
     residenceCountry: pickStr(patch.residenceCountry, current.residenceCountry),
     residenceState: pickStr(patch.residenceState, current.residenceState),

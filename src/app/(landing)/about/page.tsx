@@ -114,7 +114,7 @@ export default function AboutPage() {
             [
               "work",
               "Candidate / worker",
-              "Landing “Start working” → onboarding → home",
+              "Landing “Get Job” → onboarding → home",
             ],
             [
               "hire",

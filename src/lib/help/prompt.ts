@@ -1,7 +1,11 @@
 import type { ProfileType } from "@/lib/profile-types";
+import { voiceLanguagePrompt } from "@/lib/voice/languages";
 
 /** Product knowledge for the in-app Help assistant. */
-export function buildHelpSystemPrompt(profileType: ProfileType): string {
+export function buildHelpSystemPrompt(
+  profileType: ProfileType,
+  languageCode?: string | null,
+): string {
   const audience =
     profileType === "hire"
       ? "The signed-in user is a recruiter (hire profile)."
@@ -41,7 +45,9 @@ BlueCollarz is AI-native hiring infrastructure for skilled candidates and recrui
 - Be accurate; if unsure, say so and suggest where in the UI to look.
 - **Always reply in Markdown**: short headings when useful, bullet lists, and **bold** for UI labels/buttons. Keep answers scannable.
 - No invented features or fake URLs.
-- Do not ask for passwords, OTP codes, or full ID numbers.`;
+- Do not ask for passwords, OTP codes, or full ID numbers.
+- Do not ask the user to pick a language — voice language comes from their profile (or English for recruiters).
+${voiceLanguagePrompt(languageCode)}`;
 }
 
 export const HELP_SUGGESTIONS = [

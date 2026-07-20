@@ -1,7 +1,11 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, isToolUIPart } from "ai";
+import {
+  DefaultChatTransport,
+  isTextUIPart,
+  isToolUIPart,
+} from "ai";
 import {
   useCallback,
   useEffect,
@@ -43,6 +47,12 @@ import {
   useChatUserAvatar,
 } from "@/components/candidate/chat-avatars";
 import { speakText } from "@/lib/voice/speak";
+import {
+  fetchProfileVoiceLanguage,
+  languageLabel,
+  type TtsLanguageCode,
+} from "@/lib/voice/languages";
+import { TTS_VOICE } from "@/lib/voice/style";
 import { transcribeBlob } from "@/lib/voice/transcribe";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -74,7 +84,7 @@ export function AiInterview({
     "permissions" | "live" | "finalizing" | "done" | "error"
   >("permissions");
   const [status, setStatus] = useState(
-    "Allow camera, microphone, and entire-screen share to begin.",
+    "Complete the system checks, then start the interview.",
   );
   const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
@@ -82,6 +92,9 @@ export function AiInterview({
   const [checksReady, setChecksReady] = useState(false);
   const [checkCameraStream, setCheckCameraStream] =
     useState<MediaStream | null>(null);
+  const [voiceLanguage, setVoiceLanguage] = useState<TtsLanguageCode | null>(
+    null,
+  );
   const spokenIdsRef = useRef<Set<string>>(new Set());
   const startedChatRef = useRef(false);
   const pausedRef = useRef(true);
@@ -89,9 +102,12 @@ export function AiInterview({
   const localTranscriptRef = useRef<LocalTurn[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const busyUtteranceRef = useRef(false);
+  const streamingRef = useRef(false);
   const closingRef = useRef(false);
+  const languageReadyRef = useRef(false);
   const sidebarCameraRef = useRef<HTMLVideoElement>(null);
   const readyPanelRef = useRef<InterviewReadyPanelHandle>(null);
+  const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
 
   const {
     start: startScreen,
@@ -134,6 +150,9 @@ export function AiInterview({
     () =>
       new DefaultChatTransport({
         api: `/api/interviews/${interviewId}/chat`,
+        body: () => ({
+          language_code: voiceLanguageRef.current,
+        }),
       }),
     [interviewId],
   );
@@ -144,6 +163,7 @@ export function AiInterview({
 
   const isStreaming =
     chatStatus === "submitted" || chatStatus === "streaming";
+  streamingRef.current = isStreaming;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -151,8 +171,14 @@ export function AiInterview({
 
   const beginSession = useCallback(async () => {
     setError("");
-    setStatus("Turning on camera, then entire-screen share…");
+    setStatus("Loading your voice language…");
     try {
+      const code = (await fetchProfileVoiceLanguage()) ?? "en-IN";
+      voiceLanguageRef.current = code;
+      languageReadyRef.current = true;
+      setVoiceLanguage(code);
+
+      setStatus("Turning on camera, then entire-screen share…");
       readyPanelRef.current?.releaseDevices();
       setCheckCameraStream(null);
       const { mic } = await startScreen();
@@ -162,7 +188,11 @@ export function AiInterview({
       // Reuse the same mic track as the screen recorder (no second getUserMedia).
       vadRef.current = await startVadLoop({
         stream: mic,
-        isPaused: () => pausedRef.current || busyUtteranceRef.current,
+        isPaused: () =>
+          pausedRef.current ||
+          busyUtteranceRef.current ||
+          streamingRef.current ||
+          !languageReadyRef.current,
         onLevel: setLevel,
         onSpeechStart: () => {
           setListening(true);
@@ -171,11 +201,20 @@ export function AiInterview({
         onSpeechEnd: (blob) => {
           setListening(false);
           void (async () => {
-            if (busyUtteranceRef.current || isStreaming) return;
+            if (
+              busyUtteranceRef.current ||
+              streamingRef.current ||
+              !languageReadyRef.current
+            ) {
+              return;
+            }
             busyUtteranceRef.current = true;
             setStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(blob, "en-IN");
+              const data = await transcribeBlob(
+                blob,
+                voiceLanguageRef.current,
+              );
               if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — try again.");
                 return;
@@ -210,9 +249,9 @@ export function AiInterview({
               "Camera, microphone, and screen share are required.",
       );
     }
-  }, [startScreen, sendMessage, jobTitle, stageId, screenError, isStreaming]);
+  }, [startScreen, sendMessage, jobTitle, stageId, screenError]);
 
-  // Speak assistant replies; detect finishInterview.
+  // Speak each finished assistant message once.
   useEffect(() => {
     if (isStreaming || phase !== "live") return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
@@ -223,6 +262,9 @@ export function AiInterview({
       .map((p) => p.text)
       .join(" ")
       .trim();
+    if (!text) return;
+
+    spokenIdsRef.current.add(last.id);
 
     const finished = last.parts.some(
       (p) =>
@@ -234,16 +276,12 @@ export function AiInterview({
         (p.output as { ok?: boolean }).ok === true,
     );
 
-    spokenIdsRef.current.add(last.id);
-
     void (async () => {
       pausedRef.current = true;
       busyUtteranceRef.current = true;
-      if (text) {
-        localTranscriptRef.current.push({ role: "assistant", text });
-        setStatus("Speaking…");
-        await speakText(text);
-      }
+      localTranscriptRef.current.push({ role: "assistant", text });
+      setStatus("Speaking…");
+      await speakText(text, voiceLanguageRef.current);
       busyUtteranceRef.current = false;
 
       if (finished) {
@@ -348,6 +386,7 @@ export function AiInterview({
         <div className="min-w-0">
           <p className="text-muted-foreground text-xs uppercase tracking-wide">
             {stageTitle}
+            {voiceLanguage ? ` · ${languageLabel(voiceLanguage)}` : ""}
           </p>
           <h1 className="text-foreground truncate text-base font-semibold md:text-lg">
             {jobTitle}
@@ -404,13 +443,13 @@ export function AiInterview({
                       )}
                       <div
                         className={cn(
-                          "text-sm leading-relaxed",
+                          "min-w-0 text-sm leading-relaxed",
                           isUser
                             ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
                             : "text-foreground/90 pt-0.5",
                         )}
                       >
-                        {text}
+                        <p className="whitespace-pre-wrap">{text}</p>
                       </div>
                     </div>
                   );
@@ -491,7 +530,7 @@ export function AiInterview({
               </Button>
               <p className="text-muted-foreground text-xs leading-relaxed">
                 {checksReady
-                  ? "All checks passed. Starting will turn on camera, microphone, and entire-screen share. Speak naturally — after a pause, your answer is sent."
+                  ? "Starting will turn on camera, microphone, and entire-screen share. Your profile voice language will be used."
                   : "Complete every system check on the left before you can start. Entire-screen share will be requested when you begin."}
               </p>
             </div>
@@ -512,22 +551,32 @@ export function AiInterview({
           ) : null}
 
           {phase === "live" ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                closingRef.current = true;
-                pausedRef.current = true;
-                vadRef.current?.stop();
-                vadRef.current = null;
-                void stopScreen();
-                onClose();
-              }}
-            >
-              <SquareIcon className="size-4" />
-              End early
-            </Button>
+            <>
+              {voiceLanguage ? (
+                <p className="text-muted-foreground text-xs">
+                  Language:{" "}
+                  <span className="text-foreground font-medium">
+                    {languageLabel(voiceLanguage)}
+                  </span>
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  closingRef.current = true;
+                  pausedRef.current = true;
+                  vadRef.current?.stop();
+                  vadRef.current = null;
+                  void stopScreen();
+                  onClose();
+                }}
+              >
+                <SquareIcon className="size-4" />
+                End early
+              </Button>
+            </>
           ) : null}
         </aside>
       </div>

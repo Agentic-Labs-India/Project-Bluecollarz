@@ -76,6 +76,7 @@ export async function PUT(req: NextRequest) {
       workExperience: parsed.data.workExperience,
       otherLinks: parsed.data.otherLinks,
       languages: parsed.data.languages,
+      voiceLanguage: parsed.data.voiceLanguage || undefined,
       hobbies: parsed.data.hobbies,
       workAuthConfirmed: parsed.data.workAuthConfirmed,
       workAuthStayAgreed: parsed.data.workAuthStayAgreed,

@@ -49,9 +49,27 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const messages = (body as { messages?: unknown }).messages;
+  const messages = (body as { messages?: unknown; language_code?: unknown })
+    .messages;
   if (!Array.isArray(messages)) {
     return new Response("Expected { messages: unknown[] }", { status: 400 });
+  }
+
+  const bodyLanguageCode =
+    typeof (body as { language_code?: unknown }).language_code === "string"
+      ? (body as { language_code: string }).language_code.trim()
+      : "";
+
+  // Prefer client override; otherwise load from the candidate profile.
+  let languageCode: string | null = bodyLanguageCode || null;
+  if (!languageCode) {
+    const userDoc = await db
+      .collection<{ voiceLanguage?: string }>(COLLECTIONS.USERS_COLLECTION)
+      .findOne(
+        { _id: matchId(auth.user.id) as never },
+        { projection: { voiceLanguage: 1 } } as never,
+      );
+    languageCode = userDoc?.voiceLanguage?.trim() || "en-IN";
   }
 
   const lastUser = [...messages].reverse().find(
@@ -89,6 +107,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     stageId: interview.stageId,
     jobTitle: interview.jobTitle,
     jobOverview: interview.jobOverview,
+    languageCode,
   });
 
   return createAgentUIStreamResponse({

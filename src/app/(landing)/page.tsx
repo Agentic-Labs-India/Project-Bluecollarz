@@ -125,7 +125,7 @@ export default function Page() {
             profileType="work"
             className="rounded-md bg-primary px-6 py-2 text-primary-foreground duration-200 hover:bg-primary-active"
           >
-            Start working
+            Get Job
           </LoginButton>
           <Link
             className="flex flex-row items-center gap-1.5 rounded-md bg-muted px-6 py-[9.5px] text-sm duration-200 hover:bg-secondary"

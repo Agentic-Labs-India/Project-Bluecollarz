@@ -20,6 +20,11 @@ import {
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
 import { auth } from "@/lib/auth/auth";
+import {
+  voiceLanguagePrompt,
+  VOICE_TOOL_DATA_PROMPT,
+  TTS_LANGUAGE_CODES,
+} from "@/lib/voice/languages";
 import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
 
 export const maxDuration = 90;
@@ -257,6 +262,7 @@ function buildAgent(
   opts?: {
     resumeApplied?: { complete: boolean; missing: string[] } | null;
     resumeParseFailed?: boolean;
+    languageCode?: string | null;
   },
 ) {
   const resumeApplied = opts?.resumeApplied;
@@ -273,23 +279,45 @@ If complete is true, congratulate them and call finishOnboarding.`
       ? `IMPORTANT — the candidate attached a resume PDF but automatic extraction failed.
 Tell them briefly, then interview by voice for the mandatory fields one at a time. Use updateCandidateProfile after each useful answer.`
       : `Flow:
-1. Greet ${userName || "the candidate"} briefly. Ask if they already have a resume PDF.
+1. ${
+          opts?.languageCode
+            ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language and ask if they already have a resume PDF.`
+            : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language and ask if they already have a resume PDF.`
+        }
 2. If YES: tell them to use the PDF button on screen. When they attach a PDF, it is parsed automatically — then call getCandidateProfile and ask only for missing fields.
 3. If NO: interview them by voice to build a resume summary. Ask one question at a time. Use updateCandidateProfile after each useful answer.
-4. When complete is true, congratulate them and say they will go to the dashboard. Call finishOnboarding.`;
+4. When complete is true, congratulate them and say they will go to the dashboard. Call finishOnboarding.
+${
+  opts?.languageCode
+    ? "Do not call selectVoiceLanguage — language is already on the profile."
+    : "Call selectVoiceLanguage at most once per session (only if voice language is not already on the profile)."
+}`;
 
   return new ToolLoopAgent({
     id: "candidate-onboarding",
     model: gatewayModel,
     instructions: `You are BlueCollarz's onboarding voice coach for candidates (workers).
-Speak in short, clear spoken English (1–3 sentences). The user answers by voice.
+Speak in short, clear spoken sentences (1–3). The user answers by voice.
+${voiceLanguagePrompt(opts?.languageCode)}
 ${VOICE_DELIVERY_PROMPT}
+${VOICE_TOOL_DATA_PROMPT}
 ${resumeContext}
 
 Mandatory fields: phone number, headline/role, location, years of experience, skills, work authorization, professional summary, education (at least one entry), work experience (at least one entry), and languages.
 Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.`,
     stopWhen: stepCountIs(12),
     tools: {
+      selectVoiceLanguage: tool({
+        description:
+          "Ask the candidate to pick their spoken language for voice sessions. Call this FIRST before greeting. Wait for their selection.",
+        inputSchema: z.object({
+          prompt: z
+            .string()
+            .max(200)
+            .optional()
+            .describe("Short question above the language buttons"),
+        }),
+      }),
       getCandidateProfile: tool({
         description: "Read the candidate's current profile and missing fields.",
         inputSchema: z.object({}),
@@ -305,12 +333,13 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields collected from conversation.",
+          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed).",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
           resumeSource: z.enum(["", "upload", "voice"]).optional(),
           skills: z.array(z.string()).optional(),
           preferredCountries: z.array(z.string()).optional(),
           languages: z.array(z.string()).optional(),
+          voiceLanguage: z.enum(TTS_LANGUAGE_CODES).optional(),
           hobbies: z.array(z.string()).optional(),
           otherLinks: z.array(z.string()).optional(),
         }),
@@ -360,10 +389,16 @@ export async function POST(request: Request) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const messages = (body as { messages?: unknown }).messages;
+  const messages = (body as { messages?: unknown; language_code?: unknown })
+    .messages;
   if (!Array.isArray(messages)) {
     return new Response("Expected { messages: unknown[] }", { status: 400 });
   }
+
+  const languageCode =
+    typeof (body as { language_code?: unknown }).language_code === "string"
+      ? (body as { language_code: string }).language_code
+      : null;
 
   let resumeApplied: { complete: boolean; missing: string[] } | null = null;
   let resumeParseFailed = false;
@@ -385,6 +420,7 @@ export async function POST(request: Request) {
   const agent = buildAgent(user.id, user.name ?? "", {
     resumeApplied,
     resumeParseFailed,
+    languageCode,
   });
   return createAgentUIStreamResponse({
     agent,

@@ -1,7 +1,12 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, isToolUIPart } from "ai";
+import {
+  DefaultChatTransport,
+  isTextUIPart,
+  isToolUIPart,
+  lastAssistantMessageIsCompleteWithToolCalls,
+} from "ai";
 import {
   useEffect,
   useLayoutEffect,
@@ -11,6 +16,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
+  CheckIcon,
   MicIcon,
   UploadIcon,
   Volume2Icon,
@@ -29,8 +35,98 @@ import {
 } from "@/components/candidate/chat-avatars";
 import { APP_PAGE_MAX } from "@/components/layout/app-page";
 import { speakText } from "@/lib/voice/speak";
+import {
+  fetchProfileVoiceLanguage,
+  languageLabel,
+  saveProfileVoiceLanguage,
+  VOICE_LANGUAGE_OPTIONS,
+  isTtsLanguageCode,
+  type TtsLanguageCode,
+} from "@/lib/voice/languages";
+import { TTS_VOICE } from "@/lib/voice/style";
 import { transcribeBlob } from "@/lib/voice/transcribe";
 import { cn } from "@/lib/utils";
+import type { UIMessage } from "ai";
+
+const LANG_TOOL = "tool-selectVoiceLanguage" as const;
+
+function langToolParts(message: UIMessage) {
+  return message.parts.filter(
+    (p) => isToolUIPart(p) && p.type === LANG_TOOL,
+  ) as Array<{
+    type: typeof LANG_TOOL;
+    toolCallId: string;
+    state: string;
+    input?: { prompt?: string };
+    output?: { language_code?: string; label?: string };
+  }>;
+}
+
+function needsLanguagePick(message: UIMessage) {
+  return langToolParts(message).some(
+    (p) => p.state === "input-available" || p.state === "approval-requested",
+  );
+}
+
+function LanguagePickerInChat({
+  prompt,
+  selectedCode,
+  disabled,
+  onSelect,
+}: {
+  prompt?: string;
+  selectedCode?: string | null;
+  disabled?: boolean;
+  onSelect: (code: TtsLanguageCode) => void;
+}) {
+  const confirmed = Boolean(selectedCode);
+  return (
+    <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
+      <p className="text-foreground text-sm leading-snug">
+        {prompt?.trim() || "Which language should we use?"}
+      </p>
+      <div
+        role="listbox"
+        aria-label="Select language"
+        className="grid grid-cols-2 gap-1.5"
+      >
+        {VOICE_LANGUAGE_OPTIONS.map((opt) => {
+          const isSelected = selectedCode === opt.code;
+          return (
+            <button
+              key={opt.code}
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              disabled={disabled || confirmed}
+              onClick={() => onSelect(opt.code)}
+              className={cn(
+                "border-border flex items-center gap-2 border px-2.5 py-2 text-left transition-colors",
+                "hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+                "disabled:pointer-events-none",
+                isSelected
+                  ? "border-primary bg-primary/10"
+                  : "bg-background/80 disabled:opacity-60",
+              )}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium leading-tight">
+                  {opt.nativeLabel}
+                </span>
+                <span className="text-muted-foreground block text-[11px]">
+                  {opt.label}
+                </span>
+              </span>
+              {isSelected ? (
+                <CheckIcon className="text-primary size-3.5 shrink-0" />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 type ActionCue = {
   label: string;
@@ -62,29 +158,48 @@ export function OnboardingAgent() {
   const [micReady, setMicReady] = useState(false);
   const [micError, setMicError] = useState("");
   const [done, setDone] = useState(false);
+  const [voiceLanguage, setVoiceLanguage] = useState<TtsLanguageCode | null>(
+    null,
+  );
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const spokenIdsRef = useRef<Set<string>>(new Set());
+  const spokenTextByIdRef = useRef<Map<string, string>>(new Map());
   const startedRef = useRef(false);
   const pausedRef = useRef(true);
   const busyUtteranceRef = useRef(false);
   const streamingRef = useRef(false);
   const vadRef = useRef<VadController | null>(null);
   const doneRef = useRef(false);
+  const languageLockedRef = useRef(false);
+  const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/onboarding" }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/onboarding",
+        body: () => ({
+          language_code: languageLockedRef.current
+            ? voiceLanguageRef.current
+            : null,
+        }),
+      }),
     [],
   );
 
-  const { messages, sendMessage, status: chatStatus } = useChat({
-    transport,
-  });
+  const { messages, sendMessage, addToolOutput, status: chatStatus } =
+    useChat({
+      transport,
+      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    });
 
   const isStreaming =
     chatStatus === "submitted" || chatStatus === "streaming";
   streamingRef.current = isStreaming;
+
+  const awaitingLanguage = messages.some(
+    (m) => m.role === "assistant" && needsLanguagePick(m),
+  );
 
   const actionCue: ActionCue = (() => {
     if (done) {
@@ -95,6 +210,9 @@ export function OnboardingAgent() {
     }
     if (!micReady) {
       return { label: "START", hint: "Enable mic", tone: "start" };
+    }
+    if (awaitingLanguage) {
+      return { label: "LANGUAGE", hint: "Pick in chat", tone: "start" };
     }
     if (uploading) {
       return { label: "WAIT", hint: "Reading PDF", tone: "wait" };
@@ -119,10 +237,23 @@ export function OnboardingAgent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isStreaming]);
 
+  const lockLanguage = (code: TtsLanguageCode) => {
+    languageLockedRef.current = true;
+    voiceLanguageRef.current = code;
+    setVoiceLanguage(code);
+    setStatus(`${languageLabel(code)} selected — continuing…`);
+  };
+
   const enableMic = async () => {
     setMicError("");
-    setStatus("Calibrating microphone…");
+    setStatus("Loading your voice language…");
     try {
+      const existingLanguage = await fetchProfileVoiceLanguage();
+      if (existingLanguage) {
+        lockLanguage(existingLanguage);
+      }
+
+      setStatus("Calibrating microphone…");
       pausedRef.current = true;
       vadRef.current?.stop();
       vadRef.current = await startVadLoop({
@@ -130,7 +261,8 @@ export function OnboardingAgent() {
           pausedRef.current ||
           busyUtteranceRef.current ||
           streamingRef.current ||
-          doneRef.current,
+          doneRef.current ||
+          !languageLockedRef.current,
         onLevel: setLevel,
         onSpeechStart: () => {
           setListening(true);
@@ -142,7 +274,8 @@ export function OnboardingAgent() {
             if (
               busyUtteranceRef.current ||
               streamingRef.current ||
-              doneRef.current
+              doneRef.current ||
+              !languageLockedRef.current
             ) {
               return;
             }
@@ -150,7 +283,10 @@ export function OnboardingAgent() {
             pausedRef.current = true;
             setStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(blob, "en-IN");
+              const data = await transcribeBlob(
+                blob,
+                voiceLanguageRef.current,
+              );
               if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — speak again.");
                 pausedRef.current = false;
@@ -168,13 +304,20 @@ export function OnboardingAgent() {
         },
       });
       setMicReady(true);
-      setStatus("Starting onboarding…");
 
       if (!startedRef.current) {
         startedRef.current = true;
-        await sendMessage({
-          text: "Hi — I just signed in as a candidate. Please start onboarding.",
-        });
+        if (existingLanguage) {
+          setStatus("Starting onboarding…");
+          await sendMessage({
+            text: "Hi — I just signed in as a candidate. My voice language is already on my profile, start onboarding in that language.",
+          });
+        } else {
+          setStatus("Starting onboarding — pick your language in chat…");
+          await sendMessage({
+            text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then start onboarding in that language.",
+          });
+        }
       }
     } catch {
       setMicError("Microphone permission is required for voice onboarding.");
@@ -182,17 +325,58 @@ export function OnboardingAgent() {
     }
   };
 
-  // Speak each finished assistant message once, then resume listening.
+  // Speak finished assistant text after language is locked.
+  // The language-picker bubble is never spoken; the greeting turn is.
   useEffect(() => {
     if (isStreaming || !micReady || doneRef.current) return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
-    if (!last || spokenIdsRef.current.has(last.id)) return;
+    if (!last) return;
+
+    if (needsLanguagePick(last)) {
+      setStatus("Pick a language in the chat to continue.");
+      return;
+    }
+
+    for (const part of langToolParts(last)) {
+      if (part.state === "output-available") {
+        const raw = part.output?.language_code;
+        if (raw && isTtsLanguageCode(raw)) lockLanguage(raw);
+      }
+    }
+
+    if (!languageLockedRef.current) return;
 
     const text = last.parts
       .filter(isTextUIPart)
       .map((p) => p.text)
       .join(" ")
       .trim();
+
+    const isLangMsg = langToolParts(last).length > 0;
+
+    // Picker message with no greeting text yet — wait (keep mic paused).
+    if (isLangMsg && !text) {
+      pausedRef.current = true;
+      setStatus("Language selected — continuing…");
+      return;
+    }
+
+    // Picker message: remember prompt text but do not TTS it.
+    if (isLangMsg) {
+      const prev = spokenTextByIdRef.current.get(last.id);
+      if (prev === undefined) {
+        spokenTextByIdRef.current.set(last.id, text);
+        pausedRef.current = true;
+        setStatus("Language selected — continuing…");
+        return;
+      }
+      // Same message grew with a real reply after the tool result — speak new text.
+      if (prev === text) return;
+    }
+
+    if (!text) return;
+    if (spokenTextByIdRef.current.get(last.id) === text) return;
+    spokenTextByIdRef.current.set(last.id, text);
 
     const finished = last.parts.some(
       (p) =>
@@ -204,15 +388,11 @@ export function OnboardingAgent() {
         (p.output as { ok?: boolean }).ok === true,
     );
 
-    spokenIdsRef.current.add(last.id);
-
     void (async () => {
       pausedRef.current = true;
       busyUtteranceRef.current = true;
-      if (text) {
-        setStatus("Speaking…");
-        await speakText(text);
-      }
+      setStatus("Speaking…");
+      await speakText(text, voiceLanguageRef.current);
       busyUtteranceRef.current = false;
 
       if (finished) {
@@ -239,7 +419,9 @@ export function OnboardingAgent() {
   }, []);
 
   const onUploadResume = async (file: File | null) => {
-    if (!file || !micReady || doneRef.current) return;
+    if (!file || !micReady || doneRef.current || !languageLockedRef.current) {
+      return;
+    }
     if (file.type !== "application/pdf") {
       setStatus("Please upload a PDF resume only.");
       return;
@@ -262,6 +444,22 @@ export function OnboardingAgent() {
     }
   };
 
+  const onPickLanguage = (
+    toolCallId: string,
+    code: TtsLanguageCode,
+  ) => {
+    lockLanguage(code);
+    void saveProfileVoiceLanguage(code).catch(() => undefined);
+    void addToolOutput({
+      tool: "selectVoiceLanguage",
+      toolCallId,
+      output: {
+        language_code: code,
+        label: languageLabel(code),
+      },
+    });
+  };
+
   return (
     <div
       className={cn(
@@ -275,6 +473,7 @@ export function OnboardingAgent() {
           className="border-primary/40 bg-primary/10 text-primary h-auto w-full justify-center px-3 py-1 text-sm font-semibold"
         >
           Candidate onboarding
+          {voiceLanguage ? ` · ${languageLabel(voiceLanguage)}` : ""}
         </Badge>
       </header>
 
@@ -286,10 +485,18 @@ export function OnboardingAgent() {
               .map((p) => p.text)
               .join("\n")
               .trim();
+            const langParts = langToolParts(message);
+            const otherTools = message.parts.filter(
+              (p) => isToolUIPart(p) && p.type !== LANG_TOOL,
+            );
             if (!text && message.role === "user") return null;
-            if (!text && message.role === "assistant") {
-              const tools = message.parts.filter(isToolUIPart);
-              if (!tools.length) return null;
+            if (
+              !text &&
+              message.role === "assistant" &&
+              !langParts.length &&
+              !otherTools.length
+            ) {
+              return null;
             }
             const isUser = message.role === "user";
             return (
@@ -307,18 +514,38 @@ export function OnboardingAgent() {
                 )}
                 <div
                   className={cn(
-                    "text-sm leading-relaxed",
+                    "min-w-0 text-sm leading-relaxed",
                     isUser
                       ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
                       : "text-foreground/90 pt-0.5",
                   )}
                 >
-                  {text || (
+                  {text ? <p className="whitespace-pre-wrap">{text}</p> : null}
+                  {!text && otherTools.length ? (
                     <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
                       <Skeleton className="h-3 w-3 shrink-0 rounded-full" />
                       Updating your profile…
                     </span>
-                  )}
+                  ) : null}
+                  {langParts.map((part) => {
+                    const selected =
+                      part.state === "output-available" &&
+                      part.output?.language_code &&
+                      isTtsLanguageCode(part.output.language_code)
+                        ? part.output.language_code
+                        : null;
+                    return (
+                      <LanguagePickerInChat
+                        key={part.toolCallId}
+                        prompt={part.input?.prompt}
+                        selectedCode={selected}
+                        disabled={isStreaming}
+                        onSelect={(code) =>
+                          onPickLanguage(part.toolCallId, code)
+                        }
+                      />
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -402,7 +629,9 @@ export function OnboardingAgent() {
               variant="outline"
               size="sm"
               className="shrink-0"
-              disabled={uploading || isStreaming || done}
+              disabled={
+                uploading || isStreaming || done || !voiceLanguage
+              }
               onClick={() => fileInputRef.current?.click()}
             >
               {uploading ? (

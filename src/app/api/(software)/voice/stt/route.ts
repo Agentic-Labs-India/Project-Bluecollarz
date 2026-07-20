@@ -6,7 +6,7 @@ export const maxDuration = 30;
 
 /**
  * Sarvam STT REST (Saaras v3) for short VAD clips (≤30s).
- * REST accepts webm/opus directly — better on Vercel than WS + WAV convert.
+ * Clients pass profile voice language_code (defaults to en-IN).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing audio" }, { status: 400 });
     }
 
-    // Sarvam rejects MIME types with codec params (e.g. audio/webm;codecs=opus)
     const baseType =
       (audio.type || "audio/webm").split(";")[0].trim() || "audio/webm";
     const filename =
@@ -50,9 +49,12 @@ export async function POST(req: NextRequest) {
     sarvamForm.append("mode", "transcribe");
 
     const language = formData.get("language_code");
-    if (typeof language === "string" && language) {
-      sarvamForm.append("language_code", language);
-    }
+    sarvamForm.append(
+      "language_code",
+      typeof language === "string" && language.trim()
+        ? language.trim()
+        : "en-IN",
+    );
 
     const res = await fetch("https://api.sarvam.ai/speech-to-text", {
       method: "POST",
@@ -69,7 +71,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = (await res.json()) as { transcript?: string };
+    const data = (await res.json()) as {
+      transcript?: string;
+      language_code?: string | null;
+    };
     const transcript = (data.transcript ?? "").trim();
     if (!transcript) {
       return NextResponse.json(
@@ -78,7 +83,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ transcript });
+    return NextResponse.json({
+      transcript,
+      language_code: data.language_code ?? null,
+    });
   } catch (error) {
     console.error("POST /api/voice/stt:", error);
     return NextResponse.json({ error: "STT failed" }, { status: 500 });

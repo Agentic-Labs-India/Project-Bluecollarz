@@ -1,9 +1,16 @@
 "use client";
 
+import { resolveTtsLanguage } from "@/lib/voice/languages";
 import { sanitizeForTts, TTS_VOICE } from "@/lib/voice/style";
 
-/** Speak text via Sarvam HTTP stream (/api/voice/tts). Waits until playback ends. */
-export async function speakText(text: string) {
+/**
+ * Speak text via Sarvam HTTP stream (/api/voice/tts).
+ * Pass `languageCode` from Sarvam STT detection so TTS matches the user.
+ */
+export async function speakText(
+  text: string,
+  languageCode?: string | null,
+) {
   const clean = sanitizeForTts(text).slice(0, 3500);
   if (!clean) return;
 
@@ -12,7 +19,10 @@ export async function speakText(text: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text: clean,
-      language_code: TTS_VOICE.languageCode,
+      language_code: resolveTtsLanguage(
+        languageCode,
+        TTS_VOICE.languageCode,
+      ),
     }),
   });
   if (!res.ok || !res.body) return;

@@ -17,6 +17,17 @@ import {
   type EducationFormEntry,
   type WorkFormEntry,
 } from "@/lib/candidate/profile";
+import {
+  VOICE_LANGUAGE_OPTIONS,
+  type TtsLanguageCode,
+} from "@/lib/voice/languages";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { BadgeCheckIcon, PlusIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +51,7 @@ const emptyProfile: CandidateProfileData = {
   portfolioUrl: "",
   otherLinks: [],
   languages: [],
+  voiceLanguage: "",
   hobbies: [],
   residenceCountry: "",
   residenceState: "",
@@ -192,6 +204,7 @@ export function CandidateProfileView() {
           portfolioUrl: profile.portfolioUrl,
           otherLinks: profile.otherLinks,
           languages: profile.languages,
+          voiceLanguage: profile.voiceLanguage || "",
           hobbies: profile.hobbies,
           residenceCountry: profile.residenceCountry,
           residenceState: profile.residenceState,
@@ -675,6 +688,44 @@ export function CandidateProfileView() {
           placeholder="Search and add languages…"
           onChange={(languages) => setProfile((p) => ({ ...p, languages }))}
         />
+      </section>
+
+      <Separator />
+
+      {/* Voice / interview language (Sarvam) */}
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-foreground text-xl font-semibold">
+            Voice interview language
+          </h3>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Used for AI onboarding and interviews (speech and replies). You can
+            change this anytime.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="voiceLanguage">Spoken language with the AI</Label>
+          <Select
+            value={profile.voiceLanguage || "en-IN"}
+            onValueChange={(value) =>
+              setProfile((p) => ({
+                ...p,
+                voiceLanguage: (value as TtsLanguageCode) || "en-IN",
+              }))
+            }
+          >
+            <SelectTrigger id="voiceLanguage" className="w-full max-w-sm">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              {VOICE_LANGUAGE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.code} value={opt.code}>
+                  {opt.nativeLabel} ({opt.label})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </section>
 
       <Separator />
