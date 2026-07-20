@@ -92,9 +92,17 @@ export function voiceLanguagePrompt(languageCode?: string | null): string {
   if (selected) {
     const tts = resolveTtsLanguage(selected);
     const label = languageLabel(selected);
+
+    if (tts === "en-IN") {
+      return `Language (spoken aloud by TTS):
+- Reply in clear, simple Indian English (${tts}). Stick to this for the whole session.
+${simplicity}`;
+    }
+
     return `Language (spoken aloud by TTS):
-- Reply in ${label} (${tts}). Stick to this language for the whole session.
-- Use the natural script for ${label}.
+- Speak casual conversational ${label} mixed with everyday English — how workers actually talk, not textbook ${label}.
+- Keep work words in English: experience, skills, resume, phone number, location, education, job, company, role, etc.
+- Stick to this mixed spoken style for the whole session (${tts}).
 ${simplicity}`;
   }
 
