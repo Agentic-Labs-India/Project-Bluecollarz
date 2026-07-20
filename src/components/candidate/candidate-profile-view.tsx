@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppPage } from "@/components/layout/app-page";
 import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
@@ -17,19 +17,74 @@ import {
   type EducationFormEntry,
   type WorkFormEntry,
 } from "@/lib/candidate/profile";
-import {
-  VOICE_LANGUAGE_OPTIONS,
-  type TtsLanguageCode,
-} from "@/lib/voice/languages";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CountryMultiSelect } from "@/components/candidate/country-multi-select";
+import { normalizeCountryNames } from "@/lib/geo/places";
 import { BadgeCheckIcon, PlusIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const AUTOSAVE_DEBOUNCE_MS = 700;
+
+type ProfileSavePayload = {
+  phoneNumber: string;
+  headline: string;
+  location: string;
+  yearsExperience: string;
+  skills: string[];
+  workAuthorization: string;
+  preferredCountries: string[];
+  summary: string;
+  resumeUrl: string;
+  resumeSource: string;
+  education: EducationFormEntry[];
+  workExperience: WorkFormEntry[];
+  portfolioUrl: string;
+  otherLinks: string[];
+  languages: string[];
+  voiceLanguage: string;
+  hobbies: string[];
+  residenceCountry: string;
+  residenceState: string;
+  residenceCity: string;
+  residencePostalCode: string;
+  dateOfBirth: string;
+  workAuthConfirmed: boolean;
+  workAuthStayAgreed: boolean;
+  fullTimeCompensation: string;
+  partTimeCompensation: string;
+};
+
+function buildProfileSavePayload(
+  profile: CandidateProfileData,
+): ProfileSavePayload {
+  return {
+    phoneNumber: profile.phoneNumber,
+    headline: profile.headline,
+    location: profile.location,
+    yearsExperience: profile.yearsExperience,
+    skills: profile.skills,
+    workAuthorization: profile.workAuthorization,
+    preferredCountries: profile.preferredCountries,
+    summary: profile.summary,
+    resumeUrl: profile.resumeUrl,
+    resumeSource: profile.resumeSource || "",
+    education: profile.education,
+    workExperience: profile.workExperience,
+    portfolioUrl: profile.portfolioUrl,
+    otherLinks: profile.otherLinks,
+    languages: profile.languages,
+    voiceLanguage: profile.voiceLanguage || "",
+    hobbies: profile.hobbies,
+    residenceCountry: profile.residenceCountry,
+    residenceState: profile.residenceState,
+    residenceCity: profile.residenceCity,
+    residencePostalCode: profile.residencePostalCode,
+    dateOfBirth: profile.dateOfBirth,
+    workAuthConfirmed: profile.workAuthConfirmed,
+    workAuthStayAgreed: profile.workAuthStayAgreed,
+    fullTimeCompensation: profile.fullTimeCompensation,
+    partTimeCompensation: profile.partTimeCompensation,
+  };
+}
 
 const emptyProfile: CandidateProfileData = {
   name: "",
@@ -148,9 +203,17 @@ function workTitle(entry: WorkFormEntry) {
 export function CandidateProfileView() {
   const [profile, setProfile] = useState<CandidateProfileData>(emptyProfile);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+
+  const profileRef = useRef(profile);
+  const lastSavedJsonRef = useRef<string | null>(null);
+  const saveRequestIdRef = useRef(0);
+  const readyRef = useRef(false);
+
+  profileRef.current = profile;
 
   useEffect(() => {
     let cancelled = false;
@@ -160,7 +223,14 @@ export function CandidateProfileView() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load");
         if (cancelled) return;
-        setProfile(data.profile as CandidateProfileData);
+        const next = data.profile as CandidateProfileData;
+        next.preferredCountries = normalizeCountryNames(
+          next.preferredCountries ?? [],
+        );
+        setProfile(next);
+        lastSavedJsonRef.current = JSON.stringify(buildProfileSavePayload(next));
+        readyRef.current = true;
+        setReady(true);
       } catch (e) {
         if (!cancelled) {
           const message =
@@ -180,53 +250,64 @@ export function CandidateProfileView() {
     };
   }, []);
 
-  const save = async () => {
-    setSaving(true);
-    setError("");
+  useEffect(() => {
+    if (!ready || loading) return;
+
+    const payload = buildProfileSavePayload(profile);
+    const json = JSON.stringify(payload);
+    if (json === lastSavedJsonRef.current) return;
+
     setSaved(false);
-    try {
-      const res = await fetch("/api/candidate/profile", {
+    const timer = window.setTimeout(() => {
+      const requestId = ++saveRequestIdRef.current;
+      const body = buildProfileSavePayload(profileRef.current);
+      const bodyJson = JSON.stringify(body);
+      if (bodyJson === lastSavedJsonRef.current) return;
+
+      setSaving(true);
+      setError("");
+      void (async () => {
+        try {
+          const res = await fetch("/api/candidate/profile", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: bodyJson,
+          });
+          const data = await res.json();
+          if (requestId !== saveRequestIdRef.current) return;
+          if (!res.ok) throw new Error(data.error || "Save failed");
+          lastSavedJsonRef.current = bodyJson;
+          setSaved(true);
+        } catch (e) {
+          if (requestId !== saveRequestIdRef.current) return;
+          setError(e instanceof Error ? e.message : "Save failed");
+          setSaved(false);
+        } finally {
+          if (requestId === saveRequestIdRef.current) setSaving(false);
+        }
+      })();
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [profile, ready, loading]);
+
+  // Flush pending edits if the user leaves mid-debounce.
+  useEffect(() => {
+    return () => {
+      if (!readyRef.current) return;
+      const body = buildProfileSavePayload(profileRef.current);
+      const bodyJson = JSON.stringify(body);
+      if (bodyJson === lastSavedJsonRef.current) return;
+      void fetch("/api/candidate/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phoneNumber: profile.phoneNumber,
-          headline: profile.headline,
-          location: profile.location,
-          yearsExperience: profile.yearsExperience,
-          skills: profile.skills,
-          workAuthorization: profile.workAuthorization,
-          preferredCountries: profile.preferredCountries,
-          summary: profile.summary,
-          resumeUrl: profile.resumeUrl,
-          resumeSource: profile.resumeSource || "",
-          education: profile.education,
-          workExperience: profile.workExperience,
-          portfolioUrl: profile.portfolioUrl,
-          otherLinks: profile.otherLinks,
-          languages: profile.languages,
-          voiceLanguage: profile.voiceLanguage || "",
-          hobbies: profile.hobbies,
-          residenceCountry: profile.residenceCountry,
-          residenceState: profile.residenceState,
-          residenceCity: profile.residenceCity,
-          residencePostalCode: profile.residencePostalCode,
-          dateOfBirth: profile.dateOfBirth,
-          workAuthConfirmed: profile.workAuthConfirmed,
-          workAuthStayAgreed: profile.workAuthStayAgreed,
-          fullTimeCompensation: profile.fullTimeCompensation,
-          partTimeCompensation: profile.partTimeCompensation,
-        }),
+        body: bodyJson,
+        keepalive: true,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
-      setProfile(data.profile as CandidateProfileData);
-      setSaved(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  };
+    };
+  }, []);
 
   const updateEducation = (
     index: number,
@@ -271,9 +352,17 @@ export function CandidateProfileView() {
 
   return (
     <AppPage className="space-y-8 pb-10">
-      <h1 className="text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
-        Profile
-      </h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
+          Profile
+        </h1>
+        <p
+          className="text-muted-foreground min-h-5 text-sm"
+          aria-live="polite"
+        >
+          {saving ? "Saving…" : saved ? "Saved" : null}
+        </p>
+      </div>
 
       <div className="border-border bg-card flex flex-col items-start gap-5 border p-6 sm:flex-row sm:items-center">
         <Avatar className="size-20">
@@ -692,44 +781,6 @@ export function CandidateProfileView() {
 
       <Separator />
 
-      {/* Voice / interview language (Sarvam) */}
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-foreground text-xl font-semibold">
-            Voice interview language
-          </h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Used for AI onboarding and interviews (speech and replies). You can
-            change this anytime.
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="voiceLanguage">Spoken language with the AI</Label>
-          <Select
-            value={profile.voiceLanguage || "en-IN"}
-            onValueChange={(value) =>
-              setProfile((p) => ({
-                ...p,
-                voiceLanguage: (value as TtsLanguageCode) || "en-IN",
-              }))
-            }
-          >
-            <SelectTrigger id="voiceLanguage" className="w-full max-w-sm">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {VOICE_LANGUAGE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.code} value={opt.code}>
-                  {opt.nativeLabel} ({opt.label})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </section>
-
-      <Separator />
-
       {/* Hobbies */}
       <section className="space-y-4">
         <div>
@@ -920,9 +971,11 @@ export function CandidateProfileView() {
 
         <div className="space-y-2">
           <Label>Preferred countries</Label>
-          <TagList
-            values={profile.preferredCountries}
-            placeholder="Add a preferred country"
+          <p className="text-muted-foreground text-xs">
+            Select one or more countries where you want to work.
+          </p>
+          <CountryMultiSelect
+            value={profile.preferredCountries}
             onChange={(preferredCountries) =>
               setProfile((p) => ({ ...p, preferredCountries }))
             }
@@ -995,13 +1048,6 @@ export function CandidateProfileView() {
       </section>
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      {saved ? (
-        <p className="text-muted-foreground text-sm">Profile saved.</p>
-      ) : null}
-
-      <Button disabled={saving} onClick={() => void save()}>
-        {saving ? "Saving…" : "Save profile"}
-      </Button>
     </AppPage>
   );
 }

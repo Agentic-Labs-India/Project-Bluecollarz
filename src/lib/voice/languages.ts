@@ -78,11 +78,17 @@ export async function fetchProfileVoiceLanguage(): Promise<TtsLanguageCode | nul
 export async function saveProfileVoiceLanguage(
   code: TtsLanguageCode,
 ): Promise<void> {
-  await fetch("/api/candidate/voice-language", {
+  const res = await fetch("/api/candidate/voice-language", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ language_code: code }),
   });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(data?.error || "Failed to save language");
+  }
 }
 
 export function voiceLanguagePrompt(languageCode?: string | null): string {
