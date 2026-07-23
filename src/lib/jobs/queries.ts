@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag, updateTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import {
   JOB_PRIORITIES,
@@ -27,9 +27,9 @@ import type { KycFields } from "@/lib/kyc";
 /** Shared tag so landing + explore job lists invalidate together. */
 export const PUBLISHED_JOBS_CACHE_TAG = "published-jobs";
 
-/** Bust daily published-job caches after hire mutates roles. */
+/** Bust published-job caches after hire mutates roles (Route Handler safe). */
 export function revalidatePublishedJobsCache() {
-  updateTag(PUBLISHED_JOBS_CACHE_TAG);
+  revalidateTag(PUBLISHED_JOBS_CACHE_TAG, "max");
 }
 
 /** Published role card on the marketing landing page. */

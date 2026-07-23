@@ -1,3 +1,5 @@
+import type { CustomQuestion } from "@/lib/jobs/custom-questions";
+
 export const OPPORTUNITY_TABS = [
   "project",
   "part-time",
@@ -38,4 +40,6 @@ export interface Opportunity {
   stateCode?: string;
   overview: string;
   applicationSteps: ApplicationStep[];
+  /** Present when the role includes a custom-questions stage. */
+  customQuestions?: CustomQuestion[];
 }

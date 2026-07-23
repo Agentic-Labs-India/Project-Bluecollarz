@@ -40,7 +40,7 @@ import {
   interviewStageLabel,
   interviewStageTitle,
 } from "@/lib/interviews/labels";
-import type { InterviewStageId } from "@/lib/interviews";
+import type { AiInterviewStageId } from "@/lib/interviews";
 import {
   AssistantAvatar,
   UserChatAvatar,
@@ -68,7 +68,7 @@ export function AiInterview({
 }: {
   interviewId: string;
   jobTitle: string;
-  stageId?: InterviewStageId;
+  stageId?: AiInterviewStageId;
   onClose: () => void;
   onCompleted: (result: {
     analysis?: unknown;

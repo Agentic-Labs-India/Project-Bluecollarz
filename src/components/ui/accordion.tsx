@@ -17,33 +17,46 @@ const AccordionContext = React.createContext<AccordionContextValue | null>(
 export function Accordion({
   type = "multiple",
   defaultValue,
+  value,
+  onValueChange,
   className,
   children,
 }: {
   type?: "single" | "multiple";
-  /** Values open by default. */
+  /** Values open by default (uncontrolled). */
   defaultValue?: string[];
+  /** Controlled open values. */
+  value?: string[];
+  onValueChange?: (next: string[]) => void;
   className?: string;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = React.useState<Set<string>>(
+  const [uncontrolled, setUncontrolled] = React.useState<Set<string>>(
     () => new Set(defaultValue ?? []),
   );
+  const controlled = value !== undefined;
+  const open = controlled ? new Set(value) : uncontrolled;
 
   const toggle = React.useCallback(
-    (value: string) => {
-      setOpen((prev) => {
+    (item: string) => {
+      const apply = (prev: Set<string>) => {
         const next = new Set(prev);
-        if (next.has(value)) {
-          next.delete(value);
+        if (next.has(item)) {
+          next.delete(item);
         } else {
           if (type === "single") next.clear();
-          next.add(value);
+          next.add(item);
         }
         return next;
-      });
+      };
+
+      if (controlled) {
+        onValueChange?.([...apply(new Set(value ?? []))]);
+        return;
+      }
+      setUncontrolled((prev) => apply(prev));
     },
-    [type],
+    [controlled, onValueChange, type, value],
   );
 
   return (

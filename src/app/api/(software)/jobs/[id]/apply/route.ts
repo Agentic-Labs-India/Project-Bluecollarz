@@ -12,7 +12,10 @@ import {
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
 import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
-import type { InterviewStageId } from "@/lib/interviews";
+import {
+  INTERVIEW_STAGE_IDS,
+  type InterviewStageId,
+} from "@/lib/interviews";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -58,12 +61,10 @@ export async function POST(_req: NextRequest, context: RouteContext) {
       );
     }
 
+    const stageSet = new Set<string>(INTERVIEW_STAGE_IDS);
     const requiredStages = normalizeStepTemplates(job.applicationStepTemplates)
       .map((s) => s.id)
-      .filter(
-        (s): s is InterviewStageId =>
-          s === "ai-communication" || s === "ai-domain",
-      );
+      .filter((s): s is InterviewStageId => stageSet.has(s));
 
     if (requiredStages.length) {
       const completed = await getCompletedInterviewStagesByJob({
@@ -75,7 +76,7 @@ export async function POST(_req: NextRequest, context: RouteContext) {
       if (missing.length) {
         return NextResponse.json(
           {
-            error: "Finish required AI interview stages before applying.",
+            error: "Finish required interview stages before applying.",
             code: "INTERVIEW_INCOMPLETE",
             missing,
           },

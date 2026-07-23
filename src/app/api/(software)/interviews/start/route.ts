@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { JobDocument } from "@/lib/jobs";
-import { normalizeStepTemplates } from "@/lib/jobs";
+import { normalizeCustomQuestions, normalizeStepTemplates } from "@/lib/jobs";
 import {
   formatInterviewError,
   interviewStartSchema,
+  isCustomQuestionsStage,
   type InterviewDocument,
+  type InterviewStageId,
 } from "@/lib/interviews";
+import type { CustomQuestion } from "@/lib/jobs/custom-questions";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
 import { idHex } from "@/lib/utils";
@@ -26,7 +29,14 @@ function isDuplicateKeyError(error: unknown): boolean {
   );
 }
 
-/** Start (or resume) an AI interview stage for a published role. */
+function questionsPayload(
+  stageId: InterviewStageId,
+  questions: CustomQuestion[] | undefined,
+) {
+  return isCustomQuestionsStage(stageId) ? questions ?? [] : undefined;
+}
+
+/** Start (or resume) an interview stage for a published role. */
 export async function POST(req: NextRequest) {
   try {
     await ensureIndexes();
@@ -85,6 +95,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const jobQuestions = isCustomQuestionsStage(stageId)
+      ? normalizeCustomQuestions(job.customQuestions)
+      : [];
+    if (isCustomQuestionsStage(stageId) && jobQuestions.length === 0) {
+      return NextResponse.json(
+        { error: "This role has no custom questions configured." },
+        { status: 400 },
+      );
+    }
+
     const interviews = db.collection<InterviewDocument>(COLLECTIONS.INTERVIEWS);
 
     const existing = await interviews.findOne({
@@ -99,15 +119,37 @@ export async function POST(req: NextRequest) {
         interviewId: idHex(existing._id),
         status: "completed",
         alreadyComplete: true,
+        customQuestions: questionsPayload(
+          stageId,
+          existing.customQuestions?.length
+            ? existing.customQuestions
+            : jobQuestions,
+        ),
       });
     }
 
     if (existing?.status === "in_progress") {
+      const snapshot =
+        existing.customQuestions?.length
+          ? existing.customQuestions
+          : jobQuestions;
+      // Backfill snapshot on older in-progress docs that lacked it.
+      if (
+        isCustomQuestionsStage(stageId) &&
+        !existing.customQuestions?.length &&
+        snapshot.length
+      ) {
+        await interviews.updateOne(
+          { _id: existing._id } as never,
+          { $set: { customQuestions: snapshot, updatedAt: new Date() } } as never,
+        );
+      }
       return NextResponse.json({
         interviewId: idHex(existing._id),
         status: "in_progress",
         jobTitle: existing.jobTitle,
         stageId: existing.stageId,
+        customQuestions: questionsPayload(stageId, snapshot),
       });
     }
 
@@ -121,6 +163,9 @@ export async function POST(req: NextRequest) {
       jobTitle: job.title,
       jobOverview: job.overview ?? "",
       transcript: [],
+      ...(isCustomQuestionsStage(stageId)
+        ? { customQuestions: jobQuestions }
+        : {}),
       startedAt: now,
       updatedAt: now,
     };
@@ -136,6 +181,7 @@ export async function POST(req: NextRequest) {
         status: "in_progress",
         jobTitle: job.title,
         stageId,
+        customQuestions: questionsPayload(stageId, jobQuestions),
       });
     } catch (error) {
       if (!isDuplicateKeyError(error)) throw error;
@@ -151,6 +197,12 @@ export async function POST(req: NextRequest) {
         alreadyComplete: raced.status === "completed",
         jobTitle: raced.jobTitle,
         stageId: raced.stageId,
+        customQuestions: questionsPayload(
+          stageId,
+          raced.customQuestions?.length
+            ? raced.customQuestions
+            : jobQuestions,
+        ),
       });
     }
   } catch (error) {

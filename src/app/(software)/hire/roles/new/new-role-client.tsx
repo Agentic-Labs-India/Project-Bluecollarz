@@ -27,6 +27,7 @@ function buildJobPayload(values: JobFormValues, publish: boolean) {
     stateCode: values.stateCode || undefined,
     priority: values.priority,
     applicationStepTemplates: steps?.length ? steps : undefined,
+    customQuestions: values.customQuestions ?? [],
     publish,
   };
 }

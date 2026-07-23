@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import {
   jobUpdateSchema,
+  normalizeCustomQuestions,
   normalizeStepTemplates,
   toJobListItem,
   toOpportunity,
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
         stateCode: doc.stateCode,
         priority: doc.priority,
         applicationStepTemplates: doc.applicationStepTemplates,
+        customQuestions: normalizeCustomQuestions(doc.customQuestions),
       },
     });
   } catch (error) {
@@ -101,7 +103,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     const now = new Date();
-    const { action, publish, applicationStepTemplates, ...fields } = parsed.data;
+    const {
+      action,
+      publish,
+      applicationStepTemplates,
+      customQuestions,
+      ...fields
+    } = parsed.data;
     const $set: Record<string, unknown> = { updatedAt: now };
     const $unset: Record<string, ""> = {};
 
@@ -114,7 +122,21 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     if (applicationStepTemplates !== undefined) {
-      $set.applicationStepTemplates = normalizeStepTemplates(applicationStepTemplates);
+      const templates = normalizeStepTemplates(applicationStepTemplates);
+      $set.applicationStepTemplates = templates;
+      if (!templates.some((s) => s.id === "custom-questions")) {
+        $set.customQuestions = [];
+      }
+    }
+
+    if (customQuestions !== undefined) {
+      const templates =
+        applicationStepTemplates !== undefined
+          ? normalizeStepTemplates(applicationStepTemplates)
+          : normalizeStepTemplates(existing.applicationStepTemplates);
+      $set.customQuestions = templates.some((s) => s.id === "custom-questions")
+        ? normalizeCustomQuestions(customQuestions)
+        : [];
     }
 
     if (action === "publish" || publish === true) {
@@ -156,35 +178,6 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ item: toJobListItem(updated) });
   } catch (error) {
     console.error("PATCH /api/jobs/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
-
-export async function DELETE(_req: NextRequest, context: RouteContext) {
-  try {
-    const hireAuth = await requireProfile("hire");
-    if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
-    }
-
-    const { id } = await context.params;
-    if (!isId(id) || !hireAuth.user.id) {
-      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-    }
-    const db = client.db(DB_NAME);
-    const result = await db.collection(COLLECTIONS.JOBS).deleteOne({
-      _id: matchId(id) as never,
-      ownerId: matchId(hireAuth.user.id),
-    });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Job not found" }, { status: 404 });
-    }
-
-    revalidatePublishedJobsCache();
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("DELETE /api/jobs/[id]:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

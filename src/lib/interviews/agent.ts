@@ -1,6 +1,6 @@
 import { isStepCount, ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
-import type { InterviewStageId } from "@/lib/interviews";
+import type { AiInterviewStageId } from "@/lib/interviews";
 
 import { htmlToPlainText } from "@/lib/rich-text";
 import { voiceLanguagePrompt, VOICE_TOOL_DATA_PROMPT } from "@/lib/voice/languages";
@@ -56,7 +56,7 @@ Do not ask the candidate to pick a language — it is already set on their profi
 /** Same ToolLoopAgent shape for every AI interview stage — only instructions change. */
 export function buildInterviewAgent(opts: {
   interviewId: string;
-  stageId: InterviewStageId;
+  stageId: AiInterviewStageId;
   jobTitle: string;
   jobOverview?: string;
   /** Profile voice language (Sarvam locale). */

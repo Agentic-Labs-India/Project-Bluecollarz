@@ -2,7 +2,7 @@ import { Country } from "country-state-city";
 
 /** Dial-code options for the phone country picker (ISO → numeric dial). */
 
-export type DialCodeOption = {
+type DialCodeOption = {
   isoCode: string;
   name: string;
   flag: string;

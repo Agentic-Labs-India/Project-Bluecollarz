@@ -1,15 +1,17 @@
 import type { InterviewStageId } from "@/lib/interviews";
 
-/** Short label used in spoken kickoff copy ("communication" | "domain"). */
+/** Short label used in spoken kickoff copy. */
 export function interviewStageLabel(stageId: InterviewStageId): string {
-  return stageId === "ai-domain" ? "domain" : "communication";
+  if (stageId === "ai-domain") return "domain";
+  if (stageId === "custom-questions") return "custom questions";
+  return "communication";
 }
 
 /** Human title for UI headers. */
 export function interviewStageTitle(stageId: InterviewStageId): string {
-  return stageId === "ai-domain"
-    ? "AI Domain Interview"
-    : "AI Communication Interview";
+  if (stageId === "ai-domain") return "AI Domain Interview";
+  if (stageId === "custom-questions") return "Custom Questions";
+  return "AI Communication Interview";
 }
 
 export function interviewKickoffText(

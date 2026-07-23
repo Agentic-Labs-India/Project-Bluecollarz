@@ -113,6 +113,8 @@ export async function GET(_req: Request, context: RouteContext) {
       jobTitle: doc.jobTitle,
       analysis: doc.analysis ?? null,
       videoUrl: doc.videoUrl ?? null,
+      customQuestions: doc.customQuestions ?? [],
+      customAnswers: doc.customAnswers ?? [],
       transcript: (doc.transcript ?? []).map((t) => ({
         role: t.role,
         text: t.text,
@@ -130,7 +132,10 @@ export async function GET(_req: Request, context: RouteContext) {
     }));
 
     return NextResponse.json({
-      job: { id: jobIdHex, title: job.title },
+      job: {
+        id: jobIdHex,
+        title: job.title,
+      },
       application: {
         id: idHex(application._id),
         status: application.status,

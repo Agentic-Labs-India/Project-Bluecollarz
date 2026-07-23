@@ -26,6 +26,11 @@ import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
 import {
+  formatCustomAnswerDisplay,
+  type CustomQuestion,
+  type CustomQuestionAnswer,
+} from "@/lib/jobs/custom-questions";
+import {
   KYC_UPLOAD_LABELS,
   KYC_UPLOAD_SLOTS,
   type KycUploadSlot,
@@ -38,6 +43,8 @@ type InterviewDetail = {
   jobTitle: string;
   analysis: CommunicationAnalysis | null;
   videoUrl: string | null;
+  customQuestions: CustomQuestion[];
+  customAnswers: CustomQuestionAnswer[];
   transcript: Array<{ role: "assistant" | "user"; text: string; at: string }>;
   startedAt: string;
   completedAt: string | null;
@@ -77,10 +84,6 @@ function initialsFor(name: string, email: string): string {
   const source = name.trim() || email;
   const parts = source.split(/[\s@.]+/).filter(Boolean);
   return (parts.slice(0, 2).map((p) => p[0] ?? "").join("") || "?").toUpperCase();
-}
-
-function stageTitle(stageId: InterviewStageId): string {
-  return interviewStageTitle(stageId);
 }
 
 function ScoreGrid({ analysis }: { analysis: CommunicationAnalysis }) {
@@ -161,7 +164,16 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Headline" value={profile.headline} />
-        <Field label="Phone" value={profile.phoneNumber} />
+        <Field
+          label="Phone"
+          value={
+            profile.phoneNumber === null
+              ? ""
+              : profile.phoneCountryCode !== null
+                ? `+${profile.phoneCountryCode} ${profile.phoneNumber}`
+                : String(profile.phoneNumber)
+          }
+        />
         <Field label="Location" value={profile.location} />
         <Field
           label="Years of experience"
@@ -461,6 +473,58 @@ function InterviewAccordionBody({ interview }: { interview: InterviewDetail }) {
   );
 }
 
+function CustomQuestionsAccordionBody({
+  interview,
+}: {
+  interview: InterviewDetail;
+}) {
+  const questions = interview.customQuestions ?? [];
+  const byId = new Map(
+    (interview.customAnswers ?? []).map((a) => [a.questionId, a.value]),
+  );
+
+  if (!questions.length && !(interview.customAnswers ?? []).length) {
+    return (
+      <p className="text-sm">
+        {interview.status === "completed"
+          ? "No answers recorded."
+          : "Custom questions not started yet."}
+      </p>
+    );
+  }
+
+  const rows =
+    questions.length > 0
+      ? questions
+      : (interview.customAnswers ?? []).map((a) => ({
+          id: a.questionId,
+          prompt: a.questionId,
+          type: "text" as const,
+          required: false,
+        }));
+
+  return (
+    <div className="space-y-4">
+      <Badge variant="outline" className="font-normal capitalize">
+        {interview.status}
+      </Badge>
+      <ul className="space-y-3">
+        {rows.map((q, index) => (
+          <li key={q.id} className="border-border border-l-2 pl-3">
+            <p className="text-muted-foreground text-[11px] uppercase tracking-wide">
+              Question {index + 1}
+            </p>
+            <p className="text-foreground text-sm font-medium">{q.prompt}</p>
+            <p className="text-foreground mt-1 text-sm whitespace-pre-wrap">
+              {formatCustomAnswerDisplay(byId.get(q.id) ?? null)}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function ApplicantSheet({
   jobId,
   applicantId,
@@ -560,6 +624,9 @@ export function ApplicantSheet({
     (i) => i.stageId === "ai-communication",
   );
   const domain = data?.interviews.find((i) => i.stageId === "ai-domain");
+  const customQuestions = data?.interviews.find(
+    (i) => i.stageId === "custom-questions",
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -698,7 +765,7 @@ export function ApplicantSheet({
                 <AccordionItem value="ai-communication">
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
-                      {stageTitle("ai-communication")}
+                      {interviewStageTitle("ai-communication")}
                       {communication?.analysis?.overall != null ? (
                         <Badge className="tabular-nums">
                           {communication.analysis.overall}/10
@@ -726,7 +793,7 @@ export function ApplicantSheet({
                 <AccordionItem value="ai-domain">
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
-                      {stageTitle("ai-domain")}
+                      {interviewStageTitle("ai-domain")}
                       {domain?.analysis?.overall != null ? (
                         <Badge className="tabular-nums">
                           {domain.analysis.overall}/10
@@ -744,6 +811,30 @@ export function ApplicantSheet({
                     ) : (
                       <p className="text-sm">
                         No domain interview for this role yet.
+                      </p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="custom-questions">
+                  <AccordionTrigger>
+                    <span className="flex items-center gap-2">
+                      {interviewStageTitle("custom-questions")}
+                      <Badge variant="outline" className="font-normal">
+                        {customQuestions
+                          ? customQuestions.status
+                          : "Not started"}
+                      </Badge>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {customQuestions ? (
+                      <CustomQuestionsAccordionBody
+                        interview={customQuestions}
+                      />
+                    ) : (
+                      <p className="text-sm">
+                        No custom questions answers for this role yet.
                       </p>
                     )}
                   </AccordionContent>

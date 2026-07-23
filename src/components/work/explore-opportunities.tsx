@@ -19,10 +19,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
+import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
 import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
 import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
-import type { InterviewStageId } from "@/lib/interviews";
+import { isAiInterviewStage, type InterviewStageId } from "@/lib/interviews";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
+import type { CustomQuestion } from "@/lib/jobs/custom-questions";
 import {
   OPPORTUNITY_TABS,
   OPPORTUNITY_TAB_LABELS,
@@ -279,7 +281,13 @@ export function ExploreOpportunities({
     interviewId: string;
     jobId: string;
     jobTitle: string;
-    stageId: InterviewStageId;
+    stageId: "ai-communication" | "ai-domain";
+  } | null>(null);
+  const [activeCustomForm, setActiveCustomForm] = useState<{
+    interviewId: string;
+    jobId: string;
+    jobTitle: string;
+    questions: CustomQuestion[];
   } | null>(null);
   const isMobile = useIsMobile();
   /** Skip the first fetch — the server already seeded the default view. */
@@ -372,7 +380,7 @@ export function ExploreOpportunities({
     opportunity: Opportunity,
     stageId: InterviewStageId,
   ) => {
-    if (isMobile) {
+    if (isAiInterviewStage(stageId) && isMobile) {
       setShowDeviceGate(true);
       return;
     }
@@ -391,6 +399,7 @@ export function ExploreOpportunities({
         interviewId?: string;
         alreadyComplete?: boolean;
         error?: string;
+        customQuestions?: CustomQuestion[];
       };
       if (!res.ok || !data.interviewId) {
         throw new Error(data.error || "Could not start interview");
@@ -399,6 +408,22 @@ export function ExploreOpportunities({
         markInterviewComplete(opportunity.id, stageId);
         return;
       }
+
+      if (stageId === "custom-questions") {
+        const questions =
+          data.customQuestions ?? opportunity.customQuestions ?? [];
+        if (!questions.length) {
+          throw new Error("This role has no custom questions configured.");
+        }
+        setActiveCustomForm({
+          interviewId: data.interviewId,
+          jobId: opportunity.id,
+          jobTitle: opportunity.title,
+          questions,
+        });
+        return;
+      }
+
       setActiveInterview({
         interviewId: data.interviewId,
         jobId: opportunity.id,
@@ -620,6 +645,9 @@ export function ExploreOpportunities({
               onStartDomainInterview={() =>
                 void startInterview(selectedOpportunity, "ai-domain")
               }
+              onStartCustomQuestions={() =>
+                void startInterview(selectedOpportunity, "custom-questions")
+              }
               scrollClassName={EXPLORE_DETAIL_SCROLL}
             />
           </section>
@@ -642,6 +670,19 @@ export function ExploreOpportunities({
               activeInterview.stageId,
             );
             setActiveInterview(null);
+          }}
+        />
+      ) : null}
+
+      {activeCustomForm ? (
+        <CustomQuestionsForm
+          interviewId={activeCustomForm.interviewId}
+          jobTitle={activeCustomForm.jobTitle}
+          questions={activeCustomForm.questions}
+          onClose={() => setActiveCustomForm(null)}
+          onComplete={() => {
+            markInterviewComplete(activeCustomForm.jobId, "custom-questions");
+            setActiveCustomForm(null);
           }}
         />
       ) : null}

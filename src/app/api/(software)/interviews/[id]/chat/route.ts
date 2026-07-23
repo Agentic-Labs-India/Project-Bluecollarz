@@ -2,6 +2,7 @@ import { createAgentUIStreamResponse } from "ai";
 import { NextRequest } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { InterviewDocument } from "@/lib/interviews";
+import { isAiInterviewStage, isCustomQuestionsStage } from "@/lib/interviews";
 import { buildInterviewAgent } from "@/lib/interviews/agent";
 import { isInterviewKickoffText } from "@/lib/interviews/labels";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   if (!interview) {
     return new Response("Interview not found", { status: 404 });
+  }
+  if (isCustomQuestionsStage(interview.stageId)) {
+    return new Response("Custom questions stage does not use chat", {
+      status: 400,
+    });
+  }
+  if (!isAiInterviewStage(interview.stageId)) {
+    return new Response("Unsupported interview stage", { status: 400 });
   }
   if (interview.status === "completed") {
     return new Response("Interview already completed", { status: 409 });

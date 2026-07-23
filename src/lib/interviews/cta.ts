@@ -5,6 +5,7 @@ export type OpportunityCta =
   | { type: "profile" }
   | { type: "communication" }
   | { type: "domain" }
+  | { type: "custom_questions" }
   | { type: "apply" }
   | { type: "applied" }
   | { type: "rejected" }
@@ -35,6 +36,7 @@ export function resolveOpportunityCta(opts: {
     if (step.status === "done") continue;
     if (step.id === "ai-communication") return { type: "communication" };
     if (step.id === "ai-domain") return { type: "domain" };
+    if (step.id === "custom-questions") return { type: "custom_questions" };
   }
 
   return { type: "apply" };

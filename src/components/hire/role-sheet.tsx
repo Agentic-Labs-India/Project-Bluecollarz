@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { JobForm, type JobFormValues } from "@/components/hire/job-form";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  JobForm,
+  type JobFormHandle,
+  type JobFormValues,
+} from "@/components/hire/job-form";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -38,10 +40,6 @@ function RoleFormSkeleton() {
         <Skeleton className="h-4 w-24 rounded" />
         <Skeleton className="h-32 w-full rounded-lg" />
       </div>
-      <div className="flex gap-3 border-t pt-6">
-        <Skeleton className="h-10 w-32 rounded-lg" />
-        <Skeleton className="h-10 w-32 rounded-lg" />
-      </div>
     </div>
   );
 }
@@ -55,15 +53,18 @@ export function RoleSheet({
   jobId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Called after the role is updated, status-changed, or deleted. */
+  /** Called after the role is updated or its status changes. */
   onChanged?: () => void;
 }) {
-  const router = useRouter();
+  const formRef = useRef<JobFormHandle>(null);
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<JobListItem | null>(null);
   const [formValues, setFormValues] = useState<JobFormValues | null>(null);
+  const [formBusy, setFormBusy] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const busy = formBusy || actionLoading;
 
   const load = useCallback(async () => {
     if (!jobId) return;
@@ -89,6 +90,7 @@ export function RoleSheet({
       setItem(null);
       setFormValues(null);
       setError("");
+      setFormBusy(false);
     }
   }, [open, jobId, load]);
 
@@ -113,31 +115,25 @@ export function RoleSheet({
         stateCode: values.stateCode || null,
         priority: values.priority,
         applicationStepTemplates: steps?.length ? steps : undefined,
+        customQuestions: values.customQuestions ?? [],
         publish,
       }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || "Failed to update role");
     setItem(json.item);
+    setFormValues({
+      ...values,
+      customQuestions: values.customQuestions ?? [],
+    });
     onChanged?.();
   }
 
-  async function runAction(action: "publish" | "close" | "reopen" | "delete") {
+  async function runAction(action: "close") {
     if (!jobId) return;
     setActionLoading(true);
     setError("");
     try {
-      if (action === "delete") {
-        const res = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
-        if (!res.ok) {
-          const json = await res.json().catch(() => ({}));
-          throw new Error(json.error || "Failed to delete role");
-        }
-        onOpenChange(false);
-        onChanged?.();
-        return;
-      }
-
       const res = await fetch(`/api/jobs/${jobId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -153,6 +149,10 @@ export function RoleSheet({
       setActionLoading(false);
     }
   }
+
+  const status = item?.status;
+  const canPublish = status === "draft" || status === "closed";
+  const canClose = status === "published";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -171,7 +171,7 @@ export function RoleSheet({
           </div>
           <SheetTitle className="text-base">Manage role</SheetTitle>
           <SheetDescription>
-            {item?.title ?? "Edit details, publish, close, or reopen this role."}
+            {item?.title ?? "Edit details, publish, or close this role."}
           </SheetDescription>
         </SheetHeader>
 
@@ -184,13 +184,17 @@ export function RoleSheet({
             ) : formValues ? (
               <>
                 {error ? (
-                  <div className="border-destructive/20 bg-destructive/10 text-destructive mb-6 rounded-lg border px-4 py-3 text-sm">
+                  <div className="border-destructive/20 bg-destructive/10 text-destructive mb-6 border px-4 py-3 text-sm">
                     {error}
                   </div>
                 ) : null}
                 <JobForm
+                  key={jobId ?? "role"}
+                  ref={formRef}
                   initialValues={formValues}
-                  submitLabel="Save changes"
+                  submitLabel="Save draft"
+                  hideActions
+                  onBusyChange={setFormBusy}
                   onSubmit={updateJob}
                 />
               </>
@@ -198,62 +202,35 @@ export function RoleSheet({
           </div>
         </ScrollArea>
 
-        <SheetFooter className="shrink-0 border-t sm:flex-row sm:flex-wrap sm:justify-end">
-          {item ? (
-            <>
-              {item.status === "draft" ? (
-                <Button
-                  size="sm"
-                  disabled={actionLoading}
-                  onClick={() => void runAction("publish")}
-                >
-                  Publish
-                </Button>
-              ) : null}
-              {item.status === "published" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={actionLoading}
-                  onClick={() => void runAction("close")}
-                >
-                  Close role
-                </Button>
-              ) : null}
-              {item.status === "closed" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={actionLoading}
-                  onClick={() => void runAction("reopen")}
-                >
-                  Reopen
-                </Button>
-              ) : null}
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={actionLoading}
-                onClick={() => router.push(`/hire/roles/${jobId}`)}
-              >
-                View candidates
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                disabled={actionLoading}
-                onClick={() => void runAction("delete")}
-              >
-                Delete
-              </Button>
-            </>
-          ) : (
-            <SheetClose asChild>
-              <Button variant="outline" size="sm">
-                Close
-              </Button>
-            </SheetClose>
-          )}
+        <SheetFooter className="shrink-0 border-t">
+          <div className="grid w-full grid-cols-3 gap-2">
+            <Button
+              size="sm"
+              className="w-full"
+              disabled={busy || !formValues}
+              onClick={() => void formRef.current?.submit(false)}
+            >
+              {formBusy ? "Saving…" : "Save draft"}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="w-full"
+              disabled={busy || !formValues || !canPublish}
+              onClick={() => void formRef.current?.submit(true)}
+            >
+              {formBusy ? "Publishing…" : "Publish"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              disabled={busy || !canClose}
+              onClick={() => void runAction("close")}
+            >
+              Mark as close
+            </Button>
+          </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>

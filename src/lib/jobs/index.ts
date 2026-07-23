@@ -7,6 +7,14 @@ import {
 } from "@/lib/opportunities";
 import { asNumber, idHex, formatZodError } from "@/lib/utils";
 import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/rich-text";
+import {
+  customQuestionsSchema,
+  normalizeCustomQuestions,
+  type CustomQuestion,
+} from "@/lib/jobs/custom-questions";
+
+export type { CustomQuestion } from "@/lib/jobs/custom-questions";
+export { normalizeCustomQuestions } from "@/lib/jobs/custom-questions";
 
 export const JOB_STATUSES = ["draft", "published", "closed"] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
@@ -56,6 +64,13 @@ export const APPLICATION_STAGE_OPTIONS = [
     description: "Domain skills interview with scoring.",
     locked: false,
   },
+  {
+    id: "custom-questions",
+    label: "Custom Questions",
+    description:
+      "Form stage with your own questions (text, choice, number, yes/no).",
+    locked: false,
+  },
 ] as const;
 
 export type ApplicationStageId =
@@ -85,6 +100,8 @@ export interface JobDocument {
   oneClickApply?: boolean;
   /** Template steps — per-candidate progress lives in Applications (future) */
   applicationStepTemplates: ApplicationStepTemplate[];
+  /** Screening / custom form questions for the custom-questions stage. */
+  customQuestions?: CustomQuestion[];
   status: JobStatus;
   hiredThisMonth: number;
   publishedAt: Date | null;
@@ -170,6 +187,7 @@ export const jobCreateSchema = z.object({
   priority: z.enum(JOB_PRIORITIES).optional(),
   oneClickApply: z.boolean().optional(),
   applicationStepTemplates: applicationStepsSchema,
+  customQuestions: customQuestionsSchema.optional(),
   publish: z.boolean().optional(),
 });
 
@@ -265,6 +283,9 @@ function stageDetail(
     return "Not started — AI communication interview";
   }
   if (stageId === "ai-domain") return "Not started — AI domain interview";
+  if (stageId === "custom-questions") {
+    return "Not started — answer custom questions";
+  }
   return "Not started";
 }
 
@@ -304,6 +325,10 @@ export function toOpportunity(
     doc.publishedAt != null &&
     Date.now() - doc.publishedAt.getTime() < 7 * 24 * 60 * 60 * 1000;
 
+  const templates = normalizeStepTemplates(doc.applicationStepTemplates);
+  const steps = templatesToApplicationSteps(templates, opts);
+  const includeCustom = steps.some((s) => s.id === "custom-questions");
+
   return {
     id: idHex(doc._id),
     title: doc.title,
@@ -316,10 +341,10 @@ export function toOpportunity(
     priority: doc.priority,
     hiredThisMonth: hiredThisMonth > 0 ? hiredThisMonth : undefined,
     isNew: isNew || undefined,
-    applicationSteps: templatesToApplicationSteps(
-      doc.applicationStepTemplates,
-      opts,
-    ),
+    applicationSteps: steps,
+    ...(includeCustom
+      ? { customQuestions: normalizeCustomQuestions(doc.customQuestions) }
+      : {}),
   };
 }
 
@@ -329,6 +354,10 @@ export function buildJobDocument(
 ): Omit<JobDocument, "_id"> {
   const now = new Date();
   const publish = input.publish === true;
+  const templates = normalizeStepTemplates(input.applicationStepTemplates);
+  const customQuestions = templates.some((s) => s.id === "custom-questions")
+    ? (input.customQuestions ?? [])
+    : [];
   return {
     ownerId: owner.id,
     ownerEmail: owner.email.toLowerCase(),
@@ -341,7 +370,8 @@ export function buildJobDocument(
     stateCode: input.stateCode?.trim() || undefined,
     priority: input.priority,
     oneClickApply: false,
-    applicationStepTemplates: normalizeStepTemplates(input.applicationStepTemplates),
+    applicationStepTemplates: templates,
+    customQuestions,
     status: publish ? "published" : "draft",
     hiredThisMonth: 0,
     publishedAt: publish ? now : null,

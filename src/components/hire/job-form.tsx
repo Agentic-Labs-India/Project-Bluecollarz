@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useImperativeHandle, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,17 +21,25 @@ import {
   JOB_LOCATION_LABELS,
   JOB_PRIORITIES,
   JOB_TABS,
+  formatJobValidationError,
+  normalizeCustomQuestions,
   normalizeJobLocation,
   normalizeStepTemplates,
   type ApplicationStageId,
   type JobCreateInput,
 } from "@/lib/jobs";
+import { customQuestionsSchema } from "@/lib/jobs/custom-questions";
 import { listCountries, listStatesForCountry, countryName, stateName } from "@/lib/geo/places";
 import { OPPORTUNITY_TAB_LABELS } from "@/lib/opportunities";
 import { JobOverviewAiMaker } from "@/components/hire/job-overview-ai-maker";
+import { CustomQuestionsBuilder } from "@/components/hire/custom-questions-builder";
 import { LockIcon } from "lucide-react";
 
 export type JobFormValues = JobCreateInput;
+
+export type JobFormHandle = {
+  submit: (publish: boolean) => Promise<void>;
+};
 
 const defaultValues: JobFormValues = {
   title: "",
@@ -43,6 +51,7 @@ const defaultValues: JobFormValues = {
   stateCode: undefined,
   priority: "medium",
   applicationStepTemplates: DEFAULT_APPLICATION_STEP_TEMPLATES,
+  customQuestions: [],
   publish: false,
 };
 
@@ -50,10 +59,19 @@ export function JobForm({
   initialValues,
   submitLabel,
   onSubmit,
+  hideActions = false,
+  onBusyChange,
+  onCancel,
+  ref,
 }: {
   initialValues?: Partial<JobFormValues>;
   submitLabel: string;
   onSubmit: (values: JobFormValues, publish: boolean) => Promise<void>;
+  /** Hide inline footer actions (use when parent renders them elsewhere). */
+  hideActions?: boolean;
+  onBusyChange?: (busy: boolean) => void;
+  onCancel?: () => void;
+  ref?: React.Ref<JobFormHandle>;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<JobFormValues>({
@@ -68,9 +86,17 @@ export function JobForm({
       initialValues?.applicationStepTemplates ??
         DEFAULT_APPLICATION_STEP_TEMPLATES,
     ),
+    customQuestions: normalizeCustomQuestions(
+      initialValues?.customQuestions ?? [],
+    ),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const setBusy = (busy: boolean) => {
+    setLoading(busy);
+    onBusyChange?.(busy);
+  };
 
   const countries = useMemo(() => listCountries(), []);
   const states = useMemo(
@@ -130,15 +156,31 @@ export function JobForm({
   };
 
   const handleSubmit = async (publish: boolean) => {
-    setLoading(true);
+    setBusy(true);
     setError("");
     try {
+      const templates = normalizeStepTemplates(values.applicationStepTemplates);
+      let customQuestions =
+        templates.some((s) => s.id === "custom-questions")
+          ? (values.customQuestions ?? [])
+          : [];
+      if (templates.some((s) => s.id === "custom-questions")) {
+        const parsed = customQuestionsSchema.safeParse(customQuestions);
+        if (!parsed.success) {
+          setError(formatJobValidationError(parsed.error));
+          return;
+        }
+        if (parsed.data.length === 0) {
+          setError("Add at least one custom question for that stage.");
+          return;
+        }
+        customQuestions = parsed.data;
+      }
       await onSubmit(
         {
           ...values,
-          applicationStepTemplates: normalizeStepTemplates(
-            values.applicationStepTemplates,
-          ),
+          applicationStepTemplates: templates,
+          customQuestions,
           publish,
         },
         publish,
@@ -146,9 +188,13 @@ export function JobForm({
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    submit: handleSubmit,
+  }));
 
   return (
     <form
@@ -327,7 +373,8 @@ export function JobForm({
             Interview stages
           </h3>
           <p className="text-muted-foreground text-xs">
-            Resume is always included. Add optional AI interviews for this role.
+            Resume is always included. Add optional AI interviews or a custom
+            questions form for this role.
           </p>
         </div>
 
@@ -365,31 +412,45 @@ export function JobForm({
             );
           })}
         </div>
+
+        {selectedStageIds.has("custom-questions") ? (
+          <div className="border-border border px-4 py-4">
+            <CustomQuestionsBuilder
+              questions={values.customQuestions ?? []}
+              disabled={loading}
+              onChange={(customQuestions) =>
+                setValues((prev) => ({ ...prev, customQuestions }))
+              }
+            />
+          </div>
+        ) : null}
       </section>
 
-      <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:flex-wrap">
-        <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-          {loading ? "Saving…" : submitLabel}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={loading}
-          className="w-full sm:w-auto"
-          onClick={() => void handleSubmit(true)}
-        >
-          {loading ? "Publishing…" : "Save & publish"}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={loading}
-          className="w-full sm:w-auto"
-          onClick={() => router.back()}
-        >
-          Cancel
-        </Button>
-      </div>
+      {hideActions ? null : (
+        <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:flex-wrap">
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+            {loading ? "Saving…" : submitLabel}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={loading}
+            className="w-full sm:w-auto"
+            onClick={() => void handleSubmit(true)}
+          >
+            {loading ? "Publishing…" : "Save & publish"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={loading}
+            className="w-full sm:w-auto"
+            onClick={() => (onCancel ? onCancel() : router.back())}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

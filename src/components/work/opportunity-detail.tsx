@@ -87,8 +87,8 @@ function ApplicationProgress({
           <div className="border-border/60 bg-muted/40 text-muted-foreground mt-5 flex gap-2 rounded-none border px-3 py-2.5 text-xs leading-relaxed">
           <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
           <p>
-            Complete Resume first. When enabled by the hiring partner, finish AI
-            interviews in order — then you can apply.
+            Complete Resume first. When enabled by the hiring partner, finish
+            interviews and custom questions in order — then you can apply.
           </p>
         </div>
       </div>
@@ -111,6 +111,7 @@ export function OpportunityDetail({
   onApply,
   onStartCommunicationInterview,
   onStartDomainInterview,
+  onStartCustomQuestions,
   scrollClassName,
   className,
 }: {
@@ -128,6 +129,7 @@ export function OpportunityDetail({
   onApply?: () => void;
   onStartCommunicationInterview?: () => void;
   onStartDomainInterview?: () => void;
+  onStartCustomQuestions?: () => void;
   scrollClassName?: string;
   className?: string;
 }) {
@@ -368,6 +370,15 @@ export function OpportunityDetail({
               {startingInterview
                 ? "Starting…"
                 : "Start AI Interview (Domain)"}
+            </Button>
+          ) : cta.type === "custom_questions" ? (
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={startingInterview}
+              onClick={onStartCustomQuestions}
+            >
+              {startingInterview ? "Starting…" : "Answer custom questions"}
             </Button>
           ) : (
             <Button

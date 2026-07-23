@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { InterviewDocument } from "@/lib/interviews";
+import { isCustomQuestionsStage } from "@/lib/interviews";
 import { analyzeInterviewTranscript } from "@/lib/interviews/analysis";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
@@ -42,6 +43,15 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (!interview) {
       return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+    }
+    if (isCustomQuestionsStage(interview.stageId)) {
+      return NextResponse.json(
+        {
+          error:
+            "Custom questions are completed via the form submit endpoint, not video complete.",
+        },
+        { status: 400 },
+      );
     }
     if (interview.status === "completed") {
       return NextResponse.json({
