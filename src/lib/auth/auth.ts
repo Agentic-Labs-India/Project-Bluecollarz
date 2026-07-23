@@ -24,7 +24,11 @@ export const auth = betterAuth({
     modelName: COLLECTIONS.USERS_COLLECTION,
     additionalFields: {
       phoneNumber: {
-        type: "string",
+        type: "number",
+        required: false,
+      },
+      phoneCountryCode: {
+        type: "number",
         required: false,
       },
       profileType: {

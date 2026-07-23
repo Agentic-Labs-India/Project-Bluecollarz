@@ -15,7 +15,7 @@ type HireUserDoc = HireProfileFields & {
   name?: string;
   email?: string;
   image?: string;
-  phoneNumber?: string;
+  phoneNumber?: number | null;
   createdAt?: Date;
 };
 

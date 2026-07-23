@@ -30,7 +30,10 @@ export interface CandidateWorkEntry {
 }
 
 export interface CandidateProfileFields {
-  phoneNumber?: string;
+  /** National phone digits as a number (e.g. 9876543210). */
+  phoneNumber?: number | null;
+  /** Country calling code as a number (e.g. 91). */
+  phoneCountryCode?: number | null;
   headline?: string;
   location?: string;
   yearsExperience?: number | null;
@@ -86,7 +89,8 @@ export interface CandidateProfileData {
   name: string;
   email: string;
   image: string;
-  phoneNumber: string;
+  phoneNumber: number | null;
+  phoneCountryCode: number | null;
   headline: string;
   location: string;
   yearsExperience: number | null;
@@ -173,7 +177,8 @@ const EMPTY: CandidateProfileData = {
   name: "",
   email: "",
   image: "",
-  phoneNumber: "",
+  phoneNumber: null,
+  phoneCountryCode: null,
   headline: "",
   location: "",
   yearsExperience: null,
@@ -233,6 +238,9 @@ const nullableGpa = z.number().finite().min(0).max(10).nullable();
 const nullableYearsExperience = z.number().int().min(0).max(80).nullable();
 const nullableFullTimePay = z.number().finite().min(0).max(10_000_000).nullable();
 const nullablePartTimePay = z.number().finite().min(0).max(10_000).nullable();
+/** Phone / dial code — numbers only (null when unset). */
+const nullablePhoneNumber = z.number().int().positive().nullable();
+const nullablePhoneCountryCode = z.number().int().positive().max(9999).nullable();
 
 const educationEntrySchema = z.object({
   school: optionalTrimmed(200),
@@ -263,8 +271,24 @@ const workListSchema = z.preprocess((val) => {
   return val.slice(0, 20);
 }, z.array(workEntrySchema).max(20));
 
+/**
+ * Wire format `yyyy-MM-dd` or null — not `z.date()`.
+ * `z.date()` cannot convert to JSON Schema (breaks AI tool registration).
+ * Mongo still stores BSON Date via candidateUpdateToMongo.
+ */
+const dateOfBirthSchema = z.preprocess((val) => {
+  if (val === null || val === undefined || val === "") return null;
+  if (val instanceof Date) {
+    const formatted = formatDateOnly(val);
+    return formatted || null;
+  }
+  const parsed = parseDateOnly(val);
+  return parsed ? formatDateOnly(parsed) : null;
+}, z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()]));
+
 export const candidateProfileUpdateSchema = z.object({
-  phoneNumber: optionalTrimmed(40),
+  phoneNumber: nullablePhoneNumber,
+  phoneCountryCode: nullablePhoneCountryCode,
   headline: optionalTrimmed(200),
   location: optionalTrimmed(160),
   yearsExperience: nullableYearsExperience,
@@ -285,7 +309,7 @@ export const candidateProfileUpdateSchema = z.object({
   residenceState: optionalTrimmed(80),
   residenceCity: optionalTrimmed(80),
   residencePostalCode: optionalTrimmed(20),
-  dateOfBirth: z.preprocess((val) => parseDateOnly(val), z.date().nullable()),
+  dateOfBirth: dateOfBirthSchema,
   workAuthConfirmed: z.boolean(),
   workAuthStayAgreed: z.boolean(),
   fullTimeCompensation: nullableFullTimePay,
@@ -330,7 +354,22 @@ export function sanitizeGeoProfileFields<
 }
 
 function asNullableNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return null;
+}
+
+/** Read phone fields that may still be legacy strings in old test docs. */
+function asNullablePhoneInt(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+  if (typeof value === "string") {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return null;
+    const n = Number(digits);
+    return Number.isFinite(n) ? Math.trunc(n) : null;
+  }
+  return null;
 }
 
 function mapEducation(
@@ -387,7 +426,8 @@ export function toCandidateProfileData(
     name: doc.name ?? "",
     email: doc.email ?? "",
     image: doc.image ?? "",
-    phoneNumber: doc.phoneNumber ?? "",
+    phoneNumber: asNullablePhoneInt(doc.phoneNumber),
+    phoneCountryCode: asNullablePhoneInt(doc.phoneCountryCode),
     headline: doc.headline ?? "",
     location: doc.location ?? "",
     yearsExperience: asNullableNumber(doc.yearsExperience),
@@ -434,7 +474,7 @@ export function getMissingCandidateFields(
   profile: CandidateProfileData,
 ): CandidateMandatoryField[] {
   const missing: CandidateMandatoryField[] = [];
-  if (!profile.phoneNumber.trim()) missing.push("phoneNumber");
+  if (profile.phoneNumber === null) missing.push("phoneNumber");
   if (!profile.headline.trim()) missing.push("headline");
   if (!profile.location.trim()) missing.push("location");
   if (profile.yearsExperience === null) missing.push("yearsExperience");
@@ -493,7 +533,6 @@ export function candidateUpdateToMongo(
   const $unset: Record<string, ""> = {};
 
   const stringFields: Array<keyof CandidateProfileUpdateInput> = [
-    "phoneNumber",
     "headline",
     "location",
     "workAuthorization",
@@ -512,8 +551,13 @@ export function candidateUpdateToMongo(
     else $unset[key] = "";
   }
 
-  if (data.dateOfBirth instanceof Date) $set.dateOfBirth = data.dateOfBirth;
-  else $unset.dateOfBirth = "";
+  if (data.dateOfBirth) {
+    const dob = parseDateOnly(data.dateOfBirth);
+    if (dob) $set.dateOfBirth = dob;
+    else $unset.dateOfBirth = "";
+  } else {
+    $unset.dateOfBirth = "";
+  }
 
   if (data.resumeSource) $set.resumeSource = data.resumeSource;
   else $unset.resumeSource = "";
@@ -530,6 +574,8 @@ export function candidateUpdateToMongo(
   $set.workAuthConfirmed = data.workAuthConfirmed;
   $set.workAuthStayAgreed = data.workAuthStayAgreed;
 
+  setNullableNumber($set, $unset, "phoneNumber", data.phoneNumber);
+  setNullableNumber($set, $unset, "phoneCountryCode", data.phoneCountryCode);
   setNullableNumber($set, $unset, "yearsExperience", data.yearsExperience);
   setNullableNumber(
     $set,
@@ -562,7 +608,11 @@ export function mergeCandidateProfilePatch(
 
   return candidateProfileUpdateSchema.parse(
     sanitizeGeoProfileFields({
-      phoneNumber: pickStr(patch.phoneNumber, current.phoneNumber),
+      phoneNumber: pickNum(patch.phoneNumber, current.phoneNumber),
+      phoneCountryCode: pickNum(
+        patch.phoneCountryCode,
+        current.phoneCountryCode,
+      ),
       headline: pickStr(patch.headline, current.headline),
       location: pickStr(patch.location, current.location),
       yearsExperience: pickNum(patch.yearsExperience, current.yearsExperience),

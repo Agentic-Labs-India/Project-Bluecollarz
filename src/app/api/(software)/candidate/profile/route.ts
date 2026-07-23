@@ -11,6 +11,7 @@ import {
 } from "@/lib/candidate/profile";
 import { requireProfile } from "@/lib/api/session";
 import { ensureIndexes } from "@/lib/db/indexes";
+import { parseDateOnly } from "@/lib/dates";
 
 type UserDoc = CandidateProfileFields & {
   _id: unknown;
@@ -73,7 +74,7 @@ export async function PUT(req: NextRequest) {
       yearsExperience: data.yearsExperience,
       fullTimeCompensation: data.fullTimeCompensation,
       partTimeCompensation: data.partTimeCompensation,
-      dateOfBirth: data.dateOfBirth,
+      dateOfBirth: parseDateOnly(data.dateOfBirth),
       resumeSource: data.resumeSource || undefined,
       education: data.education,
       workExperience: data.workExperience,

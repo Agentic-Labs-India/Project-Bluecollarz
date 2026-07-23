@@ -27,6 +27,7 @@ import {
 } from "@/lib/voice/languages";
 import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
 import { lookupPlaceOptions } from "@/lib/geo/places";
+import { parseDateOnly } from "@/lib/dates";
 
 export const maxDuration = 90;
 
@@ -36,7 +37,8 @@ const GEO_PLACE_PROMPT = `Places (must use country-state-city official English n
 - preferredCountries: array of official country names only.
 - Residence flow: country → state (if listed) → city. Each value must appear in listPlaceOptions.
 - Postal code can be free text; place names cannot.
-- Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).`;
+- Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).
+- phoneNumber and phoneCountryCode are JSON numbers (e.g. phoneCountryCode 91, phoneNumber 9876543210). Never strings.`;
 
 const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
 
@@ -84,7 +86,7 @@ async function saveProfile(
     yearsExperience: mergedInput.yearsExperience,
     fullTimeCompensation: mergedInput.fullTimeCompensation,
     partTimeCompensation: mergedInput.partTimeCompensation,
-    dateOfBirth: mergedInput.dateOfBirth,
+    dateOfBirth: parseDateOnly(mergedInput.dateOfBirth),
     resumeSource: mergedInput.resumeSource || undefined,
   });
   const complete = isCandidateProfileComplete(preview);
@@ -215,7 +217,7 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
           {
             type: "text",
             text: `Extract candidate profile JSON from this resume PDF. Return ONLY valid JSON with keys:
-phoneNumber, headline, location, yearsExperience (number|null), skills (string[]), workAuthorization, preferredCountries (string[]), summary (2-4 paragraphs),
+phoneNumber (number|null — national digits only), phoneCountryCode (number|null — calling code, e.g. 91), headline, location, yearsExperience (number|null), skills (string[]), workAuthorization, preferredCountries (string[]), summary (2-4 paragraphs),
 education (array of {school, degree, startYear (number|null), endYear (number|null), major, gpa (number|null)}),
 workExperience (array of {company, role, startYear (number|null), endYear (number|null), city, country, description}),
 languages (string[]), hobbies (string[]), portfolioUrl, otherLinks (string[]),
@@ -254,7 +256,14 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
   const skills = asStringList(extracted.skills);
 
   const result = await saveProfile(userId, {
-    phoneNumber: String(extracted.phoneNumber ?? ""),
+    phoneNumber:
+      typeof extracted.phoneNumber === "number"
+        ? extracted.phoneNumber
+        : null,
+    phoneCountryCode:
+      typeof extracted.phoneCountryCode === "number"
+        ? extracted.phoneCountryCode
+        : null,
     headline: String(extracted.headline ?? ""),
     location: String(extracted.location ?? ""),
     yearsExperience: asNullableInt(extracted.yearsExperience),
@@ -394,7 +403,7 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions.",
+          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions. phoneNumber and phoneCountryCode are JSON numbers.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
           resumeSource: z.enum(["", "upload", "voice"]).optional(),
           skills: z.array(z.string()).optional(),
@@ -403,6 +412,26 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
           voiceLanguage: z.enum(TTS_LANGUAGE_CODES).optional(),
           hobbies: z.array(z.string()).optional(),
           otherLinks: z.array(z.string()).optional(),
+          phoneNumber: z
+            .number()
+            .int()
+            .positive()
+            .nullable()
+            .optional()
+            .describe("National phone digits as a number, e.g. 9876543210"),
+          phoneCountryCode: z
+            .number()
+            .int()
+            .positive()
+            .nullable()
+            .optional()
+            .describe("Country calling code as a number, e.g. 91"),
+          dateOfBirth: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .nullable()
+            .optional()
+            .describe("Date of birth as yyyy-MM-dd, or null"),
         }),
         execute: async (input) => saveProfile(userId, input),
       }),

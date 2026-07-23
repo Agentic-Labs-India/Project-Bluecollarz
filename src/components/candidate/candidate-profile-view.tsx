@@ -19,8 +19,10 @@ import {
 } from "@/lib/candidate/profile";
 import { CountryMultiSelect } from "@/components/candidate/country-multi-select";
 import { DateOfBirthPicker } from "@/components/candidate/date-of-birth-picker";
+import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
 import { ResidencePlaceFields } from "@/components/candidate/residence-place-fields";
 import {
+  countryCodeFromName,
   normalizeCountryNames,
   normalizeResidencePlace,
 } from "@/lib/geo/places";
@@ -42,7 +44,8 @@ function readNullableFloat(raw: string): number | null {
 }
 
 type ProfileSavePayload = {
-  phoneNumber: string;
+  phoneNumber: number | null;
+  phoneCountryCode: number | null;
   headline: string;
   location: string;
   yearsExperience: number | null;
@@ -75,6 +78,7 @@ function buildProfileSavePayload(
 ): ProfileSavePayload {
   return {
     phoneNumber: profile.phoneNumber,
+    phoneCountryCode: profile.phoneCountryCode,
     headline: profile.headline,
     location: profile.location,
     yearsExperience: profile.yearsExperience,
@@ -107,7 +111,8 @@ const emptyProfile: CandidateProfileData = {
   name: "",
   email: "",
   image: "",
-  phoneNumber: "",
+  phoneNumber: null,
+  phoneCountryCode: null,
   headline: "",
   location: "",
   yearsExperience: null,
@@ -434,11 +439,19 @@ export function CandidateProfileView() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
-            <Input
+            <PhoneNumberInput
               id="phone"
-              value={profile.phoneNumber}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, phoneNumber: e.target.value }))
+              countryCode={profile.phoneCountryCode}
+              number={profile.phoneNumber}
+              defaultIso={
+                countryCodeFromName(profile.residenceCountry) ?? "IN"
+              }
+              onChange={({ phoneCountryCode, phoneNumber }) =>
+                setProfile((p) => ({
+                  ...p,
+                  phoneCountryCode,
+                  phoneNumber,
+                }))
               }
             />
           </div>

@@ -16,7 +16,7 @@ export interface HireOverview {
   account: {
     name: string | null;
     email: string;
-    phoneNumber: string | null;
+    phoneNumber: number | null;
     image: string | null;
     memberSince: string | null;
   };
