@@ -6,6 +6,7 @@ import { normalizeProfileType, type ProfileType } from "@/lib/profile-types";
 interface AuthContext {
   id: string;
   email: string;
+  name: string | null;
   profileType: ProfileType;
 }
 
@@ -18,12 +19,13 @@ async function getAuthContext(): Promise<AuthContext | null> {
   await connection();
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as
-    | { id?: string; email?: string; profileType?: string }
+    | { id?: string; email?: string; name?: string | null; profileType?: string }
     | undefined;
   if (!user?.id) return null;
   return {
     id: user.id,
     email: (user.email ?? "").toLowerCase(),
+    name: user.name?.trim() || null,
     profileType: normalizeProfileType(user.profileType),
   };
 }
