@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { ProfileType } from "@/lib/profile-types";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -63,6 +64,8 @@ function toListItem(
 export async function listUsersByProfileType(
   profileType: ProvisionProfileType,
 ): Promise<AdminUserListItem[]> {
+  // Request-time only — Mongo / indexes may touch Date under the hood.
+  await connection();
   await ensureIndexes();
   const [docs, provisions] = await Promise.all([
     client
