@@ -27,7 +27,7 @@ export default async function HomePage() {
       };
 
   const cards = [
-    { label: "Active applications", value: stats.active, icon: BriefcaseIcon },
+    { label: "Active roles", value: stats.active, icon: BriefcaseIcon },
     { label: "Selected", value: stats.selected, icon: CircleCheckIcon },
     { label: "Not qualified / closed", value: stats.closed, icon: CircleXIcon },
   ];

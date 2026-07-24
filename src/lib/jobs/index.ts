@@ -119,6 +119,8 @@ export interface JobListItem {
   priority?: JobPriority;
   location?: string;
   hiredThisMonth: number;
+  /** Formal applications count for this role. */
+  applicantCount: number;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -250,7 +252,10 @@ export function normalizeStepTemplates(
   );
 }
 
-export function toJobListItem(doc: JobDocument): JobListItem {
+export function toJobListItem(
+  doc: JobDocument,
+  opts?: { applicantCount?: number },
+): JobListItem {
   return {
     id: idHex(doc._id),
     ownerId: idHex(doc.ownerId),
@@ -261,6 +266,7 @@ export function toJobListItem(doc: JobDocument): JobListItem {
     priority: doc.priority,
     location: doc.location ? normalizeJobLocation(doc.location) : undefined,
     hiredThisMonth: asNumber(doc.hiredThisMonth, 0),
+    applicantCount: opts?.applicantCount ?? 0,
     publishedAt: doc.publishedAt?.toISOString() ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),

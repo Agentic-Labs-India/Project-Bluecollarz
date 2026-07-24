@@ -16,7 +16,7 @@ export interface ApplicationDocument {
 
 /** Aggregate counts of a candidate's applications, for the home dashboard. */
 export interface CandidateApplicationStats {
-  /** Applied to a role that is still open/published. */
+  /** Applied or interviewing on a role that is still open/published. */
   active: number;
   /** Marked as selected by the hirer. */
   selected: number;
@@ -37,14 +37,18 @@ export interface CandidateApplicationInterviewStage {
   overall: number | null;
 }
 
-/** One application row for the candidate home dashboard. */
+/** Pipeline status on the candidate home list (includes pre-apply interviewing). */
+export type CandidatePipelineStatus = ApplicationStatus | "interviewing";
+
+/** One application / interview row for the candidate home dashboard. */
 export interface CandidateApplicationListItem {
   id: string;
   jobId: string;
   jobTitle: string;
   jobPay: string;
   jobStatus: "published" | "draft" | "closed" | "missing";
-  status: ApplicationStatus;
+  status: CandidatePipelineStatus;
+  /** Formal apply date, or first interview start when not yet applied. */
   appliedAt: string;
   interviews: CandidateApplicationInterviewStage[];
 }

@@ -9,6 +9,7 @@ function applicationStatusLabel(
 ): string {
   if (status === "selected") return "Selected";
   if (status === "rejected") return "Rejected";
+  if (status === "interviewing") return "Interviewing";
   return "Applied";
 }
 
@@ -17,7 +18,14 @@ function applicationStatusVariant(
 ): "default" | "secondary" | "destructive" | "outline" {
   if (status === "selected") return "default";
   if (status === "rejected") return "destructive";
+  if (status === "interviewing") return "outline";
   return "secondary";
+}
+
+function activityLabel(app: CandidateApplicationListItem): string {
+  const date = new Date(app.appliedAt).toLocaleDateString();
+  if (app.status === "interviewing") return `Started ${date}`;
+  return `Applied ${date}`;
 }
 
 function interviewStatusLabel(
@@ -37,11 +45,11 @@ export function CandidateApplicationsList({
     return (
       <div className="border-border/80 bg-card rounded-none border p-6 shadow-sm">
         <h2 className="text-foreground mb-2 text-lg font-semibold">
-          Your applications
+          Your roles
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          You haven&apos;t applied to any roles yet. Explore opportunities and
-          start an application when you&apos;re ready.
+          Roles you interview for or apply to will show up here. Explore
+          opportunities to get started.
         </p>
       </div>
     );
@@ -50,12 +58,10 @@ export function CandidateApplicationsList({
   return (
     <section className="border-border/80 bg-card rounded-none border shadow-sm">
       <div className="border-border/60 border-b px-5 py-4">
-        <h2 className="text-foreground text-lg font-semibold">
-          Your applications
-        </h2>
+        <h2 className="text-foreground text-lg font-semibold">Your roles</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Status, AI interviews, and outcomes for every role you&apos;ve applied
-          to.
+          Status, AI interviews, and outcomes for every role you&apos;ve
+          interviewed for or applied to.
         </p>
       </div>
 
@@ -81,7 +87,7 @@ export function CandidateApplicationsList({
                 <p className="text-muted-foreground mt-1 text-sm">
                   {app.jobPay}
                   <span className="mx-1.5">·</span>
-                  Applied {new Date(app.appliedAt).toLocaleDateString()}
+                  {activityLabel(app)}
                 </p>
               </div>
             </div>

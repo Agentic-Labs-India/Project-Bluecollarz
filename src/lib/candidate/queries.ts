@@ -11,6 +11,7 @@ import type {
   CandidateApplicationListItem,
   CandidateApplicationStats,
   CandidateInterviewStageStatus,
+  CandidatePipelineStatus,
 } from "@/lib/jobs/applications";
 import {
   INTERVIEW_STAGE_IDS,
@@ -62,7 +63,10 @@ function statsFromApplications(
   for (const app of applications) {
     if (app.status === "selected") {
       stats.selected += 1;
-    } else if (app.status === "applied" && app.jobStatus === "published") {
+    } else if (
+      (app.status === "applied" || app.status === "interviewing") &&
+      app.jobStatus === "published"
+    ) {
       stats.active += 1;
     } else {
       stats.closed += 1;
@@ -71,9 +75,15 @@ function statsFromApplications(
   return stats;
 }
 
+function toIsoDate(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string" && value) return value;
+  return new Date(0).toISOString();
+}
+
 /**
- * All applications for a candidate, with job details + AI interview progress.
- * Newest applications first.
+ * Roles the candidate has applied to OR interviewed for, with stage progress.
+ * Newest activity first.
  */
 export async function getCandidateApplications(
   userId: string,
@@ -82,44 +92,85 @@ export async function getCandidateApplications(
   if (!userId) return [];
 
   const db = client.db(DB_NAME);
-  const applications = await db
-    .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
-    .find({ applicantId: matchId(userId) })
-    .project({ jobId: 1, status: 1, createdAt: 1 })
-    .sort({ createdAt: -1 })
-    .toArray();
-
-  if (!applications.length) return [];
-
-  const jobIdHexes = applications
-    .map((app) => idHex(app.jobId))
-    .filter(Boolean);
-
-  const [jobs, interviewDocs] = await Promise.all([
+  const [applications, interviewDocs] = await Promise.all([
     db
-      .collection<JobDocument>(COLLECTIONS.JOBS)
-      .find({ _id: { $in: matchIds(jobIdHexes) as never } })
-      .project<{
-        _id: unknown;
-        title: string;
-        pay: string;
-        status: JobDocument["status"];
-      }>({ title: 1, pay: 1, status: 1 })
+      .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
+      .find({ applicantId: matchId(userId) })
+      .project({ jobId: 1, status: 1, createdAt: 1 })
       .toArray(),
     db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
-      .find({
-        applicantId: matchId(userId),
-        jobId: { $in: jobIdHexes },
-      } as never)
+      .find({ applicantId: matchId(userId) } as never)
       .project({
         jobId: 1,
         stageId: 1,
         status: 1,
         "analysis.overall": 1,
+        startedAt: 1,
+        updatedAt: 1,
       })
       .toArray(),
   ]);
+
+  const applicationByJob = new Map<
+    string,
+    { id: string; status: CandidatePipelineStatus; createdAt: string }
+  >();
+  for (const app of applications) {
+    const jobId = idHex(app.jobId);
+    if (!jobId) continue;
+    applicationByJob.set(jobId, {
+      id: idHex(app._id),
+      status: app.status ?? "applied",
+      createdAt: toIsoDate(app.createdAt),
+    });
+  }
+
+  const interviewsByJob = new Map<
+    string,
+    {
+      byStage: Map<
+        InterviewStageId,
+        { status: CandidateInterviewStageStatus; overall: number | null }
+      >;
+      earliestStart: string;
+    }
+  >();
+
+  for (const doc of interviewDocs) {
+    const jobId = idHex(doc.jobId) || String(doc.jobId);
+    if (!jobId) continue;
+    const existing = interviewsByJob.get(jobId) ?? {
+      byStage: new Map(),
+      earliestStart: toIsoDate(doc.startedAt ?? doc.updatedAt),
+    };
+    existing.byStage.set(doc.stageId, {
+      status: doc.status === "completed" ? "completed" : "in_progress",
+      overall:
+        doc.status === "completed" && doc.analysis?.overall != null
+          ? doc.analysis.overall
+          : null,
+    });
+    const started = toIsoDate(doc.startedAt ?? doc.updatedAt);
+    if (started < existing.earliestStart) existing.earliestStart = started;
+    interviewsByJob.set(jobId, existing);
+  }
+
+  const jobIdHexes = [
+    ...new Set([...applicationByJob.keys(), ...interviewsByJob.keys()]),
+  ];
+  if (!jobIdHexes.length) return [];
+
+  const jobs = await db
+    .collection<JobDocument>(COLLECTIONS.JOBS)
+    .find({ _id: { $in: matchIds(jobIdHexes) as never } })
+    .project<{
+      _id: unknown;
+      title: string;
+      pay: string;
+      status: JobDocument["status"];
+    }>({ title: 1, pay: 1, status: 1 })
+    .toArray();
 
   const jobById = new Map(
     jobs.map((job) => [
@@ -132,48 +183,20 @@ export async function getCandidateApplications(
     ]),
   );
 
-  const interviewsByJob = new Map<
-    string,
-    Map<
-      InterviewStageId,
-      { status: CandidateInterviewStageStatus; overall: number | null }
-    >
-  >();
-
-  for (const doc of interviewDocs) {
-    const jobId = idHex(doc.jobId) || String(doc.jobId);
-    const byStage =
-      interviewsByJob.get(jobId) ??
-      new Map<
-        InterviewStageId,
-        { status: CandidateInterviewStageStatus; overall: number | null }
-      >();
-    byStage.set(doc.stageId, {
-      status: doc.status === "completed" ? "completed" : "in_progress",
-      overall:
-        doc.status === "completed" && doc.analysis?.overall != null
-          ? doc.analysis.overall
-          : null,
-    });
-    interviewsByJob.set(jobId, byStage);
-  }
-
-  return applications.map((app) => {
-    const jobId = idHex(app.jobId);
+  const items: CandidateApplicationListItem[] = jobIdHexes.map((jobId) => {
     const job = jobById.get(jobId);
-    const byStage = interviewsByJob.get(jobId);
+    const application = applicationByJob.get(jobId);
+    const interview = interviewsByJob.get(jobId);
+    const byStage = interview?.byStage;
 
     return {
-      id: idHex(app._id),
+      id: application?.id ?? `interviewing:${jobId}`,
       jobId,
       jobTitle: job?.title ?? "Role unavailable",
       jobPay: job?.pay ?? "—",
       jobStatus: job?.status ?? "missing",
-      status: app.status ?? "applied",
-      appliedAt:
-        app.createdAt instanceof Date
-          ? app.createdAt.toISOString()
-          : String(app.createdAt),
+      status: application?.status ?? "interviewing",
+      appliedAt: application?.createdAt ?? interview?.earliestStart ?? new Date(0).toISOString(),
       interviews: INTERVIEW_STAGE_IDS.map((stageId) => {
         const hit = byStage?.get(stageId);
         return {
@@ -184,6 +207,12 @@ export async function getCandidateApplications(
       }),
     };
   });
+
+  items.sort(
+    (a, b) =>
+      new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime(),
+  );
+  return items;
 }
 
 /** One DB pass for candidate home: applications list + derived stat cards. */

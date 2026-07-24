@@ -112,6 +112,15 @@ export function HireJobsTable({
         ),
       },
       {
+        accessorKey: "applicantCount",
+        header: "Applicants",
+        cell: ({ row }) => (
+          <span className="text-foreground text-sm tabular-nums">
+            {row.original.applicantCount}
+          </span>
+        ),
+      },
+      {
         accessorKey: "updatedAt",
         header: "Updated",
         cell: ({ row }) => (

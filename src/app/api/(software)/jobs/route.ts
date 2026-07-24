@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
+import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import {
   buildJobDocument,
   jobCreateSchema,
@@ -12,6 +12,7 @@ import {
   JOB_PRIORITIES,
   type JobDocument,
 } from "@/lib/jobs";
+import type { ApplicationDocument } from "@/lib/jobs/applications";
 import {
   getPublishedOpportunities,
   revalidatePublishedJobsCache,
@@ -19,6 +20,7 @@ import {
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireUser, requireProfile } from "@/lib/api/session";
 import { getHireProfileComplete } from "@/lib/hire/queries";
+import { idHex } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -87,8 +89,27 @@ export async function GET(req: NextRequest) {
       collection.countDocuments(query),
     ]);
 
+    const jobIdHexes = docs.map((doc) => idHex(doc._id)).filter(Boolean);
+    const applicantCounts = new Map<string, number>();
+    if (jobIdHexes.length) {
+      const grouped = await db
+        .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
+        .aggregate<{ _id: unknown; count: number }>([
+          { $match: { jobId: { $in: matchIds(jobIdHexes) } } },
+          { $group: { _id: "$jobId", count: { $sum: 1 } } },
+        ])
+        .toArray();
+      for (const row of grouped) {
+        applicantCounts.set(idHex(row._id), row.count);
+      }
+    }
+
     return NextResponse.json({
-      items: docs.map(toJobListItem),
+      items: docs.map((doc) =>
+        toJobListItem(doc, {
+          applicantCount: applicantCounts.get(idHex(doc._id)) ?? 0,
+        }),
+      ),
       total,
       page,
       limit,
