@@ -16,6 +16,7 @@ import {
   INTERVIEW_STAGE_IDS,
   type InterviewStageId,
 } from "@/lib/interviews";
+import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -88,22 +89,29 @@ export async function POST(_req: NextRequest, context: RouteContext) {
     const jobId = idHex(job._id) || id;
     const applicantId = auth.user.id;
 
-    await db.collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS).updateOne(
-      {
-        applicantId: matchId(applicantId),
-        jobId: matchId(jobId),
-      },
-      {
-        $setOnInsert: {
-          jobId,
-          applicantId,
-          applicantEmail: auth.user.email,
-          status: "applied",
-          createdAt: new Date(),
+    const result = await db
+      .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
+      .updateOne(
+        {
+          applicantId: matchId(applicantId),
+          jobId: matchId(jobId),
         },
-      },
-      { upsert: true },
-    );
+        {
+          $setOnInsert: {
+            jobId,
+            applicantId,
+            applicantEmail: auth.user.email,
+            status: "applied",
+            createdAt: new Date(),
+          },
+        },
+        { upsert: true },
+      );
+
+    // Fresh applicant counts on the landing carousel after a new apply.
+    if (result.upsertedCount === 1) {
+      revalidatePublishedJobsCache();
+    }
 
     return NextResponse.json({ applied: true });
   } catch (error) {

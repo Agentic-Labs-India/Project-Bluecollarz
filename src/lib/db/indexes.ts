@@ -6,6 +6,8 @@ const JOB_INDEX_SPECS = [
   { key: { ownerId: 1, status: 1, createdAt: -1 } },
   { key: { status: 1, tab: 1, createdAt: -1 } },
   { key: { status: 1, createdAt: -1 } },
+  /** Landing carousel + public sitemap sort by publish time. */
+  { key: { status: 1, publishedAt: -1, createdAt: -1 } },
 ] as const;
 
 const APPLICATION_INDEX_SPECS = [
@@ -29,6 +31,11 @@ const SUPPORT_TICKET_INDEX_SPECS = [
 const USER_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
   { key: { email: 1 }, options: {} },
+] as const;
+
+const BLOG_INDEX_SPECS = [
+  { key: { slug: 1 }, options: { unique: true } },
+  { key: { status: 1, publishedAt: -1, createdAt: -1 }, options: {} },
 ] as const;
 
 const INTERVIEW_INDEX_SPECS = [
@@ -107,6 +114,9 @@ export async function ensureIndexes() {
         spec.key,
         spec.options,
       ),
+    ),
+    ...BLOG_INDEX_SPECS.map((spec) =>
+      ensureIndex(db.collection(COLLECTIONS.BLOGS), spec.key, spec.options),
     ),
     ...INTERVIEW_INDEX_SPECS.map((spec) =>
       ensureIndex(

@@ -17,6 +17,7 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
       { label: "About", href: "/about" },
       { label: "Mission", href: "/mission" },
       { label: "Vision", href: "/vision" },
+      { label: "Blog", href: "/blog" },
       { label: "Contact", href: "/contact" },
     ],
   },

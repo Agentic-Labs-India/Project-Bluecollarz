@@ -1,29 +1,9 @@
 import "server-only";
 
-import { del } from "@vercel/blob";
 import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
-import { isVercelBlobUrl } from "@/lib/blob/pathname";
+import { deleteBlobUrls } from "@/lib/blob/delete";
 import { kycBlobUrls, type KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
-
-/** Best-effort delete of Vercel Blob URLs (never throws). */
-async function deleteBlobUrls(
-  urls: Array<string | null | undefined>,
-): Promise<void> {
-  const unique = [
-    ...new Set(
-      urls.filter(
-        (url): url is string => typeof url === "string" && isVercelBlobUrl(url),
-      ),
-    ),
-  ];
-  if (!unique.length) return;
-  try {
-    await del(unique);
-  } catch (error) {
-    console.warn("deleteBlobUrls:", error);
-  }
-}
 
 /**
  * Cascade cleanup before Better Auth removes the user document.

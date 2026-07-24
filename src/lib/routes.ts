@@ -1,5 +1,6 @@
 import {
   Briefcase,
+  FileText,
   Home,
   LifeBuoy,
   LucideIcon,
@@ -35,6 +36,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { title: "Admins", url: "/admin/admins", icon: Shield },
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },
+  { title: "Blog", url: "/admin/blog", icon: FileText },
 ];
 
 /** Base path for each profile area; everything under these requires auth. */

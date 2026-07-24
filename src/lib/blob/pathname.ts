@@ -103,3 +103,16 @@ export function isInterviewRecordingUrl(
     return false;
   }
 }
+
+/** Blog cover images: `{DB_NAME}/admin/blog/…` on Vercel Blob. */
+export function isBlogCoverImageUrl(url: string): boolean {
+  if (!isVercelBlobUrl(url)) return false;
+  try {
+    const root = getBlobRoot();
+    const { pathname } = new URL(url);
+    const decoded = decodeURIComponent(pathname);
+    return decoded.includes(`/${root}/admin/blog/`);
+  } catch {
+    return false;
+  }
+}

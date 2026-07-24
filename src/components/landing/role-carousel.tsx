@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { LoginButton } from "@/components/auth/login-button";
-import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import type { LandingRole } from "@/lib/jobs/queries";
 
 const AVATAR_COLORS = [
@@ -179,9 +179,8 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
             const avatars = avatarsForRole(role.id, role.title);
             return (
               <div key={role.id} className="w-[290px] snap-start">
-                <button
-                  type="button"
-                  onClick={() => void signInWithGoogle()}
+                <Link
+                  href={`/jobs/${role.id}`}
                   className="group ml-px flex h-[140px] w-full flex-col justify-between rounded-lg border border-foreground/7 bg-canvas bg-clip-padding p-4 pt-3 text-left shadow-sm ring-1 ring-transparent duration-200 hover:border-ring hover:bg-muted/50 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-transparent focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div>
@@ -209,13 +208,13 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
                       </div>
                     </div>
                     <div className="flex flex-row items-center gap-1 text-mute group-hover:text-ring">
-                      <div className="text-sm">Apply</div>
+                      <div className="text-sm">View</div>
                       <div className="w-0 shrink-0 overflow-hidden duration-200 group-hover:w-[10px]">
                         <ArrowUpRightIcon />
                       </div>
                     </div>
                   </div>
-                </button>
+                </Link>
               </div>
             );
           })}

@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
+import client, { DB_NAME, COLLECTIONS, isId, matchId, matchIds } from "@/lib/db";
 import {
   JOB_PRIORITIES,
   JOB_TABS,
@@ -211,7 +211,18 @@ export async function getLatestPublishedRoles(
   const safeLimit = Math.min(20, Math.max(1, limit));
 
   const docs = await collection
-    .find({ status: "published" })
+    .find(
+      { status: "published" },
+      {
+        projection: {
+          title: 1,
+          pay: 1,
+          hiredThisMonth: 1,
+          publishedAt: 1,
+          createdAt: 1,
+        },
+      },
+    )
     .sort({ publishedAt: -1, createdAt: -1 })
     .limit(safeLimit)
     .toArray();
@@ -350,4 +361,94 @@ export async function getPublishedOpportunities(opts: {
     profileComplete,
     kycVerified,
   };
+}
+
+/** Public SEO job page — published only, no auth. */
+export type PublicJobDetail = {
+  id: string;
+  title: string;
+  pay: string;
+  tab: OpportunityTab;
+  overview: string;
+  location?: JobLocation;
+  countryCode?: string;
+  stateCode?: string;
+  publishedAt: string | null;
+  updatedAt: string;
+};
+
+async function getPublishedJobPublicCached(
+  id: string,
+): Promise<PublicJobDetail | null> {
+  "use cache";
+  cacheLife("days");
+  cacheTag(PUBLISHED_JOBS_CACHE_TAG);
+
+  const doc = await client
+    .db(DB_NAME)
+    .collection<JobDocument>(COLLECTIONS.JOBS)
+    .findOne(
+      { _id: matchId(id) as never, status: "published" },
+      {
+        projection: {
+          title: 1,
+          pay: 1,
+          tab: 1,
+          overview: 1,
+          location: 1,
+          countryCode: 1,
+          stateCode: 1,
+          publishedAt: 1,
+          updatedAt: 1,
+        },
+      },
+    );
+  if (!doc) return null;
+  return {
+    id: idHex(doc._id),
+    title: doc.title,
+    pay: doc.pay,
+    tab: doc.tab,
+    overview: doc.overview,
+    location: doc.location,
+    countryCode: doc.countryCode,
+    stateCode: doc.stateCode,
+    publishedAt: doc.publishedAt?.toISOString() ?? null,
+    updatedAt: doc.updatedAt.toISOString(),
+  };
+}
+
+export async function getPublishedJobPublic(
+  id: string,
+): Promise<PublicJobDetail | null> {
+  if (!isId(id)) return null;
+  return getPublishedJobPublicCached(id);
+}
+
+export async function listPublishedJobsForSitemap(): Promise<
+  { id: string; updatedAt: string }[]
+> {
+  "use cache";
+  cacheLife("days");
+  cacheTag(PUBLISHED_JOBS_CACHE_TAG);
+
+  try {
+    const docs = await client
+      .db(DB_NAME)
+      .collection<JobDocument>(COLLECTIONS.JOBS)
+      .find(
+        { status: "published" },
+        { projection: { updatedAt: 1 } },
+      )
+      .sort({ publishedAt: -1 })
+      .limit(1000)
+      .toArray();
+
+    return docs.map((doc) => ({
+      id: idHex(doc._id),
+      updatedAt: doc.updatedAt.toISOString(),
+    }));
+  } catch {
+    return [];
+  }
 }

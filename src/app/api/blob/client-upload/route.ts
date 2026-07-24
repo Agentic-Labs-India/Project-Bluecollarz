@@ -67,6 +67,13 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (segments.length < 3) {
             throw new Error("Invalid admin email upload path");
           }
+        } else if (kind === "admin" && segments[1] === "blog") {
+          if (auth.user.profileType !== "admin") {
+            throw new Error("Blog uploads require an admin profile");
+          }
+          if (segments.length < 3) {
+            throw new Error("Invalid blog upload path");
+          }
         } else if (kind === "users") {
           if (segments[1] !== auth.user.id || segments.length < 3) {
             throw new Error("User uploads must be under your own folder");
