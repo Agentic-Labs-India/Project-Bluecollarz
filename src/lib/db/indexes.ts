@@ -13,6 +13,11 @@ const APPLICATION_INDEX_SPECS = [
   { key: { jobId: 1, createdAt: -1 }, options: {} },
 ] as const;
 
+const USER_PROVISION_INDEX_SPECS = [
+  { key: { email: 1 }, options: { unique: true } },
+  { key: { profileType: 1, createdAt: -1 }, options: {} },
+] as const;
+
 const INTERVIEW_INDEX_SPECS = [
   {
     key: { applicantId: 1, jobId: 1, stageId: 1 },
@@ -65,6 +70,13 @@ export async function ensureIndexes() {
     ...APPLICATION_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.APPLICATIONS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...USER_PROVISION_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.USER_PROVISIONS),
         spec.key,
         spec.options,
       ),

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
-import { ADMIN_EMAIL, PROFILE_BASE_ROUTES } from "@/lib/routes";
+import { PROFILE_BASE_ROUTES } from "@/lib/routes";
 import {
   getProfileBasePath,
   getProfileHomePath,
@@ -131,18 +131,16 @@ export async function proxy(req: NextRequest) {
         return clearSessionAndRedirect(req, "/");
       }
 
-      const normalizedEmail = user.email.toLowerCase().trim();
-      const isAdmin = normalizedEmail === ADMIN_EMAIL.toLowerCase();
       const profileType = normalizeProfileType(user.profileType ?? undefined);
 
-      // Admins may browse any area; everyone else stays in their profile app.
-      if (!isAdmin && !isPathAllowedForProfile(pathname, profileType)) {
+      // Each profile type stays in its own app area.
+      if (!isPathAllowedForProfile(pathname, profileType)) {
         return NextResponse.redirect(
           new URL(getProfileHomePath(profileType), req.url),
         );
       }
 
-      // Work candidates (including admin testing as work) must finish onboarding.
+      // Work candidates must finish onboarding before using the candidate app.
       if (
         profileType === "work" &&
         pathname.startsWith("/candidate") &&

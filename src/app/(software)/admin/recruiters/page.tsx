@@ -1,7 +1,10 @@
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AppPage } from "@/components/layout/app-page";
+import { listUsersByProfileType } from "@/lib/admin/queries";
 
-export default function AdminRecruitersPage() {
+export default async function AdminRecruitersPage() {
+  const items = await listUsersByProfileType("hire");
+
   return (
     <AppPage>
       <div className="mb-8">
@@ -9,11 +12,12 @@ export default function AdminRecruitersPage() {
           Recruiters
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          Accounts with hire access. Add by email to create or promote someone
-          to recruiter, or set them back to candidate from the row menu.
+          Accounts with hire access. Add by email to promote an existing user
+          or queue an invite for first Google sign-in. Use the row menu to move
+          someone back to candidate.
         </p>
       </div>
-      <AdminUsersTable type="hire" />
+      <AdminUsersTable type="hire" initialItems={items} />
     </AppPage>
   );
 }

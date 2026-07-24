@@ -11,8 +11,6 @@ import {
   Users,
 } from "lucide-react";
 
-export const ADMIN_EMAIL = "realnikhileshrana@gmail.com";
-
 export interface AppNavItem {
   title: string;
   url: string;

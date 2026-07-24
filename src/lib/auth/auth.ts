@@ -3,6 +3,7 @@ import { nextCookies } from "better-auth/next-js";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
+import { consumeUserProvision } from "@/lib/admin/provisions";
 
 const APP_NAME = "BlueCollarz";
 
@@ -60,6 +61,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: false,
   },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -70,11 +77,13 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
+          const email = (user.email ?? "").toLowerCase().trim();
+          const provisioned = email ? await consumeUserProvision(email) : null;
           return {
             data: {
               ...user,
-              // All Google signups are candidates. Hire/admin are admin-provisioned.
-              profileType: "work",
+              // Organic Google signups are candidates; admin invites win when present.
+              profileType: provisioned ?? "work",
               cookiesEnabled: true,
               notificationsEnabled: true,
             },

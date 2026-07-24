@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, PlusIcon, UserRound } from "lucide-react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -36,11 +37,13 @@ function initials(name: string | null, email: string) {
 
 export function AdminUsersTable({
   type,
+  initialItems,
 }: {
   type: "hire" | "admin";
+  initialItems: AdminUserListItem[];
 }) {
-  const [data, setData] = useState<AdminUserListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AdminUserListItem[]>(initialItems);
+  const [loading, setLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -57,17 +60,14 @@ export function AdminUsersTable({
       const json = (await res.json().catch(() => ({}))) as {
         items?: AdminUserListItem[];
       };
-      setData(res.ok ? (json.items ?? []) : []);
+      if (res.ok) setData(json.items ?? []);
+      else toast.error("Could not refresh list");
     } catch {
-      setData([]);
+      toast.error("Could not refresh list");
     } finally {
       setLoading(false);
     }
   }, [type]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -90,6 +90,11 @@ export function AdminUsersTable({
       }
       setAddOpen(false);
       setEmail("");
+      toast.success(
+        json.created
+          ? `${roleLabel} invite saved — they’ll get access on Google sign-in`
+          : `Updated to ${roleLabel.toLowerCase()}`,
+      );
       await load();
     } catch {
       setError("Could not add user");
@@ -104,16 +109,23 @@ export function AdminUsersTable({
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, profileType: "work" }),
+        body: JSON.stringify(
+          user.pending
+            ? { kind: "pending", email: user.email, profileType: "work" }
+            : { kind: "user", userId: user.id, profileType: "work" },
+        ),
       });
       if (!res.ok) {
         const json = (await res.json().catch(() => ({}))) as { error?: string };
-        window.alert(json.error || "Could not update user");
+        toast.error(json.error || "Could not update user");
         return;
       }
       setData((prev) => prev.filter((row) => row.id !== user.id));
+      toast.success(
+        user.pending ? "Invite cancelled" : "Moved back to candidate",
+      );
     } catch {
-      window.alert("Could not update user");
+      toast.error("Could not update user");
     } finally {
       setRowBusyId(null);
     }
@@ -135,9 +147,17 @@ export function AdminUsersTable({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="text-foreground truncate text-sm font-medium">
-              {row.original.name || "Unnamed"}
-            </p>
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="text-foreground truncate text-sm font-medium">
+                {row.original.name ||
+                  (row.original.pending ? "Pending invite" : "Unnamed")}
+              </p>
+              {row.original.pending ? (
+                <span className="text-muted-foreground border-border shrink-0 border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+                  Pending
+                </span>
+              ) : null}
+            </div>
             <p className="text-muted-foreground truncate text-xs">
               {row.original.email}
             </p>
@@ -150,9 +170,11 @@ export function AdminUsersTable({
       header: "Joined",
       cell: ({ row }) => (
         <span className="text-muted-foreground text-sm tabular-nums">
-          {row.original.createdAt
-            ? new Date(row.original.createdAt).toLocaleDateString()
-            : "—"}
+          {row.original.pending
+            ? "Not signed in"
+            : row.original.createdAt
+              ? new Date(row.original.createdAt).toLocaleDateString()
+              : "—"}
         </span>
       ),
     },
@@ -181,7 +203,9 @@ export function AdminUsersTable({
                   onSelect={() => void makeCandidate(row.original)}
                 >
                   <UserRound className="size-4" />
-                  Make candidate
+                  {row.original.pending
+                    ? "Cancel invite"
+                    : "Make candidate"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -230,9 +254,9 @@ export function AdminUsersTable({
             <DialogHeader>
               <DialogTitle>{addLabel}</DialogTitle>
               <DialogDescription>
-                Enter an email. If the account exists, its role becomes{" "}
-                {roleLabel.toLowerCase()}. If not, a stub account is created
-                with that role — they sign in with Google later.
+                Enter an email. If they already have an account, their role
+                becomes {roleLabel.toLowerCase()}. If not, an invite is queued
+                and applied on their first Google sign-in.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-2 py-2">

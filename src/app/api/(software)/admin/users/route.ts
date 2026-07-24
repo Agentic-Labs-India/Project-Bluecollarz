@@ -6,6 +6,7 @@ import {
   setUserProfileType,
   upsertUserProfileTypeByEmail,
 } from "@/lib/admin/queries";
+import { deleteUserProvision } from "@/lib/admin/provisions";
 import { formatZodError } from "@/lib/utils";
 
 const provisionSchema = z.object({
@@ -13,10 +14,18 @@ const provisionSchema = z.object({
   profileType: z.enum(["hire", "admin"]),
 });
 
-const updateSchema = z.object({
-  userId: z.string().trim().min(1),
-  profileType: z.enum(["work", "hire", "admin"]),
-});
+const updateSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("user"),
+    userId: z.string().trim().min(1),
+    profileType: z.literal("work"),
+  }),
+  z.object({
+    kind: z.literal("pending"),
+    email: z.string().trim().email(),
+    profileType: z.literal("work"),
+  }),
+]);
 
 /** List provisioned hire or admin users. Admin-only. */
 export async function GET(req: NextRequest) {
@@ -78,7 +87,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/** Change an existing user's profileType (e.g. back to candidate). Admin-only. */
+/** Change role or cancel a pending invite. Admin-only. */
 export async function PATCH(req: NextRequest) {
   try {
     const auth = await requireProfile("admin");
@@ -93,6 +102,14 @@ export async function PATCH(req: NextRequest) {
         { error: formatZodError(parsed.error) },
         { status: 400 },
       );
+    }
+
+    if (parsed.data.kind === "pending") {
+      const removed = await deleteUserProvision(parsed.data.email);
+      if (!removed) {
+        return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+      }
+      return NextResponse.json({ ok: true });
     }
 
     if (parsed.data.userId === auth.user.id) {
