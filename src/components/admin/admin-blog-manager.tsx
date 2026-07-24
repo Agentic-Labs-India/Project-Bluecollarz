@@ -26,7 +26,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { BlogDetail, BlogListItem, BlogStatus } from "@/lib/blog/types";
-import { BLOG_STATUSES, slugifyBlogTitle } from "@/lib/blog/types";
+import {
+  BLOG_STATUSES,
+  scoreSeoTitle,
+  slugifyBlogTitle,
+} from "@/lib/blog/types";
 import { uploadBlob } from "@/lib/blob/upload";
 import { formatDateTimeShort } from "@/lib/dates";
 import { htmlToPlainText } from "@/lib/rich-text";
@@ -34,6 +38,33 @@ import { cn } from "@/lib/utils";
 
 function label(status: string) {
   return status.replace(/_/g, " ");
+}
+
+function SeoTitleScoreBadge({ title }: { title: string }) {
+  const score = scoreSeoTitle(title);
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={cn(
+            "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
+            score.level === "excellent" &&
+              "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+            score.level === "good" &&
+              "bg-amber-500/15 text-amber-800 dark:text-amber-400",
+            score.level === "bad" &&
+              "bg-red-500/15 text-red-700 dark:text-red-400",
+          )}
+        >
+          SEO · {score.label}
+        </span>
+        <span className="text-mute text-xs tabular-nums">
+          {score.length} / 60 chars
+        </span>
+      </div>
+      <p className="text-muted-foreground text-xs">{score.hint}</p>
+    </div>
+  );
 }
 
 type EditorState = {
@@ -391,7 +422,9 @@ export function AdminBlogManager() {
                         }));
                       }}
                       placeholder="Post title"
+                      maxLength={120}
                     />
+                    <SeoTitleScoreBadge title={editor.title} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="blog-slug">URL slug</Label>
@@ -519,6 +552,10 @@ export function AdminBlogManager() {
                         }))
                       }
                       placeholder="Defaults to post title"
+                      maxLength={120}
+                    />
+                    <SeoTitleScoreBadge
+                      title={editor.seoTitle.trim() || editor.title}
                     />
                   </div>
                   <div className="space-y-2">

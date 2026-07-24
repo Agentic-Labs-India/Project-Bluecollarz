@@ -35,6 +35,8 @@ const isPublicRoute = createRouteMatcher([
   "/blog",
   "/blog(.*)",
   "/jobs(.*)",
+  "/sitemap.xml",
+  "/robots.txt",
 ]);
 
 const isProtectedRoute = createRouteMatcher(

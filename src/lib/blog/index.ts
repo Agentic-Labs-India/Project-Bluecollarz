@@ -15,8 +15,8 @@ import {
   type BlogStatus,
 } from "@/lib/blog/types";
 
-export type { BlogDetail, BlogListItem, BlogStatus } from "@/lib/blog/types";
-export { BLOG_STATUSES, slugifyBlogTitle } from "@/lib/blog/types";
+export type { BlogDetail, BlogListItem, BlogStatus, SeoTitleScore, SeoTitleScoreLevel } from "@/lib/blog/types";
+export { BLOG_STATUSES, scoreSeoTitle, slugifyBlogTitle } from "@/lib/blog/types";
 
 export const PUBLISHED_BLOGS_CACHE_TAG = "published-blogs";
 
