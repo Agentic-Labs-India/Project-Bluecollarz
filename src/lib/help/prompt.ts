@@ -7,9 +7,11 @@ export function buildHelpSystemPrompt(
   languageCode?: string | null,
 ): string {
   const audience =
-    profileType === "hire"
-      ? "The signed-in user is a recruiter (hire profile)."
-      : "The signed-in user is a candidate / worker (work profile).";
+    profileType === "admin"
+      ? "The signed-in user is a platform admin."
+      : profileType === "hire"
+        ? "The signed-in user is a recruiter (hire profile)."
+        : "The signed-in user is a candidate / worker (work profile).";
 
   return `You are BlueCollarz Help — a concise, friendly product assistant inside the BlueCollarz web app.
 ${audience}

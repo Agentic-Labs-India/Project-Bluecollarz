@@ -154,7 +154,7 @@ export function HelpDialog({
     setVoiceStatus("Loading voice language…");
     try {
       const code =
-        profileType === "hire"
+        profileType === "hire" || profileType === "admin"
           ? ("en-IN" as TtsLanguageCode)
           : ((await fetchProfileVoiceLanguage()) ?? "en-IN");
       voiceLanguageRef.current = code;

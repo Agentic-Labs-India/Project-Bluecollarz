@@ -1,15 +1,23 @@
-export type ProfileType = "work" | "hire";
+export type ProfileType = "work" | "hire" | "admin";
 
 export const DEFAULT_PROFILE_TYPE: ProfileType = "work";
 
 const PROFILE_HOMES: Record<ProfileType, string> = {
   work: "/candidate/home",
   hire: "/hire/roles",
+  admin: "/admin/recruiters",
+};
+
+const PROFILE_BASES: Record<ProfileType, string> = {
+  work: "/candidate",
+  hire: "/hire",
+  admin: "/admin",
 };
 
 const PROFILE_ID_LABELS: Record<ProfileType, string> = {
   work: "Candidate",
   hire: "Recruiter",
+  admin: "Admin",
 };
 
 export function getProfileIdLabel(
@@ -22,7 +30,7 @@ export function normalizeProfileType(
   value: string | null | undefined,
 ): ProfileType {
   const normalized = value?.toLowerCase().trim();
-  if (normalized === "hire" || normalized === "work") {
+  if (normalized === "hire" || normalized === "work" || normalized === "admin") {
     return normalized;
   }
   return DEFAULT_PROFILE_TYPE;
@@ -31,7 +39,7 @@ export function normalizeProfileType(
 export function getProfileBasePath(
   profileType: string | null | undefined,
 ): string {
-  return normalizeProfileType(profileType) === "hire" ? "/hire" : "/candidate";
+  return PROFILE_BASES[normalizeProfileType(profileType)];
 }
 
 export function getProfileHomePath(

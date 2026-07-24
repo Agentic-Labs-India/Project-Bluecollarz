@@ -1,10 +1,14 @@
 import {
   Briefcase,
   Home,
+  LifeBuoy,
   LucideIcon,
+  Mail,
   Search,
   Settings,
+  Shield,
   User,
+  Users,
 } from "lucide-react";
 
 export const ADMIN_EMAIL = "realnikhileshrana@gmail.com";
@@ -28,5 +32,12 @@ export const HIRE_NAV: AppNavItem[] = [
   { title: "Settings", url: "/hire/settings", icon: Settings },
 ];
 
+export const ADMIN_NAV: AppNavItem[] = [
+  { title: "Recruiters", url: "/admin/recruiters", icon: Users },
+  { title: "Admins", url: "/admin/admins", icon: Shield },
+  { title: "Email", url: "/admin/email", icon: Mail },
+  { title: "Support", url: "/admin/support", icon: LifeBuoy },
+];
+
 /** Base path for each profile area; everything under these requires auth. */
-export const PROFILE_BASE_ROUTES = ["/candidate", "/hire"] as const;
+export const PROFILE_BASE_ROUTES = ["/candidate", "/hire", "/admin"] as const;

@@ -33,7 +33,7 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         defaultValue: "work",
-        // Not client-writable — hire is set manually in MongoDB only.
+        // Not client-writable — hire/admin are provisioned via admin console.
         input: false,
       },
       cookiesEnabled: {
@@ -73,7 +73,7 @@ export const auth = betterAuth({
           return {
             data: {
               ...user,
-              // All Google signups are candidates. Hire is provisioned in DB only.
+              // All Google signups are candidates. Hire/admin are admin-provisioned.
               profileType: "work",
               cookiesEnabled: true,
               notificationsEnabled: true,
