@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
@@ -19,6 +19,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
+
+function isEditorAlive(editor: Editor | null): editor is Editor {
+  if (!editor || editor.isDestroyed) return false;
+  try {
+    return Boolean(editor.view);
+  } catch {
+    return false;
+  }
+}
 
 function ToolbarButton({
   onClick,
@@ -90,19 +99,24 @@ export function RichTextEditor({
       },
     },
     onUpdate: ({ editor: ed }) => {
+      if (!isEditorAlive(ed)) return;
       onChange(sanitizeRichTextHtml(ed.getHTML()));
     },
   });
 
   useEffect(() => {
-    if (!editor) return;
-    const current = editor.getHTML();
-    const next = value || "";
-    if (sanitizeRichTextHtml(current) === sanitizeRichTextHtml(next)) return;
-    editor.commands.setContent(next || "", { emitUpdate: false });
+    if (!isEditorAlive(editor)) return;
+    try {
+      const current = editor.getHTML();
+      const next = value || "";
+      if (sanitizeRichTextHtml(current) === sanitizeRichTextHtml(next)) return;
+      editor.commands.setContent(next || "", { emitUpdate: false });
+    } catch {
+      // Editor view can be torn down mid-navigation (e.g. after create → redirect).
+    }
   }, [editor, value]);
 
-  if (!editor) {
+  if (!isEditorAlive(editor)) {
     return (
       <div
         className={cn(
@@ -114,6 +128,7 @@ export function RichTextEditor({
   }
 
   const setLink = () => {
+    if (!isEditorAlive(editor)) return;
     const previous = editor.getAttributes("link").href as string | undefined;
     const url = window.prompt("Link URL", previous || "https://");
     if (url === null) return;

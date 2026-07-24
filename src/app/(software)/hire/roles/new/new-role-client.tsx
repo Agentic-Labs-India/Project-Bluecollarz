@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,16 @@ function buildJobPayload(values: JobFormValues, publish: boolean) {
 
 export function NewRoleClient() {
   const router = useRouter();
+  /** Bump to remount JobForm (clears fields after create / bfcache restore). */
+  const [formKey, setFormKey] = useState(() => Date.now());
+
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) setFormKey(Date.now());
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   async function createJob(values: JobFormValues, publish: boolean) {
     const res = await fetch("/api/jobs", {
@@ -49,6 +60,7 @@ export function NewRoleClient() {
       }
       throw new Error(json.error || "Failed to create role");
     }
+    setFormKey(Date.now());
     router.push(`/hire/roles/${json.id}`);
   }
 
@@ -73,7 +85,11 @@ export function NewRoleClient() {
           or publish immediately. This role will be linked to your hirer account.
         </p>
       </div>
-      <JobForm submitLabel="Save draft" onSubmit={createJob} />
+      <JobForm
+        key={formKey}
+        submitLabel="Save draft"
+        onSubmit={createJob}
+      />
     </AppPage>
   );
 }
