@@ -24,7 +24,11 @@ const SUPPORT_TICKET_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
   { key: { priority: 1, createdAt: -1 }, options: {} },
   { key: { seriousness: 1, createdAt: -1 }, options: {} },
-  { key: { userId: 1, createdAt: -1 }, options: {} },
+] as const;
+
+const USER_INDEX_SPECS = [
+  { key: { profileType: 1, createdAt: -1 }, options: {} },
+  { key: { email: 1 }, options: {} },
 ] as const;
 
 const INTERVIEW_INDEX_SPECS = [
@@ -93,6 +97,13 @@ export async function ensureIndexes() {
     ...SUPPORT_TICKET_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.SUPPORT_TICKETS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...USER_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.USERS_COLLECTION),
         spec.key,
         spec.options,
       ),

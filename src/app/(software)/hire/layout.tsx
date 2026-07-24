@@ -1,9 +1,14 @@
-"use client";
+import { Suspense } from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { HireShell } from "@/app/(software)/hire/hire-shell";
+import { auth } from "@/lib/auth/auth";
+import {
+  getProfileHomePath,
+  normalizeProfileType,
+} from "@/lib/profile-types";
 
-import React, { Suspense } from "react";
-import { AppShell } from "@/components/layout/app-shell";
-import { HIRE_NAV } from "@/lib/routes";
-
+/** Hire area: only `hire` profiles. Others are sent to their home. */
 export default function HireLayout({
   children,
 }: {
@@ -11,13 +16,23 @@ export default function HireLayout({
 }) {
   return (
     <Suspense fallback={null}>
-      <AppShell
-        items={HIRE_NAV}
-        homeHref="/hire/roles"
-        profileHref="/hire/profile"
-      >
-        {children}
-      </AppShell>
+      <HireAuthGate>{children}</HireAuthGate>
     </Suspense>
   );
+}
+
+async function HireAuthGate({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const user = session?.user as
+    | { id?: string; profileType?: string }
+    | undefined;
+
+  if (!user?.id) redirect("/");
+
+  const profileType = normalizeProfileType(user.profileType);
+  if (profileType !== "hire") {
+    redirect(getProfileHomePath(profileType));
+  }
+
+  return <HireShell>{children}</HireShell>;
 }

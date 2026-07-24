@@ -28,6 +28,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getProfileIdLabel, PROFILE_TYPES } from "@/lib/profile-types";
+import { formatDateTimeShort } from "@/lib/dates";
 import type {
   SupportPriority,
   SupportSeriousness,
@@ -41,17 +42,6 @@ import {
   SUPPORT_STATUSES,
 } from "@/lib/support/types";
 import { cn } from "@/lib/utils";
-
-function formatWhen(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 function label(value: string) {
   return value.replace(/_/g, " ");
@@ -299,7 +289,7 @@ export function AdminSupportTickets() {
         header: "Opened",
         cell: ({ row }) => (
           <span className="text-muted-foreground text-sm tabular-nums">
-            {formatWhen(row.original.createdAt)}
+            {formatDateTimeShort(row.original.createdAt)}
           </span>
         ),
       },
@@ -415,8 +405,8 @@ export function AdminSupportTickets() {
                     Issue · {label(detail.problemType)}
                   </span>
                   <span className="block">
-                    Opened {formatWhen(detail.createdAt)} · Updated{" "}
-                    {formatWhen(detail.updatedAt)}
+                    Opened {formatDateTimeShort(detail.createdAt)} · Updated{" "}
+                    {formatDateTimeShort(detail.updatedAt)}
                   </span>
                 </span>
               ) : (

@@ -2,6 +2,7 @@ import "server-only";
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import { getGatewayModel } from "@/lib/ai/gateway-model";
 import {
   deferredDocAnalysis,
   type KycAnalysis,
@@ -11,7 +12,7 @@ import {
 } from "@/lib/kyc";
 import { formatDateOnlyDisplay } from "@/lib/dates";
 
-const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+const gatewayModel = getGatewayModel();
 
 const matchLevel = z.enum(["match", "partial", "mismatch", "unknown"]);
 const profileMatchLevel = z.enum([

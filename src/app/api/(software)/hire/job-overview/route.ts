@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import { getGatewayModel } from "@/lib/ai/gateway-model";
 import { requireProfile } from "@/lib/api/session";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
 
 export const maxDuration = 60;
 
-const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+const gatewayModel = getGatewayModel();
 
 const requestSchema = z.object({
   roleType: z.string().trim().min(2).max(120),

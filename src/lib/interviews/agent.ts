@@ -1,12 +1,13 @@
 import { isStepCount, ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
+import { getGatewayModel } from "@/lib/ai/gateway-model";
 import type { AiInterviewStageId } from "@/lib/interviews";
 
 import { htmlToPlainText } from "@/lib/rich-text";
 import { voiceLanguagePrompt, VOICE_TOOL_DATA_PROMPT } from "@/lib/voice/languages";
 import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
 
-const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+const gatewayModel = getGatewayModel();
 
 function communicationInstructions(
   jobTitle: string,

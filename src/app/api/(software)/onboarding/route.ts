@@ -5,7 +5,6 @@ import {
   tool,
   generateText,
 } from "ai";
-import { headers } from "next/headers";
 import { z } from "zod";
 import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
 import {
@@ -19,7 +18,8 @@ import {
   type CandidateProfileFields,
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
-import { auth } from "@/lib/auth/auth";
+import { getGatewayModel } from "@/lib/ai/gateway-model";
+import { requireProfile } from "@/lib/api/session";
 import {
   voiceLanguagePrompt,
   VOICE_TOOL_DATA_PROMPT,
@@ -40,7 +40,7 @@ const GEO_PLACE_PROMPT = `Places (must use country-state-city official English n
 - Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).
 - phoneNumber and phoneCountryCode are JSON numbers (e.g. phoneCountryCode 91, phoneNumber 9876543210). Never strings.`;
 
-const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+const gatewayModel = getGatewayModel();
 
 type UserDoc = CandidateProfileFields & {
   _id: unknown;
@@ -461,16 +461,15 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
 }
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as
-    | { id?: string; name?: string; profileType?: string }
-    | undefined;
-  if (!user?.id) {
-    return new Response("Unauthorized", { status: 401 });
+  const authResult = await requireProfile("work");
+  if (!authResult.ok) {
+    return new Response(authResult.error, { status: authResult.status });
   }
-  if (user.profileType && user.profileType !== "work") {
-    return new Response("Candidate profile required", { status: 403 });
-  }
+  const user = {
+    id: authResult.user.id,
+    name: authResult.user.name ?? undefined,
+    profileType: authResult.user.profileType,
+  };
 
   let body: unknown;
   try {

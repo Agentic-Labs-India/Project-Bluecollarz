@@ -3,6 +3,7 @@ import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { InterviewDocument } from "@/lib/interviews";
 import { isCustomQuestionsStage } from "@/lib/interviews";
 import { analyzeInterviewTranscript } from "@/lib/interviews/analysis";
+import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
 import { idHex } from "@/lib/utils";
@@ -64,19 +65,17 @@ export async function POST(req: NextRequest, context: RouteContext) {
       });
     }
 
-    // Merge any client-side transcript turns that weren't persisted mid-stream.
+    // Client transcript has both roles; DB only stores user turns mid-chat.
+    // Prefer client when present to avoid duplicating user answers in scoring.
     let transcript = interview.transcript ?? [];
     if (Array.isArray(body.transcript) && body.transcript.length) {
-      const extras = body.transcript
+      transcript = body.transcript
         .filter((t) => t?.text?.trim())
         .map((t) => ({
           role: t.role,
           text: t.text.trim().slice(0, 4000),
           at: new Date(),
         }));
-      if (extras.length) {
-        transcript = [...transcript, ...extras];
-      }
     }
 
     const videoUrl = body.videoUrl?.trim() || interview.videoUrl;
@@ -86,6 +85,15 @@ export async function POST(req: NextRequest, context: RouteContext) {
           error:
             "Interview recording is required before this stage can be completed.",
           code: "VIDEO_REQUIRED",
+        },
+        { status: 400 },
+      );
+    }
+    if (!isInterviewRecordingUrl(videoUrl, id)) {
+      return NextResponse.json(
+        {
+          error: "Interview recording URL is invalid for this interview.",
+          code: "VIDEO_INVALID",
         },
         { status: 400 },
       );

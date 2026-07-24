@@ -83,3 +83,15 @@ export function formatDateOnlyDisplay(value: unknown): string {
     timeZone: "UTC",
   });
 }
+
+/** Compact local date-time for admin tables (e.g. "Jul 24, 7:39 PM"). */
+export function formatDateTimeShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}

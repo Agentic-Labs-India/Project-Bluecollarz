@@ -32,10 +32,30 @@ export function blobPathname(...parts: (string | number)[]): string {
   return `${root}/${joined}`;
 }
 
+/** Reject path traversal / weird segments before prefix checks. */
+export function isSafeBlobPathname(pathname: string): boolean {
+  const clean = pathname.replace(/^\/+/, "");
+  if (!clean || clean.includes("..") || clean.includes("\\")) return false;
+  if (clean.split("/").some((seg) => !seg || seg === "." || seg === "..")) {
+    return false;
+  }
+  return true;
+}
+
 export function isUnderBlobRoot(pathname: string): boolean {
+  if (!isSafeBlobPathname(pathname)) return false;
   const root = getBlobRoot();
   const clean = pathname.replace(/^\/+/, "");
   return clean === root || clean.startsWith(`${root}/`);
+}
+
+/** Path relative to `{DB_NAME}/`, or null if not under root. */
+export function blobPathRelativeToRoot(pathname: string): string | null {
+  if (!isUnderBlobRoot(pathname)) return null;
+  const root = getBlobRoot();
+  const clean = pathname.replace(/^\/+/, "");
+  if (clean === root) return "";
+  return clean.slice(root.length + 1);
 }
 
 export function isVercelBlobUrl(url: string): boolean {
@@ -53,7 +73,32 @@ export function isBlobUrlUnderRoot(url: string): boolean {
   try {
     const root = getBlobRoot();
     const { pathname } = new URL(url);
-    return pathname.includes(`/${root}/`);
+    const decoded = decodeURIComponent(pathname);
+    return (
+      decoded.includes(`/${root}/`) ||
+      decoded.startsWith(`/${root}/`) ||
+      decoded === `/${root}`
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Interview recordings must live under `{DB_NAME}/interviews/{interviewId}/…`
+ * on Vercel Blob.
+ */
+export function isInterviewRecordingUrl(
+  url: string,
+  interviewId: string,
+): boolean {
+  if (!isVercelBlobUrl(url) || !interviewId) return false;
+  try {
+    const root = getBlobRoot();
+    const { pathname } = new URL(url);
+    const decoded = decodeURIComponent(pathname);
+    const marker = `/${root}/interviews/${interviewId}/`;
+    return decoded.includes(marker);
   } catch {
     return false;
   }

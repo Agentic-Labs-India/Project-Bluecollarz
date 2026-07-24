@@ -8,6 +8,7 @@ import {
 } from "ai";
 import { z } from "zod";
 import { requireUser } from "@/lib/api/session";
+import { getGatewayModel } from "@/lib/ai/gateway-model";
 import { buildHelpSystemPrompt } from "@/lib/help/prompt";
 import { createSupportTicket } from "@/lib/support/tickets";
 import {
@@ -19,7 +20,7 @@ import {
 
 export const maxDuration = 60;
 
-const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+const gatewayModel = getGatewayModel();
 
 /** Turns sent to the model (short context window). */
 const HELP_MODEL_MESSAGE_LIMIT = 16;

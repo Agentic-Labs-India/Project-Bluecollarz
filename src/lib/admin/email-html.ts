@@ -57,7 +57,7 @@ export function sanitizeEmailComposeHtml(html: string): string {
       div: ["style"],
       p: ["style"],
     },
-    allowedSchemes: ["http", "https", "mailto", "data"],
+    allowedSchemes: ["http", "https", "mailto"],
     allowProtocolRelative: false,
     transformTags: {
       a: sanitizeHtml.simpleTransform("a", {
@@ -81,7 +81,7 @@ export function sanitizeEmailViewHtml(html: string): string {
       div: ["style"],
       p: ["style"],
     },
-    allowedSchemes: ["http", "https", "mailto", "data", "cid"],
+    allowedSchemes: ["http", "https", "mailto", "cid"],
     allowProtocolRelative: false,
   }).trim();
 }

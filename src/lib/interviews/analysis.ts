@@ -1,5 +1,6 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import { getGatewayModel } from "@/lib/ai/gateway-model";
 import type {
   CommunicationAnalysis,
   InterviewStageId,
@@ -7,7 +8,7 @@ import type {
 } from "@/lib/interviews";
 import { htmlToPlainText } from "@/lib/rich-text";
 
-const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+const gatewayModel = getGatewayModel();
 
 const analysisSchema = z.object({
   clarity: z.number().min(0).max(10),

@@ -35,6 +35,7 @@ import type {
   AdminEmailListItem,
 } from "@/lib/admin/resend";
 import { authClient } from "@/lib/auth/auth-client";
+import { formatDateTimeShort } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
 type Box = "sending" | "receiving";
@@ -44,14 +45,7 @@ const PAGE_SIZE = 10;
 
 function formatWhen(iso: string | null) {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTimeShort(iso);
 }
 
 function replySubject(subject: string) {

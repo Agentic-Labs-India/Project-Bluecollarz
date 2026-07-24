@@ -9,7 +9,6 @@ import { formatDateOnly } from "@/lib/dates";
 import {
   KYC_DEFERABLE_SLOTS,
   KYC_UPLOAD_LABELS,
-  KYC_UPLOAD_SLOTS,
   toKycPublicState,
   type KycDeferableSlot,
   type KycDocumentFile,
@@ -28,6 +27,8 @@ const ALLOWED_TYPES = new Set([
 
 /** Soft limit per file — keeps the AI request under serverless body limits. */
 const MAX_BYTES = 3 * 1024 * 1024;
+
+export const maxDuration = 90;
 
 function extFor(mediaType: string): string {
   if (mediaType === "application/pdf") return "pdf";
