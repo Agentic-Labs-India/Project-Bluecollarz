@@ -1,14 +1,45 @@
 import {
   convertToModelMessages,
+  isStepCount,
+  isTextUIPart,
   streamText,
+  tool,
   type UIMessage,
 } from "ai";
+import { z } from "zod";
 import { requireUser } from "@/lib/api/session";
 import { buildHelpSystemPrompt } from "@/lib/help/prompt";
+import { createSupportTicket } from "@/lib/support/tickets";
+import {
+  SUPPORT_PRIORITIES,
+  SUPPORT_PROBLEM_TYPES,
+  SUPPORT_SERIOUSNESS,
+  type SupportTranscriptTurn,
+} from "@/lib/support/types";
 
 export const maxDuration = 60;
 
 const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
+
+/** Turns sent to the model (short context window). */
+const HELP_MODEL_MESSAGE_LIMIT = 16;
+/** Turns stored on a support ticket (can be longer than model context). */
+const SUPPORT_TRANSCRIPT_TURN_LIMIT = 40;
+
+function transcriptFromMessages(messages: UIMessage[]): SupportTranscriptTurn[] {
+  const turns: SupportTranscriptTurn[] = [];
+  for (const message of messages) {
+    if (message.role !== "user" && message.role !== "assistant") continue;
+    const content = message.parts
+      .filter(isTextUIPart)
+      .map((p) => p.text)
+      .join("\n")
+      .trim();
+    if (!content) continue;
+    turns.push({ role: message.role, content });
+  }
+  return turns.slice(-SUPPORT_TRANSCRIPT_TURN_LIMIT);
+}
 
 export async function POST(request: Request) {
   const auth = await requireUser();
@@ -34,14 +65,68 @@ export async function POST(request: Request) {
       ? (body as { language_code: string }).language_code
       : null;
 
-  // Keep help chats short — only last turns to the model.
-  const recent = messages.slice(-16);
+  const recent = messages.slice(-HELP_MODEL_MESSAGE_LIMIT);
+  // Ticket transcript uses the fuller recent history, not just the model window.
+  const transcript = transcriptFromMessages(messages);
 
   const result = streamText({
     model: gatewayModel,
     instructions: buildHelpSystemPrompt(auth.user.profileType, languageCode),
     messages: await convertToModelMessages(recent),
     temperature: 0.4,
+    stopWhen: isStepCount(6),
+    tools: {
+      createSupportTicket: tool({
+        description:
+          "Create a support ticket after the user confirmed their problem and said they have nothing else to add (or after capturing extra notes). Call once per issue.",
+        inputSchema: z.object({
+          summary: z
+            .string()
+            .trim()
+            .min(10)
+            .max(2000)
+            .describe("Clear summary of the user's problem"),
+          problemType: z
+            .enum(SUPPORT_PROBLEM_TYPES)
+            .describe("Category of the issue"),
+          seriousness: z
+            .enum(SUPPORT_SERIOUSNESS)
+            .describe("Impact severity for the user"),
+          priority: z
+            .enum(SUPPORT_PRIORITIES)
+            .describe("How urgently ops should respond"),
+          extraNotes: z
+            .string()
+            .trim()
+            .max(2000)
+            .optional()
+            .describe("Optional extra details the user added"),
+        }),
+        execute: async (input) => {
+          const summary = input.extraNotes?.trim()
+            ? `${input.summary.trim()}\n\nAdditional notes: ${input.extraNotes.trim()}`
+            : input.summary.trim();
+
+          const ticket = await createSupportTicket({
+            userId: auth.user.id,
+            email: auth.user.email,
+            profileType: auth.user.profileType,
+            transcript,
+            summary,
+            problemType: input.problemType,
+            seriousness: input.seriousness,
+            priority: input.priority,
+          });
+
+          return {
+            ok: true as const,
+            ticketId: ticket.id,
+            status: ticket.status,
+            message: `Support ticket ${ticket.id} created successfully.`,
+          };
+        },
+      }),
+    },
   });
 
   return result.toUIMessageStreamResponse();

@@ -17,6 +17,7 @@ export const DB_NAME = process.env.DB_NAME;
 export const COLLECTIONS = {
   USERS_COLLECTION: "Users",
   USER_PROVISIONS: "UserProvisions",
+  SUPPORT_TICKETS: "SupportTickets",
   JOBS: "Jobs",
   APPLICATIONS: "Applications",
   INTERVIEWS: "Interviews",

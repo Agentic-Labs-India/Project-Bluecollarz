@@ -1,5 +1,7 @@
 export type ProfileType = "work" | "hire" | "admin";
 
+export const PROFILE_TYPES = ["work", "hire", "admin"] as const satisfies readonly ProfileType[];
+
 export const DEFAULT_PROFILE_TYPE: ProfileType = "work";
 
 const PROFILE_HOMES: Record<ProfileType, string> = {

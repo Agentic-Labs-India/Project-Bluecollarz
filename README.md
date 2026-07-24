@@ -8,6 +8,7 @@ BlueCollarz connects skilled people with hiring teams through AI onboarding, res
 |---|---|
 | **Candidates (`work`)** | Onboard, build a profile, explore roles, complete AI interviews, verify identity |
 | **Recruiters (`hire`)** | Post roles, review scored applicants, select/reject, view verified KYC docs |
+| **Admins (`admin`)** | Provision recruiters/admins, Resend email desk, support ticket queue |
 | **Auth** | [Better Auth](https://www.better-auth.com/) + Google OAuth |
 | **AI** | Vercel AI Gateway (default `openai/gpt-4o`) + Sarvam voice (TTS/STT) |
 
@@ -21,6 +22,8 @@ BlueCollarz connects skilled people with hiring teams through AI onboarding, res
 - [System overview](#system-overview)
 - [Candidate flows](#candidate-flows)
 - [Recruiter flows](#recruiter-flows)
+- [Admin flows](#admin-flows)
+- [In-app Help & support tickets](#in-app-help--support-tickets)
 - [KYC verification](#kyc-verification)
 - [Caching & performance](#caching--performance)
 - [Storage](#storage)
@@ -41,6 +44,7 @@ BlueCollarz connects skilled people with hiring teams through AI onboarding, res
 | **AI for communication interview** | Scored interview on clarity, fluency, confidence, professionalism |
 | **AI for domain profile interview** | Role-aware domain interview using the job overview, with scores & summary |
 | **AI for KYC document verification** | Vision checks on Aadhaar (front/back), PAN, and passport for authenticity, deepfakes, and AI-generated / tampered documents — **Blob upload only after AI passes** |
+| **In-app Help agent** | Signed-in product assistant (text/voice) that can open structured support tickets |
 
 ### Platform
 
@@ -48,7 +52,9 @@ BlueCollarz connects skilled people with hiring teams through AI onboarding, res
 |------------|--------------|
 | **Caching for load management** | Published roles cached daily on landing + explore; invalidated when hirers publish/update/delete |
 | **Optimised API calls** | Lean REST handlers, shared query helpers, slim projections — efficient client ↔ server traffic |
-| **Secure auth (Better Auth)** | Google sign-in with profile-scoped access (`work` vs `hire`) |
+| **Secure auth (Better Auth)** | Google sign-in with profile-scoped access (`work` / `hire` / `admin`) |
+| **Admin console** | Recruiters & admins provisioning, Resend email desk, support ticket queue |
+| **User provisions** | Invite hire/admin by email before first Google login (applied on signup) |
 
 ---
 
@@ -69,7 +75,8 @@ AI_GATEWAY_MODEL  →  defaults to  openai/gpt-4o
 | Domain interview (live chat) | same | `ToolLoopAgent` id `ai-domain-interview` (job overview context) |
 | Domain interview (scoring) | same | same analysis pipeline, domain-tuned prompt |
 | KYC document verification | same (vision / file) | `generateText` + `Output.object` on 4 documents |
-| TextText-to-speech (TTS)** | **Sarvam** `bulbul:v3` (speaker `priya`, `en-IN`) | Streams spoken agent replies |
+| In-app Help / support tickets | same | `streamText` + `createSupportTicket` tool |
+| **Text-to-speech (TTS)** | **Sarvam** `bulbul:v3` (speaker `priya`, `en-IN`) | Streams spoken agent replies |
 | **Speech-to-text (STT)** | **Sarvam** `saaras:v3` | Transcribes candidate mic segments (VAD) |
 
 ```mermaid
@@ -100,12 +107,13 @@ flowchart LR
 
 ## Profiles & points of view
 
-BlueCollarz has **two account types**. Google sign-in always creates a **`work`** (candidate) account. **`hire`** (recruiter) is provisioned manually in MongoDB — there is no public hire signup or login CTA.
+BlueCollarz has **three account types**. Google sign-in always creates a **`work`** (candidate) account. **`hire`** and **`admin`** are provisioned by an existing admin (or invite queue) — there is no public hire/admin signup CTA.
 
 | Profile | Who | How you get it | Lands on |
 |---------|-----|----------------|----------|
 | **`work`** | Candidate | Any Google sign-in (landing / nav) | `/candidate/onboarding` → `/candidate/home` when complete |
-| **`hire`** | Recruiter | Set `profileType: "hire"` in MongoDB for that user | `/hire/roles` after normal Google login |
+| **`hire`** | Recruiter | Admin sets profile (or email invite in `UserProvisions`) | `/hire/roles` after Google login |
+| **`admin`** | Platform admin | Same as hire — admin provisioning only | `/admin/recruiters` |
 
 ```mermaid
 flowchart TD
@@ -120,6 +128,7 @@ flowchart TD
   Google -->|existing user| DB
   DB -->|work| Home
   DB -->|hire| Roles["/hire/roles"]
+  DB -->|admin| Admin["/admin/recruiters"]
 
   Home --> Explore["/candidate/explore"]
   Explore --> Interviews[AI interviews]
@@ -129,6 +138,10 @@ flowchart TD
   Roles --> NewRole["/hire/roles/new"]
   Roles --> Applicants["/hire/roles/id"]
   Applicants --> Sheet[Applicant sheet:<br/>resume · scores · KYC]
+
+  Admin --> Recruiters[Recruiters / Admins]
+  Admin --> Email[Email desk]
+  Admin --> Support[Support tickets]
 ```
 
 ### Candidate POV
@@ -153,6 +166,15 @@ You are a hiring team with provisioned access. You:
 5. **Select** or **Reject**
 6. When a selected candidate finishes KYC — see **AI KYC Done** badge + documents
 
+### Admin POV
+
+You operate the platform. You:
+
+1. Sign in with Google after your account is set to **admin**
+2. Provision recruiters and admins by email (live users or pending invites)
+3. Use the email desk (Resend) for outbound / inbound mail
+4. Triage support tickets created by the in-app Help agent
+
 ---
 
 ## System overview
@@ -162,6 +184,7 @@ flowchart TB
   subgraph Profiles
     C[Candidate work]
     H[Recruiter hire]
+    A[Admin admin]
   end
 
   subgraph App["Next.js App Router"]
@@ -180,14 +203,20 @@ flowchart TB
     Sarvam[Sarvam TTS/STT]
   end
 
+  subgraph Ops["Ops"]
+    Resend[Resend email]
+  end
+
   C --> Pages
   H --> Pages
+  A --> Pages
   Pages --> API
   Proxy --> API
   API --> Mongo
   API --> Blob
   API --> GW
   API --> Sarvam
+  API --> Resend
 ```
 
 ---
@@ -313,6 +342,73 @@ Documents are **not** exposed until `kycStatus === "verified"`.
 
 ---
 
+## Admin flows
+
+Admins use `/admin` (profile-type gated). Access is **`profileType === "admin"`** only — no email allowlist bypass.
+
+| Area | Route | What it does |
+|------|-------|--------------|
+| Recruiters | `/admin/recruiters` | List hire users; add by email (existing user → set `hire`, or queue invite); make candidate |
+| Admins | `/admin/admins` | Same for `admin` profile type |
+| Email | `/admin/email` | Resend sending/receiving inbox, compose (rich text), reply — paginated (10/page) |
+| Support | `/admin/support` | Tickets from Help: filters (profile type, priority, seriousness, status), transcript, status updates |
+
+**Provisioning**
+
+1. Admin enters an email on Recruiters or Admins.
+2. If the user already exists → `profileType` is updated.
+3. If not → a row is stored in `UserProvisions` and applied on first Google signup (`consumeUserProvision`).
+4. Admins cannot change their own role.
+
+```mermaid
+sequenceDiagram
+  participant A as Admin
+  participant UI as /admin
+  participant API as Admin APIs
+  participant DB as MongoDB
+  participant R as Resend
+
+  A->>UI: Add recruiter/admin by email
+  UI->>API: POST /api/admin/users
+  API->>DB: Users update or UserProvisions insert
+  A->>UI: Email desk
+  UI->>API: GET/POST /api/admin/emails
+  API->>R: List / send
+  A->>UI: Support queue
+  UI->>API: GET /api/admin/support/tickets
+  API->>DB: SupportTickets
+```
+
+---
+
+## In-app Help & support tickets
+
+Signed-in users (work / hire / admin) open **Help** from the left rail (above Cookies). The agent:
+
+1. Knows `profileType` from the session
+2. Clarifies the problem and offers a ticket
+3. Asks “anything else?” then calls `createSupportTicket`
+4. Stores a `SupportTickets` document (`_id` = ticket id) with user id, email, profile type, transcript, summary, problem type, seriousness, priority, status
+
+| | |
+|---|---|
+| UI | Help dialog in app chrome |
+| API | `POST /api/help/chat` (`streamText` + tool) |
+| Admin | `/admin/support` |
+| Collection | `SupportTickets` |
+| Public how-to | `/contact` (screenshots: `/images/support/1.png`, `2.png`) |
+
+```mermaid
+flowchart LR
+  User[Signed-in user] --> Help[Help dialog]
+  Help --> Chat[POST /api/help/chat]
+  Chat --> Tool[createSupportTicket]
+  Tool --> ST[(SupportTickets)]
+  ST --> AdminUI["/admin/support"]
+```
+
+---
+
 ## KYC verification
 
 **Order of operations (important):** AI first → Blob only on pass.
@@ -377,6 +473,8 @@ flowchart LR
 | Collection | Purpose |
 |------------|---------|
 | `Users` | Auth user, `profileType`, candidate profile, hire company fields, KYC |
+| `UserProvisions` | Pending hire/admin invites by email (consumed on Google signup) |
+| `SupportTickets` | Help-agent tickets (transcript, summary, priority, status, …) |
 | `Jobs` | Roles (draft / published / closed) |
 | `Applications` | Candidate ↔ job + status |
 | `Interviews` | Stage, transcript, analysis scores, `videoUrl` |
@@ -435,6 +533,8 @@ bun run lint    # Biome
 | `MONGODB_URI` / `DB_NAME` | Database |
 | `AI_GATEWAY_MODEL` | Optional; default `openai/gpt-4o` |
 | `SARVAM_API_KEY` | TTS + STT |
+| `RESEND_API_KEY` (or `RESEND_API`) | Admin email desk |
+| `RESEND_FROM_EMAIL` | From address for admin compose |
 | Blob / AI Gateway secrets | As configured on Vercel |
 | `NEXT_PUBLIC_SITE_URL` | Canonical site URL |
 
@@ -463,12 +563,22 @@ bun run lint    # Biome
 | `/hire/profile` | Company profile |
 | `/hire/settings` | Settings |
 
+### Admin
+
+| Path | Purpose |
+|------|---------|
+| `/admin/recruiters` | Hire users + invites |
+| `/admin/admins` | Admin users + invites |
+| `/admin/email` | Resend inbox / compose |
+| `/admin/support` | Support ticket queue |
+
 ### Marketing
 
 | Path | Purpose |
 |------|---------|
 | `/` | Landing + latest roles |
 | `/for-recruiters` | Recruiter program info + request access |
+| `/contact` | How to use Help + contact channels |
 
 ---
 

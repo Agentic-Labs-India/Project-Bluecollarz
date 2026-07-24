@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Shared content width for candidate + hire app pages (PC). */
+/** Shared content width for candidate, hire, and admin app pages (PC). */
 export const APP_PAGE_MAX = "max-w-5xl";
 
 /**

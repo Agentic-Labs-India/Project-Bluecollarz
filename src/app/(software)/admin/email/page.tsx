@@ -3,7 +3,7 @@ import { AppPage } from "@/components/layout/app-page";
 
 export default function AdminEmailPage() {
   return (
-    <AppPage className="max-w-6xl">
+    <AppPage>
       <AdminEmailInbox />
     </AppPage>
   );

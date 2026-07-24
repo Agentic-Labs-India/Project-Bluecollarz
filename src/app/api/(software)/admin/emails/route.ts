@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const limit = parsed.data.limit ?? 20;
+    const limit = parsed.data.limit ?? 10;
     const listOpts = parsed.data.after
       ? { limit, after: parsed.data.after }
       : parsed.data.before

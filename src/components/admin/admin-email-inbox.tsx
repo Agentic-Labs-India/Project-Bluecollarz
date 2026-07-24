@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 type Box = "sending" | "receiving";
 type DaysFilter = "7" | "15" | "30" | "90" | "all";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 function formatWhen(iso: string | null) {
   if (!iso) return "—";
@@ -377,7 +377,6 @@ export function AdminEmailInbox() {
         leftActions={
           <Button
             type="button"
-            variant="outline"
             onClick={() => startCompose(null)}
             disabled={!configured}
           >

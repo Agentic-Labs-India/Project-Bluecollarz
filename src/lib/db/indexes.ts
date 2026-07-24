@@ -18,6 +18,15 @@ const USER_PROVISION_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
 ] as const;
 
+const SUPPORT_TICKET_INDEX_SPECS = [
+  { key: { createdAt: -1 }, options: {} },
+  { key: { status: 1, createdAt: -1 }, options: {} },
+  { key: { profileType: 1, createdAt: -1 }, options: {} },
+  { key: { priority: 1, createdAt: -1 }, options: {} },
+  { key: { seriousness: 1, createdAt: -1 }, options: {} },
+  { key: { userId: 1, createdAt: -1 }, options: {} },
+] as const;
+
 const INTERVIEW_INDEX_SPECS = [
   {
     key: { applicantId: 1, jobId: 1, stageId: 1 },
@@ -77,6 +86,13 @@ export async function ensureIndexes() {
     ...USER_PROVISION_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.USER_PROVISIONS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...SUPPORT_TICKET_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.SUPPORT_TICKETS),
         spec.key,
         spec.options,
       ),

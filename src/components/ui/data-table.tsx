@@ -67,6 +67,8 @@ interface DataTableProps<TData, TValue> {
   customSearch?: React.ReactNode;
   /** Hide the search input entirely (e.g. server-driven lists without search). */
   hideSearch?: boolean;
+  /** Hide the Columns visibility dropdown. */
+  hideColumns?: boolean;
   initialColumnVisibility?: VisibilityState;
   defaultPageSize?: number;
   manualPagination?: boolean;
@@ -90,6 +92,7 @@ export function DataTable<TData, TValue>({
   leftActions,
   customSearch,
   hideSearch = false,
+  hideColumns = false,
   initialColumnVisibility = {},
   defaultPageSize = 10,
   manualPagination,
@@ -184,30 +187,32 @@ export function DataTable<TData, TValue>({
 
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {leftActions}
-          <div className="hidden sm:block">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Columns <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((col) => col.getCanHide())
-                  .map((col) => (
-                    <DropdownMenuCheckboxItem
-                      key={col.id}
-                      className="capitalize"
-                      checked={col.getIsVisible()}
-                      onCheckedChange={(val) => col.toggleVisibility(!!val)}
-                    >
-                      {col.id}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {!hideColumns ? (
+            <div className="hidden sm:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {table
+                    .getAllColumns()
+                    .filter((col) => col.getCanHide())
+                    .map((col) => (
+                      <DropdownMenuCheckboxItem
+                        key={col.id}
+                        className="capitalize"
+                        checked={col.getIsVisible()}
+                        onCheckedChange={(val) => col.toggleVisibility(!!val)}
+                      >
+                        {col.id}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : null}
           {rightActions}
         </div>
       </div>

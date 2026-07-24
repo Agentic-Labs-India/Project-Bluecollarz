@@ -271,6 +271,36 @@ export function DocCtaRow({ children }: { children: ReactNode }) {
   );
 }
 
+/** Screenshot / diagram with optional caption for how-to sections. */
+export function DocFigure({
+  src,
+  alt,
+  caption,
+}: {
+  src: string;
+  alt: string;
+  caption?: string;
+}) {
+  return (
+    <figure className="border-border space-y-0 overflow-hidden border">
+      <div className="bg-muted/25 relative aspect-[16/10] w-full">
+        {/* Public marketing screenshots — plain img keeps layout stable before assets land. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          className="absolute inset-0 h-full w-full object-contain object-top"
+        />
+      </div>
+      {caption ? (
+        <figcaption className="text-mute border-border border-t px-3 py-2.5 text-xs leading-relaxed sm:px-4 sm:text-sm">
+          {caption}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
 export function DocContactCard({
   title,
   email,
