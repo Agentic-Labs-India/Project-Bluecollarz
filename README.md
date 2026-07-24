@@ -100,25 +100,26 @@ flowchart LR
 
 ## Profiles & points of view
 
-BlueCollarz has **two account types**. Sign-in always uses Google; the intended profile is chosen at the CTA:
+BlueCollarz has **two account types**. Google sign-in always creates a **`work`** (candidate) account. **`hire`** (recruiter) is provisioned manually in MongoDB — there is no public hire signup or login CTA.
 
-| Profile | Who | Sign-in entry | Lands on |
-|---------|-----|---------------|----------|
-| **`work`** | Candidate | Landing “Start working” / nav Log in | `/candidate/onboarding` → `/candidate/home` when complete |
-| **`hire`** | Recruiter | `/for-recruiters` → Recruiter login | `/hire/roles` |
+| Profile | Who | How you get it | Lands on |
+|---------|-----|----------------|----------|
+| **`work`** | Candidate | Any Google sign-in (landing / nav) | `/candidate/onboarding` → `/candidate/home` when complete |
+| **`hire`** | Recruiter | Set `profileType: "hire"` in MongoDB for that user | `/hire/roles` after normal Google login |
 
 ```mermaid
 flowchart TD
-  Landing[Landing / for-recruiters]
+  Landing[Landing Log in / Get Job]
   Google[Google OAuth via Better Auth]
+  DB[(MongoDB profileType)]
 
-  Landing -->|profileType = work| Google
-  Landing -->|profileType = hire| Google
-
-  Google --> Work{profileType?}
-  Work -->|work| Onboard["/candidate/onboarding"]
+  Landing --> Google
+  Google -->|new user always work| Onboard["/candidate/onboarding"]
   Onboard -->|profile complete| Home["/candidate/home"]
-  Work -->|hire| Roles["/hire/roles"]
+
+  Google -->|existing user| DB
+  DB -->|work| Home
+  DB -->|hire| Roles["/hire/roles"]
 
   Home --> Explore["/candidate/explore"]
   Explore --> Interviews[AI interviews]
@@ -134,7 +135,7 @@ flowchart TD
 
 You are a worker looking for roles. You:
 
-1. Sign in with Google as **work**
+1. Sign in with Google (always candidate)
 2. Finish AI onboarding (resume PDF optional + voice agent)
 3. Explore published jobs
 4. Complete **communication** then **domain** AI interviews for a role
@@ -143,9 +144,9 @@ You are a worker looking for roles. You:
 
 ### Recruiter POV
 
-You are a hiring team with invite access. You:
+You are a hiring team with provisioned access. You:
 
-1. Sign in from **For Recruiters** as **hire**
+1. Sign in with Google after BlueCollarz sets your account to **hire** in the database
 2. Complete company profile
 3. Create and publish roles
 4. Review applicants: resume, interview scores, recordings, transcripts
@@ -467,7 +468,7 @@ bun run lint    # Biome
 | Path | Purpose |
 |------|---------|
 | `/` | Landing + latest roles |
-| `/for-recruiters` | Recruiter info + hire login |
+| `/for-recruiters` | Recruiter program info + request access |
 
 ---
 

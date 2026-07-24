@@ -141,9 +141,9 @@ export default function MissionPage() {
         />
         <DocCallout title="Access model">
           <p>
-            Hire accounts are invite-based. We share private access rather than
-            open self-serve recruiter signup, so the applicant pool stays tied
-            to serious hiring teams.
+            Hire accounts are provisioned by BlueCollarz rather than open
+            self-serve recruiter signup, so the applicant pool stays tied to
+            serious hiring teams.
           </p>
         </DocCallout>
       </DocSection>

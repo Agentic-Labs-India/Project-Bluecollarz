@@ -1,18 +1,12 @@
 "use client";
 
 import { authClient } from "@/lib/auth/auth-client";
-import { getProfileHomePath, type ProfileType } from "@/lib/profile-types";
 
-/** Start Google OAuth for the given profile type (Candidate or Recruiter). */
-export async function signInWithGoogle(profileType: ProfileType) {
+/** Start Google OAuth. New accounts are always created as Candidate (`work`). */
+export async function signInWithGoogle() {
   await authClient.signIn.social({
     provider: "google",
-    // Work accounts land on onboarding; the page sends complete profiles to home.
-    callbackURL:
-      profileType === "work"
-        ? "/candidate/onboarding"
-        : getProfileHomePath(profileType),
+    callbackURL: "/candidate/onboarding",
     errorCallbackURL: "/",
-    additionalData: { profileType },
   });
 }

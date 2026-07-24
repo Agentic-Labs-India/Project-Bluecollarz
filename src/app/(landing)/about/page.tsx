@@ -119,7 +119,7 @@ export default function AboutPage() {
             [
               "hire",
               "Recruiter / company",
-              "For Recruiters → invite access → roles workspace",
+              "Provisioned in MongoDB → company profile → roles workspace",
             ],
           ]}
         />
@@ -155,8 +155,8 @@ export default function AboutPage() {
         <DocSteps
           steps={[
             {
-              title: "Sign in as hire",
-              body: "Access is invite-based — we share a private link rather than open self-serve signup.",
+              title: "Access is provisioned",
+              body: "Hire accounts are enabled by BlueCollarz — there is no public recruiter signup or login button.",
             },
             {
               title: "Complete company profile",

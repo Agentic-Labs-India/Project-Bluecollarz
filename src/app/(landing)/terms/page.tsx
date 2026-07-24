@@ -21,11 +21,12 @@ export default function TermsPage() {
 
         <LegalSection title="2. Accounts and profile types">
           <p>
-            You may use BlueCollarz as a candidate (“work” profile) or as a hirer
-            (“hire” profile), depending on the account type you select at
-            sign-in. You are responsible for activity under your account and for
-            keeping your sign-in credentials secure. Provide accurate
-            information and keep your profile up to date.
+            Google sign-in creates a candidate (“work”) account. Hirer (“hire”)
+            access is provisioned by BlueCollarz for approved companies — it is
+            not available as a public sign-up option. You are responsible for
+            activity under your account and for keeping your sign-in credentials
+            secure. Provide accurate information and keep your profile up to
+            date.
           </p>
         </LegalSection>
 

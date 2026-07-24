@@ -98,7 +98,7 @@ export default function ContactPage() {
           items={[
             {
               title: "Sign-in",
-              body: "Google OAuth failures, wrong profile type (work vs hire), session loops.",
+              body: "Google OAuth failures, unexpected redirects, session loops.",
             },
             {
               title: "Onboarding",
@@ -128,9 +128,9 @@ export default function ContactPage() {
 
       <DocSection id="sales" number="04" title="Sales & recruiter access">
         <p>
-          Hire accounts are invite-based. There is no public “become a
-          recruiter” signup. To hire on BlueCollarz, contact sales — we share a
-          private access path for your team.
+          Hire accounts are provisioned by BlueCollarz. There is no public
+          “become a recruiter” signup. To hire on BlueCollarz, contact sales —
+          we enable hire access for your team in the database.
         </p>
         <DocSteps
           steps={[
@@ -144,7 +144,7 @@ export default function ContactPage() {
             },
             {
               title: "Receive onboarding steps",
-              body: "We reply with access instructions and profile completion guidance.",
+              body: "We enable hire on your account and reply with profile completion guidance.",
             },
             {
               title: "Publish and review",

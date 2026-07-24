@@ -50,7 +50,6 @@ export function LandingNav() {
 
         <div className="relative z-10 flex w-[100px] flex-row items-center justify-end gap-2">
           <LoginButton
-            profileType="work"
             className="hidden min-w-[72px] rounded-md bg-muted/80 px-6 py-2 duration-300 hover:bg-secondary/80 lg:block"
           />
           <button
@@ -107,7 +106,6 @@ export function LandingNav() {
               </Link>
             ))}
             <LoginButton
-              profileType="work"
               className="mt-4 w-full rounded-md bg-muted/80 px-6 py-2 text-center duration-300 hover:bg-secondary/80"
               onBeforeOpen={() => setMobileOpen(false)}
             />

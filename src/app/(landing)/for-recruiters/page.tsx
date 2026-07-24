@@ -1,4 +1,3 @@
-import { LoginButton } from "@/components/auth/login-button";
 import {
   DocCallout,
   DocCta,
@@ -14,19 +13,18 @@ import {
 export const metadata = {
   title: "For Recruiters · BlueCollarz",
   description:
-    "Hire blue-collar talent on BlueCollarz — scored AI interviews, applicant sheets, and verified KYC. Invite access for hiring teams.",
+    "Hire on autopilot with BlueCollarz AI — resume generation, communication & domain interviews, custom questions, JD writing, and verified KYC. Provisioned access for hiring teams.",
 };
 
 const TOC = [
   { id: "overview", label: "Overview" },
+  { id: "ai-ecosystem", label: "AI ecosystem" },
+  { id: "autopilot", label: "Runs on autopilot" },
   { id: "who-you-hire", label: "Who you hire" },
   { id: "what-you-get", label: "What you get" },
   { id: "access", label: "How access works" },
-  { id: "login", label: "Recruiter login" },
   { id: "workspace", label: "Hiring workspace" },
-  { id: "applicant-file", label: "Applicant file" },
   { id: "kyc", label: "KYC for hirers" },
-  { id: "operating-notes", label: "Operating notes" },
   { id: "request-access", label: "Request access" },
 ];
 
@@ -35,28 +33,111 @@ export default function ForRecruitersPage() {
     <DocPage
       eyebrow="Programs document"
       title="For Recruiters"
-      description="Post roles, review AI interview scores and recordings, shortlist with clearer signal, and see verified KYC only after candidates pass identity checks. Hiring access is shared by our team."
-      updated="July 19, 2026"
+      description="BlueCollarz is an AI hiring ecosystem — not a job board with chatbots bolted on. Resume generation, communication interviews, domain interviews, custom questions, and job descriptions run end-to-end on autopilot so your team reviews signal, not paperwork."
+      updated="July 24, 2026"
       toc={TOC}
     >
       <DocSection id="overview" number="01" title="Overview">
         <p>
-          BlueCollarz helps hiring teams evaluate blue-collar and skilled
-          operational candidates with structured evidence — not inbox noise.
-          Workers complete profiles and AI interviews before or alongside
-          apply; you review decision-ready applicant files and move people to
-          selected or rejected.
+          Hiring blue-collar and skilled operational talent usually burns hours
+          on resumes, phone screens, and inconsistent interview notes. BlueCollarz
+          replaces that grind with a single AI stack: candidates build profiles,
+          sit structured interviews, and answer your custom questions before you
+          ever open a file. You shortlist from scored evidence — then AI KYC
+          verifies identity when you select someone.
         </p>
-        <DocCallout title="Invite-only hire access">
+        <DocCallout title="Provisioned hire access">
           <p>
-            Recruiter accounts are not open for public self-serve signup. If you
-            already have access, use Recruiter login below. If you do not,
-            contact us and we will share a private link for your company.
+            Recruiter accounts are provisioned by BlueCollarz — there is no public
+            self-serve signup. Contact sales and we enable hire access for your
+            company in the database.
           </p>
         </DocCallout>
       </DocSection>
 
-      <DocSection id="who-you-hire" number="02" title="Who you hire here">
+      <DocSection id="ai-ecosystem" number="02" title="The AI ecosystem">
+        <p>
+          One platform. Multiple agents. The same model fabric powers every step
+          of the pipeline so quality stays consistent from first profile field to
+          final shortlist.
+        </p>
+        <DocFeatureGrid
+          items={[
+            {
+              title: "AI resume & profile",
+              body: "Voice onboarding and resume extraction fill structured candidate profiles — skills, experience, education — without a recruiter chasing missing fields.",
+            },
+            {
+              title: "AI Communication interview",
+              body: "Scored live interviews for clarity, fluency, confidence, and professionalism — with summary, strengths, and a recording when the session completes.",
+            },
+            {
+              title: "AI Domain interview",
+              body: "Role-grounded questioning against your job overview so domain judgment is scored on the work you actually need, not generic trivia.",
+            },
+            {
+              title: "Custom questions",
+              body: "Your screening form — text, selects, yes/no, multi-select — frozen per interview so every applicant answers the same bank you designed.",
+            },
+            {
+              title: "AI job description",
+              body: "Generate industry-standard role overviews from a short brief. Publish-ready JD copy without a writing committee.",
+            },
+            {
+              title: "AI KYC",
+              body: "Document authenticity checks before storage. Hirers only see verified identity packs — not raw unverified uploads.",
+            },
+          ]}
+        />
+        <DocTable
+          headers={["AI layer", "What it replaces"]}
+          rows={[
+            ["Resume / profile agent", "Manual data entry and incomplete CVs"],
+            ["Communication interview", "First-round phone screens"],
+            ["Domain interview", "Ad-hoc technical chats with uneven notes"],
+            ["Custom questions", "Scattered Google Forms and email threads"],
+            ["JD generator", "Blank-page writing and template hunting"],
+            ["KYC vision checks", "Blind document dumps into shared drives"],
+          ]}
+        />
+      </DocSection>
+
+      <DocSection id="autopilot" number="03" title="Runs on autopilot">
+        <p>
+          The point of the stack is not “AI assists a human at every click.” It
+          is that the pipeline moves without babysitting. Candidates advance
+          through stages; scores land; your team opens decision-ready files.
+        </p>
+        <DocSteps
+          steps={[
+            {
+              title: "You publish the role",
+              body: "Title, pay, location, stages, and optional custom questions. AI can draft the overview so the JD is live in minutes.",
+            },
+            {
+              title: "Candidates run the gauntlet",
+              body: "Profile completion, communication, domain, and custom questions — in the order you configured — without a recruiter coordinating calendars.",
+            },
+            {
+              title: "Evidence compounds",
+              body: "Scores, summaries, transcripts, and recordings attach to the applicant automatically.",
+            },
+            {
+              title: "You decide",
+              body: "Select or reject from the sheet. Selected workers complete AI KYC; verified docs surface only after pass.",
+            },
+          ]}
+        />
+        <DocCallout title="Humans stay where judgment matters">
+          <p>
+            Autopilot handles collection, scoring, and verification. Your team
+            still owns the hire call — with denser signal and far less ops
+            overhead.
+          </p>
+        </DocCallout>
+      </DocSection>
+
+      <DocSection id="who-you-hire" number="04" title="Who you hire here">
         <p>
           The candidate base is oriented around trades and operational roles —
           electricians, welders, drivers, technicians, facilities, construction,
@@ -65,50 +146,37 @@ export default function ForRecruitersPage() {
         </p>
         <DocList
           items={[
-            "Candidates who finished AI onboarding and structured profiles",
-            "Applicants with communication and domain interview history on the role",
-            "Selected workers who can complete AI KYC for verified document sharing",
+            "Workers who finished AI onboarding with structured profiles",
+            "Applicants with communication, domain, and custom-question history on the role",
+            "Selected candidates who can complete AI KYC for verified document sharing",
           ]}
         />
       </DocSection>
 
-      <DocSection id="what-you-get" number="03" title="What you get">
+      <DocSection id="what-you-get" number="05" title="What you get in the workspace">
         <DocFeatureGrid
           items={[
             {
               title: "Role publishing",
-              body: "Create jobs with pay, location, overview, and interview stages your domain agent can ground in.",
+              body: "Create jobs with pay, location, AI-assisted overview, and interview stages your domain agent grounds in.",
             },
             {
               title: "Applicant table",
-              body: "See status, interview progress, and AI KYC Done badges when identity is verified.",
+              body: "Status, interview progress, and AI KYC Done badges when identity is verified.",
             },
             {
               title: "Applicant sheet",
-              body: "Resume context, scores, summaries, strengths, recordings, transcripts, and KYC previews.",
+              body: "Resume context, scores, summaries, strengths, recordings, transcripts, custom answers, and KYC previews.",
             },
             {
               title: "Select / reject",
-              body: "Explicit status updates so workers know where they stand.",
+              body: "Explicit status updates so workers know where they stand — no silent inbox limbo.",
             },
-          ]}
-        />
-        <DocTable
-          headers={["Interview stage", "What you learn"]}
-          rows={[
-            [
-              "AI Communication",
-              "Clarity, fluency, confidence, professionalism + summary",
-            ],
-            [
-              "AI Domain",
-              "Role-aware judgment against your job overview + summary",
-            ],
           ]}
         />
       </DocSection>
 
-      <DocSection id="access" number="04" title="How access works">
+      <DocSection id="access" number="06" title="How access works">
         <DocSteps
           steps={[
             {
@@ -116,8 +184,8 @@ export default function ForRecruitersPage() {
               body: "Email sales or use Contact. Tell us company, locations, and hiring volume.",
             },
             {
-              title: "Receive a private access path",
-              body: "We share onboarding steps for hire-profile Google sign-in — not a public “become a hirer” form.",
+              title: "We provision your account",
+              body: "Hire access is granted by our team — not via a public signup button.",
             },
             {
               title: "Complete company profile",
@@ -125,32 +193,13 @@ export default function ForRecruitersPage() {
             },
             {
               title: "Post roles and review",
-              body: "Publish openings, watch applications, and shortlist from the hire workspace.",
+              body: "Publish openings, let the AI pipeline run, and shortlist from scored applicant files.",
             },
           ]}
         />
       </DocSection>
 
-      <DocSection id="login" number="05" title="Recruiter login">
-        <p>
-          Already provisioned? Sign in with Google using your hire profile to
-          open the roles workspace.
-        </p>
-        <div className="pt-1">
-          <LoginButton
-            profileType="hire"
-            className="bg-primary text-primary-foreground hover:bg-primary-active inline-flex items-center justify-center rounded-md px-6 py-2.5 text-sm font-medium transition-colors"
-          >
-            Recruiter login
-          </LoginButton>
-        </div>
-        <p className="text-mute pt-2 text-xs">
-          If Google sign-in fails or lands you on a candidate surface, your
-          account may not have hire access yet — request it below.
-        </p>
-      </DocSection>
-
-      <DocSection id="workspace" number="06" title="Hiring workspace">
+      <DocSection id="workspace" number="07" title="Hiring workspace">
         <p>Once inside hire, your day-to-day loop looks like this:</p>
         <DocSteps
           steps={[
@@ -160,7 +209,7 @@ export default function ForRecruitersPage() {
             },
             {
               title: "Roles list",
-              body: "See your published and draft roles; create new openings from the workspace.",
+              body: "Draft and publish openings; generate JD copy with AI when you need speed.",
             },
             {
               title: "Applicants for a role",
@@ -168,7 +217,7 @@ export default function ForRecruitersPage() {
             },
             {
               title: "Applicant detail sheet",
-              body: "Dive into one candidate: resume fields, interviews, recording, KYC when verified.",
+              body: "Dive into one candidate: profile, interviews, recording, custom answers, KYC when verified.",
             },
             {
               title: "Decision",
@@ -178,31 +227,11 @@ export default function ForRecruitersPage() {
         />
       </DocSection>
 
-      <DocSection id="applicant-file" number="07" title="What’s in an applicant file">
-        <DocList
-          items={[
-            "Profile and resume-structured fields collected during onboarding",
-            "Application status and applied timestamp",
-            "Communication interview analysis and optional recording/transcript",
-            "Domain interview analysis grounded in your role overview",
-            "AI KYC summary and document previews only when kycStatus is verified",
-            "Notes when PAN/Passport were deferred under submit-later undertaking",
-          ]}
-        />
-        <DocCallout title="Why interviews require screen share">
-          <p>
-            Candidates interview on laptop/tablet/PC with entire-screen share
-            and camera on. That produces a recording you can review and raises
-            the bar against trivial proxying.
-          </p>
-        </DocCallout>
-      </DocSection>
-
       <DocSection id="kyc" number="08" title="KYC for hirers">
         <p>
-          Identity documents are not a free-for-all upload. The product order
-          is: AI authenticity check first, Blob storage only on pass, then
-          recruiter visibility.
+          Identity documents are not a free-for-all upload. Order of operations:
+          AI authenticity check first, storage only on pass, then recruiter
+          visibility.
         </p>
         <DocTable
           headers={["Document", "Notes"]}
@@ -213,39 +242,16 @@ export default function ForRecruitersPage() {
           ]}
         />
         <p>
-          When verified, you see an <strong className="text-foreground">AI KYC Done</strong>{" "}
-          badge in the table and sheet, plus previews or links and the AI
-          summary. Until then, documents stay hidden.
+          When verified, you see an{" "}
+          <strong className="text-foreground">AI KYC Done</strong> badge plus
+          previews and the AI summary. Until then, documents stay hidden.
         </p>
       </DocSection>
 
-      <DocSection id="operating-notes" number="09" title="Operating notes">
-        <DocFeatureGrid
-          items={[
-            {
-              title: "Published roles are cached",
-              body: "Landing and explore lists refresh on a daily cache; publishing or editing updates the tag.",
-            },
-            {
-              title: "Lean APIs",
-              body: "Applicant and job endpoints are built for table + sheet workflows without heavy payloads.",
-            },
-            {
-              title: "Google auth only",
-              body: "Hire users sign in with Google under the hire profile type.",
-            },
-            {
-              title: "Support path",
-              body: "Product issues go to support; access and commercial questions go to sales.",
-            },
-          ]}
-        />
-      </DocSection>
-
-      <DocSection id="request-access" number="10" title="Request access">
+      <DocSection id="request-access" number="09" title="Request access">
         <p>
-          Ready to hire with BlueCollarz? Tell us about your company and roles.
-          We reply with the private link and onboarding steps.
+          Ready to run hiring on autopilot with BlueCollarz? Tell us about your
+          company and roles. We provision access and reply with onboarding steps.
         </p>
         <DocCallout title="What to include in your email">
           <DocList

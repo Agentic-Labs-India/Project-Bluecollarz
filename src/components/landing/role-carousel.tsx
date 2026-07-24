@@ -100,7 +100,6 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
             No open roles right now. Check back soon or sign in to get notified.
           </p>
           <LoginButton
-            profileType="work"
             className="text-primary mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline"
           >
             Continue with Google
@@ -182,7 +181,7 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
               <div key={role.id} className="w-[290px] snap-start">
                 <button
                   type="button"
-                  onClick={() => void signInWithGoogle("work")}
+                  onClick={() => void signInWithGoogle()}
                   className="group ml-px flex h-[140px] w-full flex-col justify-between rounded-lg border border-foreground/7 bg-canvas bg-clip-padding p-4 pt-3 text-left shadow-sm ring-1 ring-transparent duration-200 hover:border-ring hover:bg-muted/50 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-transparent focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div>

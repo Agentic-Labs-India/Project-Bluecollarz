@@ -164,7 +164,7 @@ export default function VisionPage() {
           items={[
             {
               title: "Auth",
-              body: "Google sign-in with work vs hire separation so surfaces stay intentional.",
+              body: "Google sign-in creates candidates by default; hire access is provisioned so surfaces stay intentional.",
             },
             {
               title: "Voice + screen integrity",

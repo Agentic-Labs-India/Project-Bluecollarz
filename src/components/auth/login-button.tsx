@@ -4,24 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/auth-client";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
-import {
-  DEFAULT_PROFILE_TYPE,
-  getProfileHomePath,
-  type ProfileType,
-} from "@/lib/profile-types";
+import { getProfileHomePath } from "@/lib/profile-types";
 import { cn } from "@/lib/utils";
 
 export function LoginButton({
   className,
   children = "Log in",
   onBeforeOpen,
-  profileType = DEFAULT_PROFILE_TYPE,
 }: {
   className?: string;
   children?: React.ReactNode;
   onBeforeOpen?: () => void;
-  /** Account type — defaults to Candidate (`work`). */
-  profileType?: ProfileType;
 }) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
@@ -38,7 +31,7 @@ export function LoginButton({
 
     setLoading(true);
     try {
-      await signInWithGoogle(profileType);
+      await signInWithGoogle();
     } catch {
       setLoading(false);
     }

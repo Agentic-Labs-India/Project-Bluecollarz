@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { LoginButton } from "@/components/auth/login-button";
-import type { ProfileType } from "@/lib/profile-types";
 
 type FooterLink = {
   label: string;
   href?: string;
-  profileType?: ProfileType;
+  /** When true, this is a login CTA (always creates Candidate / work accounts). */
+  login?: boolean;
 };
 
 const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
@@ -24,7 +24,7 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
     title: "Programs",
     links: [
       { label: "For Recruiters", href: "/for-recruiters" },
-      { label: "Find work", profileType: "work" },
+      { label: "Find work", login: true },
     ],
   },
   {
@@ -52,10 +52,9 @@ export function LandingFooter() {
               </div>
               <div className="flex flex-col gap-1">
                 {section.links.map((link) =>
-                  link.profileType ? (
+                  link.login ? (
                     <LoginButton
                       key={link.label}
-                      profileType={link.profileType}
                       className="text-[15px] text-muted-foreground text-left duration-100 hover:text-mute"
                     >
                       {link.label}

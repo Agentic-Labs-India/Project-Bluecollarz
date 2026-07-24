@@ -122,7 +122,6 @@ export default function Page() {
         </p>
         <div className="mt-6 flex w-full flex-row items-center justify-center gap-3 text-[15px]">
           <LoginButton
-            profileType="work"
             className="rounded-md bg-primary px-6 py-2 text-primary-foreground duration-200 hover:bg-primary-active"
           >
             Get Job

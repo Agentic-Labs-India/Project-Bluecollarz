@@ -1,9 +1,7 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { getOAuthState } from "better-auth/api";
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
-import { normalizeProfileType } from "@/lib/profile-types";
 import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
 
 const APP_NAME = "BlueCollarz";
@@ -35,7 +33,8 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         defaultValue: "work",
-        input: true,
+        // Not client-writable — hire is set manually in MongoDB only.
+        input: false,
       },
       cookiesEnabled: {
         type: "boolean",
@@ -71,18 +70,11 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const state = await getOAuthState();
-          const profileType =
-            (state as { profileType?: string } | null)?.profileType ??
-            (state as { additionalData?: { profileType?: string } } | null)
-              ?.additionalData?.profileType;
-
           return {
             data: {
               ...user,
-              ...(profileType
-                ? { profileType: normalizeProfileType(profileType) }
-                : {}),
+              // All Google signups are candidates. Hire is provisioned in DB only.
+              profileType: "work",
               cookiesEnabled: true,
               notificationsEnabled: true,
             },
