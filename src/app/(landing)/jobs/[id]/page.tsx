@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { RichTextContent } from "@/components/ui/rich-text-content";
+import { formatJobPlaceLabel } from "@/lib/geo/places";
+import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import { getPublishedJobPublic } from "@/lib/jobs/queries";
 import { htmlToPlainText } from "@/lib/rich-text";
 
@@ -60,6 +62,15 @@ async function PublicJobBody({ params }: PageProps) {
   const job = await getPublishedJobPublic(id);
   if (!job) notFound();
 
+  const placeLabel = formatJobPlaceLabel({
+    location: job.location,
+    countryCode: job.countryCode,
+    stateCode: job.stateCode,
+    locationLabel: job.location
+      ? JOB_LOCATION_LABELS[job.location as JobLocation]
+      : undefined,
+  });
+
   return (
     <article className="mx-auto max-w-3xl">
       <p className="text-mute mb-4 text-xs sm:text-sm">
@@ -77,8 +88,8 @@ async function PublicJobBody({ params }: PageProps) {
       </h1>
       <p className="text-muted-foreground mt-3 text-base sm:text-lg">
         {job.pay}
-        {job.location ? (
-          <span className="text-mute"> · {job.location}</span>
+        {placeLabel ? (
+          <span className="text-mute"> · {placeLabel}</span>
         ) : null}
       </p>
 

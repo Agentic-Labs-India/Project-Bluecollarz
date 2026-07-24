@@ -26,6 +26,8 @@ import {
   type Opportunity,
   type OpportunityTab,
 } from "@/lib/opportunities";
+import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
+import { formatJobPlaceLabel } from "@/lib/geo/places";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +73,8 @@ function OpportunityCard({
   applicationStatus?: ApplicationStatus | null;
   onSelect: () => void;
 }) {
-  const { title, pay, tab, isNew, location } = opportunity;
+  const { title, pay, tab, isNew, location, countryCode, stateCode } =
+    opportunity;
   const hasApplied = Boolean(applicationStatus);
   const statusLabel =
     applicationStatus === "selected"
@@ -81,6 +84,15 @@ function OpportunityCard({
         : hasApplied
           ? "Applied"
           : null;
+
+  const placeLabel = formatJobPlaceLabel({
+    location,
+    countryCode,
+    stateCode,
+    locationLabel: location
+      ? JOB_LOCATION_LABELS[location as JobLocation]
+      : undefined,
+  });
 
   return (
     <article
@@ -137,9 +149,7 @@ function OpportunityCard({
           )}
         >
           {OPPORTUNITY_TAB_LABELS[tab]}
-          {location
-            ? ` · ${location === "on-site" ? "On-site" : "Remote"}`
-            : ""}
+          {placeLabel ? ` · ${placeLabel}` : ""}
         </p>
       </div>
 

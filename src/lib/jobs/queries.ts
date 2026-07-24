@@ -37,6 +37,9 @@ export interface LandingRole {
   id: string;
   title: string;
   pay: string;
+  location?: JobLocation;
+  countryCode?: string;
+  stateCode?: string;
   hiredThisMonth: number;
   applicantCount: number;
 }
@@ -217,6 +220,9 @@ export async function getLatestPublishedRoles(
         projection: {
           title: 1,
           pay: 1,
+          location: 1,
+          countryCode: 1,
+          stateCode: 1,
           hiredThisMonth: 1,
           publishedAt: 1,
           createdAt: 1,
@@ -247,6 +253,9 @@ export async function getLatestPublishedRoles(
     id: idHex(doc._id),
     title: doc.title,
     pay: doc.pay,
+    location: doc.location,
+    countryCode: doc.countryCode,
+    stateCode: doc.stateCode,
     hiredThisMonth: asNumber(doc.hiredThisMonth, 0),
     applicantCount: applicantsByJob.get(idHex(doc._id)) ?? 0,
   }));

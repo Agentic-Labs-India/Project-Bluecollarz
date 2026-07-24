@@ -96,7 +96,7 @@ export function WorldMap({
       className={cn(
         "relative w-full overflow-hidden font-sans",
         compact
-          ? "aspect-[2.2/1] max-h-[360px] bg-transparent sm:max-h-[400px] md:max-h-[440px] lg:max-h-[460px]"
+          ? "aspect-[2.6/1] max-h-[240px] bg-transparent sm:max-h-[280px] md:max-h-[320px] lg:max-h-[340px]"
           : "aspect-[2/1] rounded-lg bg-canvas md:aspect-[2.5/1] lg:aspect-[2/1] dark:bg-ink",
         className,
       )}
@@ -368,15 +368,15 @@ export function WorldMap({
         <>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_28%,var(--canvas)_72%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_34%,var(--canvas)_78%)]"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--canvas)_0%,transparent_18%,transparent_82%,var(--canvas)_100%)]"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--canvas)_0%,transparent_12%,transparent_88%,var(--canvas)_100%)]"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,var(--canvas)_0%,transparent_22%,transparent_78%,var(--canvas)_100%)]"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,var(--canvas)_0%,transparent_14%,transparent_88%,var(--canvas)_100%)]"
           />
         </>
       ) : null}

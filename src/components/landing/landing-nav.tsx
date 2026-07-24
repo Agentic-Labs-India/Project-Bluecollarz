@@ -21,7 +21,7 @@ export function LandingNav() {
     <>
       <div
         id="TopNav"
-        className="fixed top-0 left-0 z-888 flex h-[68px] w-full flex-row items-center justify-between gap-4 border-b border-canvas-soft bg-canvas px-6 text-[14px] duration-300 sm:px-6 md:px-5"
+        className="fixed top-0 left-0 z-888 flex h-[68px] w-full flex-row items-center justify-between gap-4 border-b border-canvas-soft bg-canvas px-4 text-[14px] duration-300 sm:px-6 md:px-5"
       >
         <Link className="relative z-10 w-[100px] shrink-0" href="/">
           <Image
@@ -92,7 +92,7 @@ export function LandingNav() {
       </div>
 
       <div
-        className={`fixed top-[68px] bottom-0 left-0 z-[1000] w-screen bg-canvas px-[18px] pr-6 duration-300 lg:hidden ${mobileOpen ? "ml-0 opacity-100" : "pointer-events-none -ml-[100vw] opacity-0"}`}
+        className={`fixed inset-x-0 top-[68px] bottom-0 z-[1000] bg-canvas px-[18px] pr-6 duration-300 lg:hidden ${mobileOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-full opacity-0"}`}
       >
         <div className="flex h-full w-full flex-col text-[14px]">
           <div className="flex flex-1 flex-col items-start justify-start max-lg:pt-4 lg:gap-1">

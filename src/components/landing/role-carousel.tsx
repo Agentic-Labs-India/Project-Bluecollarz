@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LoginButton } from "@/components/auth/login-button";
+import { formatJobPlaceLabel } from "@/lib/geo/places";
+import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import type { LandingRole } from "@/lib/jobs/queries";
 
 const AVATAR_COLORS = [
@@ -44,6 +46,17 @@ function roleActivityLabel(role: LandingRole): string {
     return `${role.applicantCount} ${role.applicantCount === 1 ? "applicant" : "applicants"}`;
   }
   return "Be the first to apply";
+}
+
+function rolePlaceLabel(role: LandingRole): string {
+  return formatJobPlaceLabel({
+    location: role.location,
+    countryCode: role.countryCode,
+    stateCode: role.stateCode,
+    locationLabel: role.location
+      ? JOB_LOCATION_LABELS[role.location as JobLocation]
+      : undefined,
+  });
 }
 
 function ArrowUpRightIcon() {
@@ -177,15 +190,21 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
         <div className="grid auto-cols-[290px] grid-flow-col grid-rows-2 gap-5 p-[2px]">
           {roles.map((role) => {
             const avatars = avatarsForRole(role.id, role.title);
+            const place = rolePlaceLabel(role);
             return (
               <div key={role.id} className="w-[290px] snap-start">
                 <Link
                   href={`/jobs/${role.id}`}
-                  className="group ml-px flex h-[140px] w-full flex-col justify-between rounded-lg border border-foreground/7 bg-canvas bg-clip-padding p-4 pt-3 text-left shadow-sm ring-1 ring-transparent duration-200 hover:border-ring hover:bg-muted/50 hover:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-transparent focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group border-foreground/7 bg-canvas hover:border-ring hover:bg-muted/50 hover:ring-ring focus-visible:ring-ring ml-px flex h-[156px] w-full flex-col justify-between rounded-lg border bg-clip-padding p-4 pt-3 text-left shadow-sm ring-1 ring-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-transparent focus-visible:ring-2"
                 >
                   <div>
                     <h3 className="line-clamp-1">{role.title}</h3>
                     <p className="mt-1 text-sm text-mute">{role.pay}</p>
+                    {place ? (
+                      <p className="text-mute mt-0.5 line-clamp-1 text-xs">
+                        {place}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex w-full flex-row items-center justify-between gap-1">
                     <div className="flex min-w-1 flex-row items-center gap-2 text-sm">

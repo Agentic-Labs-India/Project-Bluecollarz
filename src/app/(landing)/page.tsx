@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
+import { ArcGalleryHero } from "@/components/landing/arc-gallery-hero";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
 import { RoleCarouselSkeleton } from "@/components/landing/role-carousel-skeleton";
 import { WorldMapLazy } from "@/components/ui/world-map-lazy";
+
+const HERO_ARC_IMAGES = [1, 2, 3, 4, 5, 6, 7].map(
+  (n) => `/images/home/${n}.png`,
+);
 
 const HERO_MAP_ROUTES = [
   {
@@ -78,72 +83,74 @@ function PlayIcon() {
 
 export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-6 py-4 duration-300 md:px-8 lg:px-14 2xl:mt-16">
-      {/* Hero */}
-      <div className="mt-24 w-full text-center sm:mt-32">
-        <section className="mx-auto flex h-[38px] w-fit flex-row items-center justify-center gap-1 text-nowrap rounded-full border border-canvas-soft px-5 py-0.5 text-[12.25px] font-medium text-muted-foreground shadow-sm duration-200 md:text-[12.75px]">
-          <div className="flex w-fit flex-row items-center justify-center gap-4 max-sm:gap-2">
-            <p className="flex flex-row items-center gap-1.5 text-[14px] font-medium text-mute duration-200 max-sm:text-[12px]">
-              <span className="text-center font-normal max-sm:text-left sm:translate-y-[-0.5px] sm:pr-4">
-                Avg. monthly pay
-              </span>
-              <span className="text-foreground sm:translate-y-[-0.5px]">
-                $<span className="tabular-nums">2.8</span>k
-              </span>
-            </p>
-            <div className="h-9 w-px bg-muted max-sm:h-9" />
-            <p className="flex flex-row items-center gap-1.5 text-[14px] font-medium text-mute duration-200 max-sm:hidden max-sm:text-[12px]">
-              <span className="text-center font-normal max-sm:text-left sm:translate-y-[-0.5px] sm:pr-4">
-                Roles open
-              </span>
-              <span className="text-foreground sm:translate-y-[-0.5px]">
-                <span className="tabular-nums">12</span>k+
-              </span>
-            </p>
-            <div className="h-9 w-px bg-muted max-sm:hidden" />
-            <p className="flex flex-row items-center gap-1.5 text-[14px] font-medium text-mute duration-200 max-sm:text-[12px]">
-              <span className="text-center font-normal max-sm:text-left sm:translate-y-[-0.5px] sm:pr-4">
-                Countries
-              </span>
-              <span className="text-foreground sm:translate-y-[-0.5px]">
-                <span className="tabular-nums">40</span>+
-              </span>
-            </p>
+    <div className="mx-auto w-full max-w-[1600px] overflow-x-clip px-6 py-4 duration-300 md:px-8 lg:px-14 2xl:mt-16">
+      {/* Hero — on mobile stack cleanly (no overlap); pull-up only from sm+ */}
+      <div className="mt-16 w-full text-center sm:mt-10 md:mt-12">
+        <ArcGalleryHero images={HERO_ARC_IMAGES} />
+
+        <div className="relative z-10 mt-5 sm:-mt-16 md:-mt-24 lg:-mt-28">
+          <section className="border-canvas-soft bg-canvas mx-auto flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden text-nowrap rounded-full border px-3 py-0.5 text-[12px] font-medium text-muted-foreground shadow-sm sm:h-[38px] sm:px-5 sm:text-[12.75px] sm:bg-canvas/90 sm:backdrop-blur-sm">
+            <div className="flex w-fit flex-row items-center justify-center gap-2.5 sm:gap-4">
+              <p className="text-mute flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
+                <span className="hidden font-normal sm:inline sm:translate-y-[-0.5px] sm:pr-4">
+                  Avg. monthly pay
+                </span>
+                <span className="font-normal sm:hidden">Pay</span>
+                <span className="text-foreground sm:translate-y-[-0.5px]">
+                  $<span className="tabular-nums">2.8</span>k
+                </span>
+              </p>
+              <div className="bg-muted h-6 w-px sm:h-9" />
+              <p className="text-mute hidden flex-row items-center gap-1.5 text-[14px] font-medium sm:flex">
+                <span className="font-normal sm:translate-y-[-0.5px] sm:pr-4">
+                  Roles open
+                </span>
+                <span className="text-foreground sm:translate-y-[-0.5px]">
+                  <span className="tabular-nums">12</span>k+
+                </span>
+              </p>
+              <div className="bg-muted hidden h-9 w-px sm:block" />
+              <p className="text-mute flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
+                <span className="font-normal sm:translate-y-[-0.5px] sm:pr-4">
+                  Countries
+                </span>
+                <span className="text-foreground sm:translate-y-[-0.5px]">
+                  <span className="tabular-nums">40</span>+
+                </span>
+              </p>
+            </div>
+          </section>
+
+          <h1 className="mt-5 text-[30px] font-normal leading-[1.15] sm:mt-7 sm:text-[42px] sm:leading-[1.1] md:mt-8 md:text-5xl md:leading-[1.1]">
+            Work Abroad with us!
+          </h1>
+          <p className="text-foreground mx-auto mt-3 max-w-[22rem] px-1 text-sm leading-relaxed sm:mt-6 sm:max-w-[400px] sm:text-base">
+            We help you find the jobs in USA, Canada, Australia, UK, Dubai, Europe, and more.
+          </p>
+          <div className="mt-5 flex w-full flex-row items-center justify-center gap-3 text-[15px] sm:mt-6">
+            <LoginButton className="bg-primary text-primary-foreground hover:bg-primary-active rounded-md px-6 py-2 duration-200">
+              Get Started
+            </LoginButton>
+            <Link
+              className="bg-muted hover:bg-secondary flex flex-row items-center gap-1.5 rounded-md px-6 py-[9.5px] text-sm duration-200"
+              href="/about"
+            >
+              About us
+            </Link>
           </div>
-        </section>
 
-        <h1 className="mt-8 text-[38px] font-normal leading-[1.1] max-[480px]:text-[30px] sm:text-[42px] sm:leading-[1.1] md:text-5xl md:leading-[1.1]">
-          Dream jobs for skilled hands
-        </h1>
-        <p className="mx-auto mt-6 max-w-[400px] text-foreground">
-          BlueCollarz helps blue-collar workers
-          <br />
-          find the jobs they dream of, worldwide.
-        </p>
-        <div className="mt-6 flex w-full flex-row items-center justify-center gap-3 text-[15px]">
-          <LoginButton
-            className="rounded-md bg-primary px-6 py-2 text-primary-foreground duration-200 hover:bg-primary-active"
-          >
-            Get Job
-          </LoginButton>
-          <Link
-            className="flex flex-row items-center gap-1.5 rounded-md bg-muted px-6 py-[9.5px] text-sm duration-200 hover:bg-secondary"
-            href="/about"
-          >
-            About us
-          </Link>
-        </div>
-
-        <div className="mx-auto mt-6 w-full max-w-5xl px-0 sm:mt-8 md:max-w-6xl">
-          <WorldMapLazy
-            dots={HERO_MAP_ROUTES}
-            lineColor="var(--primary)"
-            showLabels
-            animationDuration={2}
-            loop
-            compact
-            focus={{ lat: 22.5, lng: 79, scale: 1.27 }}
-          />
+          <div className="mx-auto mt-4 w-full max-w-5xl px-0 sm:mt-6 md:max-w-6xl">
+            <WorldMapLazy
+              dots={HERO_MAP_ROUTES}
+              lineColor="var(--primary)"
+              showLabels={false}
+              animationDuration={2}
+              loop
+              compact
+              focus={{ lat: 22.5, lng: 79, scale: 1.15 }}
+              className="mx-auto max-sm:max-h-[180px]"
+            />
+          </div>
         </div>
       </div>
 
@@ -155,7 +162,7 @@ export default function Page() {
         <div className="gap-6 space-y-16 @5xl:grid @5xl:grid-cols-4 @5xl:space-y-0">
           <Link
             id="primary-testimonial"
-            className="group top-[68px] @5xl:sticky @5xl:col-span-3 h-fit cursor-pointer duration-200"
+            className="group top-[68px] h-fit cursor-pointer duration-200 @5xl:sticky @5xl:col-span-3"
             href="/mission"
           >
             <div className="relative aspect-square w-full overflow-hidden rounded-lg sm:aspect-video">
