@@ -26,9 +26,10 @@ export const SUPPORT_PRIORITIES = [
   "urgent",
 ] as const;
 
+/** `in_progress` removed — use `assigned` after an admin replies by email. */
 export const SUPPORT_STATUSES = [
   "open",
-  "in_progress",
+  "assigned",
   "resolved",
   "closed",
 ] as const;
@@ -43,6 +44,12 @@ export type SupportTranscriptTurn = {
   content: string;
 };
 
+export type SupportAssignee = {
+  id: string;
+  name: string;
+  email: string;
+};
+
 export type SupportTicketListItem = {
   id: string;
   userId: string;
@@ -53,6 +60,7 @@ export type SupportTicketListItem = {
   seriousness: SupportSeriousness;
   priority: SupportPriority;
   status: SupportStatus;
+  assignee: SupportAssignee | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -60,3 +68,19 @@ export type SupportTicketListItem = {
 export type SupportTicketDetail = SupportTicketListItem & {
   transcript: SupportTranscriptTurn[];
 };
+
+export function normalizeSupportStatus(
+  value: string | null | undefined,
+): SupportStatus {
+  const normalized = value?.toLowerCase().trim();
+  if (normalized === "in_progress") return "assigned";
+  if (
+    normalized === "open" ||
+    normalized === "assigned" ||
+    normalized === "resolved" ||
+    normalized === "closed"
+  ) {
+    return normalized;
+  }
+  return "open";
+}

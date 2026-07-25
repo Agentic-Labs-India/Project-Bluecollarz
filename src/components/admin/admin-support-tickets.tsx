@@ -9,8 +9,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,9 +37,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { getProfileIdLabel, PROFILE_TYPES } from "@/lib/profile-types";
 import { formatDateTimeShort } from "@/lib/dates";
 import type {
+  SupportAssignee,
   SupportPriority,
   SupportSeriousness,
   SupportStatus,
@@ -42,6 +54,8 @@ import {
   SUPPORT_STATUSES,
 } from "@/lib/support/types";
 import { cn } from "@/lib/utils";
+
+const POLL_MS = 5_000;
 
 function label(value: string) {
   return value.replace(/_/g, " ");
@@ -85,6 +99,22 @@ function seriousnessTone(
   return "neutral";
 }
 
+function statusTone(
+  status: SupportStatus,
+): "neutral" | "warn" | "danger" | "ok" {
+  if (status === "resolved" || status === "closed") return "ok";
+  if (status === "assigned") return "warn";
+  return "neutral";
+}
+
+function mergeTicketDetail(
+  prev: SupportTicketDetail | null,
+  next: SupportTicketListItem,
+): SupportTicketDetail | null {
+  if (!prev || prev.id !== next.id) return prev;
+  return { ...prev, ...next };
+}
+
 export function AdminSupportTickets() {
   const [items, setItems] = useState<SupportTicketListItem[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -97,51 +127,85 @@ export function AdminSupportTickets() {
   const [detail, setDetail] = useState<SupportTicketDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+  const [conflictAssignee, setConflictAssignee] =
+    useState<SupportAssignee | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!opts?.silent) setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        if (priorityFilter !== "all") params.set("priority", priorityFilter);
+        if (profileTypeFilter !== "all") {
+          params.set("profileType", profileTypeFilter);
+        }
+        if (seriousnessFilter !== "all") {
+          params.set("seriousness", seriousnessFilter);
+        }
+        const res = await fetch(
+          `/api/admin/support/tickets?${params.toString()}`,
+        );
+        const json = (await res.json().catch(() => ({}))) as {
+          items?: SupportTicketListItem[];
+          hasMore?: boolean;
+          error?: string;
+        };
+        if (!res.ok) {
+          if (!opts?.silent) {
+            toast.error(json.error || "Could not load tickets");
+            setItems([]);
+            setHasMore(false);
+          }
+          return;
+        }
+        setItems(json.items ?? []);
+        setHasMore(Boolean(json.hasMore));
+      } catch {
+        if (!opts?.silent) {
+          toast.error("Could not load tickets");
+          setItems([]);
+          setHasMore(false);
+        }
+      } finally {
+        if (!opts?.silent) setLoading(false);
+      }
+    },
+    [statusFilter, priorityFilter, profileTypeFilter, seriousnessFilter],
+  );
+
+  const refreshDetail = useCallback(async (id: string) => {
     try {
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      if (priorityFilter !== "all") params.set("priority", priorityFilter);
-      if (profileTypeFilter !== "all") {
-        params.set("profileType", profileTypeFilter);
-      }
-      if (seriousnessFilter !== "all") {
-        params.set("seriousness", seriousnessFilter);
-      }
-      const res = await fetch(
-        `/api/admin/support/tickets?${params.toString()}`,
-      );
+      const res = await fetch(`/api/admin/support/tickets/${id}`);
       const json = (await res.json().catch(() => ({}))) as {
-        items?: SupportTicketListItem[];
-        hasMore?: boolean;
-        error?: string;
+        ticket?: SupportTicketDetail;
       };
-      if (!res.ok) {
-        toast.error(json.error || "Could not load tickets");
-        setItems([]);
-        setHasMore(false);
-        return;
+      if (res.ok && json.ticket) {
+        setDetail(json.ticket);
       }
-      setItems(json.items ?? []);
-      setHasMore(Boolean(json.hasMore));
     } catch {
-      toast.error("Could not load tickets");
-      setItems([]);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
+      // Silent refresh — keep current detail.
     }
-  }, [statusFilter, priorityFilter, profileTypeFilter, seriousnessFilter]);
+  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void load({ silent: true });
+      if (selectedId) void refreshDetail(selectedId);
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [load, refreshDetail, selectedId]);
+
   async function openTicket(item: SupportTicketListItem) {
     setSelectedId(item.id);
     setDetail(null);
+    setReplyMessage("");
     setDetailLoading(true);
     try {
       const res = await fetch(`/api/admin/support/tickets/${item.id}`);
@@ -163,6 +227,17 @@ export function AdminSupportTickets() {
     }
   }
 
+  function applyListItem(next: SupportTicketListItem) {
+    setDetail((prev) => mergeTicketDetail(prev, next));
+    setItems((prev) => {
+      const mapped = prev.map((row) => (row.id === next.id ? next : row));
+      if (statusFilter !== "all" && statusFilter !== next.status) {
+        return mapped.filter((row) => row.id !== next.id);
+      }
+      return mapped;
+    });
+  }
+
   async function setStatus(status: SupportStatus) {
     if (!detail) return;
     setUpdating(true);
@@ -180,23 +255,7 @@ export function AdminSupportTickets() {
         toast.error(json.error || "Could not update status");
         return;
       }
-      const next = json.item;
-      setDetail((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: next.status,
-              updatedAt: next.updatedAt,
-            }
-          : prev,
-      );
-      setItems((prev) => {
-        const mapped = prev.map((row) => (row.id === next.id ? next : row));
-        if (statusFilter !== "all" && statusFilter !== status) {
-          return mapped.filter((row) => row.id !== next.id);
-        }
-        return mapped;
-      });
+      applyListItem(json.item);
       toast.success(`Marked ${label(status)}`);
     } catch {
       toast.error("Could not update status");
@@ -205,12 +264,53 @@ export function AdminSupportTickets() {
     }
   }
 
+  async function sendReply() {
+    if (!detail || !replyMessage.trim() || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const res = await fetch(`/api/admin/support/tickets/${detail.id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: replyMessage.trim() }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        item?: SupportTicketListItem;
+        error?: string;
+        message?: string;
+        assignee?: SupportAssignee;
+      };
+
+      if (res.status === 409 && json.assignee) {
+        setConflictAssignee(json.assignee);
+        applyListItem({
+          ...detail,
+          status: "assigned",
+          assignee: json.assignee,
+        });
+        return;
+      }
+
+      if (!res.ok || !json.item) {
+        toast.error(json.error || json.message || "Could not send reply");
+        return;
+      }
+
+      applyListItem(json.item);
+      setReplyMessage("");
+      toast.success(`Reply sent to ${detail.email}`);
+    } catch {
+      toast.error("Could not send reply");
+    } finally {
+      setSendingReply(false);
+    }
+  }
+
   const columns: ColumnDef<SupportTicketListItem>[] = useMemo(
     () => [
       {
         id: "search",
         accessorFn: (row) =>
-          `${row.id} ${row.email} ${row.summary} ${row.profileType} ${row.problemType}`,
+          `${row.id} ${row.email} ${row.summary} ${row.profileType} ${row.problemType} ${row.assignee?.name ?? ""} ${row.assignee?.email ?? ""}`,
         header: "Ticket",
         cell: ({ row }) => (
           <div className="min-w-0 max-w-[200px]">
@@ -278,9 +378,16 @@ export function AdminSupportTickets() {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-sm capitalize">
-            {label(row.original.status)}
-          </span>
+          <div className="min-w-0 space-y-1">
+            <TonePill tone={statusTone(row.original.status)}>
+              {label(row.original.status)}
+            </TonePill>
+            {row.original.assignee ? (
+              <p className="text-muted-foreground truncate text-[11px]">
+                {row.original.assignee.name}
+              </p>
+            ) : null}
+          </div>
         ),
       },
       {
@@ -376,6 +483,9 @@ export function AdminSupportTickets() {
           older ones.
         </p>
       ) : null}
+      <p className="text-mute mt-2 text-[11px]">
+        Auto-refreshes every 5 seconds
+      </p>
 
       <Sheet
         open={Boolean(selectedId)}
@@ -383,6 +493,7 @@ export function AdminSupportTickets() {
           if (!open) {
             setSelectedId(null);
             setDetail(null);
+            setReplyMessage("");
           }
         }}
       >
@@ -408,6 +519,14 @@ export function AdminSupportTickets() {
                     Opened {formatDateTimeShort(detail.createdAt)} · Updated{" "}
                     {formatDateTimeShort(detail.updatedAt)}
                   </span>
+                  {detail.assignee ? (
+                    <span className="block">
+                      Assigned to {detail.assignee.name} ({detail.assignee.email}
+                      )
+                    </span>
+                  ) : (
+                    <span className="block">Unassigned</span>
+                  )}
                 </span>
               ) : (
                 "Fetching ticket…"
@@ -462,16 +581,7 @@ export function AdminSupportTickets() {
                       Status
                     </p>
                     <div className="mt-1.5">
-                      <TonePill
-                        tone={
-                          detail.status === "resolved" ||
-                          detail.status === "closed"
-                            ? "ok"
-                            : detail.status === "in_progress"
-                              ? "warn"
-                              : "neutral"
-                        }
-                      >
+                      <TonePill tone={statusTone(detail.status)}>
                         {label(detail.status)}
                       </TonePill>
                     </div>
@@ -480,7 +590,7 @@ export function AdminSupportTickets() {
 
                 <Accordion
                   type="multiple"
-                  defaultValue={["summary"]}
+                  defaultValue={["summary", "reply"]}
                   className="border-border border"
                 >
                   <AccordionItem value="summary" className="px-3">
@@ -528,6 +638,47 @@ export function AdminSupportTickets() {
                       )}
                     </AccordionContent>
                   </AccordionItem>
+
+                  <AccordionItem value="reply" className="px-3">
+                    <AccordionTrigger className="py-3 hover:no-underline">
+                      Reply by email
+                    </AccordionTrigger>
+                    <AccordionContent className="text-foreground">
+                      <div className="space-y-3">
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          Write a response for{" "}
+                          <span className="text-foreground font-medium">
+                            {detail.email}
+                          </span>{" "}
+                          about their{" "}
+                          <span className="capitalize">
+                            {label(detail.problemType)}
+                          </span>{" "}
+                          issue. Sending assigns this ticket to you.
+                        </p>
+                        <div className="space-y-2">
+                          <Label htmlFor="support-reply">Message</Label>
+                          <Textarea
+                            id="support-reply"
+                            value={replyMessage}
+                            onChange={(e) => setReplyMessage(e.target.value)}
+                            placeholder="Hi — thanks for reaching out. Here's how we can help…"
+                            className="min-h-28 text-sm"
+                            disabled={sendingReply}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          disabled={
+                            sendingReply || replyMessage.trim().length === 0
+                          }
+                          onClick={() => void sendReply()}
+                        >
+                          {sendingReply ? "Sending…" : "Send reply & assign"}
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </>
             ) : null}
@@ -536,22 +687,11 @@ export function AdminSupportTickets() {
           {detail ? (
             <SheetFooter className="border-border shrink-0 border-t">
               <div className="flex w-full gap-2">
-                {detail.status !== "in_progress" ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full flex-1"
-                    disabled={updating}
-                    onClick={() => void setStatus("in_progress")}
-                  >
-                    In progress
-                  </Button>
-                ) : null}
                 {detail.status !== "resolved" ? (
                   <Button
                     type="button"
                     className="w-full flex-1"
-                    disabled={updating}
+                    disabled={updating || sendingReply}
                     onClick={() => void setStatus("resolved")}
                   >
                     Resolve
@@ -562,7 +702,7 @@ export function AdminSupportTickets() {
                     type="button"
                     variant="outline"
                     className="w-full flex-1"
-                    disabled={updating}
+                    disabled={updating || sendingReply}
                     onClick={() => void setStatus("closed")}
                   >
                     Close
@@ -573,6 +713,39 @@ export function AdminSupportTickets() {
           ) : null}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={Boolean(conflictAssignee)}
+        onOpenChange={(open) => {
+          if (!open) setConflictAssignee(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Already assigned</AlertDialogTitle>
+            <AlertDialogDescription>
+              {conflictAssignee ? (
+                <>
+                  This ticket is already assigned to{" "}
+                  <span className="text-foreground font-medium">
+                    {conflictAssignee.name}
+                  </span>{" "}
+                  (
+                  <span className="text-foreground font-medium">
+                    {conflictAssignee.email}
+                  </span>
+                  ). Only they can reply on this case.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setConflictAssignee(null)}>
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
