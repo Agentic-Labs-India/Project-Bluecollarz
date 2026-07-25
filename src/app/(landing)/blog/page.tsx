@@ -18,10 +18,15 @@ type PageProps = {
 
 function BlogIndexBodyFallback() {
   return (
-    <div className="mt-10 max-w-3xl animate-pulse space-y-6">
-      <div className="bg-muted h-24 w-full rounded" />
-      <div className="bg-muted h-24 w-full rounded" />
-      <div className="bg-muted h-24 w-full rounded" />
+    <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="animate-pulse space-y-4">
+          <div className="bg-muted aspect-video w-full" />
+          <div className="bg-muted h-3 w-24 rounded" />
+          <div className="bg-muted h-7 w-4/5 rounded" />
+          <div className="bg-muted h-4 w-full rounded" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -35,30 +40,32 @@ async function BlogIndexBody({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="mt-10 max-w-3xl space-y-0">
+    <div className="mt-10 w-full">
       {items.length === 0 ? (
         <p className="text-muted-foreground text-sm">
           No published posts yet. Check back soon.
         </p>
       ) : (
-        <ul className="divide-border divide-y">
+        <ul className="grid grid-cols-1 gap-x-10 gap-y-12 lg:grid-cols-2">
           {items.map((post) => (
             <li key={post.id}>
               <Link
                 href={`/blog/${post.slug}`}
-                className="hover:bg-muted/40 block space-y-3 py-6 transition-colors first:pt-0 sm:flex sm:gap-5 sm:space-y-0"
+                className="group block space-y-4 transition-opacity hover:opacity-90"
               >
                 {post.coverImageUrl ? (
-                  <div className="border-border relative aspect-[16/10] w-full shrink-0 overflow-hidden border sm:h-auto sm:w-40">
+                  <div className="border-border relative aspect-video w-full overflow-hidden border">
                     <Image
                       src={post.coverImageUrl}
                       alt=""
                       fill
-                      sizes="(max-width: 640px) 100vw, 160px"
-                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                   </div>
-                ) : null}
+                ) : (
+                  <div className="border-border bg-muted/40 aspect-video w-full border" />
+                )}
                 <div className="min-w-0 space-y-2">
                   <p className="text-mute text-xs tabular-nums">
                     {post.publishedAt
@@ -69,7 +76,7 @@ async function BlogIndexBody({ searchParams }: PageProps) {
                     {post.title}
                   </h2>
                   {post.excerpt ? (
-                    <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed sm:text-[15px]">
+                    <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed sm:text-[15px]">
                       {post.excerpt}
                     </p>
                   ) : null}
@@ -82,7 +89,7 @@ async function BlogIndexBody({ searchParams }: PageProps) {
 
       {pageCount > 1 ? (
         <nav
-          className="border-border mt-10 flex items-center justify-between gap-4 border-t pt-6"
+          className="border-border mt-12 flex items-center justify-between gap-4 border-t pt-6"
           aria-label="Blog pagination"
         >
           {page > 1 ? (
@@ -119,14 +126,14 @@ async function BlogIndexBody({ searchParams }: PageProps) {
 export default function BlogIndexPage({ searchParams }: PageProps) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28 md:px-8 md:pb-24 md:pt-32">
-      <header className="border-border max-w-3xl space-y-4 border-b pb-8 md:pb-10">
+      <header className="border-border w-full space-y-4 border-b pb-8 md:pb-10">
         <p className="text-mute text-xs font-medium tracking-[0.14em] uppercase sm:text-sm">
           Company document
         </p>
         <h1 className="font-heading text-foreground text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl md:leading-[1.1]">
           Blog
         </h1>
-        <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
+        <p className="text-muted-foreground max-w-2xl text-base leading-relaxed sm:text-lg">
           Updates and guides from the BlueCollarz team. Newest posts first.
         </p>
       </header>

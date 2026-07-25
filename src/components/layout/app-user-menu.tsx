@@ -15,6 +15,7 @@ import {
   BadgeCheckIcon,
   BellIcon,
   CookieIcon,
+  IdCardIcon,
   LogOutIcon,
   MoonIcon,
   SunIcon,
@@ -31,6 +32,7 @@ import {
   type PreferenceKind,
 } from "@/components/layout/preference-dialog";
 import type { UserPreferences } from "@/lib/user/preferences";
+import { getProfileIdLabel } from "@/lib/profile-types";
 
 type AppUser = { name: string; email: string; avatar: string };
 
@@ -47,6 +49,8 @@ function UserMenuDropdown({
 }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { data: session } = authClient.useSession();
+  const profileTypeLabel = getProfileIdLabel(session?.user?.profileType);
   const initial = user.name?.charAt(0)?.toUpperCase() || "U";
 
   const handleLogout = async () => {
@@ -84,15 +88,16 @@ function UserMenuDropdown({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+        <DropdownMenuItem onClick={() => router.push(profileHref)}>
+            <IdCardIcon />
+            Profile : {profileTypeLabel} 😄
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             {theme === "dark" ? <SunIcon /> : <MoonIcon />}
             Toggle theme
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push(profileHref)}>
-            <BadgeCheckIcon />
-            Profile
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

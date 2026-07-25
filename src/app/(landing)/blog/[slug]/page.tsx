@@ -3,13 +3,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ArrowLeftIcon } from "lucide-react";
+import { BlogPostCta } from "@/components/landing/blog-post-cta";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { getBlogBySlug } from "@/lib/blog";
-import { formatDateTimeShort } from "@/lib/dates";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
+
+function formatBlogDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 export async function generateMetadata({
   params,
@@ -43,12 +54,18 @@ export async function generateMetadata({
 
 function BlogPostBodyFallback() {
   return (
-    <article className="mx-auto max-w-3xl animate-pulse space-y-4">
-      <div className="bg-muted h-4 w-40 rounded" />
-      <div className="bg-muted h-10 w-3/4 rounded" />
-      <div className="bg-muted h-5 w-full rounded" />
-      <div className="bg-muted mt-8 aspect-[16/9] w-full rounded" />
-    </article>
+    <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="border-border animate-pulse space-y-4 border-b pb-8 lg:border-b-0 lg:border-e lg:pe-10 lg:pb-0">
+        <div className="bg-muted h-3 w-24 rounded" />
+        <div className="bg-muted h-12 w-full rounded" />
+        <div className="bg-muted h-10 w-28 rounded" />
+      </div>
+      <div className="animate-pulse space-y-5 pt-8 lg:ps-12 lg:pt-0 xl:ps-14">
+        <div className="bg-muted h-4 w-44 rounded" />
+        <div className="bg-muted h-14 w-[85%] rounded" />
+        <div className="bg-muted mt-10 aspect-video w-full rounded" />
+      </div>
+    </div>
   );
 }
 
@@ -57,55 +74,70 @@ async function BlogPostBody({ params }: PageProps) {
   const post = await getBlogBySlug(slug, { publishedOnly: true });
   if (!post) notFound();
 
+  const publishedLabel = formatBlogDate(post.publishedAt ?? post.createdAt);
+
   return (
-    <article className="mx-auto max-w-3xl">
-      <p className="text-mute mb-4 text-xs sm:text-sm">
-        <Link
-          href="/blog"
-          className="hover:text-foreground underline-offset-4 hover:underline"
+    <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="border-border mb-10 border-b pb-8 lg:mb-0 lg:border-b-0 lg:border-e lg:pe-10 lg:pb-0 xl:pe-12">
+        <BlogPostCta />
+      </div>
+
+      <article className="min-w-0 lg:ps-12 xl:ps-14">
+        <nav
+          aria-label="Breadcrumb"
+          className="text-mute mb-6 flex flex-wrap items-center gap-x-2 text-sm"
         >
-          Blog
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="tabular-nums">
-          {post.publishedAt
-            ? formatDateTimeShort(post.publishedAt)
-            : formatDateTimeShort(post.createdAt)}
-        </span>
-      </p>
-      <h1 className="font-heading text-foreground text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl md:leading-[1.1]">
-        {post.title}
-      </h1>
-      {post.excerpt ? (
-        <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
-          {post.excerpt}
-        </p>
-      ) : null}
-      {post.coverImageUrl ? (
-        <div className="border-border relative mt-8 aspect-[16/9] overflow-hidden border">
-          <Image
-            src={post.coverImageUrl}
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
+          <Link
+            href="/blog"
+            className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
+          >
+            <ArrowLeftIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+            Blog
+          </Link>
+          <span className="opacity-50" aria-hidden>
+            /
+          </span>
+          <span className="tabular-nums">{publishedLabel}</span>
+        </nav>
+
+        <header className="border-border space-y-5 border-b pb-10 md:pb-12">
+          <h1 className="font-heading text-foreground text-[2rem] font-semibold tracking-tight sm:text-4xl md:text-5xl md:leading-[1.08]">
+            {post.title}
+          </h1>
+          {post.excerpt ? (
+            <p className="text-muted-foreground max-w-2xl text-base leading-relaxed sm:text-lg sm:leading-relaxed">
+              {post.excerpt}
+            </p>
+          ) : null}
+        </header>
+
+        {post.coverImageUrl ? (
+          <div className="relative mt-10 aspect-video w-full overflow-hidden bg-muted/30">
+            <Image
+              src={post.coverImageUrl}
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 720px"
+              className="object-cover"
+            />
+          </div>
+        ) : null}
+
+        <div className="mt-10 max-w-2xl text-sm leading-relaxed sm:mt-12 sm:text-[15px]">
+          <RichTextContent
+            html={post.content}
+            className="text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_strong]:text-foreground space-y-5 [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_h2]:mt-12 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:my-1.5 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:leading-[1.75] [&_ul]:list-disc [&_ul]:ps-5"
           />
         </div>
-      ) : null}
-      <div className="border-border prose-invert mt-10 border-t pt-8 text-sm leading-relaxed sm:text-[15px]">
-        <RichTextContent
-          html={post.content}
-          className="text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_strong]:text-foreground space-y-4 [&_a]:underline [&_a]:underline-offset-4 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_li]:my-1 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ps-5"
-        />
-      </div>
-    </article>
+      </article>
+    </div>
   );
 }
 
 export default function BlogPostPage({ params }: PageProps) {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28 md:px-8 md:pb-24 md:pt-32">
+    <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28 md:px-8 md:pb-28 md:pt-32">
       <Suspense fallback={<BlogPostBodyFallback />}>
         <BlogPostBody params={params} />
       </Suspense>

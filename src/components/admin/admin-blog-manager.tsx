@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ImageIcon, PenSquareIcon, Trash2Icon } from "lucide-react";
+import {
+  ExternalLinkIcon,
+  ImageIcon,
+  PenSquareIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -313,6 +318,21 @@ export function AdminBlogManager() {
         header: "",
         cell: ({ row }) => (
           <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Open blog post"
+              asChild
+            >
+              <a
+                href={`/blog/${row.original.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLinkIcon className="size-4" />
+              </a>
+            </Button>
             <Button
               type="button"
               variant="ghost"
