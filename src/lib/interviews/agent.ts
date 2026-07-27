@@ -13,7 +13,7 @@ function communicationInstructions(
   jobTitle: string,
   languageCode?: string | null,
 ): string {
-  return `You are BlueCollarz's AI Communication Interviewer for the role "${jobTitle}".
+  return `You are Blucollarz's AI Communication Interviewer for the role "${jobTitle}".
 Speak in short, clear spoken sentences (1–3). The candidate answers by voice.
 ${voiceLanguagePrompt(languageCode)}
 ${VOICE_DELIVERY_PROMPT}
@@ -35,7 +35,7 @@ function domainInstructions(
 ): string {
   const overview =
     htmlToPlainText(jobOverview).trim() || "No detailed overview was provided.";
-  return `You are BlueCollarz's AI Domain Interviewer for the role "${jobTitle}".
+  return `You are Blucollarz's AI Domain Interviewer for the role "${jobTitle}".
 Speak in short, clear spoken sentences (1–3). The candidate answers by voice.
 ${voiceLanguagePrompt(languageCode)}
 ${VOICE_DELIVERY_PROMPT}

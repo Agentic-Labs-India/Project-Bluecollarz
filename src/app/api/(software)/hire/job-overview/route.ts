@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     const { output } = await generateText({
       model: gatewayModel,
       output: Output.object({ schema: overviewSchema }),
-      prompt: `You write clear, industry-standard job overviews for BlueCollarz — a platform for blue-collar and skilled-trade hiring (warehouse, construction, driving, facilities, manufacturing, field service, hospitality ops, etc.).
+      prompt: `You write clear, industry-standard job overviews for Blucollarz — a platform for blue-collar and skilled-trade hiring (warehouse, construction, driving, facilities, manufacturing, field service, hospitality ops, etc.).
 
 Write practical hiring copy a site supervisor or recruiter would post. No fluff, no corporate buzzwords, no DEI boilerplate, no emoji.
 

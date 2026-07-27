@@ -11,9 +11,9 @@ import {
 } from "@/components/landing/marketing-doc";
 
 export const metadata = {
-  title: "Vision · BlueCollarz",
+  title: "Vision · Blucollarz",
   description:
-    "BlueCollarz vision: skilled hands cross borders with proof and land dream jobs worldwide.",
+    "Blucollarz vision: skilled hands cross borders with proof and land dream jobs worldwide.",
 };
 
 const TOC = [
@@ -38,7 +38,7 @@ export default function VisionPage() {
     >
       <DocSection id="north-star" number="01" title="North star">
         <p className="text-foreground text-base font-medium leading-relaxed sm:text-lg">
-          BlueCollarz becomes the trusted bridge between blue-collar workers and
+          Blucollarz becomes the trusted bridge between blue-collar workers and
           the employers who need them: practical profiles, interview evidence,
           and identity verification that respects craft.
         </p>
@@ -107,7 +107,7 @@ export default function VisionPage() {
 
       <DocSection id="corridors" number="04" title="Global corridors">
         <p>
-          Vision is geographic as well as product. BlueCollarz is rooted in
+          Vision is geographic as well as product. Blucollarz is rooted in
           Dubai and oriented around corridors where blue-collar mobility already
           happens — South Asia, Southeast Asia, and Africa into Gulf hubs and
           other markets that hire skilled crews.
@@ -189,7 +189,7 @@ export default function VisionPage() {
       >
         <DocList
           items={[
-            "Turn BlueCollarz into a generic white-collar job board",
+            "Turn Blucollarz into a generic white-collar job board",
             "Invent candidate experience or interview answers",
             "Expose identity documents before verification",
             "Open uncontrolled recruiter signup that floods workers with spam roles",

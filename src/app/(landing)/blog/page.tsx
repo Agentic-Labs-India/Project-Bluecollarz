@@ -5,9 +5,9 @@ import { listPublishedBlogsPublic } from "@/lib/blog";
 import { formatDateTimeShort } from "@/lib/dates";
 
 export const metadata = {
-  title: "Blog · BlueCollarz",
+  title: "Blog · Blucollarz",
   description:
-    "Product updates, hiring insights, and guides from BlueCollarz — AI-native hiring for skilled candidates and recruiters.",
+    "Product updates, hiring insights, and guides from Blucollarz — AI-native hiring for skilled candidates and recruiters.",
 };
 
 const PAGE_SIZE = 10;
@@ -134,7 +134,7 @@ export default function BlogIndexPage({ searchParams }: PageProps) {
           Blog
         </h1>
         <p className="text-muted-foreground max-w-2xl text-base leading-relaxed sm:text-lg">
-          Updates and guides from the BlueCollarz team. Newest posts first.
+          Updates and guides from the Blucollarz team. Newest posts first.
         </p>
       </header>
 

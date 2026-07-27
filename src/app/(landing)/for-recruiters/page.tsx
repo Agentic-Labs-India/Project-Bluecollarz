@@ -11,9 +11,9 @@ import {
 } from "@/components/landing/marketing-doc";
 
 export const metadata = {
-  title: "For Recruiters · BlueCollarz",
+  title: "For Recruiters · Blucollarz",
   description:
-    "Hire on autopilot with BlueCollarz AI — resume generation, communication & domain interviews, custom questions, JD writing, and verified KYC. Provisioned access for hiring teams.",
+    "Hire on autopilot with Blucollarz AI — resume generation, communication & domain interviews, custom questions, JD writing, and verified KYC. Provisioned access for hiring teams.",
 };
 
 const TOC = [
@@ -33,14 +33,14 @@ export default function ForRecruitersPage() {
     <DocPage
       eyebrow="Programs document"
       title="For Recruiters"
-      description="BlueCollarz is an AI hiring ecosystem — not a job board with chatbots bolted on. Resume generation, communication interviews, domain interviews, custom questions, and job descriptions run end-to-end on autopilot so your team reviews signal, not paperwork."
+      description="Blucollarz is an AI hiring ecosystem — not a job board with chatbots bolted on. Resume generation, communication interviews, domain interviews, custom questions, and job descriptions run end-to-end on autopilot so your team reviews signal, not paperwork."
       updated="July 24, 2026"
       toc={TOC}
     >
       <DocSection id="overview" number="01" title="Overview">
         <p>
           Hiring blue-collar and skilled operational talent usually burns hours
-          on resumes, phone screens, and inconsistent interview notes. BlueCollarz
+          on resumes, phone screens, and inconsistent interview notes. Blucollarz
           replaces that grind with a single AI stack: candidates build profiles,
           sit structured interviews, and answer your custom questions before you
           ever open a file. You shortlist from scored evidence — then AI KYC
@@ -48,7 +48,7 @@ export default function ForRecruitersPage() {
         </p>
         <DocCallout title="Provisioned hire access">
           <p>
-            Recruiter accounts are provisioned by BlueCollarz — there is no public
+            Recruiter accounts are provisioned by Blucollarz — there is no public
             self-serve signup. Contact sales and we enable hire access for your
             company in the database.
           </p>
@@ -180,7 +180,7 @@ export default function ForRecruitersPage() {
         <DocSteps
           steps={[
             {
-              title: "Contact BlueCollarz",
+              title: "Contact Blucollarz",
               body: "Email sales or use Contact. Tell us company, locations, and hiring volume.",
             },
             {
@@ -250,7 +250,7 @@ export default function ForRecruitersPage() {
 
       <DocSection id="request-access" number="09" title="Request access">
         <p>
-          Ready to run hiring on autopilot with BlueCollarz? Tell us about your
+          Ready to run hiring on autopilot with Blucollarz? Tell us about your
           company and roles. We provision access and reply with onboarding steps.
         </p>
         <DocCallout title="What to include in your email">
@@ -264,14 +264,14 @@ export default function ForRecruitersPage() {
           />
         </DocCallout>
         <DocCtaRow>
-          <DocCta href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request">
+          <DocCta href="mailto:gtm@blucollarz.com?subject=Recruiter%20access%20request">
             Email sales
           </DocCta>
           <DocCta href="/contact" variant="secondary">
             Contact page
           </DocCta>
           <DocCta href="/about" variant="secondary">
-            About BlueCollarz
+            About Blucollarz
           </DocCta>
         </DocCtaRow>
       </DocSection>

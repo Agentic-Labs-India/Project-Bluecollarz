@@ -51,7 +51,7 @@ function buildReplyHtml(input: {
       ${paragraphs}
       <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 24px 0;" />
       <p style="font-size: 12px; color: #737373; margin: 0 0 8px;">
-        Regarding your BlueCollarz support request
+        Regarding your Blucollarz support request
       </p>
       <p style="font-size: 13px; color: #525252; margin: 0 0 4px;">
         <strong>Issue:</strong> ${escapeHtml(input.problemType)}
@@ -154,7 +154,7 @@ export async function POST(
       );
     }
 
-    const subject = `Re: BlueCollarz support — ${ticket.summary.slice(0, 80)}`;
+    const subject = `Re: Blucollarz support — ${ticket.summary.slice(0, 80)}`;
     const from = formatSenderFrom(assignee.name, fromEmail);
 
     const { data, error } = await resend.emails.send({

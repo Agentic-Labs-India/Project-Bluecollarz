@@ -26,7 +26,7 @@ export function LandingNav() {
         <Link className="relative z-10 w-[100px] shrink-0" href="/">
           <Image
             src="/logo.svg"
-            alt="BlueCollarz logo"
+            alt="Blucollarz logo"
             width={34}
             height={34}
             className="h-[30px] w-[30px] sm:h-[34px] sm:w-[34px]"

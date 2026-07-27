@@ -73,7 +73,7 @@ function normalizeCoverImageUrl(
   const trimmed = value?.trim() || "";
   if (!trimmed) return null;
   if (!isBlogCoverImageUrl(trimmed)) {
-    throw new Error("Cover image must be a BlueCollarz blog blob URL");
+    throw new Error("Cover image must be a Blucollarz blog blob URL");
   }
   return trimmed;
 }

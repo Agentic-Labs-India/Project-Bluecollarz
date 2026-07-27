@@ -11,9 +11,9 @@ import {
 } from "@/components/landing/marketing-doc";
 
 export const metadata = {
-  title: "About · BlueCollarz",
+  title: "About · Blucollarz",
   description:
-    "About BlueCollarz — AI-native hiring for blue-collar workers and the teams that hire them worldwide.",
+    "About Blucollarz — AI-native hiring for blue-collar workers and the teams that hire them worldwide.",
 };
 
 const TOC = [
@@ -32,14 +32,14 @@ export default function AboutPage() {
   return (
     <DocPage
       eyebrow="Company document"
-      title="About BlueCollarz"
-      description="BlueCollarz is AI-native hiring infrastructure for blue-collar workers searching for dream jobs around the world — and for recruiters who need clearer signal before they hire."
+      title="About Blucollarz"
+      description="Blucollarz is AI-native hiring infrastructure for blue-collar workers searching for dream jobs around the world — and for recruiters who need clearer signal before they hire."
       updated="July 19, 2026"
       toc={TOC}
     >
       <DocSection id="who-we-are" number="01" title="Who we are">
         <p>
-          BlueCollarz connects skilled people with hiring teams through
+          Blucollarz connects skilled people with hiring teams through
           structured profiles, AI-assisted interviews, and identity checks. We
           exist so a welder in Bihar, an electrician in Manila, or a driver in
           Lagos can pursue serious roles in Dubai, Doha, Riyadh, and beyond —
@@ -156,7 +156,7 @@ export default function AboutPage() {
           steps={[
             {
               title: "Access is provisioned",
-              body: "Hire accounts are enabled by BlueCollarz — there is no public recruiter signup or login button.",
+              body: "Hire accounts are enabled by Blucollarz — there is no public recruiter signup or login button.",
             },
             {
               title: "Complete company profile",
@@ -236,7 +236,7 @@ export default function AboutPage() {
 
       <DocSection id="where-we-operate" number="07" title="Where we operate">
         <p>
-          BlueCollarz is rooted in Dubai, UAE, and built for cross-border talent
+          Blucollarz is rooted in Dubai, UAE, and built for cross-border talent
           pathways — especially from South Asia, Southeast Asia, and Africa into
           Gulf opportunity hubs and other global markets. Roles may be on-site
           or location-specific depending on the employer.
@@ -279,7 +279,7 @@ export default function AboutPage() {
         <DocCtaRow>
           <DocCta href="/">Find work</DocCta>
           <DocCta href="/for-recruiters" variant="secondary">
-            Hire on BlueCollarz
+            Hire on Blucollarz
           </DocCta>
           <DocCta href="/contact" variant="secondary">
             Contact us

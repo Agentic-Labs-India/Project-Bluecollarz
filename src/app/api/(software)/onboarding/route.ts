@@ -332,7 +332,7 @@ Call selectResume at most once per session.`;
   return new ToolLoopAgent({
     id: "candidate-onboarding",
     model: gatewayModel,
-    instructions: `You are BlueCollarz's onboarding voice coach for candidates (workers).
+    instructions: `You are Blucollarz's onboarding voice coach for candidates (workers).
 Speak in short, clear spoken sentences (1–3). The user answers by voice.
 ${voiceLanguagePrompt(opts?.languageCode)}
 ${VOICE_DELIVERY_PROMPT}

@@ -1,8 +1,8 @@
-# BlueCollarz
+# Blucollarz
 
 **AI-native hiring infrastructure for candidates and recruiters.**
 
-BlueCollarz connects skilled people with hiring teams through AI onboarding, resume building, communication & domain interviews, and KYC document checks — so recruiters get clearer signal, faster.
+Blucollarz connects skilled people with hiring teams through AI onboarding, resume building, communication & domain interviews, and KYC document checks — so recruiters get clearer signal, faster.
 
 | | |
 |---|---|
@@ -107,7 +107,7 @@ flowchart LR
 
 ## Profiles & points of view
 
-BlueCollarz has **three account types**. Google sign-in always creates a **`work`** (candidate) account. **`hire`** and **`admin`** are provisioned by an existing admin (or invite queue) — there is no public hire/admin signup CTA.
+Blucollarz has **three account types**. Google sign-in always creates a **`work`** (candidate) account. **`hire`** and **`admin`** are provisioned by an existing admin (or invite queue) — there is no public hire/admin signup CTA.
 
 | Profile | Who | How you get it | Lands on |
 |---------|-----|----------------|----------|
@@ -159,7 +159,7 @@ You are a worker looking for roles. You:
 
 You are a hiring team with provisioned access. You:
 
-1. Sign in with Google after BlueCollarz sets your account to **hire** in the database
+1. Sign in with Google after Blucollarz sets your account to **hire** in the database
 2. Complete company profile
 3. Create and publish roles
 4. Review applicants: resume, interview scores, recordings, transcripts

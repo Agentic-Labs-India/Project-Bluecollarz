@@ -47,7 +47,7 @@ export function AppRailSidebar({
         <Link href={homeHref} className="flex items-center justify-center">
           <Image
             src="/logo.svg"
-            alt="BlueCollarz"
+            alt="Blucollarz"
             width={32}
             height={32}
             className="size-8"

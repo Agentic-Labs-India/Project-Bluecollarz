@@ -15,7 +15,7 @@ type PageProps = {
 
 function seoDescriptionFromOverview(overview: string): string {
   const plain = htmlToPlainText(overview).replace(/\s+/g, " ").trim();
-  if (!plain) return "Open role on BlueCollarz. Log in to apply and interview.";
+  if (!plain) return "Open role on Blucollarz. Log in to apply and interview.";
   if (plain.length <= 160) return plain;
   return `${plain.slice(0, 157).trimEnd()}…`;
 }
@@ -26,9 +26,9 @@ export async function generateMetadata({
   const { id } = await params;
   const job = await getPublishedJobPublic(id);
   if (!job) {
-    return { title: "Role · BlueCollarz" };
+    return { title: "Role · Blucollarz" };
   }
-  const title = `${job.title} · BlueCollarz`;
+  const title = `${job.title} · Blucollarz`;
   const description = seoDescriptionFromOverview(job.overview);
   return {
     title,
@@ -96,7 +96,7 @@ async function PublicJobBody({ params }: PageProps) {
       <div className="border-border mt-8 flex flex-col gap-3 border-y py-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
           Sign in to apply, complete AI interviews, and track your application
-          on BlueCollarz.
+          on Blucollarz.
         </p>
         <LoginButton className="bg-primary text-primary-foreground hover:bg-primary-active inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-medium transition-colors">
           Log in

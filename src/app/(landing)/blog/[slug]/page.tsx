@@ -28,9 +28,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getBlogBySlug(slug, { publishedOnly: true });
   if (!post) {
-    return { title: "Post · BlueCollarz" };
+    return { title: "Post · Blucollarz" };
   }
-  const title = `${post.seoTitle || post.title} · BlueCollarz`;
+  const title = `${post.seoTitle || post.title} · Blucollarz`;
   const description = post.seoDescription || post.excerpt;
   return {
     title,

@@ -13,9 +13,9 @@ import {
 } from "@/components/landing/marketing-doc";
 
 export const metadata = {
-  title: "Contact · BlueCollarz",
+  title: "Contact · Blucollarz",
   description:
-    "Get BlueCollarz support via the in-app Help agent, or contact sales and press. Dubai-based hiring platform for blue-collar talent.",
+    "Get Blucollarz support via the in-app Help agent, or contact sales and press. Dubai-based hiring platform for blue-collar talent.",
 };
 
 const TOC = [
@@ -42,7 +42,7 @@ export default function ContactPage() {
     >
       <DocSection id="how-to-reach-us" number="01" title="How to reach us">
         <p>
-          BlueCollarz is a hiring platform for blue-collar workers and the teams
+          Blucollarz is a hiring platform for blue-collar workers and the teams
           that hire them. For product or account issues while you are signed in,
           start with <strong className="text-foreground">in-app Help</strong> —
           not email. Help already knows your profile type (candidate, recruiter,
@@ -53,9 +53,9 @@ export default function ContactPage() {
           <DocList
             items={[
               "Signed-in product / account problems → open Help in the app (preferred)",
-              "Cannot sign in, or Help is unavailable → support@BlueCollarz.ai",
-              "Recruiter access or hiring programs → gtm@BlueCollarz.ai",
-              "Media and press → press@BlueCollarz.ai",
+              "Cannot sign in, or Help is unavailable → support@blucollarz.com",
+              "Recruiter access or hiring programs → gtm@blucollarz.com",
+              "Media and press → press@blucollarz.com",
             ]}
           />
         </DocCallout>
@@ -65,23 +65,23 @@ export default function ContactPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <DocContactCard
             title="Support (fallback email)"
-            email="support@BlueCollarz.ai"
+            email="support@blucollarz.com"
             body="Use only if you cannot sign in. Prefer in-app Help for bugs, interviews, KYC, and profile issues while logged in."
-            href="mailto:support@BlueCollarz.ai"
+            href="mailto:support@blucollarz.com"
             cta="Email support"
           />
           <DocContactCard
             title="Sales & recruiter access"
-            email="gtm@BlueCollarz.ai"
+            email="gtm@blucollarz.com"
             body="Company access requests, hiring volume discussions, and onboarding for hire workspaces."
-            href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request"
+            href="mailto:gtm@blucollarz.com?subject=Recruiter%20access%20request"
             cta="Request access"
           />
           <DocContactCard
             title="Press"
-            email="press@BlueCollarz.ai"
-            body="Media inquiries, briefing requests, and official statements about BlueCollarz."
-            href="mailto:press@BlueCollarz.ai"
+            email="press@blucollarz.com"
+            body="Media inquiries, briefing requests, and official statements about Blucollarz."
+            href="mailto:press@blucollarz.com"
             cta="Email press"
           />
         </div>
@@ -100,7 +100,7 @@ export default function ContactPage() {
           steps={[
             {
               title: "Sign in",
-              body: "Use Google on BlueCollarz so Help can attach your account, email, and profile type (candidate, recruiter, or admin).",
+              body: "Use Google on Blucollarz so Help can attach your account, email, and profile type (candidate, recruiter, or admin).",
             },
             {
               title: "Open Help",
@@ -119,12 +119,12 @@ export default function ContactPage() {
         <div className="grid gap-4 sm:gap-5">
           <DocFigure
             src="/images/support/1.png"
-            alt="Screenshot highlighting where to click Help in the BlueCollarz left rail"
+            alt="Screenshot highlighting where to click Help in the Blucollarz left rail"
             caption="1 — Where to click: the Help control in the left rail (above Cookies)."
           />
           <DocFigure
             src="/images/support/2.png"
-            alt="Screenshot of the BlueCollarz Help chat dialog after it opens"
+            alt="Screenshot of the Blucollarz Help chat dialog after it opens"
             caption="2 — What opens: the Help chat. Describe your issue and let the agent create a ticket when ready."
           />
         </div>
@@ -146,9 +146,9 @@ export default function ContactPage() {
           If you cannot reach Help (for example sign-in is broken), email{" "}
           <a
             className="text-foreground underline underline-offset-4"
-            href="mailto:support@BlueCollarz.ai"
+            href="mailto:support@blucollarz.com"
           >
-            support@BlueCollarz.ai
+            support@blucollarz.com
           </a>
           . Prefer Help whenever you are signed in so tickets include your
           transcript and profile automatically.
@@ -189,14 +189,14 @@ export default function ContactPage() {
 
       <DocSection id="sales" number="05" title="Sales & recruiter access">
         <p>
-          Hire accounts are provisioned by BlueCollarz. There is no public
-          “become a recruiter” signup. To hire on BlueCollarz, contact sales —
+          Hire accounts are provisioned by Blucollarz. There is no public
+          “become a recruiter” signup. To hire on Blucollarz, contact sales —
           we enable hire access for your team from the admin console.
         </p>
         <DocSteps
           steps={[
             {
-              title: "Email gtm@BlueCollarz.ai",
+              title: "Email gtm@blucollarz.com",
               body: "Subject line “Recruiter access request” helps routing.",
             },
             {
@@ -214,7 +214,7 @@ export default function ContactPage() {
           ]}
         />
         <DocCtaRow>
-          <DocCta href="mailto:gtm@BlueCollarz.ai?subject=Recruiter%20access%20request">
+          <DocCta href="mailto:gtm@blucollarz.com?subject=Recruiter%20access%20request">
             Email sales
           </DocCta>
           <DocCta href="/for-recruiters" variant="secondary">
@@ -228,9 +228,9 @@ export default function ContactPage() {
           Media inquiries:{" "}
           <a
             className="text-foreground underline underline-offset-4"
-            href="mailto:press@BlueCollarz.ai"
+            href="mailto:press@blucollarz.com"
           >
-            press@BlueCollarz.ai
+            press@blucollarz.com
           </a>
           . Include your outlet, deadline, and topic. For company background,
           see About, Mission, and Vision.
@@ -281,7 +281,7 @@ export default function ContactPage() {
 
       <DocSection id="location" number="09" title="Location">
         <p>
-          BlueCollarz is rooted in{" "}
+          Blucollarz is rooted in{" "}
           <strong className="text-foreground">Dubai, UAE</strong>, and built for
           cross-border hiring corridors into the Gulf and other global hubs. We
           do not publish a walk-in retail address for drop-in visits; commercial

@@ -5,7 +5,7 @@ import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
 import { consumeUserProvision } from "@/lib/admin/provisions";
 
-const APP_NAME = "BlueCollarz";
+const APP_NAME = "Blucollarz";
 
 export const auth = betterAuth({
   appName: APP_NAME,

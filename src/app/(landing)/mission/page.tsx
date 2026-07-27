@@ -10,9 +10,9 @@ import {
 } from "@/components/landing/marketing-doc";
 
 export const metadata = {
-  title: "Mission · BlueCollarz",
+  title: "Mission · Blucollarz",
   description:
-    "BlueCollarz mission: open real pathways for blue-collar workers to find dream jobs worldwide.",
+    "Blucollarz mission: open real pathways for blue-collar workers to find dream jobs worldwide.",
 };
 
 const TOC = [
@@ -141,7 +141,7 @@ export default function MissionPage() {
         />
         <DocCallout title="Access model">
           <p>
-            Hire accounts are provisioned by BlueCollarz rather than open
+            Hire accounts are provisioned by Blucollarz rather than open
             self-serve recruiter signup, so the applicant pool stays tied to
             serious hiring teams.
           </p>

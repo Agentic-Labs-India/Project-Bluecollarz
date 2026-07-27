@@ -281,7 +281,7 @@ export function HelpDialog({
                   : ""}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-sm">
-                Ask anything about BlueCollarz — jobs, interviews, KYC, or
+                Ask anything about Blucollarz — jobs, interviews, KYC, or
                 hiring.
               </DialogDescription>
             </div>
@@ -410,7 +410,7 @@ export function HelpDialog({
                 <InputGroupInput
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about BlueCollarz…"
+                  placeholder="Ask about Blucollarz…"
                   disabled={isBusy}
                   aria-label="Help message"
                 />

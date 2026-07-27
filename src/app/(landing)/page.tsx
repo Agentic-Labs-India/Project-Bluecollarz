@@ -186,7 +186,7 @@ export default function Page() {
             </div>
             <div className="mt-4 flex flex-row items-center gap-3 text-sm sm:mt-6">
               <div>Mission</div>
-              <div className="text-mute">Why BlueCollarz exists</div>
+              <div className="text-mute">Why Blucollarz exists</div>
             </div>
           </Link>
 

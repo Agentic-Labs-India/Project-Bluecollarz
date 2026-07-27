@@ -4,7 +4,7 @@ import { listPublishedJobsForSitemap } from "@/lib/jobs/queries";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://www.BlueCollarz.ai";
+  "https://www.blucollarz.com";
 
 /** Stable lastModified for evergreen marketing pages (avoids crawl churn). */
 const STATIC_LAST_MODIFIED = new Date("2026-07-01T00:00:00.000Z");

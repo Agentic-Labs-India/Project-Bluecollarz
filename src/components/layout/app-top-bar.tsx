@@ -21,7 +21,7 @@ export function AppTopBar({
       <Link href={homeHref} className="flex items-center" aria-label="Home">
         <Image
           src="/logo.svg"
-          alt="BlueCollarz"
+          alt="Blucollarz"
           width={32}
           height={32}
           className="size-8"

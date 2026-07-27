@@ -82,7 +82,7 @@ export function AdminEmailInbox() {
     | { name?: string | null; email?: string | null }
     | undefined;
 
-  const senderName = user?.name?.trim() || "BlueCollarz";
+  const senderName = user?.name?.trim() || "Blucollarz";
   const [box, setBox] = useState<Box>("receiving");
   const [days, setDays] = useState<DaysFilter>("15");
   const [search, setSearch] = useState("");
