@@ -1,10 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { ArcGalleryHero } from "@/components/landing/arc-gallery-hero";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
 import { RoleCarouselSkeleton } from "@/components/landing/role-carousel-skeleton";
 import { WorldMapLazy } from "@/components/ui/world-map-lazy";
+
+export const metadata: Metadata = {
+  title: "Blucollarz — AI hiring for skilled workers & recruiters",
+  description:
+    "Blucollarz is an AI-native hiring platform for blue-collar and skilled workers. Build a profile, complete AI interviews, verify identity, and connect with recruiters hiring worldwide. Sign in with Google to create your account.",
+};
 
 const HERO_ARC_IMAGES = [1, 2, 3, 4, 5, 6, 7].map(
   (n) => `/images/home/${n}.png`,
@@ -37,6 +44,25 @@ const HERO_MAP_ROUTES = [
   },
 ];
 
+const PURPOSE_FEATURES = [
+  {
+    title: "AI onboarding & profiles",
+    body: "Voice-guided onboarding and optional resume upload turn your experience into a structured profile recruiters can trust.",
+  },
+  {
+    title: "AI interviews",
+    body: "Complete communication and domain interviews so hiring teams see how you communicate and what you know — not just a CV.",
+  },
+  {
+    title: "Role discovery & applications",
+    body: "Browse open roles across trades and skilled work, apply with evidence, and track where you stand in the process.",
+  },
+  {
+    title: "Identity verification (KYC)",
+    body: "When selected for a role, verify your identity with document checks so employers can hire with confidence.",
+  },
+];
+
 const STORIES = [
   {
     href: "/stories/ruby/",
@@ -57,7 +83,7 @@ const STORIES = [
   {
     href: "/stories/mick-computer-information-systems/",
     image:
-      "https://cdn.sanity.io/images/h6s14f4z/production/309640570646595dbd60e7b7c06bc15c970df64a-1421x720.jpg",
+      "https://cdn.sanity.io/images/h6s14f4z/production/309640570646595dbd60e7c06bc15c970df64a-1421x720.jpg",
     alt: "Omar - Meet Omar: Heavy vehicle driver",
     title: "Meet Omar: Heavy vehicle driver",
     name: "Omar",
@@ -121,11 +147,16 @@ export default function Page() {
             </div>
           </section>
 
-          <h1 className="mt-5 text-[30px] font-normal leading-[1.15] sm:mt-7 sm:text-[42px] sm:leading-[1.1] md:mt-8 md:text-5xl md:leading-[1.1]">
-            Work Abroad with us!
+          <h1 className="font-heading mt-5 text-[34px] font-medium leading-[1.1] tracking-tight sm:mt-7 sm:text-[48px] sm:leading-[1.05] md:mt-8 md:text-6xl md:leading-[1.05]">
+            Blucollarz
           </h1>
-          <p className="text-foreground mx-auto mt-3 max-w-[22rem] px-1 text-sm leading-relaxed sm:mt-6 sm:max-w-[400px] sm:text-base">
-            We help you find the jobs in USA, Canada, Australia, UK, Dubai, Europe, and more.
+          <p className="text-foreground mx-auto mt-3 max-w-[28rem] px-1 text-base font-medium leading-snug sm:mt-4 sm:max-w-[36rem] sm:text-xl sm:leading-snug">
+            AI-native hiring for skilled workers and the teams that hire them.
+          </p>
+          <p className="text-mute mx-auto mt-3 max-w-[26rem] px-1 text-sm leading-relaxed sm:mt-4 sm:max-w-[480px] sm:text-base">
+            Blucollarz helps blue-collar and skilled candidates build profiles,
+            complete AI interviews, verify identity, and find work abroad —
+            while recruiters review clearer signal before they hire.
           </p>
           <div className="mt-5 flex w-full flex-row items-center justify-center gap-3 text-[15px] sm:mt-6">
             <LoginButton className="bg-primary text-primary-foreground hover:bg-primary-active rounded-md px-6 py-2 duration-200">
@@ -135,7 +166,7 @@ export default function Page() {
               className="bg-muted hover:bg-secondary flex flex-row items-center gap-1.5 rounded-md px-6 py-[9.5px] text-sm duration-200"
               href="/about"
             >
-              About us
+              About Blucollarz
             </Link>
           </div>
 
@@ -153,6 +184,63 @@ export default function Page() {
           </div>
         </div>
       </div>
+
+      {/* Purpose — required for Google OAuth brand verification */}
+      <section
+        id="what-is-blucollarz"
+        aria-labelledby="purpose-heading"
+        className="mx-auto mt-16 max-w-3xl sm:mt-24"
+      >
+        <h2
+          id="purpose-heading"
+          className="font-heading text-2xl font-medium tracking-tight sm:text-3xl"
+        >
+          What Blucollarz does
+        </h2>
+        <p className="text-mute mt-4 text-sm leading-relaxed sm:text-base">
+          Blucollarz is a hiring platform — not a login page alone. Candidates
+          sign in to create a work account, build a portable profile, explore
+          open roles, complete AI-assisted interviews, apply, and verify
+          identity when selected. Recruiters (provisioned by Blucollarz) publish
+          roles and review scored applicants with verified documents. The
+          product is rooted in Dubai, UAE, and built for cross-border skilled
+          talent.
+        </p>
+
+        <ul className="mt-8 grid gap-6 sm:grid-cols-2">
+          {PURPOSE_FEATURES.map((feature) => (
+            <li key={feature.title}>
+              <h3 className="text-[15px] font-medium text-foreground">
+                {feature.title}
+              </h3>
+              <p className="text-mute mt-1.5 text-sm leading-relaxed">
+                {feature.body}
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <div className="border-canvas-soft mt-10 border-t pt-8">
+          <h3 className="text-[15px] font-medium text-foreground">
+            Why Blucollarz uses Google Sign-In
+          </h3>
+          <p className="text-mute mt-2 text-sm leading-relaxed">
+            Blucollarz uses Google OAuth so you can create and access your
+            account securely. We request your Google name, email address, and
+            profile photo only to identify you, create your Blucollarz account,
+            keep you signed in, and communicate about applications, interviews,
+            and account activity. We do not sell your Google account data. See
+            our{" "}
+            <Link
+              href="/privacy"
+              className="text-foreground underline underline-offset-2 hover:text-mute"
+            >
+              Privacy Policy
+            </Link>{" "}
+            for full details.
+          </p>
+        </div>
+      </section>
 
       <Suspense fallback={<RoleCarouselSkeleton />}>
         <LatestRolesCarousel />

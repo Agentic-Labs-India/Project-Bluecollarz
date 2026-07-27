@@ -23,15 +23,21 @@ export function LandingNav() {
         id="TopNav"
         className="fixed top-0 left-0 z-888 flex h-[68px] w-full flex-row items-center justify-between gap-4 border-b border-canvas-soft bg-canvas px-4 text-[14px] duration-300 sm:px-6 md:px-5"
       >
-        <Link className="relative z-10 w-[100px] shrink-0" href="/">
+        <Link
+          className="relative z-10 flex shrink-0 flex-row items-center gap-2.5"
+          href="/"
+        >
           <Image
             src="/logo.svg"
-            alt="Blucollarz logo"
+            alt=""
             width={34}
             height={34}
             className="h-[30px] w-[30px] sm:h-[34px] sm:w-[34px]"
             priority
           />
+          <span className="font-heading text-[17px] font-medium tracking-tight text-foreground sm:text-[18px]">
+            Blucollarz
+          </span>
         </Link>
 
         <nav
@@ -49,7 +55,7 @@ export function LandingNav() {
           ))}
         </nav>
 
-        <div className="relative z-10 flex w-[100px] flex-row items-center justify-end gap-2">
+        <div className="relative z-10 flex min-w-[100px] flex-row items-center justify-end gap-2">
           <LoginButton
             className="hidden min-w-[72px] rounded-md bg-muted/80 px-6 py-2 duration-300 hover:bg-secondary/80 lg:block"
           />
