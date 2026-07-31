@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     const search = sp.get("search")?.trim() || "";
     const tab = sp.get("tab")?.trim() || "";
     const priority = sp.get("priority")?.trim() || "";
+    const pinJobId = sp.get("pinJobId")?.trim() || "";
 
     // Public scope: published opportunities for the signed-in viewer.
     if (scope !== "mine") {
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
         priority,
         page,
         limit,
+        pinJobId: pinJobId || null,
       });
       return NextResponse.json(result);
     }

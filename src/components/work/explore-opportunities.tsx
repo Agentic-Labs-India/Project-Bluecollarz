@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRightIcon, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,6 +31,10 @@ import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import { formatJobPlaceLabel } from "@/lib/geo/places";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+
+function isJobId(id: string): boolean {
+  return /^[a-fA-F0-9]{24}$/.test(id);
+}
 
 const EXPLORE_SHELL_HEIGHT =
   "h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] md:h-dvh md:max-h-dvh";
@@ -272,14 +277,23 @@ export function ExploreOpportunities({
   /** Deep-link from home / other pages: open this job in the detail panel. */
   initialJobId?: string | null;
 } = {}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const jobIdFromUrl = searchParams.get("jobId");
+  /** URL is the source of truth for which job detail is open. */
+  const selectedId =
+    typeof jobIdFromUrl === "string" && isJobId(jobIdFromUrl)
+      ? jobIdFromUrl
+      : initialJobId && isJobId(initialJobId)
+        ? initialJobId
+        : null;
+
   const [search, setSearch] = useState("");
   const [priority, setPriority] = useState<"all" | "high" | "medium" | "low">(
     "all",
   );
   const [workType, setWorkType] = useState<WorkTypeFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialJobId ?? null,
-  );
   const [opportunities, setOpportunities] =
     useState<Opportunity[]>(initialOpportunities);
   const [applicationStatuses, setApplicationStatuses] = useState<
@@ -307,22 +321,73 @@ export function ExploreOpportunities({
     questions: CustomQuestion[];
   } | null>(null);
   const isMobile = useIsMobile();
-  /** Skip the first fetch — the server already seeded the default view. */
-  const seededDefault = useRef(true);
-  /** Skip clearing selection on the initial workType mount. */
-  const workTypeReady = useRef(false);
+  /**
+   * Once the user changes filters away from the server-seeded default, client
+   * fetches take over — including when they return to the default filters.
+   */
+  const filtersDirty = useRef(false);
+  const prevWorkTypeRef = useRef(workType);
+  const lastSeededJobId = useRef<string | null>(null);
+  const pinFetchAttempted = useRef<string | null>(null);
+
+  const selectJob = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const current = params.get("jobId");
+    if (id && current === id) return;
+    if (!id && !current) return;
+    if (id) params.set("jobId", id);
+    else params.delete("jobId");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
+  // Adopt server-pinned seed when navigating in with a fresh ?jobId= (e.g. from home).
+  useEffect(() => {
+    if (!initialJobId) return;
+    if (lastSeededJobId.current === initialJobId) return;
+    lastSeededJobId.current = initialJobId;
+    setOpportunities(initialOpportunities);
+    setApplicationStatuses(initialApplicationStatuses);
+    setProfileComplete(initialProfileComplete);
+    setKycVerified(initialKycVerified);
+    filtersDirty.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed keyed by initialJobId
+  }, [initialJobId]);
+
+  const applyJobsResponse = (json: {
+    items?: Opportunity[];
+    applicationStatuses?: Record<string, ApplicationStatus>;
+    appliedJobIds?: string[];
+    profileComplete?: boolean;
+    kycVerified?: boolean;
+  }) => {
+    setOpportunities(json.items ?? []);
+    if (json.applicationStatuses) {
+      setApplicationStatuses(json.applicationStatuses);
+    } else if (json.appliedJobIds) {
+      const next: Record<string, ApplicationStatus> = {};
+      for (const id of json.appliedJobIds) next[id] = "applied";
+      setApplicationStatuses(next);
+    } else {
+      setApplicationStatuses({});
+    }
+    if (typeof json.profileComplete === "boolean") {
+      setProfileComplete(json.profileComplete);
+    }
+    if (typeof json.kycVerified === "boolean") {
+      setKycVerified(json.kycVerified);
+    }
+  };
 
   useEffect(() => {
-    if (
-      seededDefault.current &&
-      workType === "all" &&
-      !search &&
-      priority === "all"
-    ) {
-      seededDefault.current = false;
+    const isDefaultQuery =
+      workType === "all" && !search.trim() && priority === "all";
+
+    // Trust the server-seeded default list (with pin) until the user filters.
+    if (isDefaultQuery && !filtersDirty.current) {
       return;
     }
-    seededDefault.current = false;
+    if (!isDefaultQuery) filtersDirty.current = true;
 
     const controller = new AbortController();
     const timer = setTimeout(async () => {
@@ -337,34 +402,13 @@ export function ExploreOpportunities({
         if (workType !== "all") params.set("tab", workType);
         if (search.trim()) params.set("search", search.trim());
         if (priority !== "all") params.set("priority", priority);
+        if (selectedId) params.set("pinJobId", selectedId);
 
         const res = await fetch(`/api/jobs?${params.toString()}`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error("Failed to load opportunities");
-        const json = (await res.json()) as {
-          items: Opportunity[];
-          applicationStatuses?: Record<string, ApplicationStatus>;
-          appliedJobIds?: string[];
-          profileComplete?: boolean;
-          kycVerified?: boolean;
-        };
-        setOpportunities(json.items ?? []);
-        if (json.applicationStatuses) {
-          setApplicationStatuses(json.applicationStatuses);
-        } else if (json.appliedJobIds) {
-          const next: Record<string, ApplicationStatus> = {};
-          for (const id of json.appliedJobIds) next[id] = "applied";
-          setApplicationStatuses(next);
-        } else {
-          setApplicationStatuses({});
-        }
-        if (typeof json.profileComplete === "boolean") {
-          setProfileComplete(json.profileComplete);
-        }
-        if (typeof json.kycVerified === "boolean") {
-          setKycVerified(json.kycVerified);
-        }
+        applyJobsResponse((await res.json()) as Parameters<typeof applyJobsResponse>[0]);
       } catch (e: unknown) {
         if (e instanceof Error && e.name === "AbortError") return;
         setFetchError("Could not load opportunities. Try again.");
@@ -378,7 +422,44 @@ export function ExploreOpportunities({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [workType, search, priority]);
+  }, [workType, search, priority, selectedId]);
+
+  // If ?jobId= points at a role missing from the current list, refetch with pin once.
+  useEffect(() => {
+    if (!selectedId) {
+      pinFetchAttempted.current = null;
+      return;
+    }
+    if (opportunities.some((item) => item.id === selectedId)) {
+      pinFetchAttempted.current = selectedId;
+      return;
+    }
+    if (pinFetchAttempted.current === selectedId) return;
+    pinFetchAttempted.current = selectedId;
+
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const params = new URLSearchParams({
+          scope: "public",
+          page: "1",
+          limit: "50",
+          pinJobId: selectedId,
+        });
+        const res = await fetch(`/api/jobs?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        applyJobsResponse(
+          (await res.json()) as Parameters<typeof applyJobsResponse>[0],
+        );
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name === "AbortError") return;
+      }
+    })();
+
+    return () => controller.abort();
+  }, [selectedId, opportunities]);
 
   const applyToJob = async (jobId: string) => {
     setApplying(true);
@@ -474,7 +555,10 @@ export function ExploreOpportunities({
   };
 
   const selectedIndex = useMemo(
-    () => opportunities.findIndex((item) => item.id === selectedId),
+    () =>
+      selectedId
+        ? opportunities.findIndex((item) => item.id === selectedId)
+        : -1,
     [opportunities, selectedId],
   );
 
@@ -488,32 +572,21 @@ export function ExploreOpportunities({
 
   const goToPrevious = () => {
     if (!hasPrevious) return;
-    setSelectedId(opportunities[selectedIndex - 1].id);
+    selectJob(opportunities[selectedIndex - 1].id);
   };
 
   const goToNext = () => {
     if (!hasNext) return;
-    setSelectedId(opportunities[selectedIndex + 1].id);
+    selectJob(opportunities[selectedIndex + 1].id);
   };
 
-  // Deep-link: server already pins the job into the seed list when possible.
+  // Clear selection only when the user actually changes work type — never on
+  // ?jobId= / searchParams updates (that was stripping the deep link).
   useEffect(() => {
-    if (!initialJobId) return;
-    setSelectedId(initialJobId);
-  }, [initialJobId]);
-
-  useEffect(() => {
-    if (selectedId && !opportunities.some((item) => item.id === selectedId)) {
-      setSelectedId(null);
-    }
-  }, [opportunities, selectedId]);
-
-  useEffect(() => {
-    if (!workTypeReady.current) {
-      workTypeReady.current = true;
-      return;
-    }
-    setSelectedId(null);
+    if (prevWorkTypeRef.current === workType) return;
+    prevWorkTypeRef.current = workType;
+    selectJob(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- workType is the only trigger
   }, [workType]);
 
   const emptyState = (
@@ -569,7 +642,7 @@ export function ExploreOpportunities({
       selected={selectedId === opportunity.id}
       compact={hasSelection}
       applicationStatus={applicationStatuses[opportunity.id] ?? null}
-      onSelect={() => setSelectedId(opportunity.id)}
+      onSelect={() => selectJob(opportunity.id)}
     />
   ));
 
@@ -643,7 +716,7 @@ export function ExploreOpportunities({
           >
             <OpportunityDetail
               opportunity={selectedOpportunity}
-              onClose={() => setSelectedId(null)}
+              onClose={() => selectJob(null)}
               onPrevious={goToPrevious}
               onNext={goToNext}
               hasPrevious={hasPrevious}

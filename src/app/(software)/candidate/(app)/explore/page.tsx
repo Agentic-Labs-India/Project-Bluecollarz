@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { ExploreOpportunities } from "@/components/work/explore-opportunities";
 import { auth } from "@/lib/auth/auth";
@@ -42,12 +43,14 @@ export default async function ExplorePage({
   }
 
   return (
-    <ExploreOpportunities
-      initialOpportunities={initialOpportunities}
-      initialApplicationStatuses={initialApplicationStatuses}
-      initialProfileComplete={initialProfileComplete}
-      initialKycVerified={initialKycVerified}
-      initialJobId={initialJobId}
-    />
+    <Suspense fallback={null}>
+      <ExploreOpportunities
+        initialOpportunities={initialOpportunities}
+        initialApplicationStatuses={initialApplicationStatuses}
+        initialProfileComplete={initialProfileComplete}
+        initialKycVerified={initialKycVerified}
+        initialJobId={initialJobId}
+      />
+    </Suspense>
   );
 }

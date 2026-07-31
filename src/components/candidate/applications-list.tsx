@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { ArrowRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { CandidateApplicationListItem } from "@/lib/jobs/applications";
-import { interviewStageTitle } from "@/lib/interviews/labels";
-import { cn } from "@/lib/utils";
 
 function applicationStatusLabel(
   status: CandidateApplicationListItem["status"],
@@ -28,12 +28,16 @@ function activityLabel(app: CandidateApplicationListItem): string {
   return `Applied ${date}`;
 }
 
-function interviewStatusLabel(
-  status: CandidateApplicationListItem["interviews"][number]["status"],
-): string {
-  if (status === "completed") return "Completed";
-  if (status === "in_progress") return "In progress";
-  return "Not taken";
+/**
+ * Show a single continue CTA while the candidate is still working through
+ * interviews / apply — not for terminal outcomes (selected / rejected).
+ */
+function needsCompleteApplication(app: CandidateApplicationListItem): boolean {
+  if (app.jobStatus === "closed" || app.jobStatus === "missing") return false;
+  if (app.status === "rejected" || app.status === "selected") return false;
+  // Pre-apply pipeline, or applied with a stage still open.
+  if (app.status === "interviewing") return true;
+  return app.interviews.some((stage) => stage.status === "in_progress");
 }
 
 export function CandidateApplicationsList({
@@ -60,82 +64,53 @@ export function CandidateApplicationsList({
       <div className="border-border/60 border-b px-5 py-4">
         <h2 className="text-foreground text-lg font-semibold">Your roles</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Status, AI interviews, and outcomes for every role you&apos;ve
-          interviewed for or applied to.
+          Status and outcomes for every role you&apos;ve interviewed for or
+          applied to.
         </p>
       </div>
 
       <ul className="divide-border/60 divide-y">
-        {applications.map((app) => (
-          <li key={app.id} className="px-5 py-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href={`/candidate/explore?jobId=${app.jobId}`}
-                    className="text-foreground truncate text-base font-medium hover:underline"
-                  >
-                    {app.jobTitle}
-                  </Link>
-                  <Badge variant={applicationStatusVariant(app.status)}>
-                    {applicationStatusLabel(app.status)}
-                  </Badge>
-                  {app.jobStatus === "closed" || app.jobStatus === "missing" ? (
-                    <Badge variant="outline">Role closed</Badge>
-                  ) : null}
-                </div>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {app.jobPay}
-                  <span className="mx-1.5">·</span>
-                  {activityLabel(app)}
-                </p>
-              </div>
-            </div>
+        {applications.map((app) => {
+          const showCompleteCta = needsCompleteApplication(app);
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {app.interviews.map((stage) => (
-                <div
-                  key={stage.stageId}
-                  className="border-border/70 bg-muted/30 flex items-center justify-between gap-3 border px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="text-foreground truncate text-sm font-medium">
-                      {interviewStageTitle(stage.stageId)}
-                    </p>
-                    <p
-                      className={cn(
-                        "text-xs",
-                        stage.status === "completed"
-                          ? "text-foreground"
-                          : "text-muted-foreground",
-                      )}
+          return (
+            <li key={app.id} className="px-5 py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/candidate/explore?jobId=${app.jobId}`}
+                      className="text-foreground truncate text-base font-medium hover:underline"
                     >
-                      {interviewStatusLabel(stage.status)}
-                      {stage.status === "completed" && stage.overall != null
-                        ? ` · ${stage.overall}/10`
-                        : ""}
-                    </p>
+                      {app.jobTitle}
+                    </Link>
+                    <Badge variant={applicationStatusVariant(app.status)}>
+                      {applicationStatusLabel(app.status)}
+                    </Badge>
+                    {app.jobStatus === "closed" ||
+                    app.jobStatus === "missing" ? (
+                      <Badge variant="outline">Role closed</Badge>
+                    ) : null}
                   </div>
-                  <Badge
-                    variant={
-                      stage.status === "completed"
-                        ? "default"
-                        : stage.status === "in_progress"
-                          ? "secondary"
-                          : "outline"
-                    }
-                  >
-                    {stage.status === "completed"
-                      ? "Done"
-                      : stage.status === "in_progress"
-                        ? "Open"
-                        : "Pending"}
-                  </Badge>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {app.jobPay}
+                    <span className="mx-1.5">·</span>
+                    {activityLabel(app)}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </li>
-        ))}
+
+                {showCompleteCta ? (
+                  <Button asChild className="w-full shrink-0 sm:w-auto">
+                    <Link href={`/candidate/explore?jobId=${app.jobId}`}>
+                      Complete Application
+                      <ArrowRightIcon className="size-4" />
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
