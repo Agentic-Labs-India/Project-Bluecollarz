@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 
 export interface MapProps {
   dots?: Array<{
-    start: { lat: number; lng: number; label?: string };
-    end: { lat: number; lng: number; label?: string };
+    start: { lat: number; lng: number; label?: string; image?: string };
+    end: { lat: number; lng: number; label?: string; image?: string };
   }>;
   lineColor?: string;
   showLabels?: boolean;
@@ -21,6 +21,127 @@ export interface MapProps {
   compact?: boolean;
   /** Zoom the map around a lat/lng (e.g. India). */
   focus?: { lat: number; lng: number; scale?: number };
+}
+
+/** Photo circle that travels along a route — steady opacity, no fade while moving. */
+function MapTravelAvatar({
+  image,
+  lineColor,
+  radius,
+  pathD,
+  fullCycleDuration,
+  startTime,
+  endTime,
+}: {
+  image: string;
+  lineColor: string;
+  radius: number;
+  pathD: string;
+  fullCycleDuration: number;
+  startTime: number;
+  endTime: number;
+}) {
+  const clipId = `travel-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+
+  return (
+    <motion.g
+      initial={{ offsetDistance: "0%", opacity: 0 }}
+      animate={{
+        offsetDistance: ["0%", "0%", "100%", "100%", "100%"],
+        opacity: [0, 1, 1, 0, 0],
+      }}
+      transition={{
+        duration: fullCycleDuration,
+        times: [0, startTime, endTime, endTime, 1],
+        ease: "linear",
+        repeat: Infinity,
+        repeatDelay: 0,
+      }}
+      style={{
+        offsetPath: `path('${pathD}')`,
+        offsetRotate: "0deg",
+      }}
+    >
+      <defs>
+        <clipPath id={clipId}>
+          <circle cx={0} cy={0} r={radius} />
+        </clipPath>
+      </defs>
+      <image
+        href={image}
+        x={-radius}
+        y={-radius}
+        width={radius * 2}
+        height={radius * 2}
+        clipPath={`url(#${clipId})`}
+        preserveAspectRatio="xMidYMid slice"
+      />
+      <circle
+        cx={0}
+        cy={0}
+        r={radius}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth={radius * 0.16}
+      />
+    </motion.g>
+  );
+}
+
+function EndpointDot({
+  x,
+  y,
+  lineColor,
+  pointRadius,
+  pulseMax,
+  pulseDelay = "0s",
+  onHoverStart,
+  onHoverEnd,
+}: {
+  x: number;
+  y: number;
+  lineColor: string;
+  pointRadius: number;
+  pulseMax: number;
+  pulseDelay?: string;
+  onHoverStart: () => void;
+  onHoverEnd: () => void;
+}) {
+  return (
+    <motion.g
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      className="cursor-pointer"
+      whileHover={{ scale: 1.2 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+    >
+      <circle
+        cx={x}
+        cy={y}
+        r={pointRadius}
+        fill={lineColor}
+        filter="url(#glow)"
+      />
+      <circle cx={x} cy={y} r={pointRadius} fill={lineColor} opacity="0.5">
+        <animate
+          attributeName="r"
+          from={String(pointRadius)}
+          to={String(pulseMax)}
+          dur="2s"
+          begin={pulseDelay}
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          from="0.6"
+          to="0"
+          dur="2s"
+          begin={pulseDelay}
+          repeatCount="indefinite"
+        />
+      </circle>
+    </motion.g>
+  );
 }
 
 export function WorldMap({
@@ -37,7 +158,6 @@ export function WorldMap({
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
   const { theme } = useTheme();
-  const gradientId = `path-gradient-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const map = useMemo(
     () => new DottedMap({ height: compact ? 80 : 100, grid: "diagonal" }),
@@ -82,12 +202,13 @@ export function WorldMap({
     return `M ${start.x} ${start.y} Q ${midX} ${midY} ${end.x} ${end.y}`;
   };
 
-  const staggerDelay = compact ? 0.45 : 0.3;
+  const staggerDelay = compact ? 1.1 : 0.75;
   const totalAnimationTime = dots.length * staggerDelay + animationDuration;
-  const pauseTime = compact ? 1.5 : 2;
+  const pauseTime = compact ? 2.5 : 3;
   const fullCycleDuration = totalAnimationTime + pauseTime;
 
   const pointRadius = compact ? 2 : 3;
+  const travelAvatarRadius = compact ? 13 : 17;
   const travelRadius = compact ? 2 : 3;
   const pulseMax = compact ? 7 : 12;
 
@@ -122,13 +243,6 @@ export function WorldMap({
           preserveAspectRatio="xMidYMid meet"
         >
           <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="white" stopOpacity="0" />
-              <stop offset="5%" stopColor={lineColor} stopOpacity="1" />
-              <stop offset="95%" stopColor={lineColor} stopOpacity="1" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
-
             <filter id="glow">
               <feMorphology operator="dilate" radius="0.5" />
               <feGaussianBlur stdDeviation="1" result="coloredBlur" />
@@ -148,62 +262,71 @@ export function WorldMap({
             const endTime =
               (i * staggerDelay + animationDuration) / fullCycleDuration;
             const resetTime = totalAnimationTime / fullCycleDuration;
+            const travelImage = dot.end.image || dot.start.image;
 
             return (
               <g key={`path-group-${i}`}>
                 <motion.path
                   d={pathD}
                   fill="none"
-                  stroke={`url(#${gradientId})`}
+                  stroke={lineColor}
                   strokeWidth={compact ? 0.75 : 1}
+                  strokeOpacity={0.85}
                   initial={{ pathLength: 0 }}
                   animate={
                     loop
-                      ? {
-                          pathLength: [0, 0, 1, 1, 0],
-                        }
-                      : {
-                          pathLength: 1,
-                        }
+                      ? { pathLength: [0, 0, 1, 1, 0] }
+                      : { pathLength: 1 }
                   }
                   transition={
                     loop
                       ? {
                           duration: fullCycleDuration,
                           times: [0, startTime, endTime, resetTime, 1],
-                          ease: "easeInOut",
+                          ease: "linear",
                           repeat: Infinity,
                           repeatDelay: 0,
                         }
                       : {
                           duration: animationDuration,
                           delay: i * staggerDelay,
-                          ease: "easeInOut",
+                          ease: "linear",
                         }
                   }
                 />
 
-                {loop && (
-                  <motion.circle
-                    r={travelRadius}
-                    fill={lineColor}
-                    initial={{ offsetDistance: "0%", opacity: 0 }}
-                    animate={{
-                      offsetDistance: [null, "0%", "100%", "100%", "100%"],
-                      opacity: [0, 0, 1, 0, 0],
-                    }}
-                    transition={{
-                      duration: fullCycleDuration,
-                      times: [0, startTime, endTime, resetTime, 1],
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                      repeatDelay: 0,
-                    }}
-                    style={{
-                      offsetPath: `path('${pathD}')`,
-                    }}
-                  />
-                )}
+                {loop &&
+                  (travelImage ? (
+                    <MapTravelAvatar
+                      image={travelImage}
+                      lineColor={lineColor}
+                      radius={travelAvatarRadius}
+                      pathD={pathD}
+                      fullCycleDuration={fullCycleDuration}
+                      startTime={startTime}
+                      endTime={endTime}
+                    />
+                  ) : (
+                    <motion.circle
+                      r={travelRadius}
+                      fill={lineColor}
+                      initial={{ offsetDistance: "0%", opacity: 0 }}
+                      animate={{
+                        offsetDistance: ["0%", "0%", "100%", "100%", "100%"],
+                        opacity: [0, 1, 1, 0, 0],
+                      }}
+                      transition={{
+                        duration: fullCycleDuration,
+                        times: [0, startTime, endTime, endTime, 1],
+                        ease: "linear",
+                        repeat: Infinity,
+                        repeatDelay: 0,
+                      }}
+                      style={{
+                        offsetPath: `path('${pathD}')`,
+                      }}
+                    />
+                  ))}
               </g>
             );
           })}
@@ -215,47 +338,17 @@ export function WorldMap({
             return (
               <g key={`points-group-${i}`}>
                 <g key={`start-${i}`}>
-                  <motion.g
+                  <EndpointDot
+                    x={startPoint.x}
+                    y={startPoint.y}
+                    lineColor={lineColor}
+                    pointRadius={pointRadius}
+                    pulseMax={pulseMax}
                     onHoverStart={() =>
                       setHoveredLocation(dot.start.label || `Location ${i}`)
                     }
                     onHoverEnd={() => setHoveredLocation(null)}
-                    className="cursor-pointer"
-                    whileHover={{ scale: 1.2 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    <circle
-                      cx={startPoint.x}
-                      cy={startPoint.y}
-                      r={pointRadius}
-                      fill={lineColor}
-                      filter="url(#glow)"
-                    />
-                    <circle
-                      cx={startPoint.x}
-                      cy={startPoint.y}
-                      r={pointRadius}
-                      fill={lineColor}
-                      opacity="0.5"
-                    >
-                      <animate
-                        attributeName="r"
-                        from={String(pointRadius)}
-                        to={String(pulseMax)}
-                        dur="2s"
-                        begin="0s"
-                        repeatCount="indefinite"
-                      />
-                      <animate
-                        attributeName="opacity"
-                        from="0.6"
-                        to="0"
-                        dur="2s"
-                        begin="0s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  </motion.g>
+                  />
 
                   {showLabels && !compact && dot.start.label && (
                     <motion.g
@@ -287,47 +380,18 @@ export function WorldMap({
                 </g>
 
                 <g key={`end-${i}`}>
-                  <motion.g
+                  <EndpointDot
+                    x={endPoint.x}
+                    y={endPoint.y}
+                    lineColor={lineColor}
+                    pointRadius={pointRadius}
+                    pulseMax={pulseMax}
+                    pulseDelay="0.5s"
                     onHoverStart={() =>
                       setHoveredLocation(dot.end.label || `Destination ${i}`)
                     }
                     onHoverEnd={() => setHoveredLocation(null)}
-                    className="cursor-pointer"
-                    whileHover={{ scale: 1.2 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    <circle
-                      cx={endPoint.x}
-                      cy={endPoint.y}
-                      r={pointRadius}
-                      fill={lineColor}
-                      filter="url(#glow)"
-                    />
-                    <circle
-                      cx={endPoint.x}
-                      cy={endPoint.y}
-                      r={pointRadius}
-                      fill={lineColor}
-                      opacity="0.5"
-                    >
-                      <animate
-                        attributeName="r"
-                        from={String(pointRadius)}
-                        to={String(pulseMax)}
-                        dur="2s"
-                        begin="0.5s"
-                        repeatCount="indefinite"
-                      />
-                      <animate
-                        attributeName="opacity"
-                        from="0.6"
-                        to="0"
-                        dur="2s"
-                        begin="0.5s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  </motion.g>
+                  />
 
                   {showLabels && dot.end.label && (
                     <motion.g
@@ -363,7 +427,6 @@ export function WorldMap({
         </svg>
       </div>
 
-      {/* Soft fade at edges / corners — sits above the map, not scaled with zoom */}
       {compact ? (
         <>
           <div
