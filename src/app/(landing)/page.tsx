@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
-import { ArcGalleryHero } from "@/components/landing/arc-gallery-hero";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
 import { RoleCarouselSkeleton } from "@/components/landing/role-carousel-skeleton";
 import { WorldMapLazy } from "@/components/ui/world-map-lazy";
@@ -13,9 +12,7 @@ export const metadata: Metadata = {
     "Blucollarz is an AI-native hiring platform for blue-collar and skilled workers. Build a profile, complete AI interviews, verify identity, and connect with recruiters hiring worldwide. Sign in with Google to create your account.",
 };
 
-const HERO_ARC_IMAGES = [1, 2, 3, 4, 5, 6, 7].map(
-  (n) => `/images/home/${n}.png`,
-);
+const WORK_CARD_IMAGE = "/images/home/1.png";
 
 const HERO_MAP_ROUTES = [
   {
@@ -46,28 +43,39 @@ const HERO_MAP_ROUTES = [
 
 const STORIES = [
   {
-    href: "/stories/ruby/",
-    image:
-      "https://cdn.sanity.io/images/h6s14f4z/production/69254df8e63160e92bd324d713e0115718bda24c-884x884.jpg",
-    alt: "Asha, Facilities electrician",
+    href: "/mission",
+    image: "/images/home/2.png",
+    alt: "Skilled worker on site",
     title: "Meet Asha: Facilities electrician",
     name: "Asha",
   },
   {
-    href: "/stories/jay-international-business-consultant/",
-    image:
-      "https://cdn.sanity.io/images/h6s14f4z/production/199834d5d15bf607aff6a6c1ea66d681a6c3e038-2586x1556.png",
-    alt: "Ravi - Meet Ravi: Site welder abroad",
+    href: "/mission",
+    image: "/images/home/3.png",
+    alt: "Site welder abroad",
     title: "Meet Ravi: Site welder abroad",
     name: "Ravi",
   },
   {
-    href: "/stories/mick-computer-information-systems/",
-    image:
-      "https://cdn.sanity.io/images/h6s14f4z/production/309640570646595dbd60e7b7c06bc15c970df64a-1421x720.jpg",
-    alt: "Omar - Meet Omar: Heavy vehicle driver",
+    href: "/mission",
+    image: "/images/home/4.png",
+    alt: "Heavy vehicle driver",
     title: "Meet Omar: Heavy vehicle driver",
     name: "Omar",
+  },
+  {
+    href: "/mission",
+    image: "/images/home/5.png",
+    alt: "Warehouse operator",
+    title: "Meet Priya: Warehouse operator",
+    name: "Priya",
+  },
+  {
+    href: "/mission",
+    image: "/images/home/6.png",
+    alt: "Field technician",
+    title: "Meet Luis: Field technician",
+    name: "Luis",
   },
 ];
 
@@ -91,12 +99,9 @@ function PlayIcon() {
 export default function Page() {
   return (
     <div className="mx-auto w-full max-w-[1600px] overflow-x-clip px-6 py-4 duration-300 md:px-8 lg:px-14 2xl:mt-16">
-      {/* Hero — on mobile stack cleanly (no overlap); pull-up only from sm+ */}
-      <div className="mt-16 w-full text-center sm:mt-10 md:mt-12">
-        <ArcGalleryHero images={HERO_ARC_IMAGES} />
-
-        <div className="relative z-10 mt-5 sm:-mt-16 md:-mt-24 lg:-mt-28">
-          <section className="border-canvas-soft bg-canvas mx-auto flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden text-nowrap rounded-full border px-3 py-0.5 text-[12px] font-medium text-muted-foreground shadow-sm sm:h-[38px] sm:px-5 sm:text-[12.75px] sm:bg-canvas/90 sm:backdrop-blur-sm">
+      <div className="mt-16 w-full text-center sm:mt-20 md:mt-24">
+        <div className="relative z-10">
+          <section className="border-canvas-soft bg-canvas mx-auto mt-4 flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden text-nowrap rounded-full border px-3 py-0.5 text-[12px] font-medium text-muted-foreground shadow-sm sm:mt-6 sm:h-[38px] sm:px-5 sm:text-[12.75px] sm:bg-canvas/90 sm:backdrop-blur-sm md:mt-8">
             <div className="flex w-fit flex-row items-center justify-center gap-2.5 sm:gap-4">
               <p className="text-mute flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
                 <span className="hidden font-normal sm:inline sm:translate-y-[-0.5px] sm:pr-4">
@@ -132,7 +137,8 @@ export default function Page() {
             Work Abroad with us!
           </h1>
           <p className="text-foreground mx-auto mt-3 max-w-[22rem] px-1 text-sm leading-relaxed sm:mt-6 sm:max-w-[400px] sm:text-base">
-            We help you find the jobs in USA, Canada, Australia, UK, Dubai, Europe, and more.
+            We help you find the jobs in USA, Canada, Australia, UK, Dubai,
+            Europe, and more.
           </p>
           <div className="mt-5 flex w-full flex-row items-center justify-center gap-3 text-[15px] sm:mt-6">
             <LoginButton className="bg-primary text-primary-foreground hover:bg-primary-active rounded-md px-6 py-2 duration-200">
@@ -169,20 +175,25 @@ export default function Page() {
         <div className="gap-6 space-y-16 @5xl:grid @5xl:grid-cols-4 @5xl:space-y-0">
           <Link
             id="primary-testimonial"
-            className="group top-[68px] h-fit cursor-pointer duration-200 @5xl:sticky @5xl:col-span-3"
+            className="group top-[92px] h-fit cursor-pointer duration-200 @5xl:sticky @5xl:col-span-3"
             href="/mission"
           >
             <div className="relative aspect-square w-full overflow-hidden rounded-lg sm:aspect-video">
-              <div className="relative grid h-full w-full scale-[1.02] cursor-pointer place-items-center overflow-hidden duration-300 group-hover:scale-[1.1]">
-                <div className="absolute inset-0 bg-ink-deep" />
-                <div className="absolute -left-1/4 -top-1/4 size-3/4 rounded-full bg-primary/70 blur-3xl" />
-                <div className="absolute -right-1/4 top-1/4 size-2/3 rounded-full bg-primary/50 blur-3xl" />
-                <div className="absolute bottom-0 left-1/3 size-1/2 rounded-full bg-chart-2/50 blur-3xl" />
-                <div className="absolute inset-0 bg-ink-deep/20" />
+              <div className="relative h-full w-full scale-[1.02] overflow-hidden duration-300 group-hover:scale-[1.06]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={WORK_CARD_IMAGE}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div className="absolute inset-0 bg-black/55" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/25" />
               </div>
               <div className="absolute inset-0 z-10 flex items-center justify-center font-medium duration-300 group-hover:scale-[1.02]">
                 <div className="flex flex-row gap-4">
-                  <p className="max-sm:text-light flex flex-row items-center gap-2 text-6xl font-thin tracking-wide text-canvas sm:text-8xl">
+                  <p className="max-sm:text-light flex flex-row items-center gap-2 text-6xl font-thin tracking-wide text-white sm:text-8xl">
                     WORK
                   </p>
                 </div>
@@ -197,9 +208,9 @@ export default function Page() {
             </div>
           </Link>
 
-          <div className="col-span-1 flex flex-col items-start justify-between pb-11 max-sm:space-y-12 @sm:flex @sm:gap-4 @2xl:flex-row @5xl:flex-col @5xl:gap-12">
+          <div className="col-span-1 flex flex-col items-start justify-between gap-10 pb-11 max-sm:space-y-12 @sm:flex @sm:gap-4 @2xl:flex-row @5xl:flex-col @5xl:gap-12">
             {STORIES.map((story) => (
-              <Link key={story.href} className="group w-full" href={story.href}>
+              <Link key={story.image} className="group w-full" href={story.href}>
                 <div className="relative aspect-square w-full overflow-hidden rounded-[8px] bg-muted/50">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -209,7 +220,7 @@ export default function Page() {
                     className="absolute inset-0 h-full w-full object-cover object-top duration-300 hover:scale-[1.02]"
                     src={story.image}
                   />
-                  <div className="absolute right-3 top-3 grid place-items-center rounded-full bg-ink/50 p-2 opacity-0 duration-300 group-hover:opacity-100">
+                  <div className="absolute right-3 top-3 grid place-items-center rounded-full bg-black/50 p-2 opacity-0 duration-300 group-hover:opacity-100">
                     <PlayIcon />
                   </div>
                 </div>
