@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
+  emptyCandidateProfileData,
   emptyEducationEntry,
   emptyWorkEntry,
   HOBBY_PRESETS,
@@ -50,11 +51,8 @@ type ProfileSavePayload = {
   location: string;
   yearsExperience: number | null;
   skills: string[];
-  workAuthorization: string;
   preferredCountries: string[];
   summary: string;
-  resumeUrl: string;
-  resumeSource: string;
   education: EducationFormEntry[];
   workExperience: WorkFormEntry[];
   portfolioUrl: string;
@@ -67,8 +65,6 @@ type ProfileSavePayload = {
   residenceCity: string;
   residencePostalCode: string;
   dateOfBirth: string;
-  workAuthConfirmed: boolean;
-  workAuthStayAgreed: boolean;
   fullTimeCompensation: number | null;
   partTimeCompensation: number | null;
 };
@@ -83,11 +79,8 @@ function buildProfileSavePayload(
     location: profile.location,
     yearsExperience: profile.yearsExperience,
     skills: profile.skills,
-    workAuthorization: profile.workAuthorization,
     preferredCountries: profile.preferredCountries,
     summary: profile.summary,
-    resumeUrl: profile.resumeUrl,
-    resumeSource: profile.resumeSource || "",
     education: profile.education,
     workExperience: profile.workExperience,
     portfolioUrl: profile.portfolioUrl,
@@ -100,46 +93,10 @@ function buildProfileSavePayload(
     residenceCity: profile.residenceCity,
     residencePostalCode: profile.residencePostalCode,
     dateOfBirth: profile.dateOfBirth,
-    workAuthConfirmed: profile.workAuthConfirmed,
-    workAuthStayAgreed: profile.workAuthStayAgreed,
     fullTimeCompensation: profile.fullTimeCompensation,
     partTimeCompensation: profile.partTimeCompensation,
   };
 }
-
-const emptyProfile: CandidateProfileData = {
-  name: "",
-  email: "",
-  image: "",
-  phoneNumber: null,
-  phoneCountryCode: null,
-  headline: "",
-  location: "",
-  yearsExperience: null,
-  skills: [],
-  workAuthorization: "",
-  preferredCountries: [],
-  summary: "",
-  resumeUrl: "",
-  resumeSource: "",
-  candidateOnboardingComplete: false,
-  education: [],
-  workExperience: [],
-  portfolioUrl: "",
-  otherLinks: [],
-  languages: [],
-  voiceLanguage: "",
-  hobbies: [],
-  residenceCountry: "",
-  residenceState: "",
-  residenceCity: "",
-  residencePostalCode: "",
-  dateOfBirth: "",
-  workAuthConfirmed: false,
-  workAuthStayAgreed: false,
-  fullTimeCompensation: null,
-  partTimeCompensation: null,
-};
 
 function TagList({
   values,
@@ -223,7 +180,9 @@ function workTitle(entry: WorkFormEntry) {
 }
 
 export function CandidateProfileView() {
-  const [profile, setProfile] = useState<CandidateProfileData>(emptyProfile);
+  const [profile, setProfile] = useState<CandidateProfileData>(
+    emptyCandidateProfileData(),
+  );
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -489,20 +448,6 @@ export function CandidateProfileView() {
                 setProfile((p) => ({
                   ...p,
                   yearsExperience: readNullableInt(e.target.value),
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="auth-summary">Work authorization (summary)</Label>
-            <Input
-              id="auth-summary"
-              placeholder="e.g. Authorized to work in UAE"
-              value={profile.workAuthorization}
-              onChange={(e) =>
-                setProfile((p) => ({
-                  ...p,
-                  workAuthorization: e.target.value,
                 }))
               }
             />
@@ -913,14 +858,12 @@ export function CandidateProfileView() {
 
       <Separator />
 
-      {/* Location & work authorization */}
+      {/* Location */}
       <section className="space-y-4">
         <div>
-          <h3 className="text-foreground text-xl font-semibold">
-            Location &amp; work authorization
-          </h3>
+          <h3 className="text-foreground text-xl font-semibold">Location</h3>
           <p className="text-muted-foreground mt-1 text-sm">
-            Where you are based and legally authorized to work.
+            Where you are based for most of the year.
           </p>
         </div>
 
@@ -961,69 +904,15 @@ export function CandidateProfileView() {
           </div>
         </div>
 
-        <div className="space-y-3">
-          <h4 className="text-foreground text-sm font-semibold">
-            Legal attestation
-          </h4>
-          <p className="text-muted-foreground text-xs">
-            Confirm your legally authorized work status.
-          </p>
-          <div className="space-y-1.5">
-            <Label htmlFor="dob">Date of birth</Label>
-            <DateOfBirthPicker
-              id="dob"
-              value={profile.dateOfBirth}
-              onChange={(dateOfBirth) =>
-                setProfile((p) => ({ ...p, dateOfBirth }))
-              }
-            />
-          </div>
-          <label className="border-border flex cursor-pointer items-start gap-3 border p-3">
-            <input
-              type="checkbox"
-              className="border-input mt-0.5 size-4 accent-primary"
-              checked={profile.workAuthConfirmed}
-              onChange={(e) =>
-                setProfile((p) => ({
-                  ...p,
-                  workAuthConfirmed: e.target.checked,
-                }))
-              }
-            />
-            <span className="space-y-1">
-              <span className="text-foreground block text-sm font-medium">
-                I agree that I am legally authorized to work for the employer I
-                am selected for.
-              </span>
-              <span className="text-muted-foreground block text-xs">
-                You warrant you have the necessary visas or permits for any role
-                you accept, and will keep that authorization current.
-              </span>
-            </span>
-          </label>
-          <label className="border-border flex cursor-pointer items-start gap-3 border p-3">
-            <input
-              type="checkbox"
-              className="border-input mt-0.5 size-4 accent-primary"
-              checked={profile.workAuthStayAgreed}
-              onChange={(e) =>
-                setProfile((p) => ({
-                  ...p,
-                  workAuthStayAgreed: e.target.checked,
-                }))
-              }
-            />
-            <span className="space-y-1">
-              <span className="text-foreground block text-sm font-medium">
-                I agree to notify in writing before any change to my work
-                location or authorization status.
-              </span>
-              <span className="text-muted-foreground block text-xs">
-                Changes may need review so roles stay compliant with local work
-                rules.
-              </span>
-            </span>
-          </label>
+        <div className="space-y-1.5">
+          <Label htmlFor="dob">Date of birth</Label>
+          <DateOfBirthPicker
+            id="dob"
+            value={profile.dateOfBirth}
+            onChange={(dateOfBirth) =>
+              setProfile((p) => ({ ...p, dateOfBirth }))
+            }
+          />
         </div>
 
         <div className="space-y-2">
@@ -1049,7 +938,7 @@ export function CandidateProfileView() {
             Work preferences
           </h3>
           <p className="text-muted-foreground mt-1 text-sm">
-            Minimum expected compensation. This stays private.
+            Minimum expected compensation. Shown to recruiters when you apply.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

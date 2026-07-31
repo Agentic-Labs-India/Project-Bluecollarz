@@ -93,7 +93,7 @@ export default function VisionPage() {
         <DocTable
           headers={["Proof layer", "What it shows a hirer"]}
           rows={[
-            ["Profile", "Trade, experience, skills, location, authorization"],
+            ["Profile", "Trade, experience, skills, location, preferences"],
             [
               "Communication interview",
               "Clarity, fluency, confidence, professionalism",

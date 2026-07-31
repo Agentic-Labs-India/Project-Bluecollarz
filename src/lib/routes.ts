@@ -32,8 +32,8 @@ export const HIRE_NAV: AppNavItem[] = [
 ];
 
 export const ADMIN_NAV: AppNavItem[] = [
-  { title: "Recruiters", url: "/admin/recruiters", icon: Users },
   { title: "Admins", url: "/admin/admins", icon: Shield },
+  { title: "Recruiters", url: "/admin/recruiters", icon: Users },
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },
   { title: "Blog", url: "/admin/blog", icon: FileText },

@@ -312,7 +312,6 @@ export async function getPublishedOpportunities(opts: {
             location: 1,
             yearsExperience: 1,
             skills: 1,
-            workAuthorization: 1,
             summary: 1,
             education: 1,
             workExperience: 1,

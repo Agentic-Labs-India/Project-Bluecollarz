@@ -57,8 +57,7 @@ export function DeleteAccountSection({
       <div>
         <p className="text-foreground text-sm font-medium">Delete {label} profile</p>
         <p className="text-muted-foreground mt-1 text-sm">
-          Permanently removes this account and related data. You can sign up again
-          later with Google as a Candidate or Recruiter.
+          Permanently removes this account and related data. You can sign up again after 90 Days.
         </p>
         {error ? (
           <p className="text-destructive mt-2 text-sm">{error}</p>
@@ -74,7 +73,7 @@ export function DeleteAccountSection({
         }}
       >
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="shrink-0">
+          <Button variant="destructive" className="w-40 shrink-0">
             <Trash2Icon className="size-4" />
             Delete profile
           </Button>

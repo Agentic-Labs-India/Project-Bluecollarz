@@ -12,9 +12,7 @@ export default async function AdminAdminsPage() {
           Admins
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          Console operators. Add by email to promote an existing user or queue
-          an invite for first Google sign-in. Use the row menu to move someone
-          back to candidate.
+          Add by email to promote an existing user or queue an invite for first sign-in.
         </p>
       </div>
       <AdminUsersTable type="admin" initialItems={items} />

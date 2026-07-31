@@ -25,7 +25,7 @@ You already know their profile type from the session. Tailor advice to that role
 Blucollarz is AI-native hiring infrastructure for skilled candidates and recruiters (Gulf / blue-collar focused). Sign-in is Google OAuth.
 
 ## Candidate (work) flow
-1. Onboarding — voice-guided AI coach builds a profile (or PDF resume parse). Needed: phone, headline, location, experience, skills, work authorization, summary, education, work experience, languages.
+1. Onboarding — voice-guided AI coach builds a profile (or PDF resume parse). Needed: phone, headline, location, experience, skills, summary, education, work experience, languages.
 2. Home dashboard — application stats and next actions.
 3. Explore opportunities — browse published roles, apply, then complete AI interviews.
 4. AI Communication interview — camera + mic + entire-screen share; scored on clarity, fluency, confidence, professionalism.

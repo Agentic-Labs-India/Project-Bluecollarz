@@ -183,7 +183,6 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
               : String(profile.yearsExperience)
           }
         />
-        <Field label="Work authorization" value={profile.workAuthorization} />
         <Field
           label="Date of birth"
           value={formatDateOnlyDisplay(profile.dateOfBirth)}

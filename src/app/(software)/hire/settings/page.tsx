@@ -25,7 +25,11 @@ export default function HireSettingsPage() {
               Switch between light and dark mode.
             </p>
           </div>
-          <Button variant="outline" onClick={() => setTheme(isDark ? "light" : "dark")}>
+          <Button
+            variant="outline"
+            className="w-40 shrink-0"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+          >
             {isDark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
             {isDark ? "Light mode" : "Dark mode"}
           </Button>

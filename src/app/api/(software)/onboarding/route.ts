@@ -87,7 +87,6 @@ async function saveProfile(
     fullTimeCompensation: mergedInput.fullTimeCompensation,
     partTimeCompensation: mergedInput.partTimeCompensation,
     dateOfBirth: parseDateOnly(mergedInput.dateOfBirth),
-    resumeSource: mergedInput.resumeSource || undefined,
   });
   const complete = isCandidateProfileComplete(preview);
   const { $set, $unset } = candidateUpdateToMongo(mergedInput, complete);
@@ -217,7 +216,7 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
           {
             type: "text",
             text: `Extract candidate profile JSON from this resume PDF. Return ONLY valid JSON with keys:
-phoneNumber (number|null — national digits only), phoneCountryCode (number|null — calling code, e.g. 91), headline, location, yearsExperience (number|null), skills (string[]), workAuthorization, preferredCountries (string[]), summary (2-4 paragraphs),
+phoneNumber (number|null — national digits only), phoneCountryCode (number|null — calling code, e.g. 91), headline, location, yearsExperience (number|null), skills (string[]), preferredCountries (string[]), summary (2-4 paragraphs),
 education (array of {school, degree, startYear (number|null), endYear (number|null), major, gpa (number|null)}),
 workExperience (array of {company, role, startYear (number|null), endYear (number|null), city, country, description}),
 languages (string[]), hobbies (string[]), portfolioUrl, otherLinks (string[]),
@@ -268,11 +267,8 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
     location: String(extracted.location ?? ""),
     yearsExperience: asNullableInt(extracted.yearsExperience),
     skills,
-    workAuthorization: String(extracted.workAuthorization ?? ""),
     preferredCountries,
     summary: String(extracted.summary ?? ""),
-    resumeUrl: "",
-    resumeSource: "upload",
     ...(education.length ? { education } : {}),
     ...(workExperience.length ? { workExperience } : {}),
     ...(languages.length ? { languages } : {}),
@@ -340,7 +336,8 @@ ${VOICE_TOOL_DATA_PROMPT}
 ${GEO_PLACE_PROMPT}
 ${resumeContext}
 
-Mandatory fields: phone number, headline/role, location, years of experience, skills, work authorization, professional summary, education (at least one entry), work experience (at least one entry), and languages.
+Mandatory fields: phone number, headline/role, location, years of experience, skills, professional summary, education (at least one entry), work experience (at least one entry), and languages.
+Never ask about work authorization, visas, work permits, citizenship, or legal eligibility to work in any country.
 Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.`,
     stopWhen: isStepCount(12),
     tools: {
@@ -405,7 +402,6 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
         description:
           "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions. phoneNumber and phoneCountryCode are JSON numbers.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
-          resumeSource: z.enum(["", "upload", "voice"]).optional(),
           skills: z.array(z.string()).optional(),
           preferredCountries: z.array(z.string()).optional(),
           languages: z.array(z.string()).optional(),
@@ -449,10 +445,7 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
               ),
             };
           }
-          const result = await saveProfile(userId, {
-            resumeUrl: "",
-            resumeSource: profile.resumeSource || "voice",
-          });
+          const result = await saveProfile(userId, {});
           return { ok: true, redirectTo: "/candidate/home", ...result };
         },
       }),

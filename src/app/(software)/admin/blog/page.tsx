@@ -9,8 +9,7 @@ export default function AdminBlogPage() {
           Blog
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          Create and publish posts for /blog. Only published posts are public
-          and included in the sitemap.
+          Create and publish posts for the blog.
         </p>
       </div>
       <AdminBlogManager />

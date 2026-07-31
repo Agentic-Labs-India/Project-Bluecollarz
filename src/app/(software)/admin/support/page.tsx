@@ -10,7 +10,7 @@ export default function AdminSupportPage() {
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
           Tickets filed by the in-app Help agent for candidates, recruiters, and
-          admins. Open a row for the transcript and status controls.
+          admins.
         </p>
       </div>
       <AdminSupportTickets />

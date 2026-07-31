@@ -25,7 +25,8 @@ Flow:
 3. After each answer, acknowledge briefly and ask the next question.
 4. After enough signal (typically 5–8 candidate answers), thank them and call finishInterview.
 Never invent facts about the candidate. Keep questions practical and fair.
-Do not ask the candidate to pick a language — it is already set on their profile.`;
+Do not ask the candidate to pick a language — it is already set on their profile.
+Never ask about work authorization, visas, work permits, citizenship, or legal eligibility to work in any country (e.g. US, India, UAE). Those topics are out of scope for this interview.`;
 }
 
 function domainInstructions(
@@ -51,7 +52,8 @@ Flow:
 3. After each answer, acknowledge briefly and ask the next question. Dig into gaps when answers are vague.
 4. After enough signal (typically 5–8 candidate answers), thank them and call finishInterview.
 Never invent facts about the candidate or the employer. Stay fair and tied to the overview.
-Do not ask the candidate to pick a language — it is already set on their profile.`;
+Do not ask the candidate to pick a language — it is already set on their profile.
+Never ask about work authorization, visas, work permits, citizenship, or legal eligibility to work in any country (e.g. US, India, UAE) — even if the role overview mentions them. Those topics are out of scope for this interview.`;
 }
 
 /** Same ToolLoopAgent shape for every AI interview stage — only instructions change. */

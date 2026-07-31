@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { AppPage } from "@/components/layout/app-page";
 import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
+import { PrivacyTermsAcknowledgment } from "@/components/shared/privacy-terms-acknowledgment";
 import { useTheme } from "next-themes";
 import { MoonIcon, SunIcon } from "lucide-react";
 
@@ -30,6 +31,7 @@ export default function CandidateSettingsPage() {
           </div>
           <Button
             variant="outline"
+            className="w-40 shrink-0"
             onClick={() => setTheme(isDark ? "light" : "dark")}
           >
             {isDark ? (
@@ -43,6 +45,18 @@ export default function CandidateSettingsPage() {
 
         <div className="p-5">
           <AppLanguageSetting />
+        </div>
+
+        <div className="space-y-3 p-5">
+          <div>
+            <Label className="text-foreground text-sm font-medium">
+              Privacy &amp; terms
+            </Label>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Accepted when you created your account.
+            </p>
+          </div>
+          <PrivacyTermsAcknowledgment />
         </div>
       </section>
 

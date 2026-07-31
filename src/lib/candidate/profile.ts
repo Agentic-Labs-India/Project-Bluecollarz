@@ -38,11 +38,8 @@ export interface CandidateProfileFields {
   location?: string;
   yearsExperience?: number | null;
   skills?: string[];
-  workAuthorization?: string;
   preferredCountries?: string[];
   summary?: string;
-  resumeUrl?: string;
-  resumeSource?: "upload" | "voice";
   candidateOnboardingComplete?: boolean;
   education?: CandidateEducationEntry[];
   workExperience?: CandidateWorkEntry[];
@@ -58,8 +55,6 @@ export interface CandidateProfileFields {
   residencePostalCode?: string;
   /** BSON Date (UTC midnight for the calendar day). */
   dateOfBirth?: Date | null;
-  workAuthConfirmed?: boolean;
-  workAuthStayAgreed?: boolean;
   /** USD / year */
   fullTimeCompensation?: number | null;
   /** USD / hour */
@@ -95,11 +90,8 @@ export interface CandidateProfileData {
   location: string;
   yearsExperience: number | null;
   skills: string[];
-  workAuthorization: string;
   preferredCountries: string[];
   summary: string;
-  resumeUrl: string;
-  resumeSource: "" | "upload" | "voice";
   candidateOnboardingComplete: boolean;
   education: EducationFormEntry[];
   workExperience: WorkFormEntry[];
@@ -114,8 +106,6 @@ export interface CandidateProfileData {
   residencePostalCode: string;
   /** Wire `yyyy-MM-dd` (empty when unset). Mongo stores BSON Date. */
   dateOfBirth: string;
-  workAuthConfirmed: boolean;
-  workAuthStayAgreed: boolean;
   fullTimeCompensation: number | null;
   partTimeCompensation: number | null;
 }
@@ -126,7 +116,6 @@ export const CANDIDATE_MANDATORY_FIELDS = [
   "location",
   "yearsExperience",
   "skills",
-  "workAuthorization",
   "summary",
   "education",
   "workExperience",
@@ -173,7 +162,8 @@ export function emptyWorkEntry(): WorkFormEntry {
   };
 }
 
-const EMPTY: CandidateProfileData = {
+/** Empty candidate profile for UI defaults / null docs. */
+export const emptyCandidateProfileData = (): CandidateProfileData => ({
   name: "",
   email: "",
   image: "",
@@ -183,11 +173,8 @@ const EMPTY: CandidateProfileData = {
   location: "",
   yearsExperience: null,
   skills: [],
-  workAuthorization: "",
   preferredCountries: [],
   summary: "",
-  resumeUrl: "",
-  resumeSource: "",
   candidateOnboardingComplete: false,
   education: [],
   workExperience: [],
@@ -201,11 +188,9 @@ const EMPTY: CandidateProfileData = {
   residenceCity: "",
   residencePostalCode: "",
   dateOfBirth: "",
-  workAuthConfirmed: false,
-  workAuthStayAgreed: false,
   fullTimeCompensation: null,
   partTimeCompensation: null,
-};
+});
 
 const optionalTrimmed = (max: number) =>
   z.preprocess((val) => {
@@ -293,11 +278,8 @@ export const candidateProfileUpdateSchema = z.object({
   location: optionalTrimmed(160),
   yearsExperience: nullableYearsExperience,
   skills: skillsSchema,
-  workAuthorization: optionalTrimmed(200),
   preferredCountries: countriesSchema,
   summary: optionalTrimmed(6000),
-  resumeUrl: optionalTrimmed(2000),
-  resumeSource: z.enum(["", "upload", "voice"]),
   education: educationListSchema,
   workExperience: workListSchema,
   portfolioUrl: optionalTrimmed(500),
@@ -310,8 +292,6 @@ export const candidateProfileUpdateSchema = z.object({
   residenceCity: optionalTrimmed(80),
   residencePostalCode: optionalTrimmed(20),
   dateOfBirth: dateOfBirthSchema,
-  workAuthConfirmed: z.boolean(),
-  workAuthStayAgreed: z.boolean(),
   fullTimeCompensation: nullableFullTimePay,
   partTimeCompensation: nullablePartTimePay,
 });
@@ -409,19 +389,7 @@ export function toCandidateProfileData(
     | null
     | undefined,
 ): CandidateProfileData {
-  if (!doc) {
-    return {
-      ...EMPTY,
-      skills: [],
-      preferredCountries: [],
-      education: [],
-      workExperience: [],
-      otherLinks: [],
-      languages: [],
-      voiceLanguage: "",
-      hobbies: [],
-    };
-  }
+  if (!doc) return emptyCandidateProfileData();
   return {
     name: doc.name ?? "",
     email: doc.email ?? "",
@@ -432,11 +400,8 @@ export function toCandidateProfileData(
     location: doc.location ?? "",
     yearsExperience: asNullableNumber(doc.yearsExperience),
     skills: doc.skills ?? [],
-    workAuthorization: doc.workAuthorization ?? "",
     preferredCountries: doc.preferredCountries ?? [],
     summary: doc.summary ?? "",
-    resumeUrl: doc.resumeUrl ?? "",
-    resumeSource: doc.resumeSource ?? "",
     candidateOnboardingComplete: Boolean(doc.candidateOnboardingComplete),
     education: mapEducation(doc.education),
     workExperience: mapWork(doc.workExperience),
@@ -450,8 +415,6 @@ export function toCandidateProfileData(
     residenceCity: doc.residenceCity ?? "",
     residencePostalCode: doc.residencePostalCode ?? "",
     dateOfBirth: formatDateOnly(doc.dateOfBirth),
-    workAuthConfirmed: Boolean(doc.workAuthConfirmed),
-    workAuthStayAgreed: Boolean(doc.workAuthStayAgreed),
     fullTimeCompensation: asNullableNumber(doc.fullTimeCompensation),
     partTimeCompensation: asNullableNumber(doc.partTimeCompensation),
   };
@@ -479,7 +442,6 @@ export function getMissingCandidateFields(
   if (!profile.location.trim()) missing.push("location");
   if (profile.yearsExperience === null) missing.push("yearsExperience");
   if (!profile.skills.length) missing.push("skills");
-  if (!profile.workAuthorization.trim()) missing.push("workAuthorization");
   if (!profile.summary.trim() || profile.summary.trim().length < 40) {
     missing.push("summary");
   }
@@ -501,7 +463,6 @@ export const CANDIDATE_FIELD_LABELS: Record<CandidateMandatoryField, string> = {
   location: "location",
   yearsExperience: "years of experience",
   skills: "skills",
-  workAuthorization: "work authorization",
   summary: "professional summary / resume content",
   education: "education",
   workExperience: "work experience",
@@ -535,9 +496,7 @@ export function candidateUpdateToMongo(
   const stringFields: Array<keyof CandidateProfileUpdateInput> = [
     "headline",
     "location",
-    "workAuthorization",
     "summary",
-    "resumeUrl",
     "portfolioUrl",
     "residenceCountry",
     "residenceState",
@@ -559,9 +518,6 @@ export function candidateUpdateToMongo(
     $unset.dateOfBirth = "";
   }
 
-  if (data.resumeSource) $set.resumeSource = data.resumeSource;
-  else $unset.resumeSource = "";
-
   $set.skills = data.skills;
   $set.preferredCountries = data.preferredCountries;
   $set.education = data.education;
@@ -571,8 +527,13 @@ export function candidateUpdateToMongo(
   if (data.voiceLanguage) $set.voiceLanguage = data.voiceLanguage;
   else $unset.voiceLanguage = "";
   $set.hobbies = data.hobbies;
-  $set.workAuthConfirmed = data.workAuthConfirmed;
-  $set.workAuthStayAgreed = data.workAuthStayAgreed;
+
+  // Drop removed / legacy fields from older documents on every save.
+  $unset.workAuthorization = "";
+  $unset.workAuthConfirmed = "";
+  $unset.workAuthStayAgreed = "";
+  $unset.resumeUrl = "";
+  $unset.resumeSource = "";
 
   setNullableNumber($set, $unset, "phoneNumber", data.phoneNumber);
   setNullableNumber($set, $unset, "phoneCountryCode", data.phoneCountryCode);
@@ -617,20 +578,10 @@ export function mergeCandidateProfilePatch(
       location: pickStr(patch.location, current.location),
       yearsExperience: pickNum(patch.yearsExperience, current.yearsExperience),
       skills: patch.skills?.length ? patch.skills : current.skills,
-      workAuthorization: pickStr(
-        patch.workAuthorization,
-        current.workAuthorization,
-      ),
       preferredCountries: patch.preferredCountries?.length
         ? patch.preferredCountries
         : current.preferredCountries,
       summary: pickStr(patch.summary, current.summary),
-      resumeUrl:
-        patch.resumeUrl !== undefined ? patch.resumeUrl : current.resumeUrl,
-      resumeSource:
-        patch.resumeSource !== undefined && patch.resumeSource !== ""
-          ? patch.resumeSource
-          : current.resumeSource || "",
       education:
         patch.education !== undefined ? patch.education : current.education,
       workExperience:
@@ -661,14 +612,6 @@ export function mergeCandidateProfilePatch(
         patch.dateOfBirth !== undefined
           ? patch.dateOfBirth
           : current.dateOfBirth || null,
-      workAuthConfirmed:
-        patch.workAuthConfirmed !== undefined
-          ? patch.workAuthConfirmed
-          : current.workAuthConfirmed,
-      workAuthStayAgreed:
-        patch.workAuthStayAgreed !== undefined
-          ? patch.workAuthStayAgreed
-          : current.workAuthStayAgreed,
       fullTimeCompensation: pickNum(
         patch.fullTimeCompensation,
         current.fullTimeCompensation,

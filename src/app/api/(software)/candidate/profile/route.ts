@@ -75,15 +75,13 @@ export async function PUT(req: NextRequest) {
       fullTimeCompensation: data.fullTimeCompensation,
       partTimeCompensation: data.partTimeCompensation,
       dateOfBirth: parseDateOnly(data.dateOfBirth),
-      resumeSource: data.resumeSource || undefined,
       education: data.education,
       workExperience: data.workExperience,
       otherLinks: data.otherLinks,
       languages: data.languages,
       voiceLanguage: data.voiceLanguage || undefined,
       hobbies: data.hobbies,
-      workAuthConfirmed: data.workAuthConfirmed,
-      workAuthStayAgreed: data.workAuthStayAgreed,
+      preferredCountries: data.preferredCountries,
     });
     const complete = isCandidateProfileComplete(merged);
     const { $set, $unset } = candidateUpdateToMongo(data, complete);

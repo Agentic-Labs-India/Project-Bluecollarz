@@ -7,7 +7,8 @@ import { idHex } from "@/lib/utils";
 
 /**
  * Cascade cleanup before Better Auth removes the user document.
- * Candidates: applications, interviews + recording blobs, profile resume blob.
+ * Candidates: applications, interviews + recording blobs, KYC blobs,
+ * and any legacy resumeUrl blob from older builds.
  * Hirers: owned jobs, apps to those jobs, interviews for those jobs + blobs.
  */
 export async function cascadeDeleteUserData(userId: string): Promise<void> {
@@ -15,7 +16,7 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
   const db = client.db(DB_NAME);
   const blobUrls: string[] = [];
 
-  // Profile resume + KYC docs (if stored as Blob URLs).
+  // KYC docs (+ legacy resumeUrl if an old document still has one).
   const user = await db
     .collection<KycFields & { resumeUrl?: string }>(COLLECTIONS.USERS_COLLECTION)
     .findOne(
@@ -27,7 +28,7 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
         },
       },
     );
-  if (typeof user?.resumeUrl === "string") {
+  if (typeof user?.resumeUrl === "string" && user.resumeUrl.trim()) {
     blobUrls.push(user.resumeUrl);
   }
   blobUrls.push(...kycBlobUrls(user));

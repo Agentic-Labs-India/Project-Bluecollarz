@@ -81,7 +81,7 @@ export function AppLanguageSetting() {
         disabled={loading || saving}
       >
         <SelectTrigger
-          className="w-full sm:w-56"
+          className="w-40 shrink-0"
           aria-label="App Language"
         >
           <SelectValue
