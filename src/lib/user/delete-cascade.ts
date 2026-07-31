@@ -18,13 +18,16 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
 
   // KYC docs (+ legacy resumeUrl if an old document still has one).
   const user = await db
-    .collection<KycFields & { resumeUrl?: string }>(COLLECTIONS.USERS_COLLECTION)
+    .collection<KycFields & { resumeUrl?: string; email?: string }>(
+      COLLECTIONS.USERS_COLLECTION,
+    )
     .findOne(
       { _id: matchId(userId) as never },
       {
         projection: {
           resumeUrl: 1,
           kycDocuments: 1,
+          email: 1,
         },
       },
     );
@@ -51,6 +54,17 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
   await db
     .collection(COLLECTIONS.APPLICATIONS)
     .deleteMany({ applicantId: matchId(userId) });
+
+  // Support tickets opened by this user.
+  await db
+    .collection(COLLECTIONS.SUPPORT_TICKETS)
+    .deleteMany({ userId: matchId(userId) } as never);
+
+  // Pending invite for this email (if any).
+  const email = typeof user?.email === "string" ? user.email.trim().toLowerCase() : "";
+  if (email) {
+    await db.collection(COLLECTIONS.USER_PROVISIONS).deleteMany({ email });
+  }
 
   // Hire-owned roles → applications + interviews for those jobs.
   const ownedJobs = await db

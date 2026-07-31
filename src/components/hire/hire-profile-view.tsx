@@ -14,7 +14,6 @@ import {
   PhoneIcon,
   PlusIcon,
   Trash2Icon,
-  TrophyIcon,
   UsersIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -69,7 +68,6 @@ export function HireProfileView({
   showCompletePrompt = false,
 }: {
   overview: HireOverview;
-  profileComplete?: boolean;
   showCompletePrompt?: boolean;
 }) {
   const router = useRouter();
@@ -177,7 +175,6 @@ export function HireProfileView({
       icon: UsersIcon,
     },
     { label: "Selected", value: overview.applicants.selected, icon: CheckCircle2Icon },
-    { label: "Hires / month", value: overview.hiresThisMonth, icon: TrophyIcon },
   ];
 
   const roleBreakdown = [

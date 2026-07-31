@@ -2,6 +2,8 @@ import { connection } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { ProfileType } from "@/lib/profile-types";
 import { ensureIndexes } from "@/lib/db/indexes";
+import { deleteBlobUrls } from "@/lib/blob/delete";
+import { kycBlobUrls, type KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
 import {
   deleteUserProvision,
@@ -9,6 +11,13 @@ import {
   upsertUserProvision,
   type ProvisionProfileType,
 } from "@/lib/admin/provisions";
+import {
+  CANDIDATE_ONLY_USER_FIELDS,
+  HIRE_ONLY_USER_FIELDS,
+  KYC_USER_FIELDS,
+  LEGACY_USER_FIELDS,
+  unsetFields,
+} from "@/lib/user/role-fields";
 
 export interface AdminUserListItem {
   id: string;
@@ -21,7 +30,7 @@ export interface AdminUserListItem {
   pending: boolean;
 }
 
-type UserDoc = {
+type UserDoc = KycFields & {
   _id: unknown;
   name?: string | null;
   email?: string | null;
@@ -29,6 +38,43 @@ type UserDoc = {
   profileType?: string | null;
   createdAt?: Date | string | null;
 };
+
+/** Strip opposite-role + legacy fields when an admin changes profileType. */
+async function applyProfileTypeCleanup(
+  userId: string,
+  profileType: ProfileType,
+) {
+  const users = client
+    .db(DB_NAME)
+    .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION);
+  const filter = { _id: matchId(userId) as never };
+
+  const dropCandidate =
+    profileType === "hire" || profileType === "admin";
+  const dropHire = profileType === "work" || profileType === "admin";
+
+  if (dropCandidate) {
+    const existing = await users.findOne(filter, {
+      projection: { kycDocuments: 1 },
+    });
+    await deleteBlobUrls(kycBlobUrls(existing));
+  }
+
+  const $unset = {
+    ...unsetFields(LEGACY_USER_FIELDS),
+    ...(dropCandidate
+      ? {
+          ...unsetFields(CANDIDATE_ONLY_USER_FIELDS),
+          ...unsetFields(KYC_USER_FIELDS),
+        }
+      : {}),
+    ...(dropHire ? unsetFields(HIRE_ONLY_USER_FIELDS) : {}),
+  };
+
+  if (Object.keys($unset).length) {
+    await users.updateOne(filter, { $unset });
+  }
+}
 
 function toIso(value: unknown): string | null {
   if (value instanceof Date) return value.toISOString();
@@ -137,6 +183,7 @@ export async function upsertUserProfileTypeByEmail(
         },
       },
     );
+    await applyProfileTypeCleanup(idHex(existing._id), profileType);
     // Clear any leftover invite for this email.
     await deleteUserProvision(normalized);
     return {
@@ -185,5 +232,6 @@ export async function setUserProfileType(
   );
 
   if (!result) return null;
+  await applyProfileTypeCleanup(userId, profileType);
   return toListItem(result, profileType, false);
 }

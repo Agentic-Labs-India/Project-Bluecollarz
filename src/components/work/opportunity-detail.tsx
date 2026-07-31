@@ -13,7 +13,6 @@ import {
   MapPinIcon,
   Maximize2Icon,
   Minimize2Icon,
-  UsersIcon,
 } from "lucide-react";
 import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
@@ -262,12 +261,6 @@ export function OpportunityDetail({
                       ]
                     : undefined,
                 })}
-              </span>
-            ) : null}
-            {opportunity.hiredThisMonth ? (
-              <span className="inline-flex items-center gap-1.5">
-                <UsersIcon className="size-4 shrink-0" />
-                {opportunity.hiredThisMonth} hired this month
               </span>
             ) : null}
           </div>

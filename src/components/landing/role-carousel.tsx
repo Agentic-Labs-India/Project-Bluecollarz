@@ -39,9 +39,6 @@ function avatarsForRole(jobId: string, title: string): Avatar[] {
 }
 
 function roleActivityLabel(role: LandingRole): string {
-  if (role.hiredThisMonth > 0) {
-    return `${role.hiredThisMonth} hired recently`;
-  }
   if (role.applicantCount > 0) {
     return `${role.applicantCount} ${role.applicantCount === 1 ? "applicant" : "applicants"}`;
   }

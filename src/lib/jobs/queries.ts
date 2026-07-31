@@ -14,7 +14,7 @@ import type {
   ApplicationStatus,
 } from "@/lib/jobs/applications";
 import type { Opportunity, OpportunityTab } from "@/lib/opportunities";
-import { asNumber, idHex } from "@/lib/utils";
+import { idHex } from "@/lib/utils";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
   isCandidateProfileComplete,
@@ -40,7 +40,6 @@ export interface LandingRole {
   location?: JobLocation;
   countryCode?: string;
   stateCode?: string;
-  hiredThisMonth: number;
   applicantCount: number;
 }
 
@@ -69,7 +68,6 @@ type CachedPublishedJob = {
   countryCode?: string;
   stateCode?: string;
   priority?: JobPriority;
-  hiredThisMonth: number;
   publishedAt: string | null;
   applicationStepTemplates: ApplicationStepTemplate[];
 };
@@ -85,7 +83,6 @@ function serializePublishedJob(doc: JobDocument): CachedPublishedJob {
     countryCode: doc.countryCode,
     stateCode: doc.stateCode,
     priority: doc.priority,
-    hiredThisMonth: asNumber(doc.hiredThisMonth, 0),
     publishedAt: doc.publishedAt?.toISOString() ?? null,
     applicationStepTemplates: doc.applicationStepTemplates ?? [],
   };
@@ -102,7 +99,6 @@ function cachedJobToOpportunity(
     {
       _id: job.id,
       ownerId: "",
-      ownerEmail: "",
       title: job.title,
       pay: job.pay,
       tab: job.tab,
@@ -113,7 +109,6 @@ function cachedJobToOpportunity(
       priority: job.priority,
       applicationStepTemplates: job.applicationStepTemplates,
       status: "published",
-      hiredThisMonth: job.hiredThisMonth,
       publishedAt: job.publishedAt ? new Date(job.publishedAt) : null,
       createdAt: new Date(0),
       updatedAt: new Date(0),
@@ -223,7 +218,6 @@ export async function getLatestPublishedRoles(
           location: 1,
           countryCode: 1,
           stateCode: 1,
-          hiredThisMonth: 1,
           publishedAt: 1,
           createdAt: 1,
         },
@@ -256,7 +250,6 @@ export async function getLatestPublishedRoles(
     location: doc.location,
     countryCode: doc.countryCode,
     stateCode: doc.stateCode,
-    hiredThisMonth: asNumber(doc.hiredThisMonth, 0),
     applicantCount: applicantsByJob.get(idHex(doc._id)) ?? 0,
   }));
 }

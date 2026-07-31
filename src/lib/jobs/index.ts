@@ -88,7 +88,6 @@ export function isApplicationStageId(id: string): id is ApplicationStageId {
 export interface JobDocument {
   _id: unknown;
   ownerId: unknown;
-  ownerEmail: string;
   title: string;
   pay: string;
   tab: OpportunityTab;
@@ -97,13 +96,11 @@ export interface JobDocument {
   countryCode?: string;
   stateCode?: string;
   priority?: JobPriority;
-  oneClickApply?: boolean;
   /** Template steps — per-candidate progress lives in Applications (future) */
   applicationStepTemplates: ApplicationStepTemplate[];
   /** Screening / custom form questions for the custom-questions stage. */
   customQuestions?: CustomQuestion[];
   status: JobStatus;
-  hiredThisMonth: number;
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -118,7 +115,6 @@ export interface JobListItem {
   status: JobStatus;
   priority?: JobPriority;
   location?: string;
-  hiredThisMonth: number;
   /** Formal applications count for this role. */
   applicantCount: number;
   publishedAt: string | null;
@@ -187,7 +183,6 @@ export const jobCreateSchema = z.object({
     return s.length ? s : null;
   }, z.string().max(16).nullable().optional()),
   priority: z.enum(JOB_PRIORITIES).optional(),
-  oneClickApply: z.boolean().optional(),
   applicationStepTemplates: applicationStepsSchema,
   customQuestions: customQuestionsSchema.optional(),
   publish: z.boolean().optional(),
@@ -200,7 +195,13 @@ export function formatJobValidationError(error: z.ZodError): string {
 /** Strip client-only fields; ownerId is never accepted from the client. */
 export function sanitizeJobCreateBody(body: unknown): unknown {
   if (!body || typeof body !== "object") return body;
-  const { ownerId: _o, ownerEmail: _e, ...rest } = body as Record<string, unknown>;
+  const {
+    ownerId: _o,
+    ownerEmail: _e,
+    oneClickApply: _a,
+    hiredThisMonth: _h,
+    ...rest
+  } = body as Record<string, unknown>;
   return rest;
 }
 
@@ -265,7 +266,6 @@ export function toJobListItem(
     status: doc.status,
     priority: doc.priority,
     location: doc.location ? normalizeJobLocation(doc.location) : undefined,
-    hiredThisMonth: asNumber(doc.hiredThisMonth, 0),
     applicantCount: opts?.applicantCount ?? 0,
     publishedAt: doc.publishedAt?.toISOString() ?? null,
     createdAt: doc.createdAt.toISOString(),
@@ -326,7 +326,6 @@ export function toOpportunity(
     completedStageIds?: Iterable<string>;
   },
 ): Opportunity {
-  const hiredThisMonth = asNumber(doc.hiredThisMonth, 0);
   const isNew =
     doc.publishedAt != null &&
     Date.now() - doc.publishedAt.getTime() < 7 * 24 * 60 * 60 * 1000;
@@ -345,7 +344,6 @@ export function toOpportunity(
     countryCode: doc.countryCode,
     stateCode: doc.stateCode,
     priority: doc.priority,
-    hiredThisMonth: hiredThisMonth > 0 ? hiredThisMonth : undefined,
     isNew: isNew || undefined,
     applicationSteps: steps,
     ...(includeCustom
@@ -356,7 +354,7 @@ export function toOpportunity(
 
 export function buildJobDocument(
   input: JobCreateInput,
-  owner: { id: string; email: string },
+  owner: { id: string },
 ): Omit<JobDocument, "_id"> {
   const now = new Date();
   const publish = input.publish === true;
@@ -366,7 +364,6 @@ export function buildJobDocument(
     : [];
   return {
     ownerId: owner.id,
-    ownerEmail: owner.email.toLowerCase(),
     title: input.title.trim(),
     pay: input.pay.trim(),
     tab: input.tab,
@@ -375,11 +372,9 @@ export function buildJobDocument(
     countryCode: input.countryCode?.trim() || undefined,
     stateCode: input.stateCode?.trim() || undefined,
     priority: input.priority,
-    oneClickApply: false,
     applicationStepTemplates: templates,
     customQuestions,
     status: publish ? "published" : "draft",
-    hiredThisMonth: 0,
     publishedAt: publish ? now : null,
     createdAt: now,
     updatedAt: now,

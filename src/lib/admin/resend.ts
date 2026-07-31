@@ -35,7 +35,6 @@ export type AdminEmailListItem = {
   to: string[];
   createdAt: string | null;
   lastEvent?: string | null;
-  hasAttachments: boolean;
 };
 
 export type AdminEmailDetail = AdminEmailListItem & {
@@ -79,7 +78,6 @@ export function mapSentListItem(row: {
     to: asStringArray(row.to),
     createdAt: toIso(row.created_at),
     lastEvent: row.last_event ?? null,
-    hasAttachments: false,
   };
 }
 
@@ -89,7 +87,6 @@ export function mapReceivedListItem(row: {
   from?: string | null;
   to?: string[] | string | null;
   created_at?: string | Date | null;
-  attachments?: unknown[] | null;
 }): AdminEmailListItem {
   return {
     id: row.id,
@@ -98,6 +95,5 @@ export function mapReceivedListItem(row: {
     to: asStringArray(row.to),
     createdAt: toIso(row.created_at),
     lastEvent: null,
-    hasAttachments: Array.isArray(row.attachments) && row.attachments.length > 0,
   };
 }

@@ -111,7 +111,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       ...fields
     } = parsed.data;
     const $set: Record<string, unknown> = { updatedAt: now };
-    const $unset: Record<string, ""> = {};
+    const $unset: Record<string, ""> = {
+      // Drop removed job fields from older documents.
+      ownerEmail: "",
+      oneClickApply: "",
+      hiredThisMonth: "",
+    };
 
     for (const [key, value] of Object.entries(fields)) {
       if (value === null && (key === "countryCode" || key === "stateCode")) {

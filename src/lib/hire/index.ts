@@ -8,7 +8,6 @@ export interface HireActiveRole {
   pay: string;
   status: JobStatus;
   applicants: number;
-  publishedAt: string | null;
 }
 
 /** Aggregate hiring overview for the signed-in hirer's profile dashboard. */
@@ -29,12 +28,9 @@ export interface HireOverview {
   applicants: {
     /** All applications across the hirer's roles. */
     total: number;
-    /** Open applications on currently published roles. */
-    active: number;
     /** Candidates marked as selected. */
     selected: number;
   };
-  hiresThisMonth: number;
   activeRoles: HireActiveRole[];
   /** Editable company details stored on the hirer's user document. */
   profile: HireProfileData;

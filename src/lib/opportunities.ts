@@ -33,7 +33,6 @@ export interface Opportunity {
   pay: string;
   tab: OpportunityTab;
   isNew?: boolean;
-  hiredThisMonth?: number;
   priority?: "high" | "medium" | "low";
   location?: "remote" | "on-site";
   countryCode?: string;

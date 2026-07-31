@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AppPage } from "@/components/layout/app-page";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
+import { PrivacyTermsAcknowledgment } from "@/components/shared/privacy-terms-acknowledgment";
 import { useTheme } from "next-themes";
 import { MoonIcon, SunIcon } from "lucide-react";
 
@@ -41,6 +42,18 @@ export default function HireSettingsPage() {
             Application and candidate alerts will be configurable here in a later
             release.
           </p>
+        </div>
+
+        <div className="space-y-3 p-5">
+          <div>
+            <Label className="text-foreground text-sm font-medium">
+              Privacy &amp; terms
+            </Label>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Accepted when you created your account.
+            </p>
+          </div>
+          <PrivacyTermsAcknowledgment />
         </div>
       </section>
 

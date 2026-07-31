@@ -9,6 +9,11 @@ import {
 } from "@/lib/hire/profile";
 import { requireProfile } from "@/lib/api/session";
 import { ensureIndexes } from "@/lib/db/indexes";
+import {
+  CANDIDATE_ONLY_USER_FIELDS,
+  LEGACY_USER_FIELDS,
+  unsetFields,
+} from "@/lib/user/role-fields";
 
 type UserDoc = HireProfileFields & { _id: unknown };
 
@@ -52,7 +57,10 @@ export async function PUT(req: NextRequest) {
       about: data.about,
     };
     const $set: Record<string, unknown> = { certificates };
-    const $unset: Record<string, ""> = {};
+    const $unset: Record<string, ""> = {
+      ...unsetFields(CANDIDATE_ONLY_USER_FIELDS),
+      ...unsetFields(LEGACY_USER_FIELDS),
+    };
     for (const [key, value] of Object.entries(fields)) {
       if (value) $set[key] = value;
       else $unset[key] = "";

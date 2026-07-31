@@ -7,7 +7,7 @@ import {
   toHireProfileData,
   type HireProfileFields,
 } from "@/lib/hire/profile";
-import { asNumber, idHex } from "@/lib/utils";
+import { idHex } from "@/lib/utils";
 import { ensureIndexes } from "@/lib/db/indexes";
 
 type HireUserDoc = HireProfileFields & {
@@ -64,7 +64,7 @@ export async function getHireOverview(viewer: {
   const grouped = jobIdHexes.length
     ? await db
         .collection<ApplicationDocument>(COLLECTIONS.APPLICATIONS)
-        .aggregate<{ _id: unknown; total: number; selected: number; applied: number }>([
+        .aggregate<{ _id: unknown; total: number; selected: number }>([
           { $match: { jobId: { $in: matchIds(jobIdHexes) } } },
           {
             $group: {
@@ -72,9 +72,6 @@ export async function getHireOverview(viewer: {
               total: { $sum: 1 },
               selected: {
                 $sum: { $cond: [{ $eq: ["$status", "selected"] }, 1, 0] },
-              },
-              applied: {
-                $sum: { $cond: [{ $eq: ["$status", "applied"] }, 1, 0] },
               },
             },
           },
@@ -86,13 +83,11 @@ export async function getHireOverview(viewer: {
 
   let totalApplicants = 0;
   let selectedApplicants = 0;
-  let activeApplicants = 0;
   for (const job of jobs) {
     const row = countsByJob.get(idHex(job._id));
     if (!row) continue;
     totalApplicants += row.total;
     selectedApplicants += row.selected;
-    if (job.status === "published") activeApplicants += row.applied;
   }
 
   const activeRoles: HireActiveRole[] = jobs
@@ -104,13 +99,7 @@ export async function getHireOverview(viewer: {
       pay: job.pay,
       status: job.status,
       applicants: countsByJob.get(idHex(job._id))?.total ?? 0,
-      publishedAt: job.publishedAt?.toISOString() ?? null,
     }));
-
-  const hiresThisMonth = jobs.reduce(
-    (sum, job) => sum + asNumber(job.hiredThisMonth, 0),
-    0,
-  );
 
   return {
     account: {
@@ -123,10 +112,8 @@ export async function getHireOverview(viewer: {
     roles,
     applicants: {
       total: totalApplicants,
-      active: activeApplicants,
       selected: selectedApplicants,
     },
-    hiresThisMonth,
     activeRoles,
     profile: toHireProfileData(account),
   };
