@@ -617,7 +617,7 @@ export function ExploreOpportunities({
       <h1
         className={cn(
           "text-foreground shrink-0 font-semibold tracking-tight",
-          compact ? "mb-4 text-xl md:text-2xl" : "mb-6 text-3xl md:text-4xl",
+          compact ? "mb-4 text-xl md:text-2xl" : "mb-6 text-2xl md:text-3xl",
         )}
       >
         Explore opportunities

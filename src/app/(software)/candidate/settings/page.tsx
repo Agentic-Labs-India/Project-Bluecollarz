@@ -15,7 +15,7 @@ export default function CandidateSettingsPage() {
 
   return (
     <AppPage>
-      <h1 className="text-foreground mb-8 text-3xl font-semibold tracking-tight md:text-4xl">
+      <h1 className="text-foreground mb-8 text-2xl font-semibold tracking-tight md:text-3xl">
         Settings
       </h1>
 

@@ -342,7 +342,7 @@ export function CandidateProfileView() {
   return (
     <AppPage className="space-y-8 pb-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
+        <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
           Profile
         </h1>
         <p

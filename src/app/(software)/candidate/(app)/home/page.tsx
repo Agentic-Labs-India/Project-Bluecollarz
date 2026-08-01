@@ -36,7 +36,7 @@ export default async function HomePage() {
     <AppPage>
       <header className="mb-10">
         <p className="text-muted-foreground mb-2 text-sm">Welcome back</p>
-        <h1 className="text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
+        <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
           Hey {firstName}, ready to work?
         </h1>
       </header>

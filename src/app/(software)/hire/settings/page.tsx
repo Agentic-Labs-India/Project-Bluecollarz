@@ -14,7 +14,7 @@ export default function HireSettingsPage() {
 
   return (
     <AppPage>
-      <h1 className="text-foreground mb-8 text-3xl font-semibold tracking-tight md:text-4xl">
+      <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl mb-6 md:mb-8">
         Settings
       </h1>
 

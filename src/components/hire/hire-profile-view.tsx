@@ -187,8 +187,8 @@ export function HireProfileView({
   return (
     <AppPage>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl">
-          Hiring profile
+      <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
+      Hiring profile
         </h1>
       </div>
 
