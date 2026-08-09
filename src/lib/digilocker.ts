@@ -148,10 +148,10 @@ function str(v: unknown): string | null {
 }
 
 /* ── config + OAuth HTTP ── */
+/* Env: only DIGILOCKER_CLIENT_ID + DIGILOCKER_CLIENT_SECRET. Rest is fixed. */
 
-function env(key: string, fallback: string) {
-  return process.env[key]?.trim() || fallback;
-}
+const DIGILOCKER_OAUTH_BASE =
+  "https://digilocker.meripehchaan.gov.in/public/oauth2";
 
 function cfg() {
   const clientId = process.env.DIGILOCKER_CLIENT_ID?.trim() ?? "";
@@ -162,48 +162,22 @@ function cfg() {
   const base =
     process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") ||
     "http://localhost:3000";
-  const xmlByUri = env(
-    "DIGILOCKER_XML_BY_URI_URL",
-    "https://digilocker.meripehchaan.gov.in/public/oauth2/1/xml/uri",
-  );
   return {
     clientId,
     clientSecret,
-    authorizeUrl: env(
-      "DIGILOCKER_AUTHORIZE_URL",
-      "https://digilocker.meripehchaan.gov.in/public/oauth2/2/authorize",
-    ),
-    tokenUrl: env(
-      "DIGILOCKER_TOKEN_URL",
-      "https://digilocker.meripehchaan.gov.in/public/oauth2/2/token",
-    ),
-    userUrl: env(
-      "DIGILOCKER_USER_URL",
-      "https://digilocker.meripehchaan.gov.in/public/oauth2/1/user",
-    ),
-    eaadhaarUrl: env(
-      "DIGILOCKER_EAADHAAR_URL",
-      "https://digilocker.meripehchaan.gov.in/public/oauth2/3/xml/eaadhaar",
-    ),
-    issuedUrl: env(
-      "DIGILOCKER_ISSUED_FILES_URL",
-      "https://digilocker.meripehchaan.gov.in/public/oauth2/2/files/issued",
-    ),
-    xmlUriBase: xmlByUri.replace(/\/uri\/?$/i, "").replace(/\/$/, ""),
-    redirectUri:
-      process.env.DIGILOCKER_REDIRECT_URI?.trim() ||
-      `${base}/api/auth/digilocker/callback`,
-    scope: env(
-      "DIGILOCKER_SCOPE",
+    authorizeUrl: `${DIGILOCKER_OAUTH_BASE}/2/authorize`,
+    tokenUrl: `${DIGILOCKER_OAUTH_BASE}/2/token`,
+    userUrl: `${DIGILOCKER_OAUTH_BASE}/1/user`,
+    eaadhaarUrl: `${DIGILOCKER_OAUTH_BASE}/3/xml/eaadhaar`,
+    issuedUrl: `${DIGILOCKER_OAUTH_BASE}/2/files/issued`,
+    xmlUriBase: `${DIGILOCKER_OAUTH_BASE}/1/xml`,
+    redirectUri: `${base}/api/auth/digilocker/callback`,
+    scope:
       "files.issueddocs openid userdetails email address picture apaardetails",
-    ),
-    acr: env("DIGILOCKER_ACR", "aadhaar pan email mobile user_alias"),
-    amr: env("DIGILOCKER_AMR", "all aadhaar pan"),
-    dlFlow: env("DIGILOCKER_DL_FLOW", "signin"),
-    reqDoctype:
-      process.env.DIGILOCKER_REQ_DOCTYPE !== undefined
-        ? process.env.DIGILOCKER_REQ_DOCTYPE.trim()
-        : "ADHAR PANCR SSCER HSCER ABCID DGMST",
+    acr: "aadhaar pan email mobile user_alias",
+    amr: "all aadhaar pan",
+    dlFlow: "signin",
+    reqDoctype: "ADHAR PANCR SSCER HSCER ABCID DGMST",
   };
 }
 
