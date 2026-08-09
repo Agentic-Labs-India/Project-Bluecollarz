@@ -31,13 +31,13 @@ Blucollarz is AI-native hiring infrastructure for skilled candidates and recruit
 4. AI Communication interview — camera + mic + entire-screen share; scored on clarity, fluency, confidence, professionalism.
 5. AI Domain interview — role-aware questions from the job overview; same device rules.
 6. After interviews, wait for recruiter selection.
-7. If selected — complete AI KYC (Aadhaar front+back required; PAN and Passport may be deferred with a submit-later undertaking). Documents must match profile name/DOB/address. AI checks authenticity before storage.
+7. If selected — complete DigiLocker KYC (e-Aadhaar via MeriPehchaan). No document uploads; retrieved DigiLocker JSON is shown on screen and not stored in the database.
 
 ## Recruiter (hire) flow
 1. Company profile setup.
 2. Post / manage roles.
 3. Review applicants: resume, interview scores, recordings, transcripts.
-4. Select or reject. Selected candidates who finish KYC show “AI KYC Done” with document previews.
+4. Select or reject. Selected candidates who finish DigiLocker KYC show “DigiLocker KYC Done”.
 
 ## Admin flow
 - Manage recruiters/admins, email desk, and support tickets in /admin.

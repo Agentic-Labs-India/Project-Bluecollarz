@@ -49,6 +49,13 @@ export const auth = betterAuth({
         defaultValue: true,
         input: false,
       },
+      /** DigiLocker identity verified — set by KYC callback, not client-writable. */
+      isKycVerified: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
     },
     deleteUser: {
       enabled: true,

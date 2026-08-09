@@ -281,7 +281,7 @@ export function OpportunityDetail({
                   ? "We are really sorry — you were genuinely good. Please apply to other open roles; you can definitely get in elsewhere."
                   : cta.type === "kyc_complete"
                     ? "Identity verification is done. The hiring team will contact you with next steps."
-                    : "Please complete the next step: AI KYC identity verification (Aadhaar front & back, PAN, and Passport)."}
+                    : "Please complete the next step: DigiLocker KYC (e-Aadhaar via MeriPehchaan)."}
               </p>
             </section>
           ) : (
@@ -317,14 +317,14 @@ export function OpportunityDetail({
                   You&apos;re selected — complete next steps
                 </p>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Next step: AI identity verification (KYC). Upload your Aadhaar
-                  front and back, PAN, and Passport so we can confirm they are
-                  original and not AI-generated.
+                  Next step: DigiLocker identity verification. Sign in with
+                  MeriPehchaan and share e-Aadhaar — no document uploads on
+                  Blucollarz.
                 </p>
               </div>
               <Button asChild className="w-full" size="lg">
                 <Link href={`/candidate/kyc?jobId=${opportunity.id}`}>
-                  Start KYC verification
+                  Verify with DigiLocker
                 </Link>
               </Button>
             </div>

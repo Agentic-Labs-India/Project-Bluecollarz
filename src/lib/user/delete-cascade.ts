@@ -2,13 +2,11 @@ import "server-only";
 
 import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import { deleteBlobUrls } from "@/lib/blob/delete";
-import { kycBlobUrls, type KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
 
 /**
  * Cascade cleanup before Better Auth removes the user document.
- * Candidates: applications, interviews + recording blobs, KYC blobs,
- * and any legacy resumeUrl blob from older builds.
+ * Candidates: applications, interviews + recording blobs.
  * Hirers: owned jobs, apps to those jobs, interviews for those jobs + blobs.
  */
 export async function cascadeDeleteUserData(userId: string): Promise<void> {
@@ -16,25 +14,12 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
   const db = client.db(DB_NAME);
   const blobUrls: string[] = [];
 
-  // KYC docs (+ legacy resumeUrl if an old document still has one).
   const user = await db
-    .collection<KycFields & { resumeUrl?: string; email?: string }>(
-      COLLECTIONS.USERS_COLLECTION,
-    )
+    .collection<{ email?: string }>(COLLECTIONS.USERS_COLLECTION)
     .findOne(
       { _id: matchId(userId) as never },
-      {
-        projection: {
-          resumeUrl: 1,
-          kycDocuments: 1,
-          email: 1,
-        },
-      },
+      { projection: { email: 1 } },
     );
-  if (typeof user?.resumeUrl === "string" && user.resumeUrl.trim()) {
-    blobUrls.push(user.resumeUrl);
-  }
-  blobUrls.push(...kycBlobUrls(user));
 
   // Candidate-owned interviews + recordings.
   const ownInterviews = await db

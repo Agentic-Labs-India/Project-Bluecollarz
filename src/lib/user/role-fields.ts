@@ -38,17 +38,10 @@ export const HIRE_ONLY_USER_FIELDS = [
   "certificates",
 ] as const;
 
-/** Candidate KYC fields stored on Users. */
-export const KYC_USER_FIELDS = [
-  "kycStatus",
-  "kycDocuments",
-  "kycAnalysis",
-  "kycDeferred",
-  "kycVerifiedAt",
-  "kycUpdatedAt",
-] as const;
+/** DigiLocker KYC fields on Users. */
+export const KYC_USER_FIELDS = ["isKycVerified", "kyc"] as const;
 
-/** Removed / legacy fields that should never linger. */
+/** Removed / leftover fields that should never linger. */
 export const LEGACY_USER_FIELDS = [
   "workAuthorization",
   "workAuthConfirmed",

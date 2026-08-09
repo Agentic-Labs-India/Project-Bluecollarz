@@ -16,9 +16,10 @@ const WORK_CARD_IMAGE = "/images/home/1.png";
 
 const HOME_IMAGES = [1, 2, 3, 4, 5, 6, 7].map((n) => `/images/home/${n}.png`);
 
+/** Origins across India → global destinations (equirectangular lat/lng). */
 const HERO_MAP_ROUTES = [
   {
-    start: { lat: 28.6139, lng: 77.209, label: "New Delhi" },
+    start: { lat: 28.6139, lng: 77.209, label: "Delhi" },
     end: {
       lat: 25.2048,
       lng: 55.2708,
@@ -27,56 +28,56 @@ const HERO_MAP_ROUTES = [
     },
   },
   {
-    start: { lat: 19.076, lng: 72.8777, label: "Mumbai" },
+    start: { lat: 31.634, lng: 74.8723, label: "Punjab" }, // Amritsar
     end: {
       lat: 40.7128,
       lng: -74.006,
-      label: "New York",
+      label: "USA",
       image: HOME_IMAGES[1],
     },
   },
   {
     start: { lat: 12.9716, lng: 77.5946, label: "Bangalore" },
     end: {
-      lat: 35.6762,
-      lng: 139.6503,
-      label: "Tokyo",
+      lat: 37.5665,
+      lng: 126.978,
+      label: "Korea",
       image: HOME_IMAGES[2],
     },
   },
   {
-    start: { lat: 13.0827, lng: 80.2707, label: "Chennai" },
-    end: {
-      lat: 24.4539,
-      lng: 54.3773,
-      label: "UAE",
-      image: HOME_IMAGES[3],
-    },
-  },
-  {
-    start: { lat: 25.5941, lng: 85.1376, label: "Bihar" },
-    end: {
-      lat: 37.5665,
-      lng: 126.978,
-      label: "Seoul",
-      image: HOME_IMAGES[4],
-    },
-  },
-  {
-    start: { lat: 26.9124, lng: 75.7873, label: "Rajasthan" },
-    end: {
-      lat: 51.5074,
-      lng: -0.1278,
-      label: "London",
-      image: HOME_IMAGES[5],
-    },
-  },
-  {
-    start: { lat: 22.5726, lng: 88.3639, label: "Kolkata" },
+    start: { lat: 13.0827, lng: 80.2707, label: "Tamil Nadu" }, // Chennai
     end: {
       lat: 1.3521,
       lng: 103.8198,
       label: "Singapore",
+      image: HOME_IMAGES[3],
+    },
+  },
+  {
+    start: { lat: 15.4909, lng: 73.8278, label: "Goa" }, // Panaji
+    end: {
+      lat: 24.4539,
+      lng: 54.3773,
+      label: "UAE",
+      image: HOME_IMAGES[4],
+    },
+  },
+  {
+    start: { lat: 25.5941, lng: 85.1376, label: "Bihar" }, // Patna
+    end: {
+      lat: -23.5505,
+      lng: -46.6333,
+      label: "South America",
+      image: HOME_IMAGES[5],
+    },
+  },
+  {
+    start: { lat: 26.9124, lng: 75.7873, label: "Rajasthan" }, // Jaipur
+    end: {
+      lat: 51.5074,
+      lng: -0.1278,
+      label: "UK",
       image: HOME_IMAGES[6],
     },
   },
@@ -203,7 +204,7 @@ export default function Page() {
             animationDuration={5.5}
             loop
             compact
-            focus={{ lat: 22.5, lng: 79, scale: 1.2 }}
+            focus={{ lat: 20, lng: 55, scale: 1.05 }}
             className="mx-auto max-h-[170px] opacity-70 sm:max-h-[340px] sm:opacity-80 md:max-h-[400px] lg:max-h-[460px]"
           />
         </div>

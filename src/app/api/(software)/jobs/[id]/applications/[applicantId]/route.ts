@@ -76,26 +76,14 @@ export async function GET(_req: Request, context: RouteContext) {
 
     const profile = toCandidateProfileData(user);
     const kycState = toKycPublicState(user);
-    // Hirers only see document URLs after AI KYC passed.
-    const kyc = kycState.verified
-      ? {
-          verified: true as const,
-          verifiedAt: kycState.verifiedAt,
-          documents: kycState.documents,
-          summary: kycState.analysis?.summary ?? null,
-          deferred: kycState.deferred,
-        }
-      : {
-          verified: false as const,
-          verifiedAt: null,
-          documents: {} as typeof kycState.documents,
-          summary: null,
-          deferred: {
-            pan: false,
-            passport: false,
-            undertakingAcceptedAt: null,
-          },
-        };
+    const kyc = {
+      isKycVerified: kycState.isKycVerified,
+      verifiedAt: kycState.verifiedAt,
+      provider: kycState.provider,
+      aadhaarLast4: kycState.aadhaarLast4,
+      pan: kycState.pan,
+      gender: kycState.gender,
+    };
 
     const interviewDocs = await db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)

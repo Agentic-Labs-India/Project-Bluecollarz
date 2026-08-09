@@ -107,7 +107,7 @@ ${simplicity}`;
 
     return `Language (spoken aloud by TTS):
 - Speak casual conversational ${label} mixed with everyday English — how workers actually talk, not textbook ${label}.
-- Keep work words in English: experience, skills, resume, phone number, location, education, job, company, role, etc.
+- Keep work words in English: experience, skills, resume, location, education, job, company, role, etc.
 - Stick to this mixed spoken style for the whole session (${tts}).
 ${simplicity}`;
   }

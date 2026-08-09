@@ -75,7 +75,7 @@ export interface ApplicantListItem {
   status: ApplicationDocument["status"];
   appliedAt: string;
   interviews: ApplicantInterviewScore[];
-  /** True when candidate passed AI KYC and docs are on file. */
+  /** True when candidate passed DigiLocker KYC (e-Aadhaar). */
   kycVerified: boolean;
 }
 

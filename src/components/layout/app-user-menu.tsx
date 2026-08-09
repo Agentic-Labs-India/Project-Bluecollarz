@@ -82,7 +82,16 @@ function UserMenuDropdown({
       <DropdownMenuContent side={side} align={align} className="w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{user.name}</span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium">
+              {user.name}
+              {(session?.user as { isKycVerified?: boolean } | undefined)
+                ?.isKycVerified ? (
+                <BadgeCheckIcon
+                  className="size-4 shrink-0 fill-sky-600 text-white dark:fill-sky-400"
+                  aria-label="Verified"
+                />
+              ) : null}
+            </span>
             <span className="text-muted-foreground text-xs">{user.email}</span>
           </div>
         </DropdownMenuLabel>

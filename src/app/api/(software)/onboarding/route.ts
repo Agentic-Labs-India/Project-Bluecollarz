@@ -28,6 +28,7 @@ import {
 import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
 import { lookupPlaceOptions } from "@/lib/geo/places";
 import { parseDateOnly } from "@/lib/dates";
+import { isIdentityVerified } from "@/lib/kyc";
 
 export const maxDuration = 90;
 
@@ -37,8 +38,7 @@ const GEO_PLACE_PROMPT = `Places (must use country-state-city official English n
 - preferredCountries: array of official country names only.
 - Residence flow: country → state (if listed) → city. Each value must appear in listPlaceOptions.
 - Postal code can be free text; place names cannot.
-- Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).
-- phoneNumber and phoneCountryCode are JSON numbers (e.g. phoneCountryCode 91, phoneNumber 9876543210). Never strings.`;
+- Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).`;
 
 const gatewayModel = getGatewayModel();
 
@@ -78,7 +78,28 @@ async function saveProfile(
     .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
     .findOne(filter);
   const current = toCandidateProfileData(existing);
-  const mergedInput = mergeCandidateProfilePatch(current, patch);
+  // DigiLocker-verified identity fields cannot be changed via onboarding.
+  const safePatch = isIdentityVerified(existing)
+    ? Object.fromEntries(
+        Object.entries(patch).filter(
+          ([key]) =>
+            ![
+              "phoneNumber",
+              "phoneCountryCode",
+              "dateOfBirth",
+              "location",
+              "residenceCountry",
+              "residenceState",
+              "residenceCity",
+              "residencePostalCode",
+            ].includes(key),
+        ),
+      )
+    : patch;
+  const mergedInput = mergeCandidateProfilePatch(
+    current,
+    safePatch as Partial<CandidateProfileUpdateInput>,
+  );
 
   const preview = toCandidateProfileData({
     ...existing,
@@ -255,14 +276,13 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
   const skills = asStringList(extracted.skills);
 
   const result = await saveProfile(userId, {
-    phoneNumber:
-      typeof extracted.phoneNumber === "number"
-        ? extracted.phoneNumber
-        : null,
-    phoneCountryCode:
-      typeof extracted.phoneCountryCode === "number"
-        ? extracted.phoneCountryCode
-        : null,
+    // Only write phone when the resume actually has one — never wipe existing.
+    ...(typeof extracted.phoneNumber === "number"
+      ? { phoneNumber: extracted.phoneNumber }
+      : {}),
+    ...(typeof extracted.phoneCountryCode === "number"
+      ? { phoneCountryCode: extracted.phoneCountryCode }
+      : {}),
     headline: String(extracted.headline ?? ""),
     location: String(extracted.location ?? ""),
     yearsExperience: asNullableInt(extracted.yearsExperience),
@@ -289,37 +309,48 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
 function buildAgent(
   userId: string,
   userName: string,
-  opts?: {
+  opts: {
     resumeApplied?: { complete: boolean; missing: string[] } | null;
     resumeParseFailed?: boolean;
     languageCode?: string | null;
+    /** Live missing mandatory labels for this request. */
+    missingLabels: string[];
+    alreadyComplete: boolean;
   },
 ) {
-  const resumeApplied = opts?.resumeApplied;
-  const resumeContext = resumeApplied
-    ? `IMPORTANT — resume already processed this turn:
+  const resumeApplied = opts.resumeApplied;
+  const missingLine = opts.missingLabels.length
+    ? `Currently missing mandatory fields: ${opts.missingLabels.join(", ")}.`
+    : "No mandatory fields are missing — profile is complete.";
+
+  const resumeContext = opts.alreadyComplete
+    ? `IMPORTANT — the profile is already complete.
+Congratulate ${userName || "the candidate"} briefly and call finishOnboarding immediately. Do not ask more questions.`
+    : resumeApplied
+      ? `IMPORTANT — resume already processed this turn:
 The candidate attached a resume PDF. It was parsed and saved (nothing was stored in blob/file storage).
-Call getCandidateProfile immediately. Ask only for missing mandatory fields${
-        resumeApplied.missing.length
-          ? ` (currently missing: ${resumeApplied.missing.join(", ")})`
-          : ""
-      }, one at a time.
-If complete is true, congratulate them and call finishOnboarding.`
-    : opts?.resumeParseFailed
-      ? `IMPORTANT — the candidate attached a resume PDF but automatic extraction failed.
-Tell them briefly, then interview by voice for the mandatory fields one at a time. Use updateCandidateProfile after each useful answer.`
-      : `Flow:
+${missingLine}
+Ask only for those missing fields, one at a time. Never re-ask fields already filled.
+If nothing is missing, congratulate them and call finishOnboarding.`
+      : opts.resumeParseFailed
+        ? `IMPORTANT — the candidate attached a resume PDF but automatic extraction failed.
+${missingLine}
+Tell them briefly, then interview only the missing fields one at a time. Use updateCandidateProfile after each useful answer.`
+        : `Profile state: ${missingLine}
+
+Flow:
 1. ${
-          opts?.languageCode
-            ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language.`
-            : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
-        }
-2. After greeting, say one short spoken sentence asking if they have a resume PDF to upload, then call selectResume (shows Upload / No resume buttons). Always speak that sentence — do not only call the tool silently. Wait for the picker result before continuing.
-3. If has_resume is true: a PDF is attached with their choice — it is parsed automatically. Call getCandidateProfile and ask only for missing mandatory fields, one at a time.
-4. If has_resume is false: interview them by voice to build the profile. Ask one question at a time. Use updateCandidateProfile after each useful answer.
-5. When complete is true, congratulate them and say they will go to the dashboard. Call finishOnboarding.
+            opts.languageCode
+              ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language.`
+              : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
+          }
+2. Immediately call getCandidateProfile (do this every session after language is set). Ask ONLY for fields listed in missing — never re-ask filled ones.
+3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most mandatory fields are already filled.
+4. If has_resume is true: PDF is parsed automatically. Ask only remaining missing fields.
+5. If has_resume is false (or resume skipped): interview only missing fields, one at a time. Use updateCandidateProfile after each useful answer.
+6. As soon as missing is empty / complete is true, congratulate them, say they will go to the dashboard, and call finishOnboarding.
 ${
-  opts?.languageCode
+  opts.languageCode
     ? "Do not call selectVoiceLanguage — language is already on the profile."
     : "Call selectVoiceLanguage at most once per session (only if voice language is not already on the profile)."
 }
@@ -330,16 +361,18 @@ Call selectResume at most once per session.`;
     model: gatewayModel,
     instructions: `You are Blucollarz's onboarding voice coach for candidates (workers).
 Speak in short, clear spoken sentences (1–3). The user answers by voice.
-${voiceLanguagePrompt(opts?.languageCode)}
+${voiceLanguagePrompt(opts.languageCode)}
 ${VOICE_DELIVERY_PROMPT}
 ${VOICE_TOOL_DATA_PROMPT}
 ${GEO_PLACE_PROMPT}
 ${resumeContext}
 
-Mandatory fields: phone number, headline/role, location, years of experience, skills, professional summary, education (at least one entry), work experience (at least one entry), and languages.
+Mandatory fields only: headline/role, location, years of experience, skills, professional summary, education (at least one entry), work experience (at least one entry), and languages.
+NEVER ask for phone number, email, Aadhaar, PAN, gender, or date of birth — those come from DigiLocker / profile settings, not this interview.
 Never ask about work authorization, visas, work permits, citizenship, or legal eligibility to work in any country.
-Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.`,
-    stopWhen: isStepCount(12),
+Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.
+After every updateCandidateProfile, if complete is true (or missing is empty), you MUST call finishOnboarding in the same turn.`,
+    stopWhen: isStepCount(24),
     tools: {
       selectVoiceLanguage: tool({
         description:
@@ -354,7 +387,7 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
       }),
       selectResume: tool({
         description:
-          "Show Upload / No resume buttons in chat. Call AFTER you speak a short question about having a resume PDF. Wait for their selection.",
+          "Show Upload / No resume buttons in chat. Call AFTER you speak a short question about having a resume PDF. Wait for their selection. Skip if most profile fields are already filled.",
         inputSchema: z.object({
           prompt: z
             .string()
@@ -386,7 +419,8 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
         execute: async (input) => lookupPlaceOptions(input),
       }),
       getCandidateProfile: tool({
-        description: "Read the candidate's current profile and missing fields.",
+        description:
+          "Read the candidate's current profile and missing mandatory fields. Call this before asking questions so you only ask what is left.",
         inputSchema: z.object({}),
         execute: async () => {
           const profile = await loadProfile(userId);
@@ -400,7 +434,7 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions. phoneNumber and phoneCountryCode are JSON numbers.",
+          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions. Do not collect phone number here.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
           skills: z.array(z.string()).optional(),
           preferredCountries: z.array(z.string()).optional(),
@@ -408,20 +442,6 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
           voiceLanguage: z.enum(TTS_LANGUAGE_CODES).optional(),
           hobbies: z.array(z.string()).optional(),
           otherLinks: z.array(z.string()).optional(),
-          phoneNumber: z
-            .number()
-            .int()
-            .positive()
-            .nullable()
-            .optional()
-            .describe("National phone digits as a number, e.g. 9876543210"),
-          phoneCountryCode: z
-            .number()
-            .int()
-            .positive()
-            .nullable()
-            .optional()
-            .describe("Country calling code as a number, e.g. 91"),
           dateOfBirth: z
             .string()
             .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -429,24 +449,44 @@ Never invent facts. Prefer updateCandidateProfile for structured saves. Do not a
             .optional()
             .describe("Date of birth as yyyy-MM-dd, or null"),
         }),
-        execute: async (input) => saveProfile(userId, input),
+        execute: async (input) => {
+          // Phone is never collected during onboarding voice interview.
+          const rest = { ...input } as Partial<CandidateProfileUpdateInput>;
+          delete rest.phoneNumber;
+          delete rest.phoneCountryCode;
+          const result = await saveProfile(userId, rest);
+          if (result.complete) {
+            return {
+              ...result,
+              finished: true,
+              redirectTo: "/candidate/home",
+            };
+          }
+          return result;
+        },
       }),
       finishOnboarding: tool({
         description:
-          "Mark onboarding complete when all mandatory fields are filled.",
+          "Mark onboarding complete when all mandatory fields are filled. Call this as soon as complete is true.",
         inputSchema: z.object({}),
         execute: async () => {
           const profile = await loadProfile(userId);
           if (!isCandidateProfileComplete(profile)) {
             return {
               ok: false,
+              finished: false,
               missing: getMissingCandidateFields(profile).map(
                 (k) => CANDIDATE_FIELD_LABELS[k],
               ),
             };
           }
           const result = await saveProfile(userId, {});
-          return { ok: true, redirectTo: "/candidate/home", ...result };
+          return {
+            ok: true,
+            finished: true,
+            redirectTo: "/candidate/home",
+            ...result,
+          };
         },
       }),
     },
@@ -499,10 +539,22 @@ export async function POST(request: Request) {
 
   const uiMessages =
     resumeApplied || resumeParseFailed ? stripFileParts(messages) : messages;
+
+  // Seed live gaps into instructions so reloads only ask what is left.
+  const currentProfile = await loadProfile(user.id);
+  const missingLabels = getMissingCandidateFields(currentProfile).map(
+    (k) => CANDIDATE_FIELD_LABELS[k],
+  );
+  const alreadyComplete =
+    resumeApplied?.complete === true ||
+    isCandidateProfileComplete(currentProfile);
+
   const agent = buildAgent(user.id, user.name ?? "", {
     resumeApplied,
     resumeParseFailed,
     languageCode,
+    missingLabels: resumeApplied?.missing ?? missingLabels,
+    alreadyComplete,
   });
   return createAgentUIStreamResponse({
     agent,

@@ -453,13 +453,13 @@ export function OnboardingAgent() {
         if (existingLanguage) {
           setStatus("Starting onboarding…");
           await sendMessage({
-            text: "Hi — I just signed in as a candidate. My voice language is already on my profile, start onboarding in that language.",
+            text: "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first, then ask ONLY for missing mandatory fields (never phone number). If already complete, call finishOnboarding.",
             metadata: { hideInChat: true },
           });
         } else {
           setStatus("Starting onboarding — pick your language in chat…");
           await sendMessage({
-            text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then start onboarding in that language.",
+            text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile and ask ONLY for missing mandatory fields (never phone number). If already complete, call finishOnboarding.",
             metadata: { hideInChat: true },
           });
         }
@@ -528,15 +528,23 @@ export function OnboardingAgent() {
     }
     spokenTextByIdRef.current.set(last.id, text);
 
-    const finished = last.parts.some(
-      (p) =>
-        isToolUIPart(p) &&
-        p.type === "tool-finishOnboarding" &&
-        p.state === "output-available" &&
-        typeof p.output === "object" &&
-        p.output !== null &&
-        (p.output as { ok?: boolean }).ok === true,
-    );
+    const finished = last.parts.some((p) => {
+      if (!isToolUIPart(p) || p.state !== "output-available") return false;
+      if (typeof p.output !== "object" || p.output === null) return false;
+      const out = p.output as {
+        ok?: boolean;
+        finished?: boolean;
+        complete?: boolean;
+      };
+      if (p.type === "tool-finishOnboarding" && out.ok === true) return true;
+      if (
+        p.type === "tool-updateCandidateProfile" &&
+        (out.finished === true || out.complete === true)
+      ) {
+        return true;
+      }
+      return false;
+    });
 
     void (async () => {
       pausedRef.current = true;
@@ -555,6 +563,27 @@ export function OnboardingAgent() {
         setStatus("Profile complete — taking you to your dashboard…");
         setTimeout(() => router.replace("/candidate/home"), 1200);
         return;
+      }
+
+      // Fallback: server may be complete even if the model skipped finishOnboarding.
+      try {
+        const res = await fetch("/api/candidate/onboarding-status");
+        const json = (await res.json().catch(() => ({}))) as {
+          complete?: boolean;
+        };
+        if (res.ok && json.complete === true) {
+          doneRef.current = true;
+          setDone(true);
+          pausedRef.current = true;
+          vadRef.current?.stop();
+          vadRef.current = null;
+          setListening(false);
+          setStatus("Profile complete — taking you to your dashboard…");
+          setTimeout(() => router.replace("/candidate/home"), 800);
+          return;
+        }
+      } catch {
+        // ignore — keep listening
       }
 
       if (awaitingResume) {

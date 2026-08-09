@@ -2,8 +2,7 @@ import { connection } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import type { ProfileType } from "@/lib/profile-types";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { deleteBlobUrls } from "@/lib/blob/delete";
-import { kycBlobUrls, type KycFields } from "@/lib/kyc";
+import type { KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
 import {
   deleteUserProvision,
@@ -52,13 +51,6 @@ async function applyProfileTypeCleanup(
   const dropCandidate =
     profileType === "hire" || profileType === "admin";
   const dropHire = profileType === "work" || profileType === "admin";
-
-  if (dropCandidate) {
-    const existing = await users.findOne(filter, {
-      projection: { kycDocuments: 1 },
-    });
-    await deleteBlobUrls(kycBlobUrls(existing));
-  }
 
   const $unset = {
     ...unsetFields(LEGACY_USER_FIELDS),

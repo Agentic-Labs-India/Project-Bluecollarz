@@ -30,12 +30,6 @@ import {
   type CustomQuestion,
   type CustomQuestionAnswer,
 } from "@/lib/jobs/custom-questions";
-import {
-  KYC_UPLOAD_LABELS,
-  KYC_UPLOAD_SLOTS,
-  type KycUploadSlot,
-} from "@/lib/kyc";
-
 type InterviewDetail = {
   id: string;
   stageId: InterviewStageId;
@@ -51,25 +45,12 @@ type InterviewDetail = {
 };
 
 type HireKycView = {
-  verified: boolean;
+  isKycVerified: boolean;
   verifiedAt: string | null;
-  summary: string | null;
-  deferred: {
-    pan: boolean;
-    passport: boolean;
-    undertakingAcceptedAt: string | null;
-  };
-  documents: Partial<
-    Record<
-      KycUploadSlot,
-      {
-        url: string;
-        pathname: string;
-        contentType: string;
-        uploadedAt: string;
-      }
-    >
-  >;
+  provider: string | null;
+  aadhaarLast4?: string | null;
+  pan?: string | null;
+  gender?: string | null;
 };
 
 type ApplicantDetailResponse = {
@@ -293,28 +274,22 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
 }
 
 function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
-  if (!kyc.verified) {
+  if (!kyc.isKycVerified) {
     return (
       <p className="text-sm">
-        AI KYC is not complete yet. Documents appear here after the candidate
-        passes verification.
+        DigiLocker KYC is not complete yet. Status updates after the candidate
+        verifies e-Aadhaar via DigiLocker.
       </p>
     );
   }
 
-  const docs = KYC_UPLOAD_SLOTS.filter((slot) => kyc.documents[slot]?.url);
-  const pendingLater = [
-    kyc.deferred?.pan ? "PAN" : null,
-    kyc.deferred?.passport ? "Passport" : null,
-  ].filter(Boolean);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>AI KYC Done</Badge>
-        {pendingLater.length ? (
+        <Badge>DigiLocker KYC Done</Badge>
+        {kyc.provider ? (
           <Badge variant="outline" className="font-normal">
-            {pendingLater.join(" + ")} pending later
+            {kyc.provider}
           </Badge>
         ) : null}
         {kyc.verifiedAt ? (
@@ -323,64 +298,30 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
           </span>
         ) : null}
       </div>
-      {kyc.summary ? <Field label="AI summary" value={kyc.summary} /> : null}
-      {pendingLater.length ? (
-        <p className="text-muted-foreground text-sm">
-          Candidate undertook to submit {pendingLater.join(" and ")} later.
-          {kyc.deferred?.undertakingAcceptedAt
-            ? ` Acknowledged ${new Date(kyc.deferred.undertakingAcceptedAt).toLocaleString()}.`
-            : null}
-        </p>
-      ) : null}
-      {docs.length ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {docs.map((slot) => {
-            const file = kyc.documents[slot]!;
-            const isImage = file.contentType.startsWith("image/");
-            return (
-              <a
-                key={slot}
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border-border hover:bg-muted/40 block overflow-hidden rounded-md border transition-colors"
-              >
-                {isImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={file.url}
-                    alt={KYC_UPLOAD_LABELS[slot]}
-                    className="bg-muted aspect-[4/3] w-full object-cover"
-                  />
-                ) : (
-                  <div className="bg-muted text-muted-foreground flex aspect-[4/3] w-full items-center justify-center text-sm">
-                    Open PDF
-                  </div>
-                )}
-                <p className="text-foreground px-3 py-2 text-sm font-medium">
-                  {KYC_UPLOAD_LABELS[slot]}
-                </p>
-              </a>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-sm">Verified, but no document files are on file.</p>
-      )}
-      {(kyc.deferred?.pan || kyc.deferred?.passport) && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {kyc.deferred.pan && !kyc.documents.pan ? (
-            <div className="border-border bg-muted/30 flex aspect-[4/3] items-center justify-center border text-sm">
-              PAN — submit later
-            </div>
-          ) : null}
-          {kyc.deferred.passport && !kyc.documents.passport ? (
-            <div className="border-border bg-muted/30 flex aspect-[4/3] items-center justify-center border text-sm">
-              Passport — submit later
-            </div>
-          ) : null}
-        </div>
-      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {kyc.gender ? (
+          <div>
+            <p className="text-muted-foreground text-xs">Gender</p>
+            <p className="text-sm">{kyc.gender}</p>
+          </div>
+        ) : null}
+        {kyc.pan ? (
+          <div>
+            <p className="text-muted-foreground text-xs">PAN</p>
+            <p className="text-sm">{kyc.pan}</p>
+          </div>
+        ) : null}
+        {kyc.aadhaarLast4 ? (
+          <div>
+            <p className="text-muted-foreground text-xs">Aadhaar (last 4)</p>
+            <p className="text-sm">XXXXXXXX{kyc.aadhaarLast4}</p>
+          </div>
+        ) : null}
+      </div>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Identity verified through DigiLocker e-Aadhaar. Raw DigiLocker document
+        JSON is not stored on Blucollarz.
+      </p>
     </div>
   );
 }
@@ -671,8 +612,8 @@ export function ApplicantSheet({
                       <Badge variant="secondary" className="capitalize">
                         {data.application.status}
                       </Badge>
-                      {data.kyc?.verified ? (
-                        <Badge>AI KYC Done</Badge>
+                      {data.kyc?.isKycVerified ? (
+                        <Badge>DigiLocker KYC Done</Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
                           KYC pending
@@ -732,9 +673,9 @@ export function ApplicantSheet({
                 <AccordionItem value="kyc">
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
-                      AI KYC
-                      {data.kyc?.verified ? (
-                        <Badge>AI KYC Done</Badge>
+                      DigiLocker KYC
+                      {data.kyc?.isKycVerified ? (
+                        <Badge>DigiLocker KYC Done</Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
                           Pending
@@ -746,15 +687,9 @@ export function ApplicantSheet({
                     <KycAccordionBody
                       kyc={
                         data.kyc ?? {
-                          verified: false,
+                          isKycVerified: false,
                           verifiedAt: null,
-                          summary: null,
-                          documents: {},
-                          deferred: {
-                            pan: false,
-                            passport: false,
-                            undertakingAcceptedAt: null,
-                          },
+                          provider: null,
                         }
                       }
                     />

@@ -59,6 +59,18 @@ export interface CandidateProfileFields {
   fullTimeCompensation?: number | null;
   /** USD / hour */
   partTimeCompensation?: number | null;
+  /** DigiLocker-verified identity flag. */
+  isKycVerified?: boolean;
+  /** Nested DigiLocker identity pack. */
+  kyc?: {
+    provider?: string;
+    verifiedAt?: Date | string | null;
+    updatedAt?: Date | string | null;
+    aadhaarLast4?: string | null;
+    pan?: string | null;
+    gender?: string | null;
+    apaarId?: string | null;
+  } | null;
 }
 
 export interface EducationFormEntry {
@@ -108,10 +120,15 @@ export interface CandidateProfileData {
   dateOfBirth: string;
   fullTimeCompensation: number | null;
   partTimeCompensation: number | null;
+  /** DigiLocker identity verified — locks phone/DOB/address/PAN/Aadhaar/gender. */
+  isKycVerified: boolean;
+  gender: string;
+  pan: string;
+  aadhaarLast4: string;
+  apaarId: string;
 }
 
 export const CANDIDATE_MANDATORY_FIELDS = [
-  "phoneNumber",
   "headline",
   "location",
   "yearsExperience",
@@ -190,6 +207,11 @@ export const emptyCandidateProfileData = (): CandidateProfileData => ({
   dateOfBirth: "",
   fullTimeCompensation: null,
   partTimeCompensation: null,
+  isKycVerified: false,
+  gender: "",
+  pan: "",
+  aadhaarLast4: "",
+  apaarId: "",
 });
 
 const optionalTrimmed = (max: number) =>
@@ -417,6 +439,11 @@ export function toCandidateProfileData(
     dateOfBirth: formatDateOnly(doc.dateOfBirth),
     fullTimeCompensation: asNullableNumber(doc.fullTimeCompensation),
     partTimeCompensation: asNullableNumber(doc.partTimeCompensation),
+    isKycVerified: Boolean(doc.isKycVerified),
+    gender: doc.kyc?.gender ?? "",
+    pan: doc.kyc?.pan ?? "",
+    aadhaarLast4: doc.kyc?.aadhaarLast4 ?? "",
+    apaarId: doc.kyc?.apaarId ?? "",
   };
 }
 
@@ -437,7 +464,6 @@ export function getMissingCandidateFields(
   profile: CandidateProfileData,
 ): CandidateMandatoryField[] {
   const missing: CandidateMandatoryField[] = [];
-  if (profile.phoneNumber === null) missing.push("phoneNumber");
   if (!profile.headline.trim()) missing.push("headline");
   if (!profile.location.trim()) missing.push("location");
   if (profile.yearsExperience === null) missing.push("yearsExperience");
@@ -458,7 +484,6 @@ export function isCandidateProfileComplete(
 }
 
 export const CANDIDATE_FIELD_LABELS: Record<CandidateMandatoryField, string> = {
-  phoneNumber: "phone number",
   headline: "current role or headline",
   location: "location",
   yearsExperience: "years of experience",

@@ -53,7 +53,7 @@ export interface OpportunitiesResult {
   /** Per-job application status for the signed-in candidate. */
   applicationStatuses: Record<string, ApplicationStatus>;
   profileComplete: boolean;
-  /** True when the candidate has completed AI KYC identity verification. */
+  /** True when the candidate has completed DigiLocker KYC. */
   kycVerified: boolean;
 }
 
@@ -309,7 +309,7 @@ export async function getPublishedOpportunities(opts: {
             education: 1,
             workExperience: 1,
             languages: 1,
-            kycStatus: 1,
+            isKycVerified: 1,
           },
         },
       );
@@ -317,7 +317,7 @@ export async function getPublishedOpportunities(opts: {
     profileComplete = isCandidateProfileComplete(
       toCandidateProfileData(userDoc),
     );
-    kycVerified = userDoc?.kycStatus === "verified";
+    kycVerified = userDoc?.isKycVerified === true;
 
     if (jobs.length) {
       const jobIdHexes = jobs.map((job) => job.id).filter(Boolean);

@@ -338,6 +338,7 @@ export function CandidateProfileView() {
   }
 
   const initial = profile.name?.charAt(0) || "U";
+  const identityLocked = profile.isKycVerified === true;
 
   return (
     <AppPage className="space-y-8 pb-10">
@@ -363,13 +364,27 @@ export function CandidateProfileView() {
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <h2 className="text-foreground text-xl font-semibold">
-            {profile.name || "Your name"}
+          <h2 className="text-foreground flex flex-wrap items-center gap-2 text-xl font-semibold">
+            <span>{profile.name || "Your name"}</span>
+            {identityLocked ? (
+              <span
+                className="text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 text-sm font-medium"
+                title="Identity verified via DigiLocker"
+              >
+                <BadgeCheckIcon className="size-5 fill-sky-600 text-white dark:fill-sky-400" />
+                Verified
+              </span>
+            ) : null}
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
             {profile.headline || "Add your headline"}
           </p>
-          {profile.candidateOnboardingComplete ? (
+          {identityLocked ? (
+            <p className="text-muted-foreground mt-2 text-xs">
+              DigiLocker verified — phone, DOB, address, PAN, Aadhaar, and gender
+              are locked.
+            </p>
+          ) : profile.candidateOnboardingComplete ? (
             <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 text-xs">
               <BadgeCheckIcon className="size-3.5" />
               Profile ready for applications
@@ -402,6 +417,7 @@ export function CandidateProfileView() {
               id="phone"
               countryCode={profile.phoneCountryCode}
               number={profile.phoneNumber}
+              disabled={identityLocked}
               defaultIso={
                 countryCodeFromName(profile.residenceCountry) ?? "IN"
               }
@@ -415,15 +431,45 @@ export function CandidateProfileView() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location">Location / address</Label>
             <Input
               id="location"
               value={profile.location}
+              disabled={identityLocked}
               onChange={(e) =>
                 setProfile((p) => ({ ...p, location: e.target.value }))
               }
             />
           </div>
+          {identityLocked || profile.gender || profile.pan || profile.aadhaarLast4 ? (
+            <>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Input value={profile.gender || "—"} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label>PAN</Label>
+                <Input value={profile.pan || "—"} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label>Aadhaar (last 4)</Label>
+                <Input
+                  value={
+                    profile.aadhaarLast4
+                      ? `XXXXXXXX${profile.aadhaarLast4}`
+                      : "—"
+                  }
+                  disabled
+                />
+              </div>
+              {profile.apaarId ? (
+                <div className="space-y-2">
+                  <Label>APAAR ID</Label>
+                  <Input value={profile.apaarId} disabled />
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="headline">Headline / current role</Label>
             <Input
@@ -875,44 +921,50 @@ export function CandidateProfileView() {
             Where you are based for most of the year. This might differ from
             citizenship.
           </p>
-          <ResidencePlaceFields
-            country={profile.residenceCountry}
-            state={profile.residenceState}
-            city={profile.residenceCity}
-            onChange={(place) =>
-              setProfile((p) => ({
-                ...p,
-                residenceCountry: place.country,
-                residenceState: place.state,
-                residenceCity: place.city,
-              }))
-            }
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Postal code</Label>
-              <Input
-                value={profile.residencePostalCode}
-                onChange={(e) =>
-                  setProfile((p) => ({
-                    ...p,
-                    residencePostalCode: e.target.value,
-                  }))
-                }
-              />
+          <fieldset disabled={identityLocked} className="min-w-0 space-y-3">
+            <ResidencePlaceFields
+              country={profile.residenceCountry}
+              state={profile.residenceState}
+              city={profile.residenceCity}
+              onChange={(place) =>
+                setProfile((p) => ({
+                  ...p,
+                  residenceCountry: place.country,
+                  residenceState: place.state,
+                  residenceCity: place.city,
+                }))
+              }
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Postal code</Label>
+                <Input
+                  value={profile.residencePostalCode}
+                  onChange={(e) =>
+                    setProfile((p) => ({
+                      ...p,
+                      residencePostalCode: e.target.value,
+                    }))
+                  }
+                />
+              </div>
             </div>
-          </div>
+          </fieldset>
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="dob">Date of birth</Label>
-          <DateOfBirthPicker
-            id="dob"
-            value={profile.dateOfBirth}
-            onChange={(dateOfBirth) =>
-              setProfile((p) => ({ ...p, dateOfBirth }))
-            }
-          />
+          {identityLocked ? (
+            <Input id="dob" value={profile.dateOfBirth || "—"} disabled />
+          ) : (
+            <DateOfBirthPicker
+              id="dob"
+              value={profile.dateOfBirth}
+              onChange={(dateOfBirth) =>
+                setProfile((p) => ({ ...p, dateOfBirth }))
+              }
+            />
+          )}
         </div>
 
         <div className="space-y-2">
