@@ -16,6 +16,7 @@ export interface HireOverview {
     name: string | null;
     email: string;
     phoneNumber: number | null;
+    phoneCountryCode: number | null;
     image: string | null;
     memberSince: string | null;
   };
@@ -32,6 +33,6 @@ export interface HireOverview {
     selected: number;
   };
   activeRoles: HireActiveRole[];
-  /** Editable company details stored on the hirer's user document. */
+  /** Company details from the approved access request (read-only). */
   profile: HireProfileData;
 }

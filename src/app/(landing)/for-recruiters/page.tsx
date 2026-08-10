@@ -12,11 +12,12 @@ import { RecruiterAccessForm } from "@/components/landing/recruiter-access-form"
 export const metadata = {
   title: "For Recruiters · Blucollarz",
   description:
-    "Hire on autopilot with Blucollarz AI — resume generation, communication & domain interviews, custom questions, JD writing, and verified KYC. Provisioned access for hiring teams.",
+    "Join Blucollarz for the best AI hiring stack — resume generation, communication & domain interviews, custom questions, JD writing, and verified KYC. Request access for your hiring team.",
 };
 
 const TOC = [
-  { id: "overview", label: "Overview" },
+  { id: "request-access", label: "Join Blucollarz" },
+  { id: "overview", label: "Why Blucollarz" },
   { id: "ai-ecosystem", label: "AI ecosystem" },
   { id: "autopilot", label: "Runs on autopilot" },
   { id: "who-you-hire", label: "Who you hire" },
@@ -24,19 +25,27 @@ const TOC = [
   { id: "access", label: "How access works" },
   { id: "workspace", label: "Hiring workspace" },
   { id: "kyc", label: "KYC for hirers" },
-  { id: "request-access", label: "Request access" },
 ];
 
 export default function ForRecruitersPage() {
   return (
     <DocPage
-      eyebrow="Programs document"
+      eyebrow="For hiring teams"
       title="For Recruiters"
-      description="Blucollarz is an AI hiring ecosystem — not a job board with chatbots bolted on. Resume generation, communication interviews, domain interviews, custom questions, and job descriptions run end-to-end on autopilot so your team reviews signal, not paperwork."
-      updated="July 24, 2026"
+      description="Join for getting the best out of best — AI hiring on autopilot, from resume to shortlist. Request access below, then see why Blucollarz is built for how you hire."
+      updated="August 10, 2026"
       toc={TOC}
     >
-      <DocSection id="overview" number="01" title="Overview">
+      <DocSection id="request-access" number="01" title="Join for the best out of best">
+        <p>
+          Ready to run hiring on autopilot? Tell us about your company. We
+          review every request and provision recruiter access when approved —
+          then your team gets the full Blucollarz stack.
+        </p>
+        <RecruiterAccessForm />
+      </DocSection>
+
+      <DocSection id="overview" number="02" title="Why Blucollarz">
         <p>
           Hiring blue-collar and skilled operational talent usually burns hours
           on resumes, phone screens, and inconsistent interview notes. Blucollarz
@@ -48,13 +57,13 @@ export default function ForRecruitersPage() {
         <DocCallout title="Provisioned hire access">
           <p>
             Recruiter accounts are provisioned by Blucollarz — there is no public
-            self-serve signup. Contact sales and we enable hire access for your
-            company in the database.
+            self-serve signup. Submit the form above; we enable hire access when
+            approved.
           </p>
         </DocCallout>
       </DocSection>
 
-      <DocSection id="ai-ecosystem" number="02" title="The AI ecosystem">
+      <DocSection id="ai-ecosystem" number="03" title="The AI ecosystem">
         <p>
           One platform. Multiple agents. The same model fabric powers every step
           of the pipeline so quality stays consistent from first profile field to
@@ -101,7 +110,7 @@ export default function ForRecruitersPage() {
         />
       </DocSection>
 
-      <DocSection id="autopilot" number="03" title="Runs on autopilot">
+      <DocSection id="autopilot" number="04" title="Runs on autopilot">
         <p>
           The point of the stack is not “AI assists a human at every click.” It
           is that the pipeline moves without babysitting. Candidates advance
@@ -136,7 +145,7 @@ export default function ForRecruitersPage() {
         </DocCallout>
       </DocSection>
 
-      <DocSection id="who-you-hire" number="04" title="Who you hire here">
+      <DocSection id="who-you-hire" number="05" title="Who you hire here">
         <p>
           The candidate base is oriented around trades and operational roles —
           electricians, welders, drivers, technicians, facilities, construction,
@@ -152,7 +161,7 @@ export default function ForRecruitersPage() {
         />
       </DocSection>
 
-      <DocSection id="what-you-get" number="05" title="What you get in the workspace">
+      <DocSection id="what-you-get" number="06" title="What you get in the workspace">
         <DocFeatureGrid
           items={[
             {
@@ -175,36 +184,32 @@ export default function ForRecruitersPage() {
         />
       </DocSection>
 
-      <DocSection id="access" number="06" title="How access works">
+      <DocSection id="access" number="07" title="How access works">
         <DocSteps
           steps={[
             {
-              title: "Contact Blucollarz",
-              body: "Email sales or use Contact. Tell us company, locations, and hiring volume.",
+              title: "Request access",
+              body: "Submit the form at the top with your company details.",
             },
             {
-              title: "We provision your account",
-              body: "Hire access is granted by our team — not via a public signup button.",
+              title: "We review and provision",
+              body: "When approved, hire access is enabled for your email — company profile is set from your request.",
             },
             {
-              title: "Complete company profile",
-              body: "Required before publishing roles so candidates see a real employer context.",
-            },
-            {
-              title: "Post roles and review",
-              body: "Publish openings, let the AI pipeline run, and shortlist from scored applicant files.",
+              title: "Sign in and hire",
+              body: "Sign in with Google using that email, then post roles and review scored applicants.",
             },
           ]}
         />
       </DocSection>
 
-      <DocSection id="workspace" number="07" title="Hiring workspace">
+      <DocSection id="workspace" number="08" title="Hiring workspace">
         <p>Once inside hire, your day-to-day loop looks like this:</p>
         <DocSteps
           steps={[
             {
               title: "Company profile",
-              body: "Maintain company name, industry, size, location, and about text.",
+              body: "Your approved request details — company, industry, size, country, and about — shown read-only.",
             },
             {
               title: "Roles list",
@@ -226,7 +231,7 @@ export default function ForRecruitersPage() {
         />
       </DocSection>
 
-      <DocSection id="kyc" number="08" title="KYC for hirers">
+      <DocSection id="kyc" number="09" title="KYC for hirers">
         <p>
           Identity documents are not a free-for-all upload. Order of operations:
           AI authenticity check first, storage only on pass, then recruiter
@@ -245,15 +250,6 @@ export default function ForRecruitersPage() {
           <strong className="text-foreground">AI KYC Done</strong> badge plus
           previews and the AI summary. Until then, documents stay hidden.
         </p>
-      </DocSection>
-
-      <DocSection id="request-access" number="09" title="Request access">
-        <p>
-          Ready to run hiring on autopilot with Blucollarz? Tell us about your
-          company below. We review every request and provision recruiter access
-          when approved.
-        </p>
-        <RecruiterAccessForm />
       </DocSection>
     </DocPage>
   );

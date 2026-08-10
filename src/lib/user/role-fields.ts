@@ -29,11 +29,13 @@ export const CANDIDATE_ONLY_USER_FIELDS = [
 
 /** Hire-only company profile fields. */
 export const HIRE_ONLY_USER_FIELDS = [
+  "contactName",
   "companyName",
   "tagline",
   "website",
   "industry",
   "companySize",
+  "location",
   "about",
   "certificates",
 ] as const;

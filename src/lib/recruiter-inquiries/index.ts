@@ -3,6 +3,10 @@ import { ObjectId } from "mongodb";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { upsertUserProfileTypeByEmail } from "@/lib/admin/queries";
+import {
+  applyHireProfileToUserByEmail,
+  inquiryToHireProfile,
+} from "@/lib/hire/apply-inquiry-profile";
 import { idHex } from "@/lib/utils";
 import type {
   RecruiterInquiryCreateInput,
@@ -169,6 +173,12 @@ export async function reviewRecruiterInquiry(opts: {
 
   if (opts.status === "approved") {
     await upsertUserProfileTypeByEmail(existing.email, "hire");
+    // Copy company details onto the user when they already have an account.
+    // Pending first-login users hydrate on first hire profile load.
+    await applyHireProfileToUserByEmail(
+      existing.email,
+      inquiryToHireProfile(toListItem(existing)),
+    );
   }
 
   const now = new Date();

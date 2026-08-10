@@ -2,6 +2,7 @@ import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import type { JobDocument } from "@/lib/jobs";
 import type { ApplicationDocument } from "@/lib/jobs/applications";
 import type { HireActiveRole, HireOverview } from "@/lib/hire";
+import { hydrateHireProfileFromApprovedInquiry } from "@/lib/hire/apply-inquiry-profile";
 import {
   isHireProfileComplete,
   toHireProfileData,
@@ -16,6 +17,7 @@ type HireUserDoc = HireProfileFields & {
   email?: string;
   image?: string;
   phoneNumber?: number | null;
+  phoneCountryCode?: number | null;
   createdAt?: Date;
 };
 
@@ -27,6 +29,18 @@ export async function getHireProfileComplete(userId: string): Promise<boolean> {
     .db(DB_NAME)
     .collection<HireUserDoc>(COLLECTIONS.USERS_COLLECTION)
     .findOne({ _id: matchId(userId) as never });
+  if (!user) return false;
+  if (!isHireProfileComplete(toHireProfileData(user)) && user.email) {
+    await hydrateHireProfileFromApprovedInquiry({
+      userId,
+      email: user.email,
+    });
+    const refreshed = await client
+      .db(DB_NAME)
+      .collection<HireUserDoc>(COLLECTIONS.USERS_COLLECTION)
+      .findOne({ _id: matchId(userId) as never });
+    return isHireProfileComplete(toHireProfileData(refreshed));
+  }
   return isHireProfileComplete(toHireProfileData(user));
 }
 export async function getHireOverview(viewer: {
@@ -34,6 +48,12 @@ export async function getHireOverview(viewer: {
   email: string;
 }): Promise<HireOverview> {
   await ensureIndexes();
+  if (viewer.id && viewer.email) {
+    await hydrateHireProfileFromApprovedInquiry({
+      userId: viewer.id,
+      email: viewer.email,
+    });
+  }
   const db = client.db(DB_NAME);
   const ownerMatch = viewer.id ? matchId(viewer.id) : null;
 
@@ -106,6 +126,7 @@ export async function getHireOverview(viewer: {
       name: account?.name ?? null,
       email: account?.email ?? viewer.email,
       phoneNumber: account?.phoneNumber ?? null,
+      phoneCountryCode: account?.phoneCountryCode ?? null,
       image: account?.image ?? null,
       memberSince: account?.createdAt?.toISOString() ?? null,
     },
