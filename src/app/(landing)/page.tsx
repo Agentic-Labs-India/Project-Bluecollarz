@@ -7,6 +7,7 @@ import { LandingFaqs } from "@/components/landing/landing-faqs";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
 import { RoleCarouselSkeleton } from "@/components/landing/role-carousel-skeleton";
 import Testimonials from "@/components/landing/testimonials";
+import { TicketDitherBand } from "@/components/landing/ticket-dither-band";
 import { TrustedBy } from "@/components/landing/trusted-by";
 import { WorldMapLazy } from "@/components/ui/world-map-lazy";
 
@@ -90,39 +91,43 @@ export default function Page() {
     <div className="mx-auto w-full max-w-7xl overflow-x-clip px-6 py-4 duration-300 md:px-8 lg:px-14 2xl:mt-16">
       <div className="relative mt-16 w-full overflow-hidden text-center sm:mt-20 md:mt-24">
         <div className="relative z-10 flex flex-col items-center pt-4">
-          <section className="border-canvas-soft bg-canvas mx-auto mt-4 flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden text-nowrap rounded-full border px-3 py-0.5 text-[12px] font-medium text-muted-foreground shadow-sm sm:mt-6 sm:h-[38px] sm:px-5 sm:text-[12.75px] sm:bg-canvas/90 sm:backdrop-blur-sm md:mt-8">
-            <div className="flex w-fit flex-row items-center justify-center gap-2.5 sm:gap-4">
-              <p className="text-mute flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
-                <span className="hidden font-normal sm:inline sm:translate-y-[-0.5px] sm:pr-4">
+          <section className="relative mx-auto mt-4 flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden rounded-full border border-primary/25 px-3 py-0.5 text-[12px] font-medium shadow-sm sm:mt-6 sm:h-[38px] sm:px-5 sm:text-[12.75px] md:mt-8">
+            <TicketDitherBand
+              seed="hero-stats"
+              className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden rounded-full bg-[#2f4af5]"
+            />
+            <div className="relative z-10 flex w-fit flex-row items-center justify-center gap-2.5 text-white sm:gap-4">
+              <p className="flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
+                <span className="hidden font-normal text-white/80 sm:inline sm:translate-y-[-0.5px] sm:pr-4">
                   Avg. monthly pay
                 </span>
-                <span className="font-normal sm:hidden">Pay</span>
-                <span className="text-foreground sm:translate-y-[-0.5px]">
+                <span className="font-normal text-white/80 sm:hidden">Pay</span>
+                <span className="sm:translate-y-[-0.5px]">
                   $<span className="tabular-nums">2.8</span>k
                 </span>
               </p>
-              <div className="bg-muted h-6 w-px sm:h-9" />
-              <p className="text-mute hidden flex-row items-center gap-1.5 text-[14px] font-medium sm:flex">
-                <span className="font-normal sm:translate-y-[-0.5px] sm:pr-4">
+              <div className="h-6 w-px bg-white/30 sm:h-9" />
+              <p className="hidden flex-row items-center gap-1.5 text-[14px] font-medium sm:flex">
+                <span className="font-normal text-white/80 sm:translate-y-[-0.5px] sm:pr-4">
                   Roles open
                 </span>
-                <span className="text-foreground sm:translate-y-[-0.5px]">
+                <span className="sm:translate-y-[-0.5px]">
                   <span className="tabular-nums">12</span>k+
                 </span>
               </p>
-              <div className="bg-muted hidden h-9 w-px sm:block" />
-              <p className="text-mute flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
-                <span className="font-normal sm:translate-y-[-0.5px] sm:pr-4">
+              <div className="hidden h-9 w-px bg-white/30 sm:block" />
+              <p className="flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
+                <span className="font-normal text-white/80 sm:translate-y-[-0.5px] sm:pr-4">
                   Countries
                 </span>
-                <span className="text-foreground sm:translate-y-[-0.5px]">
+                <span className="sm:translate-y-[-0.5px]">
                   <span className="tabular-nums">40</span>+
                 </span>
               </p>
             </div>
           </section>
 
-          <h1 className="mt-5 text-[30px] font-normal leading-[1.15] sm:mt-7 sm:text-[42px] sm:leading-[1.1] md:mt-8 md:text-5xl md:leading-[1.1]">
+          <h1 className="mt-5 text-[30px] leading-[1.15] font-normal sm:mt-7 sm:text-[42px] sm:leading-[1.1] md:mt-8 md:text-5xl md:leading-[1.1]">
             Work Abroad with us!
           </h1>
           <p className="text-foreground mx-auto mt-3 max-w-[22rem] px-1 text-sm leading-relaxed sm:mt-6 sm:max-w-[400px] sm:text-base">
@@ -147,7 +152,7 @@ export default function Page() {
           <WorldMapLazy
             dots={HERO_MAP_ROUTES}
             lineColor="var(--primary)"
-            showLabels={false}
+            showLabels
             animationDuration={5.5}
             loop
             compact

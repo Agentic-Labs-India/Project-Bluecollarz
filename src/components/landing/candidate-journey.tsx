@@ -16,7 +16,7 @@ type JourneyStep = {
 const STEPS: JourneyStep[] = [
   {
     code: "01",
-    title: "Get onboarded with AI and find the right role for you",
+    title: "Get onboarded with AI",
     body: "Voice onboarding builds your profile and matches verified roles to your trade.",
   },
   {

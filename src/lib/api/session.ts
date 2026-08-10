@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { connection } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { normalizeProfileType, type ProfileType } from "@/lib/profile-types";
 
@@ -14,9 +13,25 @@ type Guard =
   | { ok: true; user: AuthContext }
   | { ok: false; error: string; status: number };
 
+/**
+ * Next aborts Cache Components prerender by rejecting hanging dynamic APIs.
+ * Route `try/catch` blocks must rethrow these so the route stays dynamic.
+ */
+export function rethrowIfPrerenderAbort(error: unknown): void {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    (error as { digest?: unknown }).digest === "HANGING_PROMISE_REJECTION"
+  ) {
+    throw error;
+  }
+}
+
 /** Resolve the signed-in user (id, email, profileType) from the session. */
 async function getAuthContext(): Promise<AuthContext | null> {
-  await connection();
+  // `headers()` is enough to opt into request time; avoid `connection()` here —
+  // API route try/catch would otherwise log HANGING_PROMISE_REJECTION during build.
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as
     | { id?: string; email?: string; name?: string | null; profileType?: string }

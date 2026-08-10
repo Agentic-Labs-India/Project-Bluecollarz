@@ -1,3 +1,4 @@
+// @ts-nocheck — vendored paper-shaders mount; skip strict checking.
 "use client";
 
 import * as React2 from "react";
