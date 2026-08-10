@@ -453,13 +453,13 @@ export function OnboardingAgent() {
         if (existingLanguage) {
           setStatus("Starting onboarding…");
           await sendMessage({
-            text: "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first, then ask ONLY for missing mandatory fields (never phone number). If already complete, call finishOnboarding.",
+            text: "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first, then ask ONLY for missing interview fields. Never ask for skills or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).",
             metadata: { hideInChat: true },
           });
         } else {
           setStatus("Starting onboarding — pick your language in chat…");
           await sendMessage({
-            text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile and ask ONLY for missing mandatory fields (never phone number). If already complete, call finishOnboarding.",
+            text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile and ask ONLY for missing interview fields. Never ask for skills or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).",
             metadata: { hideInChat: true },
           });
         }

@@ -277,8 +277,8 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
   if (!kyc.isKycVerified) {
     return (
       <p className="text-sm">
-        DigiLocker KYC is not complete yet. Status updates after the candidate
-        verifies e-Aadhaar via DigiLocker.
+        DigiLocker KYC is not complete yet. After they verify once on their
+        account, it shows as already done for every role — no per-job repeat.
       </p>
     );
   }
@@ -286,7 +286,7 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>DigiLocker KYC Done</Badge>
+        <Badge>KYC already done</Badge>
         {kyc.provider ? (
           <Badge variant="outline" className="font-normal">
             {kyc.provider}
@@ -613,7 +613,7 @@ export function ApplicantSheet({
                         {data.application.status}
                       </Badge>
                       {data.kyc?.isKycVerified ? (
-                        <Badge>DigiLocker KYC Done</Badge>
+                        <Badge>KYC already done</Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
                           KYC pending
@@ -675,7 +675,7 @@ export function ApplicantSheet({
                     <span className="flex items-center gap-2">
                       DigiLocker KYC
                       {data.kyc?.isKycVerified ? (
-                        <Badge>DigiLocker KYC Done</Badge>
+                        <Badge>KYC already done</Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
                           Pending

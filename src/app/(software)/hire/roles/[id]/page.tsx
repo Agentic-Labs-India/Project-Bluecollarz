@@ -160,7 +160,11 @@ export default function RoleCandidatesPage() {
                   {row.original.name ?? "Candidate"}
                 </p>
                 {row.original.kycVerified ? (
-                  <Badge className="shrink-0 font-normal">DigiLocker KYC Done</Badge>
+                  <Badge className="shrink-0 font-normal">KYC already done</Badge>
+                ) : row.original.status === "selected" ? (
+                  <Badge variant="outline" className="shrink-0 font-normal">
+                    KYC pending
+                  </Badge>
                 ) : null}
               </div>
               <p className="text-muted-foreground truncate text-xs">

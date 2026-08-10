@@ -132,7 +132,6 @@ export const CANDIDATE_MANDATORY_FIELDS = [
   "headline",
   "location",
   "yearsExperience",
-  "skills",
   "summary",
   "education",
   "workExperience",
@@ -467,7 +466,6 @@ export function getMissingCandidateFields(
   if (!profile.headline.trim()) missing.push("headline");
   if (!profile.location.trim()) missing.push("location");
   if (profile.yearsExperience === null) missing.push("yearsExperience");
-  if (!profile.skills.length) missing.push("skills");
   if (!profile.summary.trim() || profile.summary.trim().length < 40) {
     missing.push("summary");
   }
@@ -475,6 +473,22 @@ export function getMissingCandidateFields(
   if (!hasUsableWorkExperience(profile)) missing.push("workExperience");
   if (!profile.languages.length) missing.push("languages");
   return missing;
+}
+
+/**
+ * Gaps the voice coach may ask about.
+ * Skills are resume-PDF only; summary is AI-generated at the end — never asked.
+ */
+export function getMissingInterviewFields(
+  profile: CandidateProfileData,
+): CandidateMandatoryField[] {
+  return getMissingCandidateFields(profile).filter((k) => k !== "summary");
+}
+
+export function isInterviewFieldsComplete(
+  profile: CandidateProfileData,
+): boolean {
+  return getMissingInterviewFields(profile).length === 0;
 }
 
 export function isCandidateProfileComplete(
@@ -487,7 +501,6 @@ export const CANDIDATE_FIELD_LABELS: Record<CandidateMandatoryField, string> = {
   headline: "current role or headline",
   location: "location",
   yearsExperience: "years of experience",
-  skills: "skills",
   summary: "professional summary / resume content",
   education: "education",
   workExperience: "work experience",

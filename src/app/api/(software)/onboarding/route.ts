@@ -12,9 +12,12 @@ import {
   candidateProfileUpdateSchema,
   candidateUpdateToMongo,
   getMissingCandidateFields,
+  getMissingInterviewFields,
   isCandidateProfileComplete,
+  isInterviewFieldsComplete,
   mergeCandidateProfilePatch,
   toCandidateProfileData,
+  type CandidateProfileData,
   type CandidateProfileFields,
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
@@ -123,10 +126,81 @@ async function saveProfile(
   return {
     profile: updated,
     complete: isCandidateProfileComplete(updated),
-    missing: getMissingCandidateFields(updated).map(
+    interviewComplete: isInterviewFieldsComplete(updated),
+    missing: getMissingInterviewFields(updated).map(
       (k) => CANDIDATE_FIELD_LABELS[k],
     ),
   };
+}
+
+async function generateAndSaveSummary(userId: string) {
+  const profile = await loadProfile(userId);
+  const summary = await writeProfessionalSummary(profile);
+  return saveProfile(userId, { summary });
+}
+
+async function writeProfessionalSummary(
+  profile: CandidateProfileData,
+): Promise<string> {
+  const edu = profile.education
+    .filter((e) => e.school.trim() || e.degree.trim() || e.major.trim())
+    .map((e) =>
+      [e.degree, e.major, e.school, e.startYear, e.endYear]
+        .filter((x) => x !== null && x !== "")
+        .join(" · "),
+    )
+    .join("\n");
+  const work = profile.workExperience
+    .filter((e) => e.company.trim() || e.role.trim() || e.description.trim())
+    .map((e) =>
+      [
+        e.role,
+        e.company,
+        e.city,
+        e.country,
+        e.startYear,
+        e.endYear,
+        e.description,
+      ]
+        .filter((x) => x !== null && x !== "")
+        .join(" · "),
+    )
+    .join("\n");
+
+  const { text } = await generateText({
+    model: gatewayModel,
+    prompt: `Write a professional candidate summary for a job platform profile.
+Use ONLY the facts below. Do not invent employers, degrees, skills, or years.
+Tone: clear, confident, third-person or first-person is fine; 2–4 short paragraphs; plain text; no markdown bullets.
+If skills are empty, do not invent a skills list — focus on role, experience, education, and languages.
+
+Name: ${profile.name || "Candidate"}
+Headline: ${profile.headline || "—"}
+Location: ${profile.location || "—"}
+Years of experience: ${profile.yearsExperience ?? "—"}
+Languages: ${profile.languages.join(", ") || "—"}
+Skills (from resume only, may be empty): ${profile.skills.join(", ") || "—"}
+Education:
+${edu || "—"}
+Work experience:
+${work || "—"}
+
+Return ONLY the summary text.`,
+  });
+
+  const cleaned = text.trim();
+  if (cleaned.length >= 40) return cleaned;
+  // Fallback if the model returns something too short.
+  const bits = [
+    profile.headline,
+    profile.yearsExperience != null
+      ? `${profile.yearsExperience} years of experience`
+      : "",
+    profile.location ? `based in ${profile.location}` : "",
+  ].filter(Boolean);
+  return `${bits.join(", ") || "Experienced professional"}. ${
+    work ? `Background includes ${work.slice(0, 280)}.` : ""
+  } ${edu ? `Education: ${edu.slice(0, 160)}.` : ""}`.trim();
 }
 
 function dataUrlToBytes(dataUrl: string): Uint8Array | null {
@@ -286,9 +360,10 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
     headline: String(extracted.headline ?? ""),
     location: String(extracted.location ?? ""),
     yearsExperience: asNullableInt(extracted.yearsExperience),
-    skills,
+    // Skills only from resume PDF — never from voice interview.
+    ...(skills.length ? { skills } : {}),
     preferredCountries,
-    summary: String(extracted.summary ?? ""),
+    // Summary is AI-generated at the end of onboarding — do not take from PDF.
     ...(education.length ? { education } : {}),
     ...(workExperience.length ? { workExperience } : {}),
     ...(languages.length ? { languages } : {}),
@@ -303,6 +378,17 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
     partTimeCompensation: asNullableNumber(extracted.partTimeCompensation),
   });
 
+  // If interview fields are already full after resume, generate summary now.
+  if (
+    result.interviewComplete &&
+    !isCandidateProfileComplete(result.profile)
+  ) {
+    return {
+      ok: true as const,
+      ...(await generateAndSaveSummary(userId)),
+    };
+  }
+
   return { ok: true as const, ...result };
 }
 
@@ -313,29 +399,31 @@ function buildAgent(
     resumeApplied?: { complete: boolean; missing: string[] } | null;
     resumeParseFailed?: boolean;
     languageCode?: string | null;
-    /** Live missing mandatory labels for this request. */
+    /** Live interview gaps (never includes skills or summary). */
     missingLabels: string[];
     alreadyComplete: boolean;
   },
 ) {
   const resumeApplied = opts.resumeApplied;
   const missingLine = opts.missingLabels.length
-    ? `Currently missing mandatory fields: ${opts.missingLabels.join(", ")}.`
-    : "No mandatory fields are missing — profile is complete.";
+    ? `Currently missing interview fields: ${opts.missingLabels.join(", ")}.`
+    : "No interview fields missing — call finishOnboarding (it will write the professional summary).";
 
   const resumeContext = opts.alreadyComplete
     ? `IMPORTANT — the profile is already complete.
 Congratulate ${userName || "the candidate"} briefly and call finishOnboarding immediately. Do not ask more questions.`
     : resumeApplied
       ? `IMPORTANT — resume already processed this turn:
-The candidate attached a resume PDF. It was parsed and saved (nothing was stored in blob/file storage).
+The candidate attached a resume PDF. It was parsed and saved (skills come from the PDF only).
 ${missingLine}
-Ask only for those missing fields, one at a time. Never re-ask fields already filled.
-If nothing is missing, congratulate them and call finishOnboarding.`
+Ask only for those missing interview fields, one at a time. Never re-ask fields already filled.
+NEVER ask about skills or professional summary.
+If nothing is missing, congratulate them and call finishOnboarding (summary is auto-written there).`
       : opts.resumeParseFailed
         ? `IMPORTANT — the candidate attached a resume PDF but automatic extraction failed.
 ${missingLine}
-Tell them briefly, then interview only the missing fields one at a time. Use updateCandidateProfile after each useful answer.`
+Tell them briefly, then interview only the missing interview fields one at a time. Use updateCandidateProfile after each useful answer.
+NEVER ask about skills or professional summary.`
         : `Profile state: ${missingLine}
 
 Flow:
@@ -345,10 +433,10 @@ Flow:
               : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
           }
 2. Immediately call getCandidateProfile (do this every session after language is set). Ask ONLY for fields listed in missing — never re-ask filled ones.
-3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most mandatory fields are already filled.
-4. If has_resume is true: PDF is parsed automatically. Ask only remaining missing fields.
-5. If has_resume is false (or resume skipped): interview only missing fields, one at a time. Use updateCandidateProfile after each useful answer.
-6. As soon as missing is empty / complete is true, congratulate them, say they will go to the dashboard, and call finishOnboarding.
+3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most interview fields are already filled.
+4. If has_resume is true: PDF is parsed automatically (skills may come from PDF). Ask only remaining interview fields.
+5. If has_resume is false (or resume skipped): interview only missing interview fields, one at a time. Use updateCandidateProfile after each useful answer.
+6. As soon as missing is empty, congratulate them, say they will go to the dashboard, and call finishOnboarding — do NOT ask them to dictate a summary; finishOnboarding writes it.
 ${
   opts.languageCode
     ? "Do not call selectVoiceLanguage — language is already on the profile."
@@ -367,11 +455,13 @@ ${VOICE_TOOL_DATA_PROMPT}
 ${GEO_PLACE_PROMPT}
 ${resumeContext}
 
-Mandatory fields only: headline/role, location, years of experience, skills, professional summary, education (at least one entry), work experience (at least one entry), and languages.
+Interview fields only: headline/role, location, years of experience, education (at least one entry), work experience (at least one entry), and languages.
+NEVER ask about skills — skills are filled only when a resume PDF provides them. Do not invent or voice-collect skills.
+NEVER ask about professional summary — finishOnboarding generates and saves it automatically.
 NEVER ask for phone number, email, Aadhaar, PAN, gender, or date of birth — those come from DigiLocker / profile settings, not this interview.
 Never ask about work authorization, visas, work permits, citizenship, or legal eligibility to work in any country.
 Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.
-After every updateCandidateProfile, if complete is true (or missing is empty), you MUST call finishOnboarding in the same turn.`,
+After every updateCandidateProfile, if missing is empty / interviewComplete is true / complete is true, you MUST call finishOnboarding in the same turn.`,
     stopWhen: isStepCount(24),
     tools: {
       selectVoiceLanguage: tool({
@@ -420,23 +510,23 @@ After every updateCandidateProfile, if complete is true (or missing is empty), y
       }),
       getCandidateProfile: tool({
         description:
-          "Read the candidate's current profile and missing mandatory fields. Call this before asking questions so you only ask what is left.",
+          "Read the candidate's current profile and missing interview fields. Call this before asking questions so you only ask what is left.",
         inputSchema: z.object({}),
         execute: async () => {
           const profile = await loadProfile(userId);
-          const missing = getMissingCandidateFields(profile);
+          const missing = getMissingInterviewFields(profile);
           return {
             profile,
             complete: isCandidateProfileComplete(profile),
+            interviewComplete: isInterviewFieldsComplete(profile),
             missing: missing.map((k) => CANDIDATE_FIELD_LABELS[k]),
           };
         },
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields. Always pass field values in clear English (translate from the conversation if needed). For residence and preferredCountries, only pass official names from listPlaceOptions. Do not collect phone number here.",
+          "Partially update candidate profile fields from the voice interview. Always pass field values in clear English. Do not set skills or summary here.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
-          skills: z.array(z.string()).optional(),
           preferredCountries: z.array(z.string()).optional(),
           languages: z.array(z.string()).optional(),
           voiceLanguage: z.enum(TTS_LANGUAGE_CODES).optional(),
@@ -450,11 +540,16 @@ After every updateCandidateProfile, if complete is true (or missing is empty), y
             .describe("Date of birth as yyyy-MM-dd, or null"),
         }),
         execute: async (input) => {
-          // Phone is never collected during onboarding voice interview.
           const rest = { ...input } as Partial<CandidateProfileUpdateInput>;
+          // Voice interview must never set these.
           delete rest.phoneNumber;
           delete rest.phoneCountryCode;
-          const result = await saveProfile(userId, rest);
+          delete rest.skills;
+          delete rest.summary;
+          let result = await saveProfile(userId, rest);
+          if (result.interviewComplete && !result.complete) {
+            result = await generateAndSaveSummary(userId);
+          }
           if (result.complete) {
             return {
               ...result,
@@ -467,10 +562,22 @@ After every updateCandidateProfile, if complete is true (or missing is empty), y
       }),
       finishOnboarding: tool({
         description:
-          "Mark onboarding complete when all mandatory fields are filled. Call this as soon as complete is true.",
+          "Finish onboarding when interview fields are done. Generates the professional summary automatically, then marks complete. Never ask the user for a summary.",
         inputSchema: z.object({}),
         execute: async () => {
-          const profile = await loadProfile(userId);
+          let profile = await loadProfile(userId);
+          const interviewGaps = getMissingInterviewFields(profile);
+          if (interviewGaps.length) {
+            return {
+              ok: false,
+              finished: false,
+              missing: interviewGaps.map((k) => CANDIDATE_FIELD_LABELS[k]),
+            };
+          }
+          if (!isCandidateProfileComplete(profile)) {
+            await generateAndSaveSummary(userId);
+            profile = await loadProfile(userId);
+          }
           if (!isCandidateProfileComplete(profile)) {
             return {
               ok: false,
@@ -540,9 +647,9 @@ export async function POST(request: Request) {
   const uiMessages =
     resumeApplied || resumeParseFailed ? stripFileParts(messages) : messages;
 
-  // Seed live gaps into instructions so reloads only ask what is left.
+  // Seed live interview gaps (skills/summary are never asked).
   const currentProfile = await loadProfile(user.id);
-  const missingLabels = getMissingCandidateFields(currentProfile).map(
+  const missingLabels = getMissingInterviewFields(currentProfile).map(
     (k) => CANDIDATE_FIELD_LABELS[k],
   );
   const alreadyComplete =

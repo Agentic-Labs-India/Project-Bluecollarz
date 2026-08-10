@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -31,6 +32,7 @@ type ResidenceValue = {
   country: string;
   state: string;
   city: string;
+  postalCode: string;
 };
 
 /** Cascading country → state → city pickers backed by country-state-city. */
@@ -38,11 +40,13 @@ export function ResidencePlaceFields({
   country,
   state,
   city,
+  postalCode = "",
   onChange,
 }: {
   country: string;
   state: string;
   city: string;
+  postalCode?: string;
   onChange: (next: ResidenceValue) => void;
 }) {
   const normalized = useMemo(
@@ -79,8 +83,12 @@ export function ResidencePlaceFields({
       country: next.country ?? normalized.country,
       state: next.state ?? normalized.state,
       city: next.city ?? normalized.city,
+      postalCode: next.postalCode ?? postalCode,
     };
-    onChange(normalizeResidencePlace(merged));
+    onChange({
+      ...normalizeResidencePlace(merged),
+      postalCode: merged.postalCode,
+    });
   };
 
   return (
@@ -134,7 +142,7 @@ export function ResidencePlaceFields({
         </Select>
       </div>
 
-      <div className="space-y-1.5 sm:col-span-2">
+      <div className="space-y-1.5">
         <Label>City</Label>
         <Combobox
           items={cityNames}
@@ -169,6 +177,14 @@ export function ResidencePlaceFields({
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Postal code</Label>
+        <Input
+          value={postalCode}
+          onChange={(e) => setPlace({ postalCode: e.target.value })}
+        />
       </div>
     </div>
   );

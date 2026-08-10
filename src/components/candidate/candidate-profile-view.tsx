@@ -27,7 +27,8 @@ import {
   normalizeCountryNames,
   normalizeResidencePlace,
 } from "@/lib/geo/places";
-import { BadgeCheckIcon, PlusIcon, XIcon } from "lucide-react";
+import { BadgeCheckIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const AUTOSAVE_DEBOUNCE_MS = 700;
@@ -401,6 +402,12 @@ export function CandidateProfileView() {
             </p>
           )}
         </div>
+        <Button asChild variant={identityLocked ? "outline" : "default"}>
+          <Link href="/candidate/kyc">
+            <ShieldCheckIcon className="size-4" />
+            {identityLocked ? "View KYC" : "Complete KYC"}
+          </Link>
+        </Button>
       </div>
 
       {/* Basics */}
@@ -462,6 +469,20 @@ export function CandidateProfileView() {
                   disabled
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of birth</Label>
+                {identityLocked ? (
+                  <Input id="dob" value={profile.dateOfBirth || "—"} disabled />
+                ) : (
+                  <DateOfBirthPicker
+                    id="dob"
+                    value={profile.dateOfBirth}
+                    onChange={(dateOfBirth) =>
+                      setProfile((p) => ({ ...p, dateOfBirth }))
+                    }
+                  />
+                )}
+              </div>
               {profile.apaarId ? (
                 <div className="space-y-2">
                   <Label>APAAR ID</Label>
@@ -469,8 +490,19 @@ export function CandidateProfileView() {
                 </div>
               ) : null}
             </>
-          ) : null}
-          <div className="space-y-2 sm:col-span-2">
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="dob">Date of birth</Label>
+              <DateOfBirthPicker
+                id="dob"
+                value={profile.dateOfBirth}
+                onChange={(dateOfBirth) =>
+                  setProfile((p) => ({ ...p, dateOfBirth }))
+                }
+              />
+            </div>
+          )}
+          <div className="space-y-2">
             <Label htmlFor="headline">Headline / current role</Label>
             <Input
               id="headline"
@@ -926,45 +958,18 @@ export function CandidateProfileView() {
               country={profile.residenceCountry}
               state={profile.residenceState}
               city={profile.residenceCity}
+              postalCode={profile.residencePostalCode}
               onChange={(place) =>
                 setProfile((p) => ({
                   ...p,
                   residenceCountry: place.country,
                   residenceState: place.state,
                   residenceCity: place.city,
+                  residencePostalCode: place.postalCode,
                 }))
               }
             />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Postal code</Label>
-                <Input
-                  value={profile.residencePostalCode}
-                  onChange={(e) =>
-                    setProfile((p) => ({
-                      ...p,
-                      residencePostalCode: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
           </fieldset>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="dob">Date of birth</Label>
-          {identityLocked ? (
-            <Input id="dob" value={profile.dateOfBirth || "—"} disabled />
-          ) : (
-            <DateOfBirthPicker
-              id="dob"
-              value={profile.dateOfBirth}
-              onChange={(dateOfBirth) =>
-                setProfile((p) => ({ ...p, dateOfBirth }))
-              }
-            />
-          )}
         </div>
 
         <div className="space-y-2">
