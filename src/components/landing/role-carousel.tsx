@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import { LoginButton } from "@/components/auth/login-button";
-import { formatJobPlaceLabel } from "@/lib/geo/places";
-import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
+import { TicketDitherBand } from "@/components/landing/ticket-dither-band";
+import { stateName } from "@/lib/geo/places";
 import type { LandingRole } from "@/lib/jobs/queries";
+import { cn } from "@/lib/utils";
 
 const AVATAR_COLORS = [
   "bg-primary",
@@ -22,6 +24,10 @@ const AVATAR_COLORS = [
 
 type Avatar = { letter: string; colorClass: (typeof AVATAR_COLORS)[number] };
 
+function hashString(value: string) {
+  return value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
 function avatarsForRole(jobId: string, title: string): Avatar[] {
   const words = title.split(/\s+/).filter((word) => word.length > 1);
   const letters = [
@@ -30,7 +36,7 @@ function avatarsForRole(jobId: string, title: string): Avatar[] {
     words[2]?.[0] ?? words[0]?.[2] ?? "C",
   ].map((letter) => letter.toUpperCase());
 
-  const hash = jobId.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const hash = hashString(jobId);
 
   return letters.map((letter, index) => ({
     letter,
@@ -45,35 +51,8 @@ function roleActivityLabel(role: LandingRole): string {
   return "Be the first to apply";
 }
 
-function rolePlaceLabel(role: LandingRole): string {
-  return formatJobPlaceLabel({
-    location: role.location,
-    countryCode: role.countryCode,
-    stateCode: role.stateCode,
-    locationLabel: role.location
-      ? JOB_LOCATION_LABELS[role.location as JobLocation]
-      : undefined,
-  });
-}
-
-function ArrowUpRightIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-3 w-3"
-    >
-      <path d="M7 7h10v10" />
-      <path d="M7 17 17 7" />
-    </svg>
-  );
+function roleStateLabel(role: LandingRole): string {
+  return stateName(role.countryCode, role.stateCode);
 }
 
 export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
@@ -97,21 +76,33 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
   const scrollCarousel = (direction: "left" | "right") => {
     const el = carouselRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction === "left" ? -320 : 320, behavior: "smooth" });
+    el.scrollBy({ left: direction === "left" ? -340 : 340, behavior: "smooth" });
     setTimeout(updateScrollButtons, 300);
   };
+
+  const header = (
+    <div className="max-w-2xl">
+      <p className="text-primary text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
+        Open roles
+      </p>
+      <h2 className="font-heading text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl">
+        Latest roles
+      </h2>
+      <p className="text-muted-foreground mt-3 max-w-xl text-sm leading-relaxed sm:text-[15px]">
+        Verified openings from recruiters hiring skilled workers abroad.
+      </p>
+    </div>
+  );
 
   if (roles.length === 0) {
     return (
       <section className="sm:block">
-        <h2 className="text-lg">Latest roles</h2>
-        <div className="border-border/60 mt-4 rounded-xl border border-dashed px-4 py-12 text-center">
+        {header}
+        <div className="border-primary/20 bg-primary/[0.03] mt-8 border border-dashed px-4 py-12 text-center sm:mt-10">
           <p className="text-muted-foreground text-sm">
             No open roles right now. Check back soon or sign in to get notified.
           </p>
-          <LoginButton
-            className="text-primary mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline"
-          >
+          <LoginButton className="text-primary mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline">
             Continue with Google
           </LoginButton>
         </div>
@@ -121,113 +112,91 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
 
   return (
     <section className="sm:block">
-      <section className="@container flex flex-row items-center justify-between">
-        <h2 className="text-lg">Latest roles</h2>
-        <div className="flex flex-row items-center gap-6">
-          <div className="flex flex-row items-center gap-2">
-            <button
-              type="button"
-              disabled={!canScrollLeft}
-              className={`rounded-md border border-canvas-soft p-1 transition-all hover:border-canvas-soft ${canScrollLeft ? "cursor-pointer bg-muted hover:bg-secondary" : "cursor-not-allowed"}`}
-              onClick={() => scrollCarousel("left")}
-            >
-              <svg
-                stroke="currentColor"
-                fill="currentColor"
-                strokeWidth="0"
-                viewBox="0 0 512 512"
-                className={`h-3.5 w-3.5 ${canScrollLeft ? "text-foreground" : "text-canvas-soft"}`}
-                height="1em"
-                width="1em"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="48"
-                  d="M328 112 184 256l144 144"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              disabled={!canScrollRight}
-              className={`rounded-md border border-canvas-soft p-1 transition-all hover:border-canvas-soft ${canScrollRight ? "cursor-pointer bg-muted hover:bg-secondary" : "cursor-not-allowed"}`}
-              onClick={() => scrollCarousel("right")}
-            >
-              <svg
-                stroke="currentColor"
-                fill="currentColor"
-                strokeWidth="0"
-                viewBox="0 0 512 512"
-                className={`h-3.5 w-3.5 ${canScrollRight ? "text-foreground" : "text-canvas-soft"}`}
-                height="1em"
-                width="1em"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="48"
-                  d="m184 112 144 144-144 144"
-                />
-              </svg>
-            </button>
-          </div>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        {header}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!canScrollLeft}
+            aria-label="Previous roles"
+            className={cn(
+              "border-primary/25 text-primary flex size-9 items-center justify-center border transition-colors",
+              canScrollLeft
+                ? "hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                : "cursor-not-allowed opacity-35",
+            )}
+            onClick={() => scrollCarousel("left")}
+          >
+            <ArrowLeftIcon className="size-4" />
+          </button>
+          <button
+            type="button"
+            disabled={!canScrollRight}
+            aria-label="Next roles"
+            className={cn(
+              "border-primary/25 text-primary flex size-9 items-center justify-center border transition-colors",
+              canScrollRight
+                ? "hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                : "cursor-not-allowed opacity-35",
+            )}
+            onClick={() => scrollCarousel("right")}
+          >
+            <ArrowRightIcon className="size-4" />
+          </button>
         </div>
-      </section>
+      </div>
 
       <div
         ref={carouselRef}
-        className="-ml-[1.5px] mt-4 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-6 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] sm:mt-8 [&::-webkit-scrollbar]:hidden"
         onScroll={updateScrollButtons}
       >
-        <div className="grid auto-cols-[290px] grid-flow-col grid-rows-2 gap-5 p-[2px]">
+        <div className="grid auto-cols-[300px] grid-flow-col grid-rows-2 gap-3 sm:auto-cols-[320px]">
           {roles.map((role) => {
             const avatars = avatarsForRole(role.id, role.title);
-            const place = rolePlaceLabel(role);
+            const place = roleStateLabel(role);
+
             return (
-              <div key={role.id} className="w-[290px] snap-start">
+              <div key={role.id} className="w-[300px] snap-start sm:w-[320px]">
                 <Link
                   href={`/jobs/${role.id}`}
-                  className="group border-foreground/7 bg-canvas hover:border-ring hover:bg-muted/50 hover:ring-ring focus-visible:ring-ring ml-px flex h-[156px] w-full flex-col justify-between rounded-lg border bg-clip-padding p-4 pt-3 text-left shadow-sm ring-1 ring-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-transparent focus-visible:ring-2"
+                  className="group border-border bg-card hover:border-primary/40 focus-visible:ring-primary relative flex h-[128px] w-full flex-col overflow-hidden border outline-none transition-[border-color] duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
-                  <div>
-                    <h3 className="line-clamp-1">{role.title}</h3>
-                    <p className="mt-1 text-sm text-mute">{role.pay}</p>
-                    {place ? (
-                      <p className="text-mute mt-0.5 line-clamp-1 text-xs">
-                        {place}
+                  <TicketDitherBand seed={role.id} label={place || undefined} />
+
+                  <div className="flex min-h-0 flex-1 flex-col justify-between px-3 py-2.5">
+                    <div>
+                      <h3 className="font-heading text-foreground line-clamp-1 text-sm font-semibold tracking-tight">
+                        {role.title}
+                      </h3>
+                      <p className="text-muted-foreground mt-0.5 text-[13px] font-medium tabular-nums">
+                        {role.pay}
                       </p>
-                    ) : null}
-                  </div>
-                  <div className="flex w-full flex-row items-center justify-between gap-1">
-                    <div className="flex min-w-1 flex-row items-center gap-2 text-sm">
-                      <div
-                        className="flex -space-x-1"
-                        role="img"
-                        aria-hidden="true"
-                      >
-                        {avatars.map((avatar) => (
-                          <span
-                            key={avatar.letter}
-                            className={`flex size-5 items-center justify-center rounded-full border-2 border-canvas text-[8px] font-semibold text-canvas ${avatar.colorClass}`}
-                          >
-                            {avatar.letter}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="text-xs text-mute">
-                        {roleActivityLabel(role)}
-                      </div>
                     </div>
-                    <div className="flex flex-row items-center gap-1 text-mute group-hover:text-ring">
-                      <div className="text-sm">View</div>
-                      <div className="w-0 shrink-0 overflow-hidden duration-200 group-hover:w-[10px]">
-                        <ArrowUpRightIcon />
+
+                    <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-primary/10 pt-1.5">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="flex -space-x-1.5" aria-hidden>
+                          {avatars.map((avatar) => (
+                            <span
+                              key={avatar.letter}
+                              className={cn(
+                                "border-card text-primary-foreground flex size-4 items-center justify-center border-2 text-[7px] font-semibold",
+                                avatar.colorClass,
+                              )}
+                            >
+                              {avatar.letter}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-muted-foreground truncate text-[11px]">
+                          {roleActivityLabel(role)}
+                        </span>
                       </div>
+                      <span className="text-primary inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold tracking-wide uppercase">
+                        View
+                        <ArrowUpRightIcon className="size-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </span>
                     </div>
                   </div>
                 </Link>

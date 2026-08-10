@@ -1,18 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
+import { CandidateJourney } from "@/components/landing/candidate-journey";
+import { LandingFaqs } from "@/components/landing/landing-faqs";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
 import { RoleCarouselSkeleton } from "@/components/landing/role-carousel-skeleton";
+import Testimonials from "@/components/landing/testimonials";
+import { TrustedBy } from "@/components/landing/trusted-by";
 import { WorldMapLazy } from "@/components/ui/world-map-lazy";
-import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Blucollarz — AI hiring for skilled workers & recruiters",
   description:
     "Blucollarz is an AI-native hiring platform for blue-collar and skilled workers. Build a profile, complete AI interviews, verify identity, and connect with recruiters hiring worldwide. Sign in with Google to create your account.",
 };
-
-const WORK_CARD_IMAGE = "/images/home/1.png";
 
 const HOME_IMAGES = [1, 2, 3, 4, 5, 6, 7].map((n) => `/images/home/${n}.png`);
 
@@ -83,64 +85,9 @@ const HERO_MAP_ROUTES = [
   },
 ];
 
-const STORIES = [
-  {
-    href: "/mission",
-    image: "/images/home/2.png",
-    alt: "Skilled worker on site",
-    title: "Meet Asha: Facilities electrician",
-    name: "Asha",
-  },
-  {
-    href: "/mission",
-    image: "/images/home/3.png",
-    alt: "Site welder abroad",
-    title: "Meet Ravi: Site welder abroad",
-    name: "Ravi",
-  },
-  {
-    href: "/mission",
-    image: "/images/home/4.png",
-    alt: "Heavy vehicle driver",
-    title: "Meet Omar: Heavy vehicle driver",
-    name: "Omar",
-  },
-  {
-    href: "/mission",
-    image: "/images/home/5.png",
-    alt: "Warehouse operator",
-    title: "Meet Priya: Warehouse operator",
-    name: "Priya",
-  },
-  {
-    href: "/mission",
-    image: "/images/home/6.png",
-    alt: "Field technician",
-    title: "Meet Luis: Field technician",
-    name: "Luis",
-  },
-];
-
-function PlayIcon() {
-  return (
-    <svg
-      stroke="currentColor"
-      fill="currentColor"
-      strokeWidth="0"
-      viewBox="0 0 16 16"
-      className="text-canvas"
-      height="1em"
-      width="1em"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393" />
-    </svg>
-  );
-}
-
 export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] overflow-x-clip px-6 py-4 duration-300 md:px-8 lg:px-14 2xl:mt-16">
+    <div className="mx-auto w-full max-w-7xl overflow-x-clip px-6 py-4 duration-300 md:px-8 lg:px-14 2xl:mt-16">
       <div className="relative mt-16 w-full overflow-hidden text-center sm:mt-20 md:mt-24">
         <div className="relative z-10 flex flex-col items-center pt-4">
           <section className="border-canvas-soft bg-canvas mx-auto mt-4 flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden text-nowrap rounded-full border px-3 py-0.5 text-[12px] font-medium text-muted-foreground shadow-sm sm:mt-6 sm:h-[38px] sm:px-5 sm:text-[12.75px] sm:bg-canvas/90 sm:backdrop-blur-sm md:mt-8">
@@ -214,69 +161,13 @@ export default function Page() {
         <LatestRolesCarousel />
       </Suspense>
 
-      <div className="relative mt-20 @container">
-        <div className="gap-6 space-y-16 @5xl:grid @5xl:grid-cols-4 @5xl:space-y-0">
-          <Link
-            id="primary-testimonial"
-            className="group top-[92px] h-fit cursor-pointer duration-200 @5xl:sticky @5xl:col-span-3"
-            href="/mission"
-          >
-            <div className="relative aspect-square w-full overflow-hidden rounded-lg sm:aspect-video">
-              <div className="relative h-full w-full scale-[1.02] overflow-hidden duration-300 group-hover:scale-[1.06]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={WORK_CARD_IMAGE}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover object-center"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-black/55" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/25" />
-              </div>
-              <div className="absolute inset-0 z-10 flex items-center justify-center font-medium duration-300 group-hover:scale-[1.02]">
-                <div className="flex flex-row gap-4">
-                  <p className="max-sm:text-light flex flex-row items-center gap-2 text-6xl font-thin tracking-wide text-white sm:text-8xl">
-                    WORK
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 text-3xl sm:mt-6 sm:text-5xl">
-              Built for blue-collar ambition
-            </div>
-            <div className="mt-4 flex flex-row items-center gap-3 text-sm sm:mt-6">
-              <div>Mission</div>
-              <div className="text-mute">Why Blucollarz exists</div>
-            </div>
-          </Link>
+      <CandidateJourney />
 
-          <div className="col-span-1 flex flex-col items-start justify-between gap-10 pb-11 max-sm:space-y-12 @sm:flex @sm:gap-4 @2xl:flex-row @5xl:flex-col @5xl:gap-12">
-            {STORIES.map((story) => (
-              <Link key={story.image} className="group w-full" href={story.href}>
-                <div className="relative aspect-square w-full overflow-hidden rounded-[8px] bg-muted/50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt={story.alt}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover object-top duration-300 hover:scale-[1.02]"
-                    src={story.image}
-                  />
-                  <div className="absolute right-3 top-3 grid place-items-center rounded-full bg-black/50 p-2 opacity-0 duration-300 group-hover:opacity-100">
-                    <PlayIcon />
-                  </div>
-                </div>
-                <div className="mt-4 text-lg">{story.title}</div>
-                <div className="mt-2 flex flex-row items-center gap-3 text-sm">
-                  <div>{story.name}</div>
-                  <div className="text-mute" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+      <TrustedBy />
+
+      <Testimonials />
+
+      <LandingFaqs />
     </div>
   );
 }

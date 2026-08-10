@@ -77,9 +77,17 @@ export function AccordionItem({
   className?: string;
   children: React.ReactNode;
 }) {
+  const ctx = React.useContext(AccordionContext);
+  const isOpen = Boolean(ctx?.open.has(value));
+
   return (
     <ItemContext.Provider value={value}>
-      <div className={cn("border-border", className)}>{children}</div>
+      <div
+        data-state={isOpen ? "open" : "closed"}
+        className={cn("border-border", className)}
+      >
+        {children}
+      </div>
     </ItemContext.Provider>
   );
 }
@@ -104,12 +112,13 @@ export function AccordionTrigger({
         className,
       )}
       aria-expanded={isOpen}
+      data-state={isOpen ? "open" : "closed"}
       onClick={() => ctx.toggle(value)}
     >
       <span className="min-w-0 flex-1">{children}</span>
       <ChevronDownIcon
         className={cn(
-          "text-muted-foreground size-4 shrink-0 transition-transform",
+          "text-muted-foreground size-4 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           isOpen && "rotate-180",
         )}
       />
@@ -127,11 +136,27 @@ export function AccordionContent({
   const ctx = React.useContext(AccordionContext);
   const value = React.useContext(ItemContext);
   if (!ctx) throw new Error("AccordionContent must be used within Accordion");
-  if (!ctx.open.has(value)) return null;
+  const isOpen = ctx.open.has(value);
 
   return (
-    <div className={cn("text-muted-foreground pb-4 text-sm", className)}>
-      {children}
+    <div
+      data-state={isOpen ? "open" : "closed"}
+      className={cn(
+        "grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+        isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+      )}
+    >
+      <div className="overflow-hidden">
+        <div
+          className={cn(
+            "text-muted-foreground pb-4 text-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+            isOpen ? "opacity-100" : "opacity-0",
+            className,
+          )}
+        >
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

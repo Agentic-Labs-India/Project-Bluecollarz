@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TicketDitherBand } from "@/components/landing/ticket-dither-band";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
@@ -27,8 +28,7 @@ import {
   type Opportunity,
   type OpportunityTab,
 } from "@/lib/opportunities";
-import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
-import { formatJobPlaceLabel } from "@/lib/geo/places";
+import { stateName } from "@/lib/geo/places";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -78,8 +78,7 @@ function OpportunityCard({
   applicationStatus?: ApplicationStatus | null;
   onSelect: () => void;
 }) {
-  const { title, pay, tab, isNew, location, countryCode, stateCode } =
-    opportunity;
+  const { title, pay, isNew, countryCode, stateCode } = opportunity;
   const hasApplied = Boolean(applicationStatus);
   const statusLabel =
     applicationStatus === "selected"
@@ -90,14 +89,7 @@ function OpportunityCard({
           ? "Applied"
           : null;
 
-  const placeLabel = formatJobPlaceLabel({
-    location,
-    countryCode,
-    stateCode,
-    locationLabel: location
-      ? JOB_LOCATION_LABELS[location as JobLocation]
-      : undefined,
-  });
+  const bandLabel = stateName(countryCode, stateCode);
 
   return (
     <article
@@ -117,55 +109,53 @@ function OpportunityCard({
           : "border-border hover:border-primary/40",
       )}
     >
-      <div className={cn("flex flex-1 flex-col", compact ? "p-3.5" : "p-4")}>
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <h3
+      <TicketDitherBand seed={opportunity.id} label={bandLabel || undefined} />
+
+      <div
+        className={cn(
+          "flex flex-1 flex-col justify-between",
+          compact ? "px-3 py-2.5" : "px-3.5 py-3",
+        )}
+      >
+        <div>
+          <div className="flex items-start justify-between gap-2">
+            <h3
+              className={cn(
+                "font-heading text-foreground min-w-0 line-clamp-1 font-semibold tracking-tight",
+                compact ? "text-sm" : "text-[15px]",
+              )}
+            >
+              {title}
+            </h3>
+            {statusLabel ? (
+              <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
+                {statusLabel}
+              </span>
+            ) : isNew ? (
+              <span className="text-primary shrink-0 text-[10px] font-semibold tracking-wide uppercase">
+                New
+              </span>
+            ) : null}
+          </div>
+          <p
             className={cn(
-              "text-foreground min-w-0 leading-snug font-semibold",
-              compact ? "text-sm" : "text-[15px]",
+              "text-muted-foreground mt-0.5 font-medium tabular-nums",
+              compact ? "text-[13px]" : "text-sm",
             )}
           >
-            {title}
-          </h3>
-          {statusLabel ? (
-            <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
-              {statusLabel}
-            </span>
-          ) : isNew ? (
-            <span className="text-primary shrink-0 text-[10px] font-semibold tracking-wide uppercase">
-              New
-            </span>
-          ) : null}
+            {pay}
+          </p>
         </div>
 
-        <p
-          className={cn(
-            "text-muted-foreground",
-            compact ? "text-xs" : "text-sm",
-          )}
-        >
-          {pay}
-        </p>
-
-        <p
-          className={cn(
-            "text-muted-foreground/80 mt-2 truncate",
-            compact ? "text-[11px]" : "text-xs",
-          )}
-        >
-          {OPPORTUNITY_TAB_LABELS[tab]}
-          {placeLabel ? ` · ${placeLabel}` : ""}
-        </p>
-      </div>
-
-      <div className="border-border/70 text-muted-foreground group-hover:text-foreground flex items-center justify-between gap-2 border-t px-4 py-2.5 text-xs font-medium transition-colors">
-        <span>Apply now</span>
-        <ArrowUpRightIcon
-          className={cn(
-            "size-3.5 shrink-0 transition-transform duration-200 ease-out",
-            "group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
-          )}
-        />
+        <div className="border-primary/10 text-primary mt-2 flex items-center justify-between gap-2 border-t pt-2 text-xs font-semibold tracking-wide uppercase">
+          <span>{hasApplied ? "View application" : "Apply now"}</span>
+          <ArrowUpRightIcon
+            className={cn(
+              "size-3.5 shrink-0 transition-transform duration-200 ease-out",
+              "group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
+            )}
+          />
+        </div>
       </div>
     </article>
   );
@@ -174,17 +164,17 @@ function OpportunityCard({
 function OpportunityCardSkeleton() {
   return (
     <div className="border-border bg-card flex w-full flex-col overflow-hidden border">
-      <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex items-start justify-between gap-2">
+      <div className="bg-primary/80 h-6 animate-pulse" />
+      <div className="flex flex-1 flex-col px-3.5 py-3">
+        <div className="mb-1 flex items-start justify-between gap-2">
           <Skeleton className="h-4 w-3/5" />
           <Skeleton className="h-3 w-8" />
         </div>
         <Skeleton className="h-3.5 w-2/5" />
-        <Skeleton className="mt-2 h-3 w-1/3" />
-      </div>
-      <div className="border-border/70 flex items-center justify-between gap-2 border-t px-4 py-2.5">
-        <Skeleton className="h-3 w-16" />
-        <Skeleton className="size-3.5" />
+        <div className="border-primary/10 mt-2 flex items-center justify-between gap-2 border-t pt-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="size-3.5" />
+        </div>
       </div>
     </div>
   );
