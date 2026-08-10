@@ -1,7 +1,5 @@
 import {
   DocCallout,
-  DocCta,
-  DocCtaRow,
   DocFeatureGrid,
   DocList,
   DocPage,
@@ -9,6 +7,7 @@ import {
   DocSteps,
   DocTable,
 } from "@/components/landing/marketing-doc";
+import { RecruiterAccessForm } from "@/components/landing/recruiter-access-form";
 
 export const metadata = {
   title: "For Recruiters · Blucollarz",
@@ -251,29 +250,10 @@ export default function ForRecruitersPage() {
       <DocSection id="request-access" number="09" title="Request access">
         <p>
           Ready to run hiring on autopilot with Blucollarz? Tell us about your
-          company and roles. We provision access and reply with onboarding steps.
+          company below. We review every request and provision recruiter access
+          when approved.
         </p>
-        <DocCallout title="What to include in your email">
-          <DocList
-            items={[
-              "Company legal name and website",
-              "Hiring locations and role types (e.g. electricians, drivers)",
-              "Approximate monthly hiring volume",
-              "Primary contact name and work email",
-            ]}
-          />
-        </DocCallout>
-        <DocCtaRow>
-          <DocCta href="mailto:gtm@blucollarz.com?subject=Recruiter%20access%20request">
-            Email sales
-          </DocCta>
-          <DocCta href="/contact" variant="secondary">
-            Contact page
-          </DocCta>
-          <DocCta href="/about" variant="secondary">
-            About Blucollarz
-          </DocCta>
-        </DocCtaRow>
+        <RecruiterAccessForm />
       </DocSection>
     </DocPage>
   );

@@ -18,6 +18,7 @@ export const COLLECTIONS = {
   USERS_COLLECTION: "Users",
   USER_PROVISIONS: "UserProvisions",
   SUPPORT_TICKETS: "SupportTickets",
+  RECRUITER_INQUIRIES: "RecruiterInquiries",
   BLOGS: "Blogs",
   JOBS: "Jobs",
   APPLICATIONS: "Applications",

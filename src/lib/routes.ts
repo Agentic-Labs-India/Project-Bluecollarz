@@ -2,6 +2,7 @@ import {
   Briefcase,
   FileText,
   Home,
+  Inbox,
   LifeBuoy,
   LucideIcon,
   Mail,
@@ -34,6 +35,7 @@ export const HIRE_NAV: AppNavItem[] = [
 export const ADMIN_NAV: AppNavItem[] = [
   { title: "Admins", url: "/admin/admins", icon: Shield },
   { title: "Recruiters", url: "/admin/recruiters", icon: Users },
+  { title: "Inquiries", url: "/admin/inquiries", icon: Inbox },
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },
   { title: "Blog", url: "/admin/blog", icon: FileText },

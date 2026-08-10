@@ -24,6 +24,7 @@ const createRouteMatcher = (patterns: string[]) => {
 const isPublicRoute = createRouteMatcher([
   "/api/auth(.*)",
   "/api/blob(.*)",
+  "/api/recruiter-inquiries",
   "/",
   "/about",
   "/mission",
