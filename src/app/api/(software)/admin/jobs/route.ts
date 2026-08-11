@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireProfile } from "@/lib/api/session";
+import {
+  requireProfile,
+  rethrowIfPrerenderAbort,
+} from "@/lib/api/session";
 import { listJobsUnderVerification } from "@/lib/admin/job-verification";
 import { ensureIndexes } from "@/lib/db/indexes";
 
@@ -15,6 +18,7 @@ export async function GET() {
     const items = await listJobsUnderVerification();
     return NextResponse.json({ items });
   } catch (error) {
+    rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/jobs:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

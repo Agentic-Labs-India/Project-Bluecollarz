@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/api/session";
+import {
+  requireProfile,
+  rethrowIfPrerenderAbort,
+} from "@/lib/api/session";
 import {
   approveJobVerification,
   denyJobVerification,
@@ -42,6 +45,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     }
     return NextResponse.json({ item });
   } catch (error) {
+    rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/jobs/[id]:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -82,6 +86,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       });
       return NextResponse.json({ item });
     } catch (error) {
+      rethrowIfPrerenderAbort(error);
       const message =
         error instanceof Error ? error.message : "Could not update job";
       const status =
@@ -94,6 +99,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: message }, { status });
     }
   } catch (error) {
+    rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/admin/jobs/[id]:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
