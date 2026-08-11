@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import {
   PRIMARY_DITHER,
   PRIMARY_TICKET_TEXTURE,
   PrimaryDither,
+  useRecoverWebGlCanvas,
 } from "@/components/landing/primary-dither";
 import AdmitOneTicket, {
   TICKET_GEOMETRY,
@@ -98,6 +99,8 @@ function JourneyStepNumber({ value }: { value: string }) {
 
 export function CandidateJourney() {
   const [width, setWidth] = useState(640);
+  const ticketRef = useRef<HTMLSpanElement>(null);
+  const ticketNonce = useRecoverWebGlCanvas(ticketRef);
 
   useEffect(() => {
     const update = () => setWidth(ticketWidth());
@@ -153,7 +156,7 @@ export function CandidateJourney() {
               Finale
             </p>
             <p className="font-heading text-foreground mt-2 text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">
-              Your Visa Ticket to Abroad!!!
+              Your Ticket to Abroad!!!
             </p>
             <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
               Tap the pass to sign in and start your journey.
@@ -162,17 +165,21 @@ export function CandidateJourney() {
 
           <LoginButton className="group cursor-pointer rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:outline-none disabled:opacity-70">
             <span className="sr-only">
-              Your Visa Ticket to Abroad — start now and sign in
+              Your Ticket to Abroad — start now and sign in
             </span>
-            <span className="block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:translate-y-0">
+            <span
+              ref={ticketRef}
+              className="block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:translate-y-0"
+            >
               <AdmitOneTicket
-                name="Your Visa Ticket to Abroad"
+                key={ticketNonce}
+                name="Your Ticket is Ready"
                 presenter="Blucollarz"
-                event="Ready to fly"
+                event="Start For Free"
                 venue="Work abroad"
                 dates="Start now"
                 stubText="Go"
-                watermark="GO"
+                watermark="LET'S"
                 width={width}
                 geometry={TICKET_GEOMETRY}
                 layout={PRIMARY_LAYOUT}

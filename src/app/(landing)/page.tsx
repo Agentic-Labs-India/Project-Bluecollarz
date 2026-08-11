@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { LoginButton } from "@/components/auth/login-button";
 import { CandidateJourney } from "@/components/landing/candidate-journey";
+import { DitherLoginButton } from "@/components/landing/dither-login-button";
 import { HOME_IMAGES } from "@/components/landing/home-images";
 import { LandingFaqs } from "@/components/landing/landing-faqs";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
@@ -136,9 +136,9 @@ export default function Page() {
             Europe, and more.
           </p>
           <div className="mt-5 flex w-full flex-row items-center justify-center gap-3 text-[15px] sm:mt-6">
-            <LoginButton className="bg-primary text-primary-foreground hover:bg-primary-active rounded-md px-6 py-2 duration-200">
+            <DitherLoginButton seed="hero-get-started">
               Get Started
-            </LoginButton>
+            </DitherLoginButton>
             <Link
               className="bg-muted hover:bg-secondary flex flex-row items-center gap-1.5 rounded-md px-6 py-[9.5px] text-sm duration-200"
               href="/about"

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { LoginButton } from "@/components/auth/login-button";
+import { DitherLoginButton } from "@/components/landing/dither-login-button";
 
 const NAV_LINKS = [
   { label: "About", href: "/about" },
@@ -85,7 +85,10 @@ export function LandingNav() {
 
         <div className="relative z-10 flex min-w-[100px] flex-row items-center justify-end gap-2">
           <ThemeToggle />
-          <LoginButton className="hidden min-w-[72px] rounded-md bg-muted/80 px-6 py-2 duration-300 hover:bg-secondary/80 lg:block" />
+          <DitherLoginButton
+            seed="nav-login"
+            className="hidden min-w-[72px] lg:inline-flex"
+          />
           <button
             type="button"
             className="text-mute duration-200 hover:text-muted-foreground lg:hidden"
@@ -139,8 +142,9 @@ export function LandingNav() {
                 {item.label}
               </Link>
             ))}
-            <LoginButton
-              className="mt-4 w-full rounded-md bg-muted/80 px-6 py-2 text-center duration-300 hover:bg-secondary/80"
+            <DitherLoginButton
+              seed="nav-login-mobile"
+              className="mt-4 w-full text-center"
               onBeforeOpen={() => setMobileOpen(false)}
             />
           </div>

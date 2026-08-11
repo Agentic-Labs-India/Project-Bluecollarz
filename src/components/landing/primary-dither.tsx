@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type RefObject,
+} from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { Dithering as DitheringRaw } from "@/components/landing/ticket";
 
 const Dithering = DitheringRaw as ComponentType<Record<string, unknown>>;
-
-const SHAPES = ["warp", "simplex", "swirl", "ripple", "wave"] as const;
 
 /** Single source of truth — fills, bands, and the admit ticket all read this. */
 export const PRIMARY_DITHER = {
@@ -28,38 +33,26 @@ export const PRIMARY_TICKET_TEXTURE = {
   speed: 0.35,
 };
 
+const SHARED_SIZE = 512;
+
 function hashString(value: string) {
   return value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
-export type PrimaryDitherProps = {
-  /** Varies shape / rotation / offsets so instances don't look identical. */
-  seed?: string;
-  className?: string;
-  /** Opacity of the shader layer (0–1). */
-  opacity?: number;
-  /** Soft blur on the shader (bands look better with this on). */
-  blur?: boolean;
-  /** Light primary wash over the shader. */
-  wash?: boolean;
-};
+/** One live WebGL dither for the whole page — mirrors paint onto 2D canvases. */
+let sharedGlCanvas: HTMLCanvasElement | null = null;
+let sharedSubscribers = 0;
+let sharedRoot: Root | null = null;
+let sharedHost: HTMLDivElement | null = null;
+let sharedTeardownTimer: ReturnType<typeof setTimeout> | null = null;
 
-/**
- * Reusable primary-blue ticket dither fill.
- * Parent should be `relative` (+ usually `bg-primary` / overflow-hidden).
- */
-export function PrimaryDither({
-  seed = "primary",
-  className = "pointer-events-none absolute inset-0 overflow-hidden",
-  opacity = 0.85,
-  blur = false,
-  wash = true,
-}: PrimaryDitherProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(false);
+function setSharedGlCanvas(canvas: HTMLCanvasElement | null) {
+  sharedGlCanvas = canvas;
+}
+
+function SharedDitherMount() {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [reduced, setReduced] = useState(false);
-  const hash = hashString(seed);
-  const shape = SHAPES[hash % SHAPES.length];
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -70,43 +63,217 @@ export function PrimaryDither({
   }, []);
 
   useEffect(() => {
-    const el = ref.current;
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const sync = () => {
+      setSharedGlCanvas(wrap.querySelector("canvas"));
+    };
+
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(wrap, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      setSharedGlCanvas(null);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={wrapRef}
+      aria-hidden
+      className="pointer-events-none fixed top-0 left-0 -z-50 overflow-hidden opacity-0"
+      style={{ width: SHARED_SIZE, height: SHARED_SIZE, contain: "strict" }}
+    >
+      <Dithering
+        colorBack={PRIMARY_DITHER.colorBack}
+        colorFront={PRIMARY_DITHER.colorFront}
+        shape="warp"
+        type="random"
+        size={0.5}
+        scale={1.55}
+        rotation={18}
+        offsetX={0.05}
+        offsetY={-0.08}
+        speed={reduced ? 0 : 0.28}
+        webGlContextAttributes={{
+          preserveDrawingBuffer: true,
+          powerPreference: "low-power",
+          antialias: false,
+        }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+        }}
+      />
+    </div>
+  );
+}
+
+function cancelSharedTeardown() {
+  if (sharedTeardownTimer == null) return;
+  clearTimeout(sharedTeardownTimer);
+  sharedTeardownTimer = null;
+}
+
+function ensureSharedHost() {
+  if (typeof document === "undefined") return;
+  cancelSharedTeardown();
+  if (sharedRoot && sharedHost) return;
+
+  sharedHost = document.createElement("div");
+  sharedHost.id = "primary-dither-shared-host";
+  document.body.appendChild(sharedHost);
+  sharedRoot = createRoot(sharedHost);
+  sharedRoot.render(<SharedDitherMount />);
+}
+
+/** Unmount off the current React render turn to avoid nested-root races. */
+function scheduleSharedTeardown(delayMs = 0) {
+  cancelSharedTeardown();
+  sharedTeardownTimer = setTimeout(() => {
+    sharedTeardownTimer = null;
+    if (sharedSubscribers > 0) return;
+    const root = sharedRoot;
+    const host = sharedHost;
+    sharedRoot = null;
+    sharedHost = null;
+    sharedGlCanvas = null;
+    if (root) root.unmount();
+    host?.remove();
+  }, delayMs);
+}
+
+function retainSharedDither() {
+  sharedSubscribers += 1;
+  ensureSharedHost();
+
+  return () => {
+    sharedSubscribers = Math.max(0, sharedSubscribers - 1);
+    if (sharedSubscribers === 0) {
+      // Defer so Strict Mode / sibling effect cleanups don't unmount mid-render.
+      scheduleSharedTeardown(0);
+    }
+  };
+}
+
+/** Tear down the shared decorative context; recreate after a beat if still needed. */
+export function releaseSharedPrimaryDither() {
+  sharedSubscribers = Math.max(sharedSubscribers, 0);
+  scheduleSharedTeardown(0);
+
+  window.setTimeout(() => {
+    if (sharedSubscribers > 0) ensureSharedHost();
+  }, 120);
+}
+
+export type PrimaryDitherProps = {
+  /** Varies crop / scale so instances don't look identical. */
+  seed?: string;
+  className?: string;
+  /** Opacity of the dither layer (0–1). */
+  opacity?: number;
+  /** Soft blur on the layer (bands look better with this on). */
+  blur?: boolean;
+  /** Light primary wash over the dither. */
+  wash?: boolean;
+  /** @deprecated Ignored — all decorative fills share one live WebGL source. */
+  live?: boolean;
+};
+
+/**
+ * Reusable primary-blue ticket dither fill.
+ * Parent should be `relative` (+ usually `bg-primary` / overflow-hidden).
+ *
+ * Uses a single shared WebGL shader, mirrored onto a 2D canvas per instance
+ * so the admit ticket keeps its own context without starving decorations.
+ */
+export function PrimaryDither({
+  seed = "primary",
+  className = "pointer-events-none absolute inset-0 overflow-hidden",
+  opacity = 0.85,
+  blur = false,
+  wash = true,
+}: PrimaryDitherProps) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [visible, setVisible] = useState(false);
+  const hash = hashString(seed);
+
+  useEffect(() => {
+    const el = wrapRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setActive(Boolean(entry?.isIntersecting)),
-      { rootMargin: "100px", threshold: 0.02 },
+      ([entry]) => setVisible(Boolean(entry?.isIntersecting)),
+      { rootMargin: "80px", threshold: 0.02 },
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!visible) return;
+    return retainSharedDither();
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let raf = 0;
+    let running = true;
+
+    const paint = () => {
+      if (!running) return;
+      const source = sharedGlCanvas;
+      const parent = wrapRef.current;
+      if (source && parent && source.width > 0 && source.height > 0) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(1, Math.floor(parent.clientWidth * dpr));
+        const h = Math.max(1, Math.floor(parent.clientHeight * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+
+        // Seeded crop so neighboring fills don't look identical.
+        const zoom = 1 + (hash % 5) * 0.04;
+        const srcW = source.width / zoom;
+        const srcH = source.height / zoom;
+        const srcX = ((hash % 40) / 40) * (source.width - srcW);
+        const srcY = (((hash * 3) % 40) / 40) * (source.height - srcH);
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(source, srcX, srcY, srcW, srcH, 0, 0, w, h);
+      }
+      raf = window.requestAnimationFrame(paint);
+    };
+
+    raf = window.requestAnimationFrame(paint);
+    return () => {
+      running = false;
+      window.cancelAnimationFrame(raf);
+    };
+  }, [visible, hash]);
+
   return (
-    <div ref={ref} aria-hidden className={className}>
-      {active ? (
-        <div
-          className={blur ? "absolute inset-0 blur-[0.6px]" : "absolute inset-0"}
-          style={{ opacity }}
-        >
-          <Dithering
-            colorBack={PRIMARY_DITHER.colorBack}
-            colorFront={PRIMARY_DITHER.colorFront}
-            shape={shape}
-            type="random"
-            size={0.5}
-            scale={1.55}
-            rotation={(hash * 17) % 360}
-            offsetX={(hash % 20) / 100 - 0.1}
-            offsetY={((hash * 3) % 20) / 100 - 0.1}
-            speed={reduced ? 0 : 0.25}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-            }}
-          />
-        </div>
-      ) : null}
+    <div ref={wrapRef} aria-hidden className={className}>
+      <canvas
+        ref={canvasRef}
+        className={
+          blur
+            ? "absolute inset-0 h-full w-full blur-[0.6px]"
+            : "absolute inset-0 h-full w-full"
+        }
+        style={{ opacity, backgroundColor: PRIMARY_DITHER.colorBack }}
+      />
       {wash ? (
         <div className="pointer-events-none absolute inset-0 bg-primary/15" />
       ) : null}
@@ -138,4 +305,43 @@ export function PrimaryDitherBand({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Remounts paper-shader canvases after WebGL context loss
+ * (common when GPU budget is tight on mobile).
+ */
+export function useRecoverWebGlCanvas(rootRef: RefObject<HTMLElement | null>) {
+  const [nonce, setNonce] = useState(0);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    let canvas: HTMLCanvasElement | null = null;
+
+    const onLost = (event: Event) => {
+      event.preventDefault();
+      releaseSharedPrimaryDither();
+      window.setTimeout(() => setNonce((n) => n + 1), 48);
+    };
+
+    const bind = () => {
+      const next = root.querySelector("canvas");
+      if (next === canvas) return;
+      canvas?.removeEventListener("webglcontextlost", onLost);
+      canvas = next;
+      canvas?.addEventListener("webglcontextlost", onLost);
+    };
+
+    bind();
+    const observer = new MutationObserver(bind);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      canvas?.removeEventListener("webglcontextlost", onLost);
+    };
+  }, [rootRef, nonce]);
+
+  return nonce;
 }

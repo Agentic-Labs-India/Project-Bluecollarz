@@ -153,8 +153,11 @@ export function KycVerification({
           ) : null}
 
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/candidate/profile">View profile</Link>
+            <Button asChild variant="outline">
+              <Link href="/candidate/profile">
+                <ArrowLeftIcon className="size-4" />
+                Back
+              </Link>
             </Button>
             {jobId ? (
               <Button asChild variant="outline">

@@ -28,6 +28,7 @@ import {
   normalizeResidencePlace,
 } from "@/lib/geo/places";
 import { BadgeCheckIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import { PrimaryDither } from "@/components/landing/primary-dither";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -355,54 +356,59 @@ export function CandidateProfileView() {
         </p>
       </div>
 
-      <div className="border-border bg-card flex flex-col items-start gap-5 border p-6 sm:flex-row sm:items-center">
-        <Avatar className="size-20">
+      <div className="bg-primary relative flex flex-col items-start gap-5 overflow-hidden border border-white/15 p-6 sm:flex-row sm:items-center">
+        <PrimaryDither seed="candidate-profile-header" opacity={0.85} />
+        <Avatar className="relative z-10 size-20 ring-2 ring-white/25">
           {profile.image ? (
             <AvatarImage src={profile.image} alt={profile.name || "User"} />
           ) : null}
-          <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
+          <AvatarFallback className="bg-white/15 text-xl font-semibold text-white">
             {initial}
           </AvatarFallback>
         </Avatar>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-foreground flex flex-wrap items-center gap-2 text-xl font-semibold">
+        <div className="relative z-10 min-w-0 flex-1">
+          <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-white">
             <span>{profile.name || "Your name"}</span>
             {identityLocked ? (
               <span
-                className="text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 text-sm font-medium"
+                className="inline-flex items-center gap-1 text-sm font-medium text-white"
                 title="Identity verified via DigiLocker"
               >
-                <BadgeCheckIcon className="size-5 fill-sky-600 text-white dark:fill-sky-400" />
+                <BadgeCheckIcon className="size-5 fill-white text-primary" />
                 Verified
               </span>
             ) : null}
           </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="mt-1 text-sm text-white/75">
             {profile.headline || "Add your headline"}
           </p>
           {identityLocked ? (
-            <p className="text-muted-foreground mt-2 text-xs">
+            <p className="mt-2 text-xs text-white/65">
               DigiLocker verified — phone, DOB, address, PAN, Aadhaar, and gender
               are locked.
             </p>
           ) : profile.candidateOnboardingComplete ? (
-            <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 text-xs">
+            <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/65">
               <BadgeCheckIcon className="size-3.5" />
               Profile ready for applications
             </p>
           ) : (
-            <p className="text-muted-foreground mt-2 text-xs">
+            <p className="mt-2 text-xs text-white/65">
               Profile incomplete —{" "}
               <a
                 href="/candidate/onboarding"
-                className="text-primary underline-offset-4 hover:underline"
+                className="text-white underline underline-offset-4 hover:text-white/90"
               >
                 continue onboarding
               </a>
             </p>
           )}
         </div>
-        <Button asChild variant={identityLocked ? "outline" : "default"}>
+        <Button
+          asChild
+          variant="outline"
+          className="relative z-10 border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+        >
           <Link href="/candidate/kyc">
             <ShieldCheckIcon className="size-4" />
             {identityLocked ? "View KYC" : "Complete KYC"}

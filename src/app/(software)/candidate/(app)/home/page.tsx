@@ -48,6 +48,7 @@ export default async function HomePage() {
             icon={stat.icon}
             label={stat.label}
             value={stat.value}
+            variant="dither"
           />
         ))}
       </div>
