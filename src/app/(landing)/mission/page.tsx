@@ -29,7 +29,6 @@ const TOC = [
 export default function MissionPage() {
   return (
     <DocPage
-      eyebrow="Company document"
       title="Our mission"
       description="Open real pathways for skilled blue-collar workers — from hometown trade to the job they have been working toward — with hiring teams who can evaluate skill, not just paperwork."
       updated="July 19, 2026"

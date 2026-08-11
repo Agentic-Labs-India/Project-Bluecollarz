@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { LoginButton } from "@/components/auth/login-button";
+import {
+  PRIMARY_DITHER,
+  PRIMARY_TICKET_TEXTURE,
+  PrimaryDither,
+} from "@/components/landing/primary-dither";
 import AdmitOneTicket, {
   TICKET_GEOMETRY,
   TICKET_LAYOUT,
@@ -46,30 +51,49 @@ const STEPS: JourneyStep[] = [
   },
 ];
 
-const PRIMARY_TEXTURE = {
-  colorBack: "#233eff",
-  colorFront: "#a8b4ff",
-  shape: "warp" as const,
-  type: "random" as const,
-  size: 0.55,
-  scale: 1.65,
-  rotation: 18,
-  offsetX: 0.05,
-  offsetY: -0.08,
-  speed: 0.35,
-};
-
 const PRIMARY_LAYOUT = {
   ...TICKET_LAYOUT,
   inkColor: "#ffffff",
-  watermarkColor: "#d4daff",
-  watermarkOpacity: 0.55,
+  watermarkColor: PRIMARY_DITHER.watermark,
+  watermarkOpacity: 0.35,
   stubOpacity: 0.92,
 };
 
 function ticketWidth() {
   if (typeof window === "undefined") return 640;
   return Math.min(720, Math.max(300, window.innerWidth - 64));
+}
+
+function JourneyStepNumber({ value }: { value: string }) {
+  const mask = `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 96"><text x="36" y="82" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="92" font-weight="700" letter-spacing="-0.08em">${value}</text></svg>`,
+  )}")`;
+
+  return (
+    <span
+      aria-hidden
+      className="relative block h-20 w-14 shrink-0 sm:h-24 sm:w-16 md:h-28 md:w-[4.5rem]"
+      style={{
+        WebkitMaskImage: mask,
+        maskImage: mask,
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }}
+    >
+      <span className="bg-primary absolute inset-0">
+        <PrimaryDither
+          seed={`journey-step-${value}`}
+          opacity={0.95}
+          wash={false}
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        />
+      </span>
+    </span>
+  );
 }
 
 export function CandidateJourney() {
@@ -89,9 +113,6 @@ export function CandidateJourney() {
     >
       <div className="w-full">
         <div className="max-w-2xl">
-          <p className="text-mute text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
-            Your journey
-          </p>
           <h2
             id="candidate-journey-heading"
             className="font-heading text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl"
@@ -109,14 +130,9 @@ export function CandidateJourney() {
             return (
               <li
                 key={step.code}
-                className="border-border bg-card flex items-center gap-3 border px-3.5 py-3 sm:gap-4 sm:px-4 sm:py-3.5"
+                className="border-border bg-card flex items-center gap-4 border px-4 py-4 sm:gap-5 sm:px-5 sm:py-5"
               >
-                <span
-                  aria-hidden
-                  className="font-heading shrink-0 text-[2.75rem] leading-none font-semibold tracking-tighter text-transparent sm:text-[3.25rem] [-webkit-text-stroke:1.4px_color-mix(in_oklab,var(--foreground)_28%,transparent)]"
-                >
-                  {number}
-                </span>
+                <JourneyStepNumber value={number} />
                 <div className="min-w-0">
                   <p className="text-foreground text-sm leading-snug font-semibold">
                     <span className="sr-only">Step {number}. </span>
@@ -160,7 +176,7 @@ export function CandidateJourney() {
                 width={width}
                 geometry={TICKET_GEOMETRY}
                 layout={PRIMARY_LAYOUT}
-                texture={PRIMARY_TEXTURE}
+                texture={PRIMARY_TICKET_TEXTURE}
                 className="font-heading shadow-[0_18px_50px_-28px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
                 tilt={{ maxTilt: 7, scale: 1.015, glare: 0.14 }}
               />

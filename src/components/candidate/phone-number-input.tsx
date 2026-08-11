@@ -76,7 +76,7 @@ export function PhoneNumberInput({
         }}
       >
         <SelectTrigger
-          className="w-[8.25rem] shrink-0"
+          className="bg-background w-[8.25rem] shrink-0"
           aria-label="Country calling code"
         >
           <SelectValue placeholder="Code" />
@@ -107,7 +107,7 @@ export function PhoneNumberInput({
         disabled={disabled}
         placeholder="Phone number"
         value={nationalDraft}
-        className="min-w-0 flex-1"
+        className="bg-background min-w-0 flex-1"
         onChange={(e) => {
           const next = e.target.value.replace(/\D/g, "");
           setNationalDraft(next);

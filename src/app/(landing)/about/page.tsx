@@ -31,7 +31,6 @@ const TOC = [
 export default function AboutPage() {
   return (
     <DocPage
-      eyebrow="Company document"
       title="About Blucollarz"
       description="Blucollarz is AI-native hiring infrastructure for blue-collar workers searching for dream jobs around the world — and for recruiters who need clearer signal before they hire."
       updated="July 19, 2026"
@@ -208,7 +207,7 @@ export default function AboutPage() {
             ],
           ]}
         />
-        <DocCallout title="Interview device rules">
+        <DocCallout title="Interview device rules" variant="default">
           <p>
             Live interviews require a laptop, tablet, or PC — not a phone —
             because candidates must share their entire screen, keep the camera
@@ -236,10 +235,10 @@ export default function AboutPage() {
 
       <DocSection id="where-we-operate" number="07" title="Where we operate">
         <p>
-          Blucollarz is rooted in Dubai, UAE, and built for cross-border talent
-          pathways — especially from South Asia, Southeast Asia, and Africa into
-          Gulf opportunity hubs and other global markets. Roles may be on-site
-          or location-specific depending on the employer.
+          Blucollarz is rooted in Hyderabad, India, and built for cross-border
+          talent pathways — especially from South Asia, Southeast Asia, and
+          Africa into Gulf opportunity hubs and other global markets. Roles may
+          be on-site or location-specific depending on the employer.
         </p>
         <p>
           The product language and interview experience are designed for

@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { DocTocNav, type DocTocItem } from "@/components/landing/doc-toc";
+import { PrimaryDither } from "@/components/landing/primary-dither";
 import { cn } from "@/lib/utils";
-
-export type DocTocItem = { id: string; label: string };
 
 /** Long-form document shell for About / Mission / Vision / Recruiters / Contact. */
 export function DocPage({
@@ -14,7 +14,7 @@ export function DocPage({
   children,
   className,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description: string;
   updated?: string;
@@ -30,9 +30,11 @@ export function DocPage({
       )}
     >
       <header className="border-border max-w-3xl space-y-4 border-b pb-8 md:pb-10">
-        <p className="text-mute text-xs font-medium tracking-[0.14em] uppercase sm:text-sm">
-          {eyebrow}
-        </p>
+        {eyebrow ? (
+          <p className="text-mute text-xs font-medium tracking-[0.14em] uppercase sm:text-sm">
+            {eyebrow}
+          </p>
+        ) : null}
         <h1 className="font-heading text-foreground text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl md:leading-[1.1]">
           {title}
         </h1>
@@ -52,27 +54,7 @@ export function DocPage({
             : null,
         )}
       >
-        {toc?.length ? (
-          <aside className="border-border mb-8 border-b pb-6 lg:sticky lg:top-24 lg:mb-0 lg:border-b-0 lg:pb-0">
-            <p className="text-mute mb-3 text-[11px] font-medium tracking-[0.12em] uppercase">
-              On this page
-            </p>
-            <nav
-              aria-label="Page sections"
-              className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
-            >
-              {toc.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0 rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap transition-colors lg:whitespace-normal"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </aside>
-        ) : null}
+        {toc?.length ? <DocTocNav items={toc} /> : null}
 
         <article className="text-muted-foreground min-w-0 max-w-3xl space-y-12 text-sm leading-relaxed sm:space-y-14 sm:text-[15px] md:space-y-16">
           {children}
@@ -114,11 +96,34 @@ export function DocCallout({
   title,
   children,
   className,
+  variant = "dither",
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  variant?: "default" | "dither";
 }) {
+  if (variant === "dither") {
+    return (
+      <aside
+        className={cn(
+          "bg-primary relative space-y-2 overflow-hidden border border-white/15 px-4 py-4 sm:px-5 sm:py-5",
+          className,
+        )}
+      >
+        <PrimaryDither seed={`doc-callout-${title ?? "note"}`} opacity={0.7} />
+        {title ? (
+          <p className="relative z-10 text-sm font-semibold text-white">
+            {title}
+          </p>
+        ) : null}
+        <div className="relative z-10 space-y-3 text-sm leading-relaxed text-white/80">
+          {children}
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside
       className={cn(
@@ -144,10 +149,13 @@ export function DocFeatureGrid({
       {items.map((item) => (
         <li
           key={item.title}
-          className="border-border bg-card space-y-1.5 border p-4"
+          className="bg-primary relative space-y-1.5 overflow-hidden border border-white/15 p-4"
         >
-          <p className="text-foreground text-sm font-semibold">{item.title}</p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <PrimaryDither seed={`doc-feature-${item.title}`} opacity={0.7} />
+          <p className="relative z-10 text-sm font-semibold text-white">
+            {item.title}
+          </p>
+          <p className="relative z-10 text-sm leading-relaxed text-white/75">
             {item.body}
           </p>
         </li>
@@ -191,35 +199,38 @@ export function DocTable({
   rows: string[][];
 }) {
   return (
-    <div className="border-border -mx-1 overflow-x-auto border sm:mx-0">
-      <table className="w-full min-w-[28rem] text-left text-sm">
-        <thead className="bg-muted/50">
-          <tr>
-            {headers.map((header) => (
-              <th
-                key={header}
-                className="text-foreground px-3 py-2.5 font-semibold whitespace-nowrap"
-              >
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className="border-border border-t">
-              {row.map((cell, cellIndex) => (
-                <td
-                  key={`${rowIndex}-${cellIndex}`}
-                  className="text-muted-foreground px-3 py-2.5 align-top"
+    <div className="bg-primary relative -mx-1 overflow-hidden border border-white/15 sm:mx-0">
+      <PrimaryDither seed={`doc-table-${headers.join("-")}`} opacity={0.65} />
+      <div className="relative z-10 overflow-x-auto">
+        <table className="w-full min-w-[28rem] text-left text-sm">
+          <thead className="bg-white/10">
+            <tr>
+              {headers.map((header) => (
+                <th
+                  key={header}
+                  className="px-3 py-2.5 font-semibold whitespace-nowrap text-white"
                 >
-                  {cell}
-                </td>
+                  {header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-t border-white/15">
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={`${rowIndex}-${cellIndex}`}
+                    className="px-3 py-2.5 align-top text-white/80"
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -315,20 +326,21 @@ export function DocContactCard({
   cta: string;
 }) {
   return (
-    <div className="border-border bg-card flex h-full flex-col gap-3 border p-4 sm:p-5">
-      <div className="space-y-1">
-        <p className="text-foreground text-sm font-semibold">{title}</p>
+    <div className="bg-primary relative flex h-full flex-col gap-3 overflow-hidden border border-white/15 p-4 sm:p-5">
+      <PrimaryDither seed={`doc-contact-${title}`} opacity={0.7} />
+      <div className="relative z-10 space-y-1">
+        <p className="text-sm font-semibold text-white">{title}</p>
         <a
           href={`mailto:${email}`}
-          className="text-foreground text-sm underline underline-offset-4"
+          className="text-sm text-white underline underline-offset-4"
         >
           {email}
         </a>
       </div>
-      <p className="text-muted-foreground flex-1 text-sm leading-relaxed">
+      <p className="relative z-10 flex-1 text-sm leading-relaxed text-white/75">
         {body}
       </p>
-      <div>
+      <div className="relative z-10">
         <DocCta href={href} variant="secondary">
           {cta}
         </DocCta>

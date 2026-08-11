@@ -127,9 +127,6 @@ export default function BlogIndexPage({ searchParams }: PageProps) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28 md:px-8 md:pb-24 md:pt-32">
       <header className="border-border w-full space-y-4 border-b pb-8 md:pb-10">
-        <p className="text-mute text-xs font-medium tracking-[0.14em] uppercase sm:text-sm">
-          Company document
-        </p>
         <h1 className="font-heading text-foreground text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl md:leading-[1.1]">
           Blog
         </h1>

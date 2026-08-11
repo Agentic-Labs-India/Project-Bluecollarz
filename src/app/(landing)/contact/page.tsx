@@ -15,7 +15,7 @@ import {
 export const metadata = {
   title: "Contact · Blucollarz",
   description:
-    "Get Blucollarz support via the in-app Help agent, or contact sales and press. Dubai-based hiring platform for blue-collar talent.",
+    "Get Blucollarz support via the in-app Help agent, or contact sales and press. Hyderabad-based hiring platform for blue-collar talent.",
 };
 
 const TOC = [
@@ -34,7 +34,6 @@ const TOC = [
 export default function ContactPage() {
   return (
     <DocPage
-      eyebrow="Company document"
       title="Contact"
       description="Product problems are handled inside the app by Help — our AI support agent that can open a ticket for the team. Use email for sales, press, or if you cannot sign in."
       updated="July 24, 2026"
@@ -272,7 +271,7 @@ export default function ContactPage() {
         </p>
         <DocList
           items={[
-            "Sunday–Thursday business hours follow UAE working patterns",
+            "Monday–Friday business hours follow India working patterns",
             "We may ask for a screen recording for interview or KYC issues",
             "We will never ask you to paste full government ID numbers into Help or email",
           ]}
@@ -282,11 +281,11 @@ export default function ContactPage() {
       <DocSection id="location" number="09" title="Location">
         <p>
           Blucollarz is rooted in{" "}
-          <strong className="text-foreground">Dubai, UAE</strong>, and built for
-          cross-border hiring corridors into the Gulf and other global hubs. We
-          do not publish a walk-in retail address for drop-in visits; commercial
-          conversations run through email, and product support through Help
-          first.
+          <strong className="text-foreground">Hyderabad, India</strong>, and
+          built for cross-border hiring corridors into the Gulf and other global
+          hubs. We do not publish a walk-in retail address for drop-in visits;
+          commercial conversations run through email, and product support
+          through Help first.
         </p>
       </DocSection>
 

@@ -4,12 +4,13 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   HardHatIcon,
-  MapPinIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { HOME_IMAGES } from "@/components/landing/home-images";
+import { PrimaryDither } from "@/components/landing/primary-dither";
 import { cn } from "@/lib/utils";
 
 type WorkerStory = {
@@ -20,8 +21,6 @@ type WorkerStory = {
   quote: string;
   image: string;
 };
-
-const HOME_IMAGES = [1, 2, 3, 4, 5, 6, 7].map((n) => `/images/home/${n}.png`);
 
 const WORKER_STORIES: WorkerStory[] = [
   {
@@ -152,7 +151,7 @@ function WorkerImage({
       src={story.image}
       alt={`${story.name}, ${story.trade}`}
       fill
-      sizes="(max-width: 768px) 100vw, 380px"
+      sizes="(max-width: 768px) 100vw, 33vw"
       className="object-cover"
       priority={priority}
     />
@@ -188,9 +187,6 @@ export default function Testimonials() {
       <div className="w-full">
         <div className="flex flex-col gap-7 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
-            <p className="text-mute text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
-              Worker stories
-            </p>
             <h2
               id="worker-stories-heading"
               className="font-heading text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl"
@@ -229,13 +225,8 @@ export default function Testimonials() {
           </div>
         </div>
 
-        <div className="relative mt-10 min-h-130 sm:mt-12">
-          <div
-            aria-hidden
-            className="text-border pointer-events-none absolute inset-x-0 top-8 z-0 h-107.5 bg-[repeating-linear-gradient(315deg,currentColor_0,currentColor_1px,transparent_0,transparent_50%)] bg-size-[11px_11px] opacity-60"
-          />
-
-          <div className="relative z-20 flex items-stretch justify-center gap-5">
+        <div className="relative mt-10 w-full sm:mt-12">
+          <div className="relative z-20 grid w-full grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
             <AnimatePresence initial={false} mode="popLayout">
               {visibleStories.map(({ story, position }) => {
                 const centered = position === 0;
@@ -248,7 +239,7 @@ export default function Testimonials() {
                     exit={{ opacity: 0, scale: 0.96 }}
                     transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                     className={cn(
-                      "border-border bg-card relative z-20 flex w-full max-w-92.5 flex-col overflow-hidden border shadow-sm",
+                      "border-border bg-card relative z-20 flex w-full min-w-0 flex-col overflow-hidden border shadow-sm",
                       !centered && "hidden md:flex",
                       centered && "z-30",
                     )}
@@ -256,29 +247,28 @@ export default function Testimonials() {
                     <div className="bg-muted relative aspect-4/3 overflow-hidden">
                       <WorkerImage story={story} priority={centered} />
                       <span className="bg-background/90 text-foreground absolute left-3 top-3 px-2.5 py-1 font-mono text-[9px] tracking-[0.14em] uppercase backdrop-blur-sm">
-                        {story.trade}
+                        {story.destination}
                       </span>
                     </div>
 
-                    <div className="flex flex-1 flex-col p-6">
-                      <HardHatIcon className="text-primary size-5" />
-                      <blockquote className="text-foreground mt-5 text-base leading-7">
-                        “{story.quote}”
-                      </blockquote>
-                      <footer className="border-border mt-7 flex items-end justify-between gap-4 border-t pt-5">
+                    <div className="bg-primary relative flex flex-1 flex-col overflow-hidden px-6 py-6">
+                      <PrimaryDither seed={`story-${story.id}`} opacity={0.75} />
+                      <div className="relative z-10 flex flex-1 flex-col">
+                        <HardHatIcon className="size-5 text-white/90" />
+                        <blockquote className="mt-4 flex-1 text-base leading-7 text-white">
+                          “{story.quote}”
+                        </blockquote>
+                        <div
+                          aria-hidden
+                          className="my-5 h-px w-full bg-white/25"
+                        />
                         <div>
-                          <p className="text-foreground font-semibold">
-                            {story.name}
-                          </p>
-                          <p className="text-muted-foreground mt-1 text-xs">
+                          <p className="font-semibold text-white">{story.name}</p>
+                          <p className="mt-1 text-xs text-white/75">
                             {story.trade}
                           </p>
                         </div>
-                        <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
-                          <MapPinIcon className="size-3.5" />
-                          {story.destination}
-                        </span>
-                      </footer>
+                      </div>
                     </div>
                   </motion.article>
                 );

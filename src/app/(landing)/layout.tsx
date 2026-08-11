@@ -11,9 +11,7 @@ export default function LandingLayout({
     <div className="bg-canvas text-foreground min-h-screen overflow-x-clip antialiased">
       <LandingNav />
       {children}
-      <div className="mx-auto w-full max-w-[1600px] px-6 duration-300 md:px-8 lg:px-14">
-        <LandingFooter />
-      </div>
+      <LandingFooter />
     </div>
   );
 }

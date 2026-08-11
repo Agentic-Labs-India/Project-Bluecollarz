@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TicketDitherBand } from "@/components/landing/ticket-dither-band";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
@@ -109,7 +109,7 @@ function OpportunityCard({
           : "border-border hover:border-primary/40",
       )}
     >
-      <TicketDitherBand seed={opportunity.id} label={bandLabel || undefined} />
+      <PrimaryDitherBand seed={opportunity.id} label={bandLabel || undefined} />
 
       <div
         className={cn(

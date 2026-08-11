@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { MoonIcon, SunIcon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 
 const NAV_LINKS = [
@@ -13,6 +15,32 @@ const NAV_LINKS = [
   { label: "For Recruiters", href: "/for-recruiters" },
   { label: "Contact", href: "/contact" },
 ];
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+
+  return (
+    <button
+      type="button"
+      className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-muted/80 text-foreground duration-200 hover:bg-secondary/80"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      {isDark ? (
+        <SunIcon className="size-4" strokeWidth={2} />
+      ) : (
+        <MoonIcon className="size-4" strokeWidth={2} />
+      )}
+    </button>
+  );
+}
 
 export function LandingNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -56,9 +84,8 @@ export function LandingNav() {
         </nav>
 
         <div className="relative z-10 flex min-w-[100px] flex-row items-center justify-end gap-2">
-          <LoginButton
-            className="hidden min-w-[72px] rounded-md bg-muted/80 px-6 py-2 duration-300 hover:bg-secondary/80 lg:block"
-          />
+          <ThemeToggle />
+          <LoginButton className="hidden min-w-[72px] rounded-md bg-muted/80 px-6 py-2 duration-300 hover:bg-secondary/80 lg:block" />
           <button
             type="button"
             className="text-mute duration-200 hover:text-muted-foreground lg:hidden"

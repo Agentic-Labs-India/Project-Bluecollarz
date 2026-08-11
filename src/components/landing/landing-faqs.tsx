@@ -66,9 +66,6 @@ export function LandingFaqs() {
     >
       <div className="w-full">
         <div className="max-w-2xl">
-          <p className="text-mute text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
-            Candidate FAQs
-          </p>
           <h2
             id="candidate-faqs-heading"
             className="font-heading text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl"

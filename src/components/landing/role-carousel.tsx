@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import { LoginButton } from "@/components/auth/login-button";
-import { TicketDitherBand } from "@/components/landing/ticket-dither-band";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { stateName } from "@/lib/geo/places";
 import type { LandingRole } from "@/lib/jobs/queries";
 import { cn } from "@/lib/utils";
@@ -82,9 +82,6 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
 
   const header = (
     <div className="max-w-2xl">
-      <p className="text-primary text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
-        Open roles
-      </p>
       <h2 className="font-heading text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl">
         Latest roles
       </h2>
@@ -162,7 +159,7 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
                   href={`/jobs/${role.id}`}
                   className="group border-border bg-card hover:border-primary/40 focus-visible:ring-primary relative flex h-[128px] w-full flex-col overflow-hidden border outline-none transition-[border-color] duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
-                  <TicketDitherBand seed={role.id} label={place || undefined} />
+                  <PrimaryDitherBand seed={role.id} label={place || undefined} />
 
                   <div className="flex min-h-0 flex-1 flex-col justify-between px-3 py-2.5">
                     <div>

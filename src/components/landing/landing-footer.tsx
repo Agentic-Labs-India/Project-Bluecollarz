@@ -1,12 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { LoginButton } from "@/components/auth/login-button";
+import { PrimaryDither } from "@/components/landing/primary-dither";
 
 type FooterLink = {
   label: string;
   href?: string;
-  /** When true, this is a login CTA (always creates Candidate / work accounts). */
   login?: boolean;
 };
 
@@ -37,67 +38,82 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
   },
 ];
 
-/** Full landing footer shared across all public marketing pages. */
+/** Full-bleed primary footer with dither wash. */
 export function LandingFooter() {
   return (
-    <div
-      className="mt-16 w-full border-t border-canvas-soft bg-canvas px-0 pb-[clamp(2.5rem,4vw,3rem)] pt-[clamp(2.5rem,4vw,4rem)] font-sans antialiased md:px-0 lg:px-0"
+    <footer
       id="footer"
+      className="relative mt-16 w-full overflow-hidden bg-canvas"
     >
-      <div className="mx-auto max-w-none">
-        <div className="grid grid-cols-2 gap-6 text-foreground md:grid-cols-3 md:gap-4">
-          {FOOTER_SECTIONS.map((section) => (
-            <div key={section.title}>
-              <div className="mb-2 mt-0.5 text-[15px] font-medium">
-                {section.title}
-              </div>
-              <div className="flex flex-col gap-1">
-                {section.links.map((link) =>
-                  link.login ? (
-                    <LoginButton
-                      key={link.label}
-                      className="text-[15px] text-muted-foreground text-left duration-100 hover:text-mute"
-                    >
-                      {link.label}
-                    </LoginButton>
-                  ) : (
-                    <Link
-                      key={link.label}
-                      className="text-[15px] text-muted-foreground duration-100 hover:text-mute"
-                      href={link.href ?? "#"}
-                    >
-                      {link.label}
-                    </Link>
-                  ),
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="relative z-10 min-h-[380px] overflow-hidden bg-[color-mix(in_oklab,var(--primary)_38%,#030712)]">
+        <PrimaryDither seed="landing-footer" opacity={0.7} wash={false} />
 
-        <div className="mt-10 flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-row items-center gap-3">
-            <span className="text-sm text-mute">© 2026 Blucollarz</span>
-            <div className="flex flex-row items-center">
-              <svg
-                stroke="currentColor"
-                fill="currentColor"
-                strokeWidth="0"
-                version="1.2"
-                baseProfile="tiny"
-                viewBox="0 0 24 24"
-                className="size-4 text-mute"
-                height="1em"
-                width="1em"
-                xmlns="http://www.w3.org/2000/svg"
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-between gap-16 px-6 py-16 md:px-12 md:py-24 lg:flex-row lg:gap-8 lg:px-24">
+          <div className="flex w-full max-w-sm flex-col justify-between">
+            <div className="flex flex-col">
+              <Link
+                href="/"
+                className="mb-3 inline-flex items-center gap-2.5 text-white"
               >
-                <path d="M10.368 19.102c.349 1.049 1.011 1.086 1.478.086l5.309-11.375c.467-1.002.034-1.434-.967-.967l-11.376 5.308c-1.001.467-.963 1.129.085 1.479l4.103 1.367 1.368 4.102z" />
-              </svg>
-              <span className="text-sm text-mute">Dubai, UAE</span>
+                <span className="inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-transparent">
+                  <Image
+                    src="/logo.svg"
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="size-full"
+                  />
+                </span>
+                <span className="text-xl font-semibold tracking-tight md:text-[22px]">
+                  Blucollarz
+                </span>
+              </Link>
+              <h3 className="text-base leading-7 text-white md:text-[17px] md:leading-7">
+                AI hiring for skilled
+                <br />
+                workers heading abroad
+              </h3>
+            </div>
+
+            <div className="mt-12 flex flex-col gap-2 pt-8 lg:mt-auto">
+              <p className="text-xs text-white/75 md:text-[13px]">
+                © 2026 Blucollarz. All rights reserved.
+              </p>
+              <p className="text-xs text-white/75 md:text-[13px]">
+                Hyderabad, India
+              </p>
             </div>
           </div>
+
+          <nav className="flex flex-wrap gap-12 md:gap-24 lg:flex-nowrap">
+            {FOOTER_SECTIONS.map((section) => (
+              <div key={section.title} className="flex flex-col gap-5">
+                <h3 className="text-base font-semibold text-white md:text-lg">
+                  {section.title}
+                </h3>
+                <ul className="flex flex-col gap-3 md:gap-4">
+                  {section.links.map((link) => (
+                    <li key={link.label}>
+                      {link.login ? (
+                        <LoginButton className="text-sm text-white/75 transition-colors hover:text-white md:text-[15px]">
+                          {link.label}
+                        </LoginButton>
+                      ) : (
+                        <Link
+                          href={link.href ?? "#"}
+                          className="text-sm text-white/75 transition-colors hover:text-white md:text-[15px]"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
       </div>
-    </div>
+    </footer>
   );
 }

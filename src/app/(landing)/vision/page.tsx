@@ -30,7 +30,6 @@ const TOC = [
 export default function VisionPage() {
   return (
     <DocPage
-      eyebrow="Company document"
       title="Our vision"
       description="A world where skilled hands can cross borders with proof — and land the jobs they dream of — while employers hire with confidence instead of guesswork."
       updated="July 19, 2026"
@@ -108,9 +107,9 @@ export default function VisionPage() {
       <DocSection id="corridors" number="04" title="Global corridors">
         <p>
           Vision is geographic as well as product. Blucollarz is rooted in
-          Dubai and oriented around corridors where blue-collar mobility already
-          happens — South Asia, Southeast Asia, and Africa into Gulf hubs and
-          other markets that hire skilled crews.
+          Hyderabad and oriented around corridors where blue-collar mobility
+          already happens — South Asia, Southeast Asia, and Africa into Gulf
+          hubs and other markets that hire skilled crews.
         </p>
         <DocList
           items={[

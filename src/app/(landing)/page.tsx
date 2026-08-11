@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { CandidateJourney } from "@/components/landing/candidate-journey";
+import { HOME_IMAGES } from "@/components/landing/home-images";
 import { LandingFaqs } from "@/components/landing/landing-faqs";
 import { LatestRolesCarousel } from "@/components/landing/latest-roles-carousel";
 import { RoleCarouselSkeleton } from "@/components/landing/role-carousel-skeleton";
 import Testimonials from "@/components/landing/testimonials";
-import { TicketDitherBand } from "@/components/landing/ticket-dither-band";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { TrustedBy } from "@/components/landing/trusted-by";
 import { WorldMapLazy } from "@/components/ui/world-map-lazy";
 
@@ -16,8 +17,6 @@ export const metadata: Metadata = {
   description:
     "Blucollarz is an AI-native hiring platform for blue-collar and skilled workers. Build a profile, complete AI interviews, verify identity, and connect with recruiters hiring worldwide. Sign in with Google to create your account.",
 };
-
-const HOME_IMAGES = [1, 2, 3, 4, 5, 6, 7].map((n) => `/images/home/${n}.png`);
 
 /** Origins across India → global destinations (equirectangular lat/lng). */
 const HERO_MAP_ROUTES = [
@@ -92,18 +91,20 @@ export default function Page() {
       <div className="relative mt-16 w-full overflow-hidden text-center sm:mt-20 md:mt-24">
         <div className="relative z-10 flex flex-col items-center pt-4">
           <section className="relative mx-auto mt-4 flex h-9 w-fit max-w-[calc(100%-0.5rem)] flex-row items-center justify-center gap-1 overflow-hidden rounded-full border border-primary/25 px-3 py-0.5 text-[12px] font-medium shadow-sm sm:mt-6 sm:h-[38px] sm:px-5 sm:text-[12.75px] md:mt-8">
-            <TicketDitherBand
+            <PrimaryDitherBand
               seed="hero-stats"
-              className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden rounded-full bg-[#2f4af5]"
+              className="bg-primary pointer-events-none absolute inset-0 h-full w-full overflow-hidden rounded-full"
             />
             <div className="relative z-10 flex w-fit flex-row items-center justify-center gap-2.5 text-white sm:gap-4">
               <p className="flex flex-row items-center gap-1.5 text-[12px] font-medium sm:text-[14px]">
                 <span className="hidden font-normal text-white/80 sm:inline sm:translate-y-[-0.5px] sm:pr-4">
-                  Avg. monthly pay
+                  Trusted by
                 </span>
-                <span className="font-normal text-white/80 sm:hidden">Pay</span>
+                <span className="font-normal text-white/80 sm:hidden">
+                  Trusted
+                </span>
                 <span className="sm:translate-y-[-0.5px]">
-                  $<span className="tabular-nums">2.8</span>k
+                  <span className="tabular-nums">40</span>k+
                 </span>
               </p>
               <div className="h-6 w-px bg-white/30 sm:h-9" />
@@ -112,7 +113,7 @@ export default function Page() {
                   Roles open
                 </span>
                 <span className="sm:translate-y-[-0.5px]">
-                  <span className="tabular-nums">12</span>k+
+                  <span className="tabular-nums">2</span>k+
                 </span>
               </p>
               <div className="hidden h-9 w-px bg-white/30 sm:block" />
@@ -121,7 +122,7 @@ export default function Page() {
                   Countries
                 </span>
                 <span className="sm:translate-y-[-0.5px]">
-                  <span className="tabular-nums">40</span>+
+                  <span className="tabular-nums">8</span>+
                 </span>
               </p>
             </div>

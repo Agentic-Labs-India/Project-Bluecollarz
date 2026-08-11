@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRightIcon } from "lucide-react";
+import { PrimaryDither } from "@/components/landing/primary-dither";
+import { cn } from "@/lib/utils";
 
 const unsplash = (id: string) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=75`;
@@ -51,8 +53,10 @@ export function TrustedBy() {
       className="relative mt-16 py-10 sm:mt-20 sm:py-14 md:mt-24"
     >
       <div className="grid w-full gap-2 lg:grid-cols-4 lg:items-stretch">
-        <div className="bg-primary text-primary-foreground flex min-h-64 flex-col justify-between p-6 sm:min-h-72 sm:p-8 lg:min-h-full">
-          <div className="max-w-xs">
+        <div className="bg-primary text-primary-foreground relative flex min-h-64 flex-col justify-between overflow-hidden p-6 sm:min-h-72 sm:p-8 lg:min-h-full">
+          <PrimaryDither seed="trusted-worldwide" opacity={0.6} />
+
+          <div className="relative z-10 max-w-xs">
             <p className="text-primary-foreground/70 text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
               Trusted worldwide
             </p>
@@ -66,7 +70,7 @@ export function TrustedBy() {
 
           <Link
             href="/candidate/explore"
-            className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 mt-8 inline-flex w-fit items-center gap-1.5 px-3.5 py-2 text-sm font-medium duration-200"
+            className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 relative z-10 mt-8 inline-flex w-fit items-center gap-1.5 px-3.5 py-2 text-sm font-medium duration-200"
           >
             Find Jobs
             <ArrowUpRightIcon className="size-3.5" strokeWidth={2.25} />
@@ -77,7 +81,10 @@ export function TrustedBy() {
           {DESTINATIONS.map((destination) => (
             <li
               key={destination.name}
-              className="border-border relative aspect-5/3 overflow-hidden border lg:aspect-auto lg:min-h-36"
+              className={cn(
+                "border-border relative aspect-5/3 overflow-hidden border lg:aspect-auto lg:min-h-36",
+                destination.name === "Brazil" && "hidden sm:list-item",
+              )}
             >
               <Image
                 src={destination.image}
