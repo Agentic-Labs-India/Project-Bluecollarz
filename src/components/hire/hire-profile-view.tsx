@@ -25,7 +25,8 @@ import {
 } from "@/lib/hire/profile";
 
 const STATUS_LABELS: Record<string, string> = {
-  published: "Open",
+  published: "Live",
+  underVerification: "In review",
   draft: "Draft",
   closed: "Closed",
 };
@@ -94,6 +95,7 @@ export function HireProfileView({
 
   const roleBreakdown = [
     { label: "Open", value: overview.roles.published },
+    { label: "In review", value: overview.roles.underVerification },
     { label: "Drafts", value: overview.roles.draft },
     { label: "Closed", value: overview.roles.closed },
   ];

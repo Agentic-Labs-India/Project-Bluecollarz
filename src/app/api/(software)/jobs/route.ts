@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
 
     const db = client.db(DB_NAME);
     const result = await db.collection(COLLECTIONS.JOBS).insertOne(doc);
+    // underVerification is not public — no cache bust on create.
     if (doc.status === "published") {
       revalidatePublishedJobsCache();
     }

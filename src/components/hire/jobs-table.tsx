@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { RoleSheet } from "@/components/hire/role-sheet";
 import type { JobListItem, PaginatedJobsResponse } from "@/lib/jobs";
-import { JOB_STATUSES } from "@/lib/jobs";
+import { JOB_STATUSES, JOB_STATUS_LABELS } from "@/lib/jobs";
 import { EyeIcon, PlusIcon } from "lucide-react";
 
 const STATUS_VARIANT: Record<
@@ -24,6 +24,7 @@ const STATUS_VARIANT: Record<
   "default" | "secondary" | "outline"
 > = {
   draft: "secondary",
+  underVerification: "outline",
   published: "default",
   closed: "outline",
 };
@@ -107,7 +108,7 @@ export function HireJobsTable({
         header: "Status",
         cell: ({ row }) => (
           <Badge variant={STATUS_VARIANT[row.original.status]}>
-            {row.original.status}
+            {JOB_STATUS_LABELS[row.original.status]}
           </Badge>
         ),
       },
@@ -192,7 +193,7 @@ export function HireJobsTable({
                 <SelectItem value="all">All statuses</SelectItem>
                 {JOB_STATUSES.map((status) => (
                   <SelectItem key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                    {JOB_STATUS_LABELS[status]}
                   </SelectItem>
                 ))}
               </SelectContent>

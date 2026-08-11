@@ -438,7 +438,7 @@ export function JobForm({
             className="w-full sm:w-auto"
             onClick={() => void handleSubmit(true)}
           >
-            {loading ? "Publishing…" : "Save & publish"}
+            {loading ? "Submitting…" : "Submit for review"}
           </Button>
           <Button
             type="button"

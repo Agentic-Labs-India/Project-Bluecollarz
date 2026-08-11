@@ -75,6 +75,8 @@ export async function getHireOverview(viewer: {
   const roles = {
     total: jobs.length,
     draft: jobs.filter((job) => job.status === "draft").length,
+    underVerification: jobs.filter((job) => job.status === "underVerification")
+      .length,
     published: jobs.filter((job) => job.status === "published").length,
     closed: jobs.filter((job) => job.status === "closed").length,
   };

@@ -46,7 +46,7 @@ export interface CandidateApplicationListItem {
   jobId: string;
   jobTitle: string;
   jobPay: string;
-  jobStatus: "published" | "draft" | "closed" | "missing";
+  jobStatus: "published" | "draft" | "underVerification" | "closed" | "missing";
   status: CandidatePipelineStatus;
   /** Formal apply date, or first interview start when not yet applied. */
   appliedAt: string;

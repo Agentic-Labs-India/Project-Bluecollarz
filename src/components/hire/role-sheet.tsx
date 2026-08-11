@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { JobListItem } from "@/lib/jobs";
-import { normalizeJobLocation } from "@/lib/jobs";
+import { JOB_STATUS_LABELS, normalizeJobLocation } from "@/lib/jobs";
 
 function RoleFormSkeleton() {
   return (
@@ -151,7 +151,8 @@ export function RoleSheet({
   }
 
   const status = item?.status;
-  const canPublish = status === "draft" || status === "closed";
+  const canPublish =
+    status === "draft" || status === "closed" || status === "underVerification";
   const canClose = status === "published";
 
   return (
@@ -162,16 +163,18 @@ export function RoleSheet({
       >
         <SheetHeader className="shrink-0 border-b">
           <div className="mb-1 flex items-center gap-2">
-            {item ? <Badge>{item.status}</Badge> : null}
+            {item ? (
+              <Badge>{JOB_STATUS_LABELS[item.status]}</Badge>
+            ) : null}
             {item?.publishedAt ? (
               <span className="text-muted-foreground text-xs">
-                Published {new Date(item.publishedAt).toLocaleDateString()}
+                Live since {new Date(item.publishedAt).toLocaleDateString()}
               </span>
             ) : null}
           </div>
           <SheetTitle className="text-base">Manage role</SheetTitle>
           <SheetDescription>
-            {item?.title ?? "Edit details, publish, or close this role."}
+            {item?.title ?? "Edit details, submit for review, or close this role."}
           </SheetDescription>
         </SheetHeader>
 
@@ -183,6 +186,12 @@ export function RoleSheet({
               <p className="text-destructive text-sm">{error}</p>
             ) : formValues ? (
               <>
+                {status === "underVerification" ? (
+                  <div className="border-border bg-muted/40 text-foreground mb-6 border px-4 py-3 text-sm leading-relaxed">
+                    Your job post is in review and will be live within 4 hours
+                    after approval.
+                  </div>
+                ) : null}
                 {error ? (
                   <div className="border-destructive/20 bg-destructive/10 text-destructive mb-6 border px-4 py-3 text-sm">
                     {error}
@@ -219,7 +228,11 @@ export function RoleSheet({
               disabled={busy || !formValues || !canPublish}
               onClick={() => void formRef.current?.submit(true)}
             >
-              {formBusy ? "Publishing…" : "Publish"}
+              {formBusy
+                ? "Submitting…"
+                : status === "underVerification"
+                  ? "Resubmit"
+                  : "Submit for review"}
             </Button>
             <Button
               size="sm"

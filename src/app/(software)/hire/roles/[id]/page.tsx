@@ -23,6 +23,7 @@ import type {
   PaginatedApplicantsResponse,
 } from "@/lib/jobs/applications";
 import type { InterviewStageId } from "@/lib/interviews";
+import { JOB_STATUS_LABELS } from "@/lib/jobs";
 import { ArrowLeftIcon, PencilIcon } from "lucide-react";
 
 const SCORE_FILTERS = [
@@ -228,9 +229,19 @@ export default function RoleCandidatesPage() {
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2">
             {job ? (
-              <Badge className="capitalize">{job.status}</Badge>
+              <Badge>
+                {JOB_STATUS_LABELS[
+                  job.status as keyof typeof JOB_STATUS_LABELS
+                ] ?? job.status}
+              </Badge>
             ) : null}
           </div>
+          {job?.status === "underVerification" ? (
+            <p className="border-border bg-muted/40 text-foreground mb-3 border px-3 py-2 text-sm leading-relaxed">
+              Your job post is in review and will be live within 4 hours after
+              approval.
+            </p>
+          ) : null}
           <h1 className="text-foreground text-xl font-semibold tracking-tight break-words sm:text-2xl md:text-3xl">
             {job?.title ?? "Candidates"}
           </h1>

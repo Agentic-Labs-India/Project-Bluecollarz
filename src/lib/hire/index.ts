@@ -23,6 +23,7 @@ export interface HireOverview {
   roles: {
     total: number;
     draft: number;
+    underVerification: number;
     published: number;
     closed: number;
   };

@@ -19,8 +19,8 @@ export default async function HireRolesPage() {
           Your roles
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          Create, publish, and manage job postings. Published roles appear in
-          the candidate explore feed.
+          Create and submit roles for review. Approved roles go live for
+          candidates; denied posts return to draft with an email reason.
         </p>
       </div>
       <HireJobsTable profileComplete={profileComplete} />

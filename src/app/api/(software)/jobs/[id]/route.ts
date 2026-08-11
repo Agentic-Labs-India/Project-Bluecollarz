@@ -145,16 +145,24 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     if (action === "publish" || publish === true) {
-      $set.status = "published";
-      $set.publishedAt = existing.publishedAt ?? now;
+      // Recruiter submit → admin review queue (not live yet).
+      $set.status = "underVerification";
+      $set.publishedAt = null;
     } else if (action === "close") {
       $set.status = "closed";
     } else if (action === "reopen") {
-      $set.status = "published";
-      $set.publishedAt = existing.publishedAt ?? now;
+      $set.status = "underVerification";
+      $set.publishedAt = null;
     } else if (fields.status) {
-      if (fields.status === "published" && !existing.publishedAt) {
-        $set.publishedAt = now;
+      // Hirers cannot self-publish; coerce to review.
+      if (fields.status === "published") {
+        $set.status = "underVerification";
+        $set.publishedAt = null;
+      } else {
+        $set.status = fields.status;
+        if (fields.status === "draft" || fields.status === "underVerification") {
+          $set.publishedAt = null;
+        }
       }
     }
 
