@@ -57,21 +57,12 @@ const HERO_MAP_ROUTES = [
     },
   },
   {
-    start: { lat: 15.4909, lng: 73.8278, label: "Goa" }, // Panaji
-    end: {
-      lat: 24.4539,
-      lng: 54.3773,
-      label: "UAE",
-      image: HOME_IMAGES[4],
-    },
-  },
-  {
     start: { lat: 25.5941, lng: 85.1376, label: "Bihar" }, // Patna
     end: {
       lat: -23.5505,
       lng: -46.6333,
       label: "South America",
-      image: HOME_IMAGES[5],
+      image: HOME_IMAGES[4],
     },
   },
   {
@@ -80,7 +71,7 @@ const HERO_MAP_ROUTES = [
       lat: 51.5074,
       lng: -0.1278,
       label: "UK",
-      image: HOME_IMAGES[6],
+      image: HOME_IMAGES[5],
     },
   },
 ];
@@ -157,7 +148,7 @@ export default function Page() {
             animationDuration={5.5}
             loop
             compact
-            focus={{ lat: 20, lng: 55, scale: 1.05 }}
+            focus={{ lat: 22.5, lng: 79, scale: 1.55 }}
             className="mx-auto max-h-[170px] opacity-70 sm:max-h-[340px] sm:opacity-80 md:max-h-[400px] lg:max-h-[460px]"
           />
         </div>

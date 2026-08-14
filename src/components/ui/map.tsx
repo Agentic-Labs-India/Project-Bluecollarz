@@ -175,23 +175,28 @@ export function WorldMap({
     [map, theme, compact],
   );
 
+  /** Match dotted-map's default Mercator grid (not equirectangular). */
   const projectPoint = (lat: number, lng: number) => {
-    const x = (lng + 180) * (800 / 360);
-    const y = (90 - lat) * (400 / 180);
-    return { x, y };
+    const pin = map.getPin({ lat, lng });
+    if (!pin) return { x: 0, y: 0 };
+    return {
+      x: (pin.x / map.width) * 800,
+      y: (pin.y / map.height) * 400,
+    };
   };
 
   const focusStyle = useMemo(() => {
     if (!focus) return undefined;
-    const point = projectPoint(focus.lat, focus.lng);
-    const originX = (point.x / 800) * 100;
-    const originY = (point.y / 400) * 100;
+    const pin = map.getPin({ lat: focus.lat, lng: focus.lng });
+    if (!pin) return undefined;
+    const originX = (pin.x / map.width) * 100;
+    const originY = (pin.y / map.height) * 100;
     const scale = focus.scale ?? 2.4;
     return {
       transform: `scale(${scale})`,
       transformOrigin: `${originX}% ${originY}%`,
     } as CSSProperties;
-  }, [focus]);
+  }, [focus, map]);
 
   const createCurvedPath = (
     start: { x: number; y: number },
@@ -208,7 +213,8 @@ export function WorldMap({
   const fullCycleDuration = totalAnimationTime + pauseTime;
 
   const pointRadius = compact ? 2 : 3;
-  const travelAvatarRadius = compact ? 13 : 17;
+  // Compact hero map scales large on desktop — keep avatars modest.
+  const travelAvatarRadius = compact ? 8 : 14;
   const travelRadius = compact ? 2 : 3;
   const pulseMax = compact ? 7 : 12;
 
