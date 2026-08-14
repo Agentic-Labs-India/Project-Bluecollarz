@@ -1,166 +1,200 @@
 import { LegalDoc, LegalSection } from "@/components/landing/legal-doc";
 
 export const metadata = {
-  title: "Privacy Policy · Blucollarz",
+  title: "Privacy Notice · Blucollarz",
   description:
-    "How Blucollarz collects, uses, and protects personal data for candidates and hirers.",
+    "How Blucollarz Technologies Private Limited processes personal data as Data Fiduciary under the DPDP Act, 2023.",
 };
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 pb-8 pt-28 md:px-8 md:pt-32">
-      <LegalDoc title="Privacy Policy" updated="July 12, 2026">
-        <LegalSection title="1. Who we are">
+    <main className="mx-auto w-full max-w-5xl px-6 pt-28 pb-8 md:px-8 md:pt-32">
+      <LegalDoc title="Privacy Notice" updated="August 14, 2026 · Version 1.0">
+        <p className="border-border bg-muted/40 border p-3 text-sm">
+          Pending counsel clearance before relying on this notice for live
+          placements. Data Fiduciary: Blucollarz Technologies Private Limited.
+        </p>
+
+        <LegalSection title="1.1 Who we are">
           <p>
-            Blucollarz (“we”, “us”, “our”) operates a platform that connects
-            candidates with hirers, including profile management, job postings,
-            applications, and AI-assisted interviews. This Privacy Policy
-            explains what information we collect and how we use it.
+            Blucollarz Technologies Private Limited (“Blucollarz”, “we”, “us”)
+            operates a verification and technology platform for international
+            workforce mobility. For the personal data described in this notice,
+            Blucollarz is the{" "}
+            <strong className="text-foreground font-medium">
+              Data Fiduciary
+            </strong>{" "}
+            — we decide why and how your data is processed. Privacy questions
+            go to our Grievance Officer (see{" "}
+            <a className="text-foreground underline underline-offset-4" href="/grievance">
+              /grievance
+            </a>
+            ).
           </p>
         </LegalSection>
 
-        <LegalSection title="2. Information we collect">
-          <p>Depending on how you use Blucollarz, we may collect:</p>
+        <LegalSection title="1.2 What data we collect">
+          <p>
+            We collect attributes to verify your profile. Most are verified
+            through DigiLocker (API Setu / MeriPehchaan) with your consent; some
+            you provide directly.
+          </p>
           <ul className="list-disc space-y-2 ps-5">
+            <li>PAN — identity &amp; tax-number verification</li>
             <li>
-              Account details such as name, email address, and profile photo
-              from your sign-in provider (for example Google).
+              Aadhaar — identity (number handled per UIDAI rules; stored masked
+              where required)
             </li>
+            <li>Name — identity matching across documents</li>
+            <li>Email &amp; mobile — account and communication</li>
+            <li>Educational certificates — qualification verification</li>
             <li>
-              Candidate profile information such as resume content, skills,
-              education, work experience, location, and contact details you
-              provide.
+              Police Clearance Certificate (Passport Seva) — background
+              conclusion when available
             </li>
+            <li>Passport — identity &amp; emigration processing when provided</li>
             <li>
-              Hirer / company information such as company name, industry, size,
-              location, website, and about text.
-            </li>
-            <li>
-              Job and application data, including roles you post or apply to and
-              application status.
-            </li>
-            <li>
-              Interview data, including chat transcripts, analysis scores and
-              summaries, and interview video recordings you choose to capture
-              and upload.
+              Profile, applications, AI interview transcripts/scores, and
+              optional interview recordings you choose to upload
             </li>
             <li>
               Technical data such as device/browser information, IP address, and
-              basic usage logs needed to operate and secure the service.
+              usage logs needed to operate and secure the service
             </li>
           </ul>
-        </LegalSection>
-
-        <LegalSection title="3. How we use information">
-          <p>We use personal data to:</p>
-          <ul className="list-disc space-y-2 ps-5">
-            <li>Create and manage your account and workspace.</li>
-            <li>
-              Power candidate–hirer matching, applications, and hiring
-              workflows.
-            </li>
-            <li>
-              Run AI interview experiences and generate scores/summaries for
-              review by authorized hirers for the relevant role.
-            </li>
-            <li>Improve reliability, security, and product quality.</li>
-            <li>Communicate service updates and respond to support requests.</li>
-            <li>Comply with legal obligations.</li>
-          </ul>
-        </LegalSection>
-
-        <LegalSection title="4. AI interviews and recordings">
           <p>
-            When you participate in an AI interview, we process your spoken or
-            typed responses to generate interview feedback and scores. If you
-            enable screen or camera recording, the recording may be stored and
-            made available to the hirer for that role so they can review your
-            interview. Do not share sensitive information you do not want
-            processed for these purposes.
+            We also generate verification{" "}
+            <strong className="text-foreground font-medium">conclusions</strong>{" "}
+            (assurance levels). Those conclusions — not your raw documents —
+            are what we make available to vetted employers.
           </p>
         </LegalSection>
 
-        <LegalSection title="5. How we share information">
-          <p>
-            We do not sell your personal information. We may share data with:
-          </p>
+        <LegalSection title="1.3 How we use your data">
           <ul className="list-disc space-y-2 ps-5">
             <li>
-              Hirers, for roles you apply to — including profile and interview
-              results needed to evaluate your application.
+              Verify identity, qualifications and background and generate
+              conclusions
             </li>
             <li>
-              Service providers that help us host, store, analyze, or operate
-              the platform (for example cloud hosting, file storage, and AI
-              providers), under appropriate safeguards.
+              Present verified conclusions (never raw documents) to vetted
+              employers for matching
             </li>
             <li>
-              Authorities when required by law or to protect rights, safety, and
-              security.
+              Enable a licensed Recruiting Agent to carry out regulated
+              recruitment for a placement when that workflow applies
             </li>
+            <li>
+              Operate your account, communicate with you, and keep a secure
+              audit record of journey events
+            </li>
+            <li>Detect fraud, protect workers, and comply with law</li>
           </ul>
         </LegalSection>
 
-        <LegalSection title="6. Retention">
+        <LegalSection title="1.4 Legal basis — your consent">
           <p>
-            We retain account, profile, application, and interview data for as
-            long as your account remains active or as needed to provide the
-            service, resolve disputes, and meet legal requirements. You may
-            request account deletion from Settings; when deletion is processed,
-            associated application and interview data may also be removed
-            according to our deletion cascade.
+            We process verification data on the basis of your consent, given
+            through our Consent Notice before DigiLocker collection. Consent is
+            purpose-specific and recorded immutably. You can withdraw it at any
+            time from Settings or by contacting the Grievance Officer. Certain
+            steps may also rely on legal obligation (for example
+            emigration-clearance requirements).
           </p>
         </LegalSection>
 
-        <LegalSection title="7. Security">
+        <LegalSection title="1.5 What we never do">
+          <ul className="list-disc space-y-2 ps-5">
+            <li>Charge workers — employers pay platform fees</li>
+            <li>
+              Sell personal data, or share raw DigiLocker documents / PAN /
+              passport numbers with employers
+            </li>
+            <li>Use data beyond the purposes you consented to</li>
+          </ul>
+        </LegalSection>
+
+        <LegalSection title="1.6 Who we share data with">
+          <ul className="list-disc space-y-2 ps-5">
+            <li>
+              Vetted employers — conclusions &amp; assurance levels only
+            </li>
+            <li>
+              Licensed Recruiting Agent — data needed to perform regulated
+              recruitment as recruiter of record
+            </li>
+            <li>
+              Verification sources (DigiLocker / MeriPehchaan, Passport Seva,
+              etc.) — the request needed to verify an attribute
+            </li>
+            <li>
+              Processors under contract: MongoDB (database), Vercel (hosting /
+              Blob storage), AI providers via Vercel AI Gateway, Sarvam (voice),
+              Resend (email), Google (OAuth sign-in; Analytics only if you allow
+              cookies)
+            </li>
+            <li>Authorities where required by law</li>
+          </ul>
+        </LegalSection>
+
+        <LegalSection title="1.7 How long we keep it">
           <p>
-            We use reasonable technical and organizational measures to protect
-            personal data. No method of transmission or storage is completely
-            secure, and we cannot guarantee absolute security.
+            We keep data only as long as needed for the purposes above and for
+            periods required by emigration and other applicable law, then delete
+            or anonymise it. When you delete your account from Settings, we remove
+            your profile, applications, interviews, recordings, consent events,
+            and rights requests in our deletion cascade (subject to any legal
+            retention we must honour, which we will explain if it applies).
           </p>
         </LegalSection>
 
-        <LegalSection title="8. Your choices">
+        <LegalSection title="1.8 Your rights">
           <p>
-            You can update profile information in-product, sign out at any time,
-            and request account deletion from Settings. Depending on your
-            location, you may have rights to access, correct, or delete personal
-            data. Contact us using the details below to make a request.
-          </p>
-        </LegalSection>
-
-        <LegalSection title="9. International processing">
-          <p>
-            Blucollarz may process and store information in countries other than
-            where you live. By using the service, you understand that your
-            information may be transferred to and processed in those locations.
-          </p>
-        </LegalSection>
-
-        <LegalSection title="10. Children">
-          <p>
-            Blucollarz is not directed to children under 16, and we do not
-            knowingly collect personal information from children.
-          </p>
-        </LegalSection>
-
-        <LegalSection title="11. Changes">
-          <p>
-            We may update this Privacy Policy from time to time. We will post
-            the updated version on this page and revise the “Last updated” date.
-          </p>
-        </LegalSection>
-
-        <LegalSection title="12. Contact">
-          <p>
-            Questions about privacy:{" "}
-            <a
-              className="text-foreground underline underline-offset-4"
-              href="mailto:support@blucollarz.com"
-            >
-              support@blucollarz.com
+            Under the Digital Personal Data Protection Act, 2023 you can ask us
+            for access, correction/completion, erasure, withdrawal of consent,
+            nomination, and grievance. Start in Settings (Data rights) or email
+            the Grievance Officer. See{" "}
+            <a className="text-foreground underline underline-offset-4" href="/grievance">
+              /grievance
             </a>
             .
+          </p>
+        </LegalSection>
+
+        <LegalSection title="1.9 Security &amp; breach">
+          <p>
+            We apply reasonable security safeguards. Access to identity data is
+            controlled. We will notify you and the Data Protection Board of a
+            personal data breach as required by law.
+          </p>
+        </LegalSection>
+
+        <LegalSection title="1.10 International processing">
+          <p>
+            Processors may store or process data outside India (for example
+            cloud hosting). By using the service you understand those transfers
+            may occur under contractual safeguards with our processors.
+          </p>
+        </LegalSection>
+
+        <LegalSection title="1.11 Children">
+          <p>
+            Blucollarz is not directed to children under 16. We do not knowingly
+            collect personal data from children under 16.
+          </p>
+        </LegalSection>
+
+        <LegalSection title="1.12 Changes &amp; contact">
+          <p>
+            We may update this notice and will post the new version with its
+            effective date. Contact our Grievance Officer via{" "}
+            <a
+              className="text-foreground underline underline-offset-4"
+              href="/grievance"
+            >
+              /grievance
+            </a>{" "}
+            or email the published address there.
           </p>
         </LegalSection>
       </LegalDoc>

@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin/resend";
 import { countryName, stateName } from "@/lib/geo/places";
 import { idHex } from "@/lib/utils";
+import { appendPlacementAuditEvent } from "@/lib/compliance/placement-audit";
 import type { Resend } from "resend";
 
 /** Table row — keep the list payload light. */
@@ -205,6 +206,16 @@ export async function approveJobVerification(opts: {
   );
   if (!updated) throw new Error("Update failed");
   revalidatePublishedJobsCache();
+
+  // No-ops unless ENABLE_PLACEMENT_AUDIT=1.
+  await appendPlacementAuditEvent({
+    kind: "job_published_after_admin_verify",
+    jobId: id,
+    raRcNumber: updated.raRcNumber ?? undefined,
+    payload: { status: updated.status },
+  }).catch(() => {
+    /* best-effort */
+  });
 
   const title = updated.title.trim() || "your role";
   const safeTitle = escapeHtml(title);

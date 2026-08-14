@@ -59,8 +59,6 @@ export interface DigilockerStatusResponse {
 /* ── OAuth cookies only (state / PKCE — not KYC data) ── */
 
 export const DIGILOCKER_OAUTH_COOKIE = "dl_oauth";
-/** Cleared if still present from older builds. */
-export const DIGILOCKER_RESULT_COOKIE = "dl_kyc_result";
 export const OAUTH_MAX_AGE_SEC = 60 * 15;
 
 interface OAuthCookie {

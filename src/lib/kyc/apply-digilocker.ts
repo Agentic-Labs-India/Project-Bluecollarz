@@ -143,7 +143,7 @@ export function compareIdentity(
 export function digilockerProfileSet(
   dl: DigilockerKycPayload,
   verifiedAt: Date,
-): { $set: Record<string, unknown>; $unset: Record<string, ""> } {
+): { $set: Record<string, unknown> } {
   const $set: Record<string, unknown> = {
     isKycVerified: true,
   };
@@ -152,7 +152,16 @@ export function digilockerProfileSet(
 
   const dobWire = digilockerDobToWire(dl.dob);
   const dob = dobWire ? parseDateOnly(dobWire) : null;
-  if (dob) $set.dateOfBirth = dob;
+  if (dob) {
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 16);
+    if (dob > cutoff) {
+      throw new Error(
+        "You must be at least 16 years old to complete DigiLocker verification on Blucollarz",
+      );
+    }
+    $set.dateOfBirth = dob;
+  }
 
   if (dl.address?.trim()) $set.location = dl.address.trim();
 
@@ -163,32 +172,41 @@ export function digilockerProfileSet(
   if (phoneNumber !== null) $set.phoneNumber = phoneNumber;
   if (phoneCountryCode !== null) $set.phoneCountryCode = phoneCountryCode;
 
-  const kyc: Required<UserKyc> = {
+  const aadhaarLast4 = aadhaarLast4FromMasked(dl.uidMasked);
+  const pan = dl.pan?.trim() ? dl.pan.trim().toUpperCase() : null;
+  const iso = verifiedAt.toISOString();
+  const kyc: UserKyc = {
     provider: "digilocker",
     verifiedAt,
     updatedAt: verifiedAt,
-    aadhaarLast4: aadhaarLast4FromMasked(dl.uidMasked),
-    pan: dl.pan?.trim() ? dl.pan.trim().toUpperCase() : null,
+    aadhaarLast4,
+    pan,
     gender: normalizeGender(dl.gender),
     apaarId: dl.apaarId?.trim() ? dl.apaarId.trim() : null,
+    attributes: {
+      pan: {
+        status: pan ? "assured" : "needs_review",
+        assuredAt: pan ? iso : null,
+        source: "digilocker",
+      },
+      aadhaar: {
+        status: aadhaarLast4 ? "assured" : "needs_review",
+        assuredAt: aadhaarLast4 ? iso : null,
+        source: "digilocker",
+      },
+      name: { status: "assured", assuredAt: iso, source: "digilocker" },
+      email: { status: "assured", assuredAt: iso, source: "account" },
+      mobile: {
+        status: phoneNumber !== null ? "assured" : "needs_review",
+        assuredAt: phoneNumber !== null ? iso : null,
+        source: "digilocker",
+      },
+      education: { status: "not_started", assuredAt: null, source: null },
+      pcc: { status: "not_started", assuredAt: null, source: null },
+      passport: { status: "not_started", assuredAt: null, source: null },
+    },
   };
   $set.kyc = kyc;
 
-  // Drop older flat KYC keys so the user doc only has the nested pack.
-  const $unset: Record<string, ""> = {
-    verified: "",
-    kycStatus: "",
-    kycProvider: "",
-    kycVerifiedAt: "",
-    kycUpdatedAt: "",
-    kycDocuments: "",
-    kycAnalysis: "",
-    kycDeferred: "",
-    aadhaarLast4: "",
-    pan: "",
-    gender: "",
-    apaarId: "",
-  };
-
-  return { $set, $unset };
+  return { $set };
 }

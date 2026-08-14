@@ -26,13 +26,13 @@ const COPY: Record<
   cookies: {
     title: "Cookie preferences",
     description:
-      "Cookies help Blucollarz stay signed in, remember your settings, and keep the product working smoothly.",
+      "Essential cookies keep you signed in. Optional analytics cookies are off until you allow them.",
     details: [
       "Essential cookies keep you logged in and protect your account.",
-      "Preference cookies remember choices like theme and layout.",
-      "Turning cookies off may require signing in more often and can reset some saved settings.",
+      "Analytics cookies (Google Analytics) measure usage only if you allow them.",
+      "Turning analytics off stops gtag; you stay signed in with essential cookies.",
     ],
-    toggleLabel: "Allow cookies",
+    toggleLabel: "Allow analytics cookies",
   },
   notifications: {
     title: "Notification preferences",

@@ -23,6 +23,10 @@ export const COLLECTIONS = {
   JOBS: "Jobs",
   APPLICATIONS: "Applications",
   INTERVIEWS: "Interviews",
+  CONSENT_EVENTS: "ConsentEvents",
+  RIGHTS_REQUESTS: "RightsRequests",
+  PLACEMENT_AUDIT_EVENTS: "PlacementAuditEvents",
+  BREACH_INCIDENTS: "BreachIncidents",
 } as const;
 
 /** 24-char hex Mongo id. */

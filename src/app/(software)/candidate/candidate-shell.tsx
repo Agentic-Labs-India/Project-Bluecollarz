@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { PlatformTermsGate } from "@/components/compliance/platform-terms-gate";
 import { CANDIDATE_NAV } from "@/lib/routes";
 
 const isFullBleed = (pathname: string) =>
@@ -57,6 +58,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
         hideMobileNav={hideMobileNav}
       >
         <OnboardingGate>{children}</OnboardingGate>
+        <PlatformTermsGate />
       </AppShell>
     </Suspense>
   );

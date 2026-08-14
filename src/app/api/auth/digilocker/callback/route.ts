@@ -4,7 +4,6 @@ import { ensureIndexes } from "@/lib/db/indexes";
 import {
   cookieOptions,
   DIGILOCKER_OAUTH_COOKIE,
-  DIGILOCKER_RESULT_COOKIE,
   exchangeAuthorizationCode,
   gatherDigilockerKyc,
   openOAuthCookie,
@@ -14,6 +13,10 @@ import {
   digilockerProfileSet,
   type UserKyc,
 } from "@/lib/kyc";
+import {
+  DIGILOCKER_REQUIRED_PURPOSES,
+  hasGrantedPurposes,
+} from "@/lib/compliance/consent";
 
 function appOrigin(req: NextRequest) {
   return (
@@ -32,10 +35,6 @@ function redirectWithError(
   url.searchParams.set("message", error.slice(0, 220));
   const res = NextResponse.redirect(url);
   res.cookies.set(DIGILOCKER_OAUTH_COOKIE, "", {
-    ...cookieOptions(0),
-    maxAge: 0,
-  });
-  res.cookies.set(DIGILOCKER_RESULT_COOKIE, "", {
     ...cookieOptions(0),
     maxAge: 0,
   });
@@ -117,14 +116,35 @@ export async function GET(req: NextRequest) {
       payload.note = [payload.note, ...mismatches].filter(Boolean).join(" ");
     }
 
-    const { $set, $unset } = digilockerProfileSet(
-      payload,
-      new Date(verifiedAtIso),
+    const consentOk = await hasGrantedPurposes(
+      oauth.userId,
+      DIGILOCKER_REQUIRED_PURPOSES,
     );
+    if (!consentOk) {
+      return redirectWithError(
+        req,
+        returnTo,
+        "Consent for identity and contact is required (or was withdrawn). Open KYC, grant consent, then try DigiLocker again.",
+      );
+    }
+
+    let profileUpdate: ReturnType<typeof digilockerProfileSet>;
+    try {
+      profileUpdate = digilockerProfileSet(payload, new Date(verifiedAtIso));
+    } catch (ageError) {
+      return redirectWithError(
+        req,
+        returnTo,
+        ageError instanceof Error
+          ? ageError.message
+          : "Could not complete DigiLocker verification.",
+      );
+    }
+    const { $set } = profileUpdate;
     await client
       .db(DB_NAME)
       .collection(COLLECTIONS.USERS_COLLECTION)
-      .updateOne(filter, { $set, $unset });
+      .updateOne(filter, { $set });
 
     const successUrl = new URL(returnTo, appOrigin(req));
     successUrl.searchParams.set("digilocker", "success");
@@ -132,11 +152,6 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.redirect(successUrl);
     res.cookies.set(DIGILOCKER_OAUTH_COOKIE, "", {
-      ...cookieOptions(0),
-      maxAge: 0,
-    });
-    // KYC lives in Mongo — clear any legacy result cookie.
-    res.cookies.set(DIGILOCKER_RESULT_COOKIE, "", {
       ...cookieOptions(0),
       maxAge: 0,
     });

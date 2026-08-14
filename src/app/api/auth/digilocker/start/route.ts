@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireProfile } from "@/lib/api/session";
+import {
+  DIGILOCKER_REQUIRED_PURPOSES,
+  hasGrantedPurposes,
+} from "@/lib/compliance/consent";
 import { isId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import {
   buildAuthorizeUrl,
   cookieOptions,
@@ -23,6 +28,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    await ensureIndexes();
+    const consented = await hasGrantedPurposes(
+      auth.user.id,
+      DIGILOCKER_REQUIRED_PURPOSES,
+    );
+    if (!consented) {
+      const jobId = req.nextUrl.searchParams.get("jobId");
+      const base =
+        typeof jobId === "string" && isId(jobId)
+          ? `/candidate/kyc?jobId=${jobId}&consent=required`
+          : "/candidate/kyc?consent=required";
+      return NextResponse.redirect(new URL(base, req.nextUrl.origin));
+    }
+
     const jobId = req.nextUrl.searchParams.get("jobId");
     const returnTo =
       typeof jobId === "string" && isId(jobId)

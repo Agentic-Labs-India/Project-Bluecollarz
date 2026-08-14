@@ -175,13 +175,22 @@ export function WorldMap({
     [map, theme, compact],
   );
 
+  /** Map grid size from SVG viewBox (width/height are private on DottedMap). */
+  const mapSize = useMemo(() => {
+    const match = svgMap.match(/viewBox="0 0 ([0-9.]+) ([0-9.]+)"/);
+    return {
+      width: match ? Number(match[1]) : 1,
+      height: match ? Number(match[2]) : 1,
+    };
+  }, [svgMap]);
+
   /** Match dotted-map's default Mercator grid (not equirectangular). */
   const projectPoint = (lat: number, lng: number) => {
     const pin = map.getPin({ lat, lng });
     if (!pin) return { x: 0, y: 0 };
     return {
-      x: (pin.x / map.width) * 800,
-      y: (pin.y / map.height) * 400,
+      x: (pin.x / mapSize.width) * 800,
+      y: (pin.y / mapSize.height) * 400,
     };
   };
 
@@ -189,14 +198,14 @@ export function WorldMap({
     if (!focus) return undefined;
     const pin = map.getPin({ lat: focus.lat, lng: focus.lng });
     if (!pin) return undefined;
-    const originX = (pin.x / map.width) * 100;
-    const originY = (pin.y / map.height) * 100;
+    const originX = (pin.x / mapSize.width) * 100;
+    const originY = (pin.y / mapSize.height) * 100;
     const scale = focus.scale ?? 2.4;
     return {
       transform: `scale(${scale})`,
       transformOrigin: `${originX}% ${originY}%`,
     } as CSSProperties;
-  }, [focus, map]);
+  }, [focus, map, mapSize]);
 
   const createCurvedPath = (
     start: { x: number; y: number },

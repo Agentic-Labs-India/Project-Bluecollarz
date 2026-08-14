@@ -13,6 +13,7 @@ import { AppPage } from "@/components/layout/app-page";
 import { KycPageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
 import type { DigilockerStatusResponse } from "@/lib/digilocker";
+import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -169,21 +170,38 @@ export function KycVerification({
           </div>
         </div>
       ) : (
-        <div className="border-border bg-card space-y-5 border p-5">
-          <div className="flex items-start gap-3">
-            <ShieldCheckIcon className="text-primary mt-0.5 size-5 shrink-0" />
-            <div>
-              <p className="text-foreground font-medium">Verify with DigiLocker</p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Consent on MeriPehchaan. We save verified identity fields to your
-                account (name, DOB, gender, PAN, Aadhaar last 4, phone, address)
-                — not raw DigiLocker XML.
-              </p>
+        <div className="space-y-5">
+          {searchParams.get("consent") === "required" ? (
+            <p className="border-border bg-muted/40 border p-3 text-sm">
+              DigiLocker needs your recorded consent for identity and contact
+              first.
+            </p>
+          ) : null}
+          <ConsentNoticePanel
+            onDeferred={() => {
+              window.location.href = jobId
+                ? `/candidate/explore?jobId=${jobId}`
+                : "/candidate/home";
+            }}
+          />
+          <div className="border-border bg-card space-y-5 border p-5">
+            <div className="flex items-start gap-3">
+              <ShieldCheckIcon className="text-primary mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="text-foreground font-medium">
+                  Verify with DigiLocker
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  After you agree above, continue on MeriPehchaan. We save
+                  verified identity fields to your account — not raw DigiLocker
+                  XML. Employers only see assurance conclusions.
+                </p>
+              </div>
             </div>
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <a href={startHref}>Verify with DigiLocker</a>
+            </Button>
           </div>
-          <Button asChild size="lg" className="w-full sm:w-auto">
-            <a href={startHref}>Verify with DigiLocker</a>
-          </Button>
         </div>
       )}
 

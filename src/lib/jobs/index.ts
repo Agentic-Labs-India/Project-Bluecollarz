@@ -115,6 +115,8 @@ export interface JobDocument {
   customQuestions?: CustomQuestion[];
   status: JobStatus;
   publishedAt: Date | null;
+  /** MEA Recruiting Agent RC number — Model 2 binding (counsel-gated use). */
+  raRcNumber?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -2,6 +2,7 @@
 
 import React, { Suspense } from "react";
 import { AppShell } from "@/components/layout/app-shell";
+import { PlatformTermsGate } from "@/components/compliance/platform-terms-gate";
 import { HIRE_NAV } from "@/lib/routes";
 
 export function HireShell({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function HireShell({ children }: { children: React.ReactNode }) {
         profileHref="/hire/profile"
       >
         {children}
+        <PlatformTermsGate />
       </AppShell>
     </Suspense>
   );

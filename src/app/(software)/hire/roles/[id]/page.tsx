@@ -35,8 +35,8 @@ const SCORE_FILTERS = [
   { value: "min:9", label: "9+ overall" },
 ] as const;
 
-function initialsFor(name: string | null, email: string): string {
-  const source = name?.trim() || email;
+function initialsFor(name: string | null, fallbackId = ""): string {
+  const source = name?.trim() || fallbackId || "?";
   const parts = source.split(/[\s@.]+/).filter(Boolean);
   const letters = parts.slice(0, 2).map((part) => part[0] ?? "");
   return (letters.join("") || source[0] || "?").toUpperCase();
@@ -152,7 +152,7 @@ export default function RoleCandidatesPage() {
                 <AvatarImage src={row.original.image} alt="" />
               ) : null}
               <AvatarFallback>
-                {initialsFor(row.original.name, row.original.email)}
+                {initialsFor(row.original.name, row.original.applicantId)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
@@ -160,16 +160,18 @@ export default function RoleCandidatesPage() {
                 <p className="text-foreground truncate font-medium">
                   {row.original.name ?? "Candidate"}
                 </p>
-                {row.original.kycVerified ? (
-                  <Badge className="shrink-0 font-normal">KYC already done</Badge>
+                {row.original.identityAssured ? (
+                  <Badge className="shrink-0 font-normal">
+                    {row.original.assuranceLevel}
+                  </Badge>
                 ) : row.original.status === "selected" ? (
                   <Badge variant="outline" className="shrink-0 font-normal">
-                    KYC pending
+                    Identity pending
                   </Badge>
                 ) : null}
               </div>
               <p className="text-muted-foreground truncate text-xs">
-                {row.original.email}
+                Contact via licensed RA — not released to employers
               </p>
             </div>
           </div>
@@ -282,7 +284,7 @@ export default function RoleCandidatesPage() {
           setSearch(value);
           resetPage();
         }}
-        searchPlaceholder="Search name or email…"
+        searchPlaceholder="Search candidates…"
         totalItems={totalItems}
         onRowClick={(row) => setSelectedApplicantId(row.applicantId)}
         rightActions={

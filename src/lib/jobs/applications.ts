@@ -70,13 +70,13 @@ export interface ApplicantListItem {
   id: string;
   applicantId: string;
   name: string | null;
-  email: string;
+  /** Contact is never released to employers (counsel ARM). */
   image: string | null;
   status: ApplicationDocument["status"];
   appliedAt: string;
   interviews: ApplicantInterviewScore[];
-  /** True when candidate passed DigiLocker KYC (e-Aadhaar). */
-  kycVerified: boolean;
+  identityAssured: boolean;
+  assuranceLevel: string;
 }
 
 export interface PaginatedApplicantsResponse {

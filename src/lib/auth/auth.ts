@@ -91,7 +91,7 @@ export const auth = betterAuth({
               ...user,
               // Organic Google signups are candidates; admin invites win when present.
               profileType: provisioned ?? "work",
-              cookiesEnabled: true,
+              cookiesEnabled: false,
               notificationsEnabled: true,
             },
           };

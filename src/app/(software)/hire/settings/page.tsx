@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AppPage } from "@/components/layout/app-page";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
-import { PrivacyTermsAcknowledgment } from "@/components/shared/privacy-terms-acknowledgment";
+import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
 import { useTheme } from "next-themes";
 import { MoonIcon, SunIcon } from "lucide-react";
 

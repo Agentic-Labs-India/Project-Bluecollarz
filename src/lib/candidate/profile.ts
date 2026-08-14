@@ -290,7 +290,17 @@ const dateOfBirthSchema = z.preprocess((val) => {
   }
   const parsed = parseDateOnly(val);
   return parsed ? formatDateOnly(parsed) : null;
-}, z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()]));
+}, z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()]).refine(
+  (value) => {
+    if (!value) return true;
+    const dob = parseDateOnly(value);
+    if (!dob) return false;
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 16);
+    return dob <= cutoff;
+  },
+  { message: "You must be at least 16 years old to use Blucollarz" },
+));
 
 export const candidateProfileUpdateSchema = z.object({
   phoneNumber: nullablePhoneNumber,
@@ -359,20 +369,6 @@ function asNullableNumber(value: unknown): number | null {
   return null;
 }
 
-/** Read phone fields that may still be legacy strings in old test docs. */
-function asNullablePhoneInt(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.trunc(value);
-  }
-  if (typeof value === "string") {
-    const digits = value.replace(/\D/g, "");
-    if (!digits) return null;
-    const n = Number(digits);
-    return Number.isFinite(n) ? Math.trunc(n) : null;
-  }
-  return null;
-}
-
 function mapEducation(
   list: CandidateEducationEntry[] | undefined,
 ): EducationFormEntry[] {
@@ -415,8 +411,8 @@ export function toCandidateProfileData(
     name: doc.name ?? "",
     email: doc.email ?? "",
     image: doc.image ?? "",
-    phoneNumber: asNullablePhoneInt(doc.phoneNumber),
-    phoneCountryCode: asNullablePhoneInt(doc.phoneCountryCode),
+    phoneNumber: asNullableNumber(doc.phoneNumber),
+    phoneCountryCode: asNullableNumber(doc.phoneCountryCode),
     headline: doc.headline ?? "",
     location: doc.location ?? "",
     yearsExperience: asNullableNumber(doc.yearsExperience),
@@ -565,13 +561,6 @@ export function candidateUpdateToMongo(
   if (data.voiceLanguage) $set.voiceLanguage = data.voiceLanguage;
   else $unset.voiceLanguage = "";
   $set.hobbies = data.hobbies;
-
-  // Drop removed / legacy fields from older documents on every save.
-  $unset.workAuthorization = "";
-  $unset.workAuthConfirmed = "";
-  $unset.workAuthStayAgreed = "";
-  $unset.resumeUrl = "";
-  $unset.resumeSource = "";
 
   setNullableNumber($set, $unset, "phoneNumber", data.phoneNumber);
   setNullableNumber($set, $unset, "phoneCountryCode", data.phoneCountryCode);

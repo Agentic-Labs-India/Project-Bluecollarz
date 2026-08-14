@@ -18,6 +18,7 @@ const STATIC_PATHS = [
   "/contact",
   "/privacy",
   "/terms",
+  "/grievance",
   "/blog",
 ] as const;
 

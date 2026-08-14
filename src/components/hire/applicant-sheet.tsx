@@ -21,7 +21,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CandidateProfileData } from "@/lib/candidate/profile";
-import { formatDateOnlyDisplay } from "@/lib/dates";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
@@ -44,25 +43,46 @@ type InterviewDetail = {
   completedAt: string | null;
 };
 
-type HireKycView = {
-  isKycVerified: boolean;
+type HireAssuranceView = {
+  identityAssured: boolean;
+  qualificationAssured: boolean;
+  backgroundAssured: boolean;
+  passportAssured?: boolean;
+  level: string;
   verifiedAt: string | null;
   provider: string | null;
-  aadhaarLast4?: string | null;
-  pan?: string | null;
-  gender?: string | null;
+  attributes?: Record<
+    string,
+    { status: string; assuredAt?: string | null; source?: string | null }
+  >;
 };
 
 type ApplicantDetailResponse = {
   job: { id: string; title: string };
   application: { id: string; status: string; appliedAt: string };
-  profile: CandidateProfileData;
-  kyc: HireKycView;
+  profile: {
+    name: string;
+    image: string;
+    headline: string;
+    yearsExperience: number | null;
+    skills: string[];
+    preferredCountries: string[];
+    summary: string;
+    education: CandidateProfileData["education"];
+    workExperience: CandidateProfileData["workExperience"];
+    portfolioUrl: string;
+    otherLinks: string[];
+    languages: string[];
+    hobbies: string[];
+    fullTimeCompensation: number | null;
+    partTimeCompensation: number | null;
+  };
+  assurance: HireAssuranceView;
   interviews: InterviewDetail[];
 };
 
-function initialsFor(name: string, email: string): string {
-  const source = name.trim() || email;
+function initialsFor(name: string, fallback = "?"): string {
+  const source = name.trim() || fallback;
   const parts = source.split(/[\s@.]+/).filter(Boolean);
   return (parts.slice(0, 2).map((p) => p[0] ?? "").join("") || "?").toUpperCase();
 }
@@ -140,22 +160,20 @@ function TagList({ label, items }: { label: string; items: string[] }) {
   );
 }
 
-function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
+function ResumeAccordionBody({
+  profile,
+}: {
+  profile: ApplicantDetailResponse["profile"];
+}) {
   return (
     <div className="space-y-5">
+      <p className="text-muted-foreground text-xs leading-relaxed">
+        Contact details and government IDs are not released to employers
+        (Attribute Release Matrix). Placement contact runs through a licensed
+        Recruiting Agent.
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Headline" value={profile.headline} />
-        <Field
-          label="Phone"
-          value={
-            profile.phoneNumber === null
-              ? ""
-              : profile.phoneCountryCode !== null
-                ? `+${profile.phoneCountryCode} ${profile.phoneNumber}`
-                : String(profile.phoneNumber)
-          }
-        />
-        <Field label="Location" value={profile.location} />
         <Field
           label="Years of experience"
           value={
@@ -163,10 +181,6 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
               ? ""
               : String(profile.yearsExperience)
           }
-        />
-        <Field
-          label="Date of birth"
-          value={formatDateOnlyDisplay(profile.dateOfBirth)}
         />
       </div>
 
@@ -250,17 +264,6 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
           value={profile.otherLinks.join("\n") || undefined}
         />
         <Field
-          label="Residence"
-          value={[
-            profile.residenceCity,
-            profile.residenceState,
-            profile.residenceCountry,
-            profile.residencePostalCode,
-          ]
-            .filter(Boolean)
-            .join(", ")}
-        />
-        <Field
           label="Full-time compensation"
           value={profile.fullTimeCompensation}
         />
@@ -273,8 +276,12 @@ function ResumeAccordionBody({ profile }: { profile: CandidateProfileData }) {
   );
 }
 
-function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
-  if (!kyc.isKycVerified) {
+function AssuranceAccordionBody({
+  assurance,
+}: {
+  assurance: HireAssuranceView;
+}) {
+  if (!assurance.identityAssured) {
     return (
       <p className="text-sm">
         DigiLocker KYC is not complete yet. After they verify once on their
@@ -286,41 +293,63 @@ function KycAccordionBody({ kyc }: { kyc: HireKycView }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>KYC already done</Badge>
-        {kyc.provider ? (
+        <Badge>Identity assured</Badge>
+        <Badge variant="outline" className="font-normal">
+          {assurance.level}
+        </Badge>
+        {assurance.provider ? (
           <Badge variant="outline" className="font-normal">
-            {kyc.provider}
+            {assurance.provider}
           </Badge>
         ) : null}
-        {kyc.verifiedAt ? (
+        {assurance.verifiedAt ? (
           <span className="text-muted-foreground text-xs">
-            Verified {new Date(kyc.verifiedAt).toLocaleString()}
+            Verified {new Date(assurance.verifiedAt).toLocaleString()}
           </span>
         ) : null}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {kyc.gender ? (
-          <div>
-            <p className="text-muted-foreground text-xs">Gender</p>
-            <p className="text-sm">{kyc.gender}</p>
-          </div>
-        ) : null}
-        {kyc.pan ? (
-          <div>
-            <p className="text-muted-foreground text-xs">PAN</p>
-            <p className="text-sm">{kyc.pan}</p>
-          </div>
-        ) : null}
-        {kyc.aadhaarLast4 ? (
-          <div>
-            <p className="text-muted-foreground text-xs">Aadhaar (last 4)</p>
-            <p className="text-sm">XXXXXXXX{kyc.aadhaarLast4}</p>
-          </div>
-        ) : null}
+        <div>
+          <p className="text-muted-foreground text-xs">Identity</p>
+          <p className="text-sm">
+            {assurance.identityAssured ? "Assured" : "Not assured"}
+          </p>
+        </div>
+        <div>
+          <p className="text-muted-foreground text-xs">Qualifications</p>
+          <p className="text-sm">
+            {assurance.qualificationAssured ? "Assured" : "Not released"}
+          </p>
+        </div>
+        <div>
+          <p className="text-muted-foreground text-xs">Background</p>
+          <p className="text-sm">
+            {assurance.backgroundAssured ? "Assured" : "Not released"}
+          </p>
+        </div>
+        <div>
+          <p className="text-muted-foreground text-xs">Passport</p>
+          <p className="text-sm">
+            {assurance.passportAssured ? "Assured" : "Not released"}
+          </p>
+        </div>
       </div>
+      {assurance.attributes ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {Object.entries(assurance.attributes).map(([key, row]) => (
+            <div
+              key={key}
+              className="border-border/60 flex items-center justify-between border px-2 py-1.5 text-xs"
+            >
+              <span className="capitalize">{key}</span>
+              <span className="text-muted-foreground">{row.status}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <p className="text-muted-foreground text-sm leading-relaxed">
-        Identity verified through DigiLocker e-Aadhaar. Raw DigiLocker document
-        JSON is not stored on Blucollarz.
+        Employers receive verification conclusions only — never PAN, Aadhaar,
+        passport numbers, email, phone, or raw DigiLocker documents.
       </p>
     </div>
   );
@@ -582,7 +611,7 @@ export function ApplicantSheet({
                   <AvatarImage src={profile.image} alt="" />
                 ) : null}
                 <AvatarFallback>
-                  {initialsFor(profile.name, profile.email)}
+                  {initialsFor(profile.name)}
                 </AvatarFallback>
               </Avatar>
             ) : (
@@ -605,15 +634,15 @@ export function ApplicantSheet({
                     {profile.name || "Candidate"}
                   </SheetTitle>
                   <SheetDescription className="truncate">
-                    {profile.email || "Profile, resume, and interview scores"}
+                    Resume conclusions &amp; interview scores — no contact IDs
                   </SheetDescription>
                   {data ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Badge variant="secondary" className="capitalize">
                         {data.application.status}
                       </Badge>
-                      {data.kyc?.isKycVerified ? (
-                        <Badge>KYC already done</Badge>
+                      {data.assurance.identityAssured ? (
+                        <Badge>Identity assured</Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
                           KYC pending
@@ -649,7 +678,7 @@ export function ApplicantSheet({
                 type="multiple"
                 defaultValue={[
                   "resume",
-                  "kyc",
+                  "assurance",
                   "ai-communication",
                   "ai-domain",
                 ]}
@@ -658,9 +687,9 @@ export function ApplicantSheet({
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
                       Resume / Profile
-                      {profile.candidateOnboardingComplete ? (
+                      {profile.headline || profile.skills.length ? (
                         <Badge variant="secondary" className="font-normal">
-                          Complete
+                          Shared
                         </Badge>
                       ) : null}
                     </span>
@@ -670,12 +699,12 @@ export function ApplicantSheet({
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="kyc">
+                <AccordionItem value="assurance">
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
-                      DigiLocker KYC
-                      {data.kyc?.isKycVerified ? (
-                        <Badge>KYC already done</Badge>
+                      Identity assurance
+                      {data.assurance.identityAssured ? (
+                        <Badge>{data.assurance.level}</Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
                           Pending
@@ -684,15 +713,7 @@ export function ApplicantSheet({
                     </span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <KycAccordionBody
-                      kyc={
-                        data.kyc ?? {
-                          isKycVerified: false,
-                          verifiedAt: null,
-                          provider: null,
-                        }
-                      }
-                    />
+                    <AssuranceAccordionBody assurance={data.assurance} />
                   </AccordionContent>
                 </AccordionItem>
 

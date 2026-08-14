@@ -1,0 +1,53 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Script from "next/script";
+import {
+  applyGtagConsent,
+  readAnalyticsConsent,
+} from "@/lib/compliance/analytics";
+
+const GA_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
+
+/**
+ * Loads gtag only after analytics consent is granted (default off).
+ */
+export function AnalyticsScripts() {
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      const consent = readAnalyticsConsent();
+      const granted = consent === "granted";
+      setAllowed(granted);
+      applyGtagConsent(granted);
+    };
+    sync();
+    const onChange = () => sync();
+    window.addEventListener("blucollarz:analytics-consent", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("blucollarz:analytics-consent", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
+
+  if (!GA_ID || !allowed) return null;
+
+  return (
+    <>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_ID}', { anonymize_ip: true });
+        `}
+      </Script>
+    </>
+  );
+}

@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { AppPage } from "@/components/layout/app-page";
 import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
-import { PrivacyTermsAcknowledgment } from "@/components/shared/privacy-terms-acknowledgment";
+import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
+import { DataRightsSection } from "@/components/compliance/data-rights-section";
 import { useTheme } from "next-themes";
 import { MoonIcon, SunIcon } from "lucide-react";
 
@@ -53,12 +54,14 @@ export default function CandidateSettingsPage() {
               Privacy &amp; terms
             </Label>
             <p className="text-muted-foreground mt-1 text-sm">
-              Accepted when you created your account.
+              Platform notices and DigiLocker purpose consent.
             </p>
           </div>
-          <PrivacyTermsAcknowledgment />
+          <PrivacyTermsAcknowledgment showConsentPanel />
         </div>
       </section>
+
+      <DataRightsSection />
 
       <section className="border-destructive/20 bg-card rounded-none border p-5 shadow-sm">
         <p className="text-destructive mb-4 text-xs font-medium tracking-wide uppercase">

@@ -34,6 +34,7 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
+      { label: "Grievance", href: "/grievance" },
     ],
   },
 ];

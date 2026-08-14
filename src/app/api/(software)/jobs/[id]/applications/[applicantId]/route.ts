@@ -11,7 +11,16 @@ import {
   toCandidateProfileData,
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
-import { toKycPublicState, type KycFields } from "@/lib/kyc";
+import type { KycFields } from "@/lib/kyc";
+import {
+  toHireAssuranceView,
+  toHireSafeProfile,
+  withheldHireAssuranceView,
+} from "@/lib/compliance/arm";
+import {
+  HIRE_RELEASE_REQUIRED_PURPOSES,
+  hasGrantedPurposes,
+} from "@/lib/compliance/consent";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
 import { idHex } from "@/lib/utils";
@@ -74,16 +83,18 @@ export async function GET(_req: Request, context: RouteContext) {
       >(COLLECTIONS.USERS_COLLECTION)
       .findOne({ _id: matchId(applicantId) as never });
 
-    const profile = toCandidateProfileData(user);
-    const kycState = toKycPublicState(user);
-    const kyc = {
-      isKycVerified: kycState.isKycVerified,
-      verifiedAt: kycState.verifiedAt,
-      provider: kycState.provider,
-      aadhaarLast4: kycState.aadhaarLast4,
-      pan: kycState.pan,
-      gender: kycState.gender,
-    };
+    const rawProfile = toCandidateProfileData(user);
+    /** Conclusions + allowlisted resume fields — never email/phone/IDs. */
+    const profile = toHireSafeProfile({
+      ...rawProfile,
+    } as Record<string, unknown>);
+    const releaseOk = await hasGrantedPurposes(
+      applicantId,
+      HIRE_RELEASE_REQUIRED_PURPOSES,
+    );
+    const assurance = releaseOk
+      ? toHireAssuranceView(user)
+      : withheldHireAssuranceView();
 
     const interviewDocs = await db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
@@ -129,11 +140,8 @@ export async function GET(_req: Request, context: RouteContext) {
         status: application.status,
         appliedAt: application.createdAt.toISOString(),
       },
-      profile: {
-        ...profile,
-        email: profile.email || application.applicantEmail,
-      },
-      kyc,
+      profile,
+      assurance,
       interviews,
     });
   } catch (error) {

@@ -26,6 +26,10 @@ import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { HelpDialog, HelpMenuButton } from "@/components/help";
 import {
+  writeAnalyticsConsent,
+  applyGtagConsent,
+} from "@/lib/compliance/analytics";
+import {
   PreferenceDialog,
   fetchUserPreferences,
   patchUserPreferences,
@@ -132,7 +136,7 @@ export function AppUserMenu({
   const [openKind, setOpenKind] = React.useState<PreferenceKind | null>(null);
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [prefs, setPrefs] = React.useState<UserPreferences>({
-    cookiesEnabled: true,
+    cookiesEnabled: false,
     notificationsEnabled: true,
   });
   const [loaded, setLoaded] = React.useState(false);
@@ -142,11 +146,17 @@ export function AppUserMenu({
     try {
       const next = await fetchUserPreferences();
       setPrefs(next);
+      writeAnalyticsConsent(next.cookiesEnabled ? "granted" : "denied");
+      applyGtagConsent(next.cookiesEnabled);
       setLoaded(true);
     } catch {
       setLoaded(true);
     }
   });
+
+  React.useEffect(() => {
+    void loadPreferences();
+  }, []);
 
   React.useEffect(() => {
     if (openKind && !loaded) {
@@ -163,6 +173,10 @@ export function AppUserMenu({
     try {
       const next = await patchUserPreferences({ [key]: enabled });
       setPrefs(next);
+      if (kind === "cookies") {
+        writeAnalyticsConsent(enabled ? "granted" : "denied");
+        applyGtagConsent(enabled);
+      }
     } catch {
       setPrefs(previous);
     } finally {

@@ -11,12 +11,12 @@ export interface UserPreferences {
   notificationsEnabled: boolean;
 }
 
-/** Missing fields default to on. */
+/** Analytics cookies default off; notifications default on. */
 export function toUserPreferences(
   doc: UserPreferencesFields | null | undefined,
 ): UserPreferences {
   return {
-    cookiesEnabled: doc?.cookiesEnabled !== false,
+    cookiesEnabled: doc?.cookiesEnabled === true,
     notificationsEnabled: doc?.notificationsEnabled !== false,
   };
 }

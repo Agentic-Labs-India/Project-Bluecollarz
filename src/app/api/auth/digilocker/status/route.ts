@@ -4,8 +4,6 @@ import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/api/session";
 import { formatDateOnly } from "@/lib/dates";
 import {
-  DIGILOCKER_RESULT_COOKIE,
-  cookieOptions,
   type DigilockerKycView,
   type DigilockerStatusResponse,
 } from "@/lib/digilocker";
@@ -98,13 +96,7 @@ export async function GET(req: NextRequest) {
       verifiedAt,
     };
 
-    const res = NextResponse.json(body);
-    // Drop legacy KYC result cookie if an older build left one behind.
-    res.cookies.set(DIGILOCKER_RESULT_COOKIE, "", {
-      ...cookieOptions(0),
-      maxAge: 0,
-    });
-    return res;
+    return NextResponse.json(body);
   } catch (error) {
     console.error("GET /api/auth/digilocker/status:", error);
     return NextResponse.json(

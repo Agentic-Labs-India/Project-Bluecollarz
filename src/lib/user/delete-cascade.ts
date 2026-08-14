@@ -49,7 +49,16 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
   const email = typeof user?.email === "string" ? user.email.trim().toLowerCase() : "";
   if (email) {
     await db.collection(COLLECTIONS.USER_PROVISIONS).deleteMany({ email });
+    await db.collection(COLLECTIONS.RECRUITER_INQUIRIES).deleteMany({ email });
   }
+
+  // Consent + rights artifacts for this principal.
+  await db
+    .collection(COLLECTIONS.CONSENT_EVENTS)
+    .deleteMany({ dataPrincipalId: userId });
+  await db
+    .collection(COLLECTIONS.RIGHTS_REQUESTS)
+    .deleteMany({ dataPrincipalId: userId });
 
   // Hire-owned roles → applications + interviews for those jobs.
   const ownedJobs = await db

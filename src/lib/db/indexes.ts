@@ -53,6 +53,28 @@ const INTERVIEW_INDEX_SPECS = [
   { key: { applicantId: 1, status: 1, updatedAt: -1 }, options: {} },
 ] as const;
 
+const CONSENT_EVENT_INDEX_SPECS = [
+  { key: { dataPrincipalId: 1, timestamp: -1 }, options: {} },
+  { key: { consentId: 1 }, options: { unique: true } },
+] as const;
+
+const RIGHTS_REQUEST_INDEX_SPECS = [
+  { key: { dataPrincipalId: 1, createdAt: -1 }, options: {} },
+  { key: { status: 1, createdAt: -1 }, options: {} },
+  { key: { requestId: 1 }, options: { unique: true } },
+] as const;
+
+const PLACEMENT_AUDIT_INDEX_SPECS = [
+  { key: { createdAt: -1 }, options: {} },
+  { key: { jobId: 1, createdAt: -1 }, options: {} },
+] as const;
+
+const BREACH_INCIDENT_INDEX_SPECS = [
+  { key: { createdAt: -1 }, options: {} },
+  { key: { status: 1, createdAt: -1 }, options: {} },
+  { key: { incidentId: 1 }, options: { unique: true } },
+] as const;
+
 let ensured = false;
 
 /** Mongo auto-name for a key pattern, e.g. { a: 1, b: -1 } → "a_1_b_-1". */
@@ -138,8 +160,36 @@ export async function ensureIndexes() {
         spec.options,
       ),
     ),
+    ...CONSENT_EVENT_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.CONSENT_EVENTS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...RIGHTS_REQUEST_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.RIGHTS_REQUESTS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...PLACEMENT_AUDIT_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.PLACEMENT_AUDIT_EVENTS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...BREACH_INCIDENT_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.BREACH_INCIDENTS),
+        spec.key,
+        spec.options,
+      ),
+    ),
   ];
-  // Don't fail the process if a unique index can't build over legacy duplicates.
+  // Log and continue if an index cannot build (e.g. unique conflict).
   await Promise.all(
     tasks.map((task) =>
       task.catch((error) => {

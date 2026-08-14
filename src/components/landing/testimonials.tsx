@@ -197,7 +197,7 @@ export default function Testimonials() {
               Blue-collar professionals using proof, interviews, and verified
               profiles to pursue serious opportunities worldwide.
             </p>
-          </div>
+        </div>
 
           <div className="flex items-center gap-2">
             <Button
@@ -223,7 +223,7 @@ export default function Testimonials() {
               <ArrowRightIcon className="size-4" />
             </Button>
           </div>
-        </div>
+          </div>
 
         <div className="relative mt-10 w-full sm:mt-12">
           <div className="relative z-20 grid w-full grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
@@ -279,7 +279,7 @@ export default function Testimonials() {
 
         <div className="mt-3 flex items-center justify-center gap-1.5">
           {WORKER_STORIES.map((story, index) => (
-            <button
+          <button
               key={story.id}
               type="button"
               onClick={() => setCurrentIndex(index)}
