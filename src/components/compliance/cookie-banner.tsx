@@ -41,8 +41,8 @@ export function CookieBanner() {
   if (!visible) return null;
 
   return (
-    <div className="border-border bg-canvas fixed inset-x-0 bottom-0 z-90 border-t p-4 shadow-sm md:inset-x-auto md:right-6 md:bottom-6 md:w-80 md:border md:shadow-lg">
-      <p className="text-muted-foreground text-sm leading-relaxed">
+    <div className="border-border bg-background text-foreground fixed inset-x-0 bottom-0 z-90 flex items-start gap-3 border-t p-3 shadow-sm md:inset-x-auto md:right-6 md:bottom-6 md:w-80 md:flex-col md:border md:p-4 md:shadow-lg">
+      <p className="text-muted-foreground min-w-0 flex-1 text-xs leading-snug md:text-sm md:leading-relaxed">
         We use essential cookies to keep you signed in. Optional analytics
         cookies (Google Analytics) help us improve the product — off until you
         allow them.{" "}
@@ -50,9 +50,10 @@ export function CookieBanner() {
           Privacy
         </a>
       </p>
-      <div className="mt-3 flex flex-row gap-2 md:flex-col">
+      <div className="flex w-24 shrink-0 flex-col gap-1.5 md:w-full md:gap-2">
         <Button
-          className="max-md:order-2 md:w-full"
+          size="sm"
+          className="w-full"
           onClick={() => {
             void choose(true);
           }}
@@ -61,7 +62,8 @@ export function CookieBanner() {
         </Button>
         <Button
           variant="outline"
-          className="max-md:order-1 md:w-full"
+          size="sm"
+          className="w-full"
           onClick={() => {
             void choose(false);
           }}

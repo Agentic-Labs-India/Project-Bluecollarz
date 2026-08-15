@@ -1,4 +1,4 @@
-import { Instrument_Serif, Inter, Space_Grotesk } from "next/font/google";
+import { Instrument_Serif, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,11 +6,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AnalyticsScripts } from "@/components/compliance/analytics-scripts";
 import { CookieBanner } from "@/components/compliance/cookie-banner";
-
-const spaceGroteskHeading = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-heading",
-});
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -34,7 +29,6 @@ export default function RootLayout({
         "h-full antialiased",
         "font-sans",
         inter.variable,
-        spaceGroteskHeading.variable,
         instrumentSerif.variable,
       )}
     >

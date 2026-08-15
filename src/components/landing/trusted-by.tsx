@@ -93,7 +93,7 @@ export function TrustedBy() {
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 22vw"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-foreground/70 via-foreground/25 to-foreground/5" />
+              <div className="absolute inset-0" />
               <span className="font-heading absolute inset-x-0 bottom-0 p-3 text-lg font-semibold tracking-tight text-white sm:p-4 sm:text-xl md:text-2xl">
                 {destination.name}
               </span>
