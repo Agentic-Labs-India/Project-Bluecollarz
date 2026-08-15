@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpRightIcon, SearchIcon } from "lucide-react";
+import {
+  ArrowUpRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SearchIcon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -47,6 +53,9 @@ const EXPLORE_GRID_SCROLL =
 
 const EXPLORE_DETAIL_SCROLL =
   "min-h-0 w-full flex-1 max-h-[calc(100dvh-4rem)] md:max-h-dvh";
+
+const EXPLORE_PAGE_SIZE = 12;
+const EXPLORE_SEARCH_DEBOUNCE_MS = 500;
 
 const PRIORITY_OPTIONS = [
   { value: "all", label: "All priorities" },
@@ -187,6 +196,9 @@ function ExploreFilters({
   onPriorityChange,
   workType,
   onWorkTypeChange,
+  page,
+  pageCount,
+  onPageChange,
   compact,
 }: {
   search: string;
@@ -195,8 +207,14 @@ function ExploreFilters({
   onPriorityChange: (value: "all" | "high" | "medium" | "low") => void;
   workType: WorkTypeFilter;
   onWorkTypeChange: (value: WorkTypeFilter) => void;
+  page: number;
+  pageCount: number;
+  onPageChange: (page: number) => void;
   compact?: boolean;
 }) {
+  const canPrev = page > 1;
+  const canNext = page < pageCount;
+
   return (
     <div
       className={cn(
@@ -222,7 +240,7 @@ function ExploreFilters({
             onPriorityChange(value as "all" | "high" | "medium" | "low")
           }
         >
-          <SelectTrigger className={cn(compact ? "flex-1" : "w-[160px]")}>
+          <SelectTrigger className={cn(compact ? "min-w-0 flex-1" : "w-[160px]")}>
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -237,7 +255,7 @@ function ExploreFilters({
           value={workType}
           onValueChange={(value) => onWorkTypeChange(value as WorkTypeFilter)}
         >
-          <SelectTrigger className={cn(compact ? "flex-1" : "w-[180px]")}>
+          <SelectTrigger className={cn(compact ? "min-w-0 flex-1" : "w-[180px]")}>
             <SelectValue placeholder="Work type" />
           </SelectTrigger>
           <SelectContent>
@@ -248,6 +266,31 @@ function ExploreFilters({
             ))}
           </SelectContent>
         </Select>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Previous page"
+            disabled={!canPrev}
+            onClick={() => onPageChange(page - 1)}
+          >
+            <ChevronLeftIcon />
+          </Button>
+          <span className="text-muted-foreground min-w-10 text-center text-xs tabular-nums">
+            {page}/{pageCount}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Next page"
+            disabled={!canNext}
+            onClick={() => onPageChange(page + 1)}
+          >
+            <ChevronRightIcon />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -257,11 +300,13 @@ export function ExploreOpportunities({
   initialOpportunities = [],
   initialApplicationStatuses = {},
   initialProfileComplete = false,
+  initialPageCount = 1,
   initialJobId = null,
 }: {
   initialOpportunities?: Opportunity[];
   initialApplicationStatuses?: Record<string, ApplicationStatus>;
   initialProfileComplete?: boolean;
+  initialPageCount?: number;
   /** Deep-link from home / other pages: open this job in the detail panel. */
   initialJobId?: string | null;
 } = {}) {
@@ -278,12 +323,17 @@ export function ExploreOpportunities({
         : null;
 
   const [search, setSearch] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [priority, setPriority] = useState<"all" | "high" | "medium" | "low">(
     "all",
   );
   const [workType, setWorkType] = useState<WorkTypeFilter>("all");
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(Math.max(1, initialPageCount));
   const [opportunities, setOpportunities] =
-    useState<Opportunity[]>(initialOpportunities);
+    useState<Opportunity[]>(() =>
+      initialOpportunities.slice(0, EXPLORE_PAGE_SIZE),
+    );
   const [applicationStatuses, setApplicationStatuses] = useState<
     Record<string, ApplicationStatus>
   >(initialApplicationStatuses);
@@ -308,14 +358,11 @@ export function ExploreOpportunities({
     questions: CustomQuestion[];
   } | null>(null);
   const isMobile = useIsMobile();
-  /**
-   * Once the user changes filters away from the server-seeded default, client
-   * fetches take over — including when they return to the default filters.
-   */
-  const filtersDirty = useRef(false);
+  const skipInitialFetch = useRef(true);
   const prevWorkTypeRef = useRef(workType);
   const lastSeededJobId = useRef<string | null>(null);
   const pinFetchAttempted = useRef<string | null>(null);
+  const queryKeyRef = useRef("all|all|");
 
   const selectJob = (id: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -333,10 +380,13 @@ export function ExploreOpportunities({
     if (!initialJobId) return;
     if (lastSeededJobId.current === initialJobId) return;
     lastSeededJobId.current = initialJobId;
-    setOpportunities(initialOpportunities);
+    setOpportunities(initialOpportunities.slice(0, EXPLORE_PAGE_SIZE));
     setApplicationStatuses(initialApplicationStatuses);
     setProfileComplete(initialProfileComplete);
-    filtersDirty.current = false;
+    setPage(1);
+    setPageCount(Math.max(1, initialPageCount));
+    skipInitialFetch.current = true;
+    queryKeyRef.current = "all|all|";
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seed keyed by initialJobId
   }, [initialJobId]);
 
@@ -345,8 +395,9 @@ export function ExploreOpportunities({
     applicationStatuses?: Record<string, ApplicationStatus>;
     appliedJobIds?: string[];
     profileComplete?: boolean;
+    pageCount?: number;
   }) => {
-    setOpportunities(json.items ?? []);
+    setOpportunities((json.items ?? []).slice(0, EXPLORE_PAGE_SIZE));
     if (json.applicationStatuses) {
       setApplicationStatuses(json.applicationStatuses);
     } else if (json.appliedJobIds) {
@@ -359,64 +410,98 @@ export function ExploreOpportunities({
     if (typeof json.profileComplete === "boolean") {
       setProfileComplete(json.profileComplete);
     }
+    if (typeof json.pageCount === "number" && json.pageCount >= 1) {
+      setPageCount(json.pageCount);
+    }
   };
 
   useEffect(() => {
-    const isDefaultQuery =
-      workType === "all" && !search.trim() && priority === "all";
+    const timer = window.setTimeout(() => {
+      setSearchDebounced(search.trim());
+    }, EXPLORE_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-    // Trust the server-seeded default list (with pin) until the user filters.
-    if (isDefaultQuery && !filtersDirty.current) {
+  useEffect(() => {
+    const queryKey = `${workType}|${priority}|${searchDebounced}`;
+    if (queryKeyRef.current !== queryKey) {
+      queryKeyRef.current = queryKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
+    }
+
+    const isDefaultQuery =
+      workType === "all" &&
+      !searchDebounced &&
+      priority === "all" &&
+      page === 1;
+
+    if (isDefaultQuery && skipInitialFetch.current) {
+      skipInitialFetch.current = false;
       return;
     }
-    if (!isDefaultQuery) filtersDirty.current = true;
+    skipInitialFetch.current = false;
 
     const controller = new AbortController();
-    const timer = setTimeout(async () => {
+    void (async () => {
       setLoading(true);
       setFetchError("");
       try {
         const params = new URLSearchParams({
           scope: "public",
-          page: "1",
-          limit: "50",
+          page: String(page),
+          limit: String(EXPLORE_PAGE_SIZE),
         });
         if (workType !== "all") params.set("tab", workType);
-        if (search.trim()) params.set("search", search.trim());
+        if (searchDebounced) params.set("search", searchDebounced);
         if (priority !== "all") params.set("priority", priority);
-        if (selectedId) params.set("pinJobId", selectedId);
 
         const res = await fetch(`/api/jobs?${params.toString()}`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error("Failed to load opportunities");
-        applyJobsResponse((await res.json()) as Parameters<typeof applyJobsResponse>[0]);
+        applyJobsResponse(
+          (await res.json()) as Parameters<typeof applyJobsResponse>[0],
+        );
       } catch (e: unknown) {
         if (e instanceof Error && e.name === "AbortError") return;
         setFetchError("Could not load opportunities. Try again.");
         setOpportunities([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
-    }, search ? 300 : 0);
+    })();
 
     return () => {
       controller.abort();
-      clearTimeout(timer);
     };
-  }, [workType, search, priority, selectedId]);
+  }, [workType, searchDebounced, priority, page]);
 
-  // If ?jobId= points at a role missing from the current list, refetch with pin once.
+  // Deep-link pin only on the default first page. Paginated/filtered pages
+  // stay at 12 cards — close detail if the job is not on this page.
   useEffect(() => {
     if (!selectedId) {
       pinFetchAttempted.current = null;
       return;
     }
+    if (loading) return;
     if (opportunities.some((item) => item.id === selectedId)) {
       pinFetchAttempted.current = selectedId;
       return;
     }
-    if (pinFetchAttempted.current === selectedId) return;
+
+    const isDefaultFirstPage =
+      page === 1 &&
+      workType === "all" &&
+      !searchDebounced &&
+      priority === "all";
+
+    if (!isDefaultFirstPage || pinFetchAttempted.current === selectedId) {
+      selectJob(null);
+      return;
+    }
     pinFetchAttempted.current = selectedId;
 
     const controller = new AbortController();
@@ -425,23 +510,28 @@ export function ExploreOpportunities({
         const params = new URLSearchParams({
           scope: "public",
           page: "1",
-          limit: "50",
+          limit: String(EXPLORE_PAGE_SIZE),
           pinJobId: selectedId,
         });
         const res = await fetch(`/api/jobs?${params.toString()}`, {
           signal: controller.signal,
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          selectJob(null);
+          return;
+        }
         applyJobsResponse(
           (await res.json()) as Parameters<typeof applyJobsResponse>[0],
         );
       } catch (e: unknown) {
         if (e instanceof Error && e.name === "AbortError") return;
+        selectJob(null);
       }
     })();
 
     return () => controller.abort();
-  }, [selectedId, opportunities]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pin keyed by selectedId + current page list
+  }, [selectedId, opportunities, loading, page, workType, searchDebounced, priority]);
 
   const applyToJob = async (jobId: string) => {
     setApplying(true);
@@ -571,6 +661,10 @@ export function ExploreOpportunities({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- workType is the only trigger
   }, [workType]);
 
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+
   const emptyState = (
     <div className="border-border bg-card text-muted-foreground rounded-none border px-6 py-16 text-center text-sm">
       {fetchError ||
@@ -580,7 +674,7 @@ export function ExploreOpportunities({
 
   const listSkeletons = (
     <div className="flex w-full flex-col gap-3 pb-4">
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: EXPLORE_PAGE_SIZE }).map((_, i) => (
         <OpportunityCardSkeleton key={i} />
       ))}
     </div>
@@ -588,7 +682,7 @@ export function ExploreOpportunities({
 
   const gridSkeletons = (
     <div className="grid gap-4 pb-6 sm:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 9 }).map((_, i) => (
+      {Array.from({ length: EXPLORE_PAGE_SIZE }).map((_, i) => (
         <OpportunityCardSkeleton key={i} />
       ))}
     </div>
@@ -612,6 +706,9 @@ export function ExploreOpportunities({
         onPriorityChange={setPriority}
         workType={workType}
         onWorkTypeChange={setWorkType}
+        page={page}
+        pageCount={pageCount}
+        onPageChange={setPage}
         compact={compact}
       />
     </>

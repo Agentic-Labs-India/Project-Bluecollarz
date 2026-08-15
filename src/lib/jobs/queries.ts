@@ -182,7 +182,7 @@ async function getCachedPublishedJobPage(opts: {
   if (pinnedDoc) {
     const pinId = idHex(pinnedDoc._id);
     if (!docs.some((d) => idHex(d._id) === pinId)) {
-      mergedDocs = [pinnedDoc, ...docs];
+      mergedDocs = [pinnedDoc, ...docs].slice(0, opts.limit);
     }
   }
 

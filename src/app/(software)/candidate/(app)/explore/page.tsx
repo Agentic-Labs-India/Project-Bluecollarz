@@ -26,18 +26,20 @@ export default async function ExplorePage({
     ReturnType<typeof getPublishedOpportunities>
   >["applicationStatuses"] = {};
   let initialProfileComplete = false;
+  let initialPageCount = 1;
 
   if (user?.id) {
     const result = await getPublishedOpportunities({
       viewerId: user.id,
       viewerProfileType: normalizeProfileType(user.profileType),
       page: 1,
-      limit: 50,
+      limit: 12,
       pinJobId: initialJobId,
     });
     initialOpportunities = result.items;
     initialApplicationStatuses = result.applicationStatuses;
     initialProfileComplete = result.profileComplete;
+    initialPageCount = result.pageCount;
   }
 
   return (
@@ -46,6 +48,7 @@ export default async function ExplorePage({
         initialOpportunities={initialOpportunities}
         initialApplicationStatuses={initialApplicationStatuses}
         initialProfileComplete={initialProfileComplete}
+        initialPageCount={initialPageCount}
         initialJobId={initialJobId}
       />
     </Suspense>
