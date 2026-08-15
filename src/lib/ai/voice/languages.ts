@@ -46,13 +46,20 @@ export function isTtsLanguageCode(code: string): code is TtsLanguageCode {
   return TTS_SET.has(code);
 }
 
+/** Valid stored locale, or null — never invent en-IN. */
+export function parseTtsLanguage(
+  code: string | null | undefined,
+): TtsLanguageCode | null {
+  if (!code || typeof code !== "string") return null;
+  const normalized = code.trim();
+  return isTtsLanguageCode(normalized) ? normalized : null;
+}
+
 export function resolveTtsLanguage(
   code: string | null | undefined,
   fallback: TtsLanguageCode = "en-IN",
 ): TtsLanguageCode {
-  if (!code || typeof code !== "string") return fallback;
-  const normalized = code.trim();
-  return isTtsLanguageCode(normalized) ? normalized : fallback;
+  return parseTtsLanguage(code) ?? fallback;
 }
 
 export function languageLabel(code: string | null | undefined): string {
@@ -60,7 +67,7 @@ export function languageLabel(code: string | null | undefined): string {
   return LABELS[resolveTtsLanguage(code)] ?? code;
 }
 
-/** Spoken resume-picker question. Keep "resume" / "PDF" in English. */
+export const LANGUAGE_PICK_PROMPT = "Which language should we use?";
 const RESUME_VOICE_PROMPT: Record<TtsLanguageCode, string> = {
   "en-IN": "Do you have a resume PDF to upload?",
   "hi-IN": "क्या आपके पास अपलोड करने के लिए resume PDF है?",
@@ -75,9 +82,7 @@ const RESUME_VOICE_PROMPT: Record<TtsLanguageCode, string> = {
   "te-IN": "మీ దగ్గర అప్‌లోడ్ చేయడానికి resume PDF ఉందా?",
 };
 
-export function resumeVoicePrompt(
-  code: string | null | undefined,
-): string {
+export function resumeVoicePrompt(code: string | null | undefined): string {
   return RESUME_VOICE_PROMPT[resolveTtsLanguage(code)];
 }
 
@@ -90,7 +95,7 @@ export async function fetchProfileVoiceLanguage(): Promise<TtsLanguageCode | nul
       profile?: { voiceLanguage?: string | null };
     };
     const raw = data.profile?.voiceLanguage?.trim();
-    return raw ? resolveTtsLanguage(raw) : null;
+    return parseTtsLanguage(raw);
   } catch {
     return null;
   }

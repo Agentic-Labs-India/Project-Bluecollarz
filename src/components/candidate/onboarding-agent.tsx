@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchProfileVoiceLanguage,
   isTtsLanguageCode,
+  LANGUAGE_PICK_PROMPT,
   languageLabel,
   resumeVoicePrompt,
   saveProfileVoiceLanguage,
@@ -42,7 +43,6 @@ import {
   VOICE_LANGUAGE_OPTIONS,
 } from "@/lib/ai/voice/languages";
 import { speakText } from "@/lib/ai/voice/speak";
-import { TTS_VOICE } from "@/lib/ai/voice/style";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { cn } from "@/lib/utils";
 
@@ -111,9 +111,7 @@ function pickerFallbackText(
   voiceLanguage: TtsLanguageCode,
 ): string | null {
   if (needsLanguagePick(message)) {
-    return (
-      openPickerPrompt(langToolParts(message)) || "Which language should we use?"
-    );
+    return openPickerPrompt(langToolParts(message)) || LANGUAGE_PICK_PROMPT;
   }
   if (needsResumePick(message)) {
     return resumeVoicePrompt(voiceLanguage);
@@ -144,7 +142,7 @@ function LanguagePickerInChat({
   return (
     <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
       <p className="text-foreground text-sm leading-snug">
-        {prompt?.trim() || "Which language should we use?"}
+        {prompt?.trim() || LANGUAGE_PICK_PROMPT}
       </p>
       <div
         role="listbox"
@@ -296,6 +294,7 @@ export function OnboardingAgent() {
   const [resumeChoice, setResumeChoice] = useState<"upload" | "skip" | null>(
     null,
   );
+  const [pendingLanguagePick, setPendingLanguagePick] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -312,15 +311,16 @@ export function OnboardingAgent() {
   const doneRef = useRef(false);
   const languageLockedRef = useRef(false);
   const pickerGateRef = useRef(false);
-  const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
+  const voiceLanguageRef = useRef<TtsLanguageCode | null>(null);
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/onboarding",
-        body: () => ({
-          language_code: voiceLanguageRef.current,
-        }),
+        body: () =>
+          languageLockedRef.current && voiceLanguageRef.current
+            ? { language_code: voiceLanguageRef.current }
+            : {},
       }),
     [],
   );
@@ -377,7 +377,7 @@ export function OnboardingAgent() {
     if (!micReady) {
       return { label: "START", hint: "Enable mic", tone: "start" };
     }
-    if (awaitingLanguage) {
+    if (awaitingLanguage || pendingLanguagePick) {
       return { label: "LANGUAGE", hint: "Pick in chat", tone: "start" };
     }
     if (awaitingResume || uploading) {
@@ -405,7 +405,27 @@ export function OnboardingAgent() {
 
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, isStreaming]);
+  }, []);
+
+  const startOnboarding = useCallback(
+    async (alreadyHasLanguage: boolean) => {
+      if (startedRef.current) return;
+      startedRef.current = true;
+      setStatus(
+        alreadyHasLanguage
+          ? "Starting onboarding…"
+          : "Starting onboarding — pick your language in chat…",
+      );
+      const kickoff = alreadyHasLanguage
+        ? "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first."
+        : "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile.";
+      await sendMessage({
+        text: `${kickoff} Interview currently working as (headline), years of experience, education, work experience, and languages. Never ask for identity (name, email, phone, location, gender, PAN, DOB, Aadhaar), skills, or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).`,
+        metadata: { hideInChat: true },
+      });
+    },
+    [sendMessage],
+  );
 
   const lockLanguage = useCallback((code: TtsLanguageCode) => {
     languageLockedRef.current = true;
@@ -475,7 +495,12 @@ export function OnboardingAgent() {
             pausedRef.current = true;
             setStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(blob, voiceLanguageRef.current);
+              const lang = voiceLanguageRef.current;
+              if (!lang) {
+                pausedRef.current = false;
+                return;
+              }
+              const data = await transcribeBlob(blob, lang);
               if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — speak again.");
                 pausedRef.current = false;
@@ -494,21 +519,12 @@ export function OnboardingAgent() {
       });
       setMicReady(true);
 
-      if (!startedRef.current) {
-        startedRef.current = true;
-        const alreadyHasLanguage = Boolean(existingLanguage);
-        setStatus(
-          alreadyHasLanguage
-            ? "Starting onboarding…"
-            : "Starting onboarding — pick your language in chat…",
-        );
-        const kickoff = alreadyHasLanguage
-          ? "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first."
-          : "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile.";
-        await sendMessage({
-          text: `${kickoff} Interview currently working as (headline), years of experience, education, work experience, and languages. Never ask for identity (name, email, phone, location, gender, PAN, DOB, Aadhaar), skills, or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).`,
-          metadata: { hideInChat: true },
-        });
+      if (existingLanguage) {
+        await startOnboarding(true);
+      } else {
+        setPendingLanguagePick(true);
+        setStatus("Pick a language in the chat to continue.");
+        void speakText(LANGUAGE_PICK_PROMPT, "en-IN");
       }
     } catch {
       setMicError("Microphone permission is required for voice onboarding.");
@@ -552,9 +568,10 @@ export function OnboardingAgent() {
       // After getCandidateProfile / updateCandidateProfile the model often
       // opens selectResume with no chat text, or with English. Speak the
       // localized question in the language they already picked.
-      text = resumeVoicePrompt(voiceLanguageRef.current);
+      text = resumeVoicePrompt(voiceLanguageRef.current ?? "en-IN");
     } else if (!text) {
-      text = pickerFallbackText(last, voiceLanguageRef.current) ?? "";
+      text =
+        pickerFallbackText(last, voiceLanguageRef.current ?? "en-IN") ?? "";
     }
 
     const baseline = pickBaselineRef.current;
@@ -601,7 +618,7 @@ export function OnboardingAgent() {
       pausedRef.current = true;
       busyUtteranceRef.current = true;
       setStatus("Speaking…");
-      await speakText(text, voiceLanguageRef.current);
+      await speakText(text, voiceLanguageRef.current ?? "en-IN");
       busyUtteranceRef.current = false;
 
       if (finished) {
@@ -632,13 +649,7 @@ export function OnboardingAgent() {
       pausedRef.current = false;
       setStatus("Speak when ready — I'm listening.");
     })();
-  }, [
-    messages,
-    isStreaming,
-    micReady,
-    lockLanguage,
-    markCompleteAndGoHome,
-  ]);
+  }, [messages, isStreaming, micReady, lockLanguage, markCompleteAndGoHome]);
 
   useEffect(() => {
     return () => {
@@ -646,24 +657,29 @@ export function OnboardingAgent() {
     };
   }, []);
 
-  const onPickLanguage = (toolCallId: string, code: TtsLanguageCode) => {
-    capturePickBaseline(toolCallId);
+  const onPickLanguage = (toolCallId: string | null, code: TtsLanguageCode) => {
     pausedRef.current = true;
     lockLanguage(code);
+    setPendingLanguagePick(false);
     void (async () => {
       try {
         await saveProfileVoiceLanguage(code);
       } catch {
         // TTS already uses the locked language.
       }
-      void addToolOutput({
-        tool: "selectVoiceLanguage",
-        toolCallId,
-        output: {
-          language_code: code,
-          label: languageLabel(code),
-        },
-      });
+      if (toolCallId) {
+        capturePickBaseline(toolCallId);
+        void addToolOutput({
+          tool: "selectVoiceLanguage",
+          toolCallId,
+          output: {
+            language_code: code,
+            label: languageLabel(code),
+          },
+        });
+        return;
+      }
+      await startOnboarding(true);
     })();
   };
 
@@ -743,6 +759,17 @@ export function OnboardingAgent() {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-6 px-4 py-5">
+          {pendingLanguagePick ? (
+            <div className="mr-auto flex max-w-[90%] items-start gap-2.5">
+              <AssistantAvatar />
+              <div className="text-foreground/90 min-w-0 pt-0.5">
+                <LanguagePickerInChat
+                  prompt={LANGUAGE_PICK_PROMPT}
+                  onSelect={(code) => onPickLanguage(null, code)}
+                />
+              </div>
+            </div>
+          ) : null}
           {messages.map((message) => {
             if (isHiddenInChat(message)) return null;
             const text = message.parts

@@ -13,7 +13,7 @@ import {
   renderOnboardingPrompt,
   renderProfileSummaryPrompt,
 } from "@/lib/ai/runtime";
-import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
+import { parseTtsLanguage, TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
 import { requireProfile } from "@/lib/auth/session";
 import {
   CANDIDATE_FIELD_LABELS,
@@ -592,10 +592,11 @@ export async function POST(request: Request) {
     return new Response("Expected { messages: unknown[] }", { status: 400 });
   }
 
-  const languageFromBody =
+  const languageFromBody = parseTtsLanguage(
     typeof (body as { language_code?: unknown }).language_code === "string"
       ? (body as { language_code: string }).language_code
-      : null;
+      : null,
+  );
 
   let resumeApplied: { complete: boolean; missing: string[] } | null = null;
   let resumeParseFailed = false;
@@ -618,7 +619,7 @@ export async function POST(request: Request) {
   // Seed live interview gaps (skills/summary are never asked).
   const currentProfile = await loadProfile(user.id);
   const languageCode =
-    languageFromBody || currentProfile.voiceLanguage || null;
+    parseTtsLanguage(currentProfile.voiceLanguage) || languageFromBody;
   const missingLabels = getMissingInterviewFields(currentProfile).map(
     (k) => CANDIDATE_FIELD_LABELS[k],
   );
