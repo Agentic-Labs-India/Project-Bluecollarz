@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AppPage } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Item = {
   incidentId: string;
@@ -19,7 +18,7 @@ type Item = {
   notificationPreview: { subject: string; body: string };
 };
 
-export default function AdminBreachesPage() {
+export function AdminBreachRegister() {
   const [items, setItems] = useState<Item[]>([]);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -73,15 +72,7 @@ export default function AdminBreachesPage() {
   };
 
   return (
-    <AppPage>
-      <h1 className="text-foreground mb-2 text-2xl font-semibold tracking-tight">
-        Breach register
-      </h1>
-      <p className="text-muted-foreground mb-8 text-sm">
-        Log personal data breaches, prepare Board / Data Principal notices, and
-        track acknowledgment. Copy preview for Resend / Email desk.
-      </p>
-
+    <>
       <section className="border-border mb-8 space-y-3 border p-4">
         <Label htmlFor="breach-title">Title</Label>
         <Input
@@ -109,7 +100,10 @@ export default function AdminBreachesPage() {
 
       <ul className="space-y-4">
         {items.map((item) => (
-          <li key={item.incidentId} className="border-border space-y-3 border p-4">
+          <li
+            key={item.incidentId}
+            className="border-border space-y-3 border p-4"
+          >
             <div className="flex flex-wrap gap-2 text-sm">
               <span className="font-medium">{item.title}</span>
               <span className="capitalize">{item.status}</span>
@@ -153,6 +147,6 @@ export default function AdminBreachesPage() {
           </li>
         ))}
       </ul>
-    </AppPage>
+    </>
   );
 }

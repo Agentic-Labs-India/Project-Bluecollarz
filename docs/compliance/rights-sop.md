@@ -30,5 +30,5 @@ Internal SOP aligned to counsel packet Artifact 3.
 ## Product surfaces
 
 - Candidate: `/candidate/settings` → Data rights; correction via `/candidate/profile`; erasure via Delete account (`#delete-account`) after the request is logged
-- Admin: `/admin/rights` (queue only — resolving an erasure request does not delete the account)
+- Admin: `/admin/compliance` (Rights tab — queue only; resolving an erasure request does not delete the account)
 - APIs: `/api/candidate/rights`, `/api/admin/rights`

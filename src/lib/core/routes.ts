@@ -2,15 +2,12 @@ import {
   Briefcase,
   FileText,
   Home,
-  Inbox,
   LifeBuoy,
-  LucideIcon,
+  type LucideIcon,
   Mail,
   Scale,
   Search,
   Settings,
-  Shield,
-  ShieldAlert,
   User,
   Users,
 } from "lucide-react";
@@ -35,12 +32,8 @@ export const HIRE_NAV: AppNavItem[] = [
 ];
 
 export const ADMIN_NAV: AppNavItem[] = [
-  { title: "Admins", url: "/admin/admins", icon: Shield },
   { title: "Recruiters", url: "/admin/recruiters", icon: Users },
-  { title: "Jobs Verification", url: "/admin/jobs", icon: Briefcase },
-  { title: "Inquiries", url: "/admin/inquiries", icon: Inbox },
-  { title: "Rights", url: "/admin/rights", icon: Scale },
-  { title: "Breaches", url: "/admin/breaches", icon: ShieldAlert },
+  { title: "Compliance", url: "/admin/compliance", icon: Scale },
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },
   { title: "Blog", url: "/admin/blog", icon: FileText },

@@ -8,6 +8,10 @@ import {
   AdminEmailCompose,
   type EmailComposeDraft,
 } from "@/components/admin/admin-email-compose";
+import {
+  AdminHubHeader,
+  AdminPageTabs,
+} from "@/components/admin/admin-page-tabs";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -36,10 +40,14 @@ import type {
 } from "@/lib/admin/resend";
 import { authClient } from "@/lib/auth/auth-client";
 import { formatDateTimeShort } from "@/lib/core/dates";
-import { cn } from "@/lib/utils";
 
 type Box = "sending" | "receiving";
 type DaysFilter = "7" | "15" | "30" | "90" | "all";
+
+const BOX_TABS = [
+  { value: "sending", label: "Sending" },
+  { value: "receiving", label: "Receiving" },
+] as const;
 
 const PAGE_SIZE = 10;
 
@@ -298,17 +306,15 @@ export function AdminEmailInbox() {
 
   return (
     <>
-      <div className="mb-6">
-        <div>
-          <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
-            Email
-          </h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
+      <AdminHubHeader
+        title="Email"
+        description={
+          <>
             Resend inbox for outbound and inbound mail. Compose sends as{" "}
             <span className="text-foreground font-medium">{senderName}</span>.
-          </p>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {!configured ? (
         <div className="border-border bg-card mb-6 border p-5 text-sm">
@@ -322,31 +328,12 @@ export function AdminEmailInbox() {
         </div>
       ) : null}
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {(
-          [
-            ["sending", "Sending"],
-            ["receiving", "Receiving"],
-          ] as const
-        ).map(([value, label]) => {
-          const active = box === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setBox(value)}
-              className={cn(
-                "px-3 py-1.5 text-sm transition-colors",
-                active
-                  ? "bg-muted text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <AdminPageTabs
+        tabs={BOX_TABS}
+        value={box}
+        onValueChange={setBox}
+        className="mb-3"
+      />
 
       <DataTable
         columns={columns}

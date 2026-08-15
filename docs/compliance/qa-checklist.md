@@ -9,8 +9,8 @@ Manual checks before claiming packet-aligned:
 5. After withdraw, hire APIs return withheld assurance (AL0) — raw KYC stays fiduciary-side only. Interview scores, transcripts, recordings, and custom answers are withheld without **evaluation** consent (`interviewRelease`).
 6. `/privacy` and `/grievance` public; GO fields driven by `DPDP_GRIEVANCE_OFFICER_*` env. Page stays interim until name, phone, and postal address are set.
 7. Analytics off by default; cookie banner; signed-in banner/rail sync `users.cookiesEnabled`.
-8. Settings → Access request downloads JSON export; `/admin/rights` queue works (admin notes not returned to workers). Correction points to `/candidate/profile`. Erasure is **not** auto-delete: log the request, then Delete account (`#delete-account`) after identity checks.
-9. `/admin/breaches` can open incident + mark Board/principal notified (copy preview).
+8. Settings → Access request downloads JSON export; `/admin/compliance` Rights queue works (admin notes not returned to workers). Correction points to `/candidate/profile`. Erasure is **not** auto-delete: log the request, then Delete account (`#delete-account`) after identity checks.
+9. `/admin/compliance?tab=breaches` can open incident + mark Board/principal notified (copy preview).
 10. Account delete removes apps/interviews/blobs/inquiries/consent/rights.
 11. DOB under 16 rejected on profile save; DigiLocker **requires DOB** and blocks under-16.
 12. DigiLocker stores `kyc.attributes` eight-attribute map (education/pcc/passport remain `not_started` until pipelines ship).

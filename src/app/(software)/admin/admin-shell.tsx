@@ -8,7 +8,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <AppShell
       items={ADMIN_NAV}
       homeHref="/admin/recruiters"
-      profileHref="/admin/admins"
+      profileHref="/admin/settings"
     >
       {children}
     </AppShell>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AppPage } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -16,7 +15,7 @@ type Item = {
   createdAt: string;
 };
 
-export default function AdminRightsPage() {
+export function AdminRightsQueue() {
   const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -59,21 +58,19 @@ export default function AdminRightsPage() {
   };
 
   return (
-    <AppPage>
-      <h1 className="text-foreground mb-2 text-2xl font-semibold tracking-tight">
-        Data Principal rights
-      </h1>
-      <p className="text-muted-foreground mb-8 text-sm">
-        Acknowledge and resolve access, correction, erasure, withdrawal,
-        nomination, and grievance requests.
-      </p>
+    <>
       {error ? <p className="text-destructive mb-4 text-sm">{error}</p> : null}
       <ul className="space-y-4">
         {items.map((item) => (
-          <li key={item.requestId} className="border-border space-y-3 border p-4">
+          <li
+            key={item.requestId}
+            className="border-border space-y-3 border p-4"
+          >
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="font-medium capitalize">{item.type}</span>
-              <span className="capitalize">{item.status.replace("_", " ")}</span>
+              <span className="capitalize">
+                {item.status.replace("_", " ")}
+              </span>
               <span className="text-muted-foreground text-xs">
                 {item.email} · {new Date(item.createdAt).toLocaleString()}
               </span>
@@ -125,6 +122,6 @@ export default function AdminRightsPage() {
       {!items.length && !error ? (
         <p className="text-muted-foreground text-sm">No requests yet.</p>
       ) : null}
-    </AppPage>
+    </>
   );
 }

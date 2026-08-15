@@ -1,11 +1,11 @@
 "use client";
 
 import {
+  type ComponentType,
+  type RefObject,
   useEffect,
   useRef,
   useState,
-  type ComponentType,
-  type RefObject,
 } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Dithering as DitheringRaw } from "@/components/landing/ticket";
@@ -182,6 +182,8 @@ export type PrimaryDitherProps = {
   wash?: boolean;
   /** @deprecated Ignored — all decorative fills share one live WebGL source. */
   live?: boolean;
+  /** When false, copy the shared shader once (admin cards). Default true. */
+  animate?: boolean;
 };
 
 /**
@@ -197,6 +199,7 @@ export function PrimaryDither({
   opacity = 0.85,
   blur = false,
   wash = true,
+  animate = true,
 }: PrimaryDitherProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -252,6 +255,10 @@ export function PrimaryDither({
 
         ctx.clearRect(0, 0, w, h);
         ctx.drawImage(source, srcX, srcY, srcW, srcH, 0, 0, w, h);
+        if (!animate) {
+          running = false;
+          return;
+        }
       }
       raf = window.requestAnimationFrame(paint);
     };
@@ -261,7 +268,7 @@ export function PrimaryDither({
       running = false;
       window.cancelAnimationFrame(raf);
     };
-  }, [visible, hash]);
+  }, [visible, hash, animate]);
 
   return (
     <div ref={wrapRef} aria-hidden className={className}>

@@ -344,14 +344,15 @@ Admins use `/admin` (profile-type gated). Access is **`profileType === "admin"`*
 
 | Area | Route | What it does |
 |------|-------|--------------|
-| Recruiters | `/admin/recruiters` | List hire users; add by email (existing user → set `hire`, or queue invite); make candidate |
-| Admins | `/admin/admins` | Same for `admin` profile type |
+| Recruiters | `/admin/recruiters` | Tabs: Accounts (hire users + invites), Jobs (verification), Inquiries (access requests) |
+| Settings | `/admin/settings` | Tabs: Admin, Voice (Sarvam), Language Model, Grievance Officer, System Prompts, Flow |
+| Compliance | `/admin/compliance` | Tabs: Rights (Data Principal queue), Breaches (incident register) |
 | Email | `/admin/email` | Resend sending/receiving inbox, compose (rich text), reply — paginated (10/page) |
 | Support | `/admin/support` | Tickets from Help: filters (profile type, priority, seriousness, status), transcript, status updates |
 
 **Provisioning**
 
-1. Admin enters an email on Recruiters or Admins.
+1. Admin enters an email on Recruiters or Settings → Admin.
 2. If the user already exists → `profileType` is updated.
 3. If not → a row is stored in `UserProvisions` and applied on first Google signup (`consumeUserProvision`).
 4. Admins cannot change their own role.
@@ -563,8 +564,9 @@ bun run lint    # Biome
 
 | Path | Purpose |
 |------|---------|
-| `/admin/recruiters` | Hire users + invites |
-| `/admin/admins` | Admin users + invites |
+| `/admin/recruiters` | Hire users, job verification, recruiter inquiries |
+| `/admin/settings` | Admin users, voice, LLM, grievance officer, prompts, flow |
+| `/admin/compliance` | Data Principal rights + breach register |
 | `/admin/email` | Resend inbox / compose |
 | `/admin/support` | Support ticket queue |
 
