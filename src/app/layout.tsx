@@ -1,4 +1,4 @@
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Instrument_Serif, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +10,12 @@ import { CookieBanner } from "@/components/compliance/cookie-banner";
 const spaceGroteskHeading = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-heading",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-serif",
 });
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -29,6 +35,7 @@ export default function RootLayout({
         "font-sans",
         inter.variable,
         spaceGroteskHeading.variable,
+        instrumentSerif.variable,
       )}
     >
       <body className="flex min-h-full flex-col">
