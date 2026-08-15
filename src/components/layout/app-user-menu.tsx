@@ -36,7 +36,7 @@ import {
   type PreferenceKind,
 } from "@/components/layout/preference-dialog";
 import type { UserPreferences } from "@/lib/user/preferences";
-import { getProfileIdLabel } from "@/lib/profile-types";
+import { getProfileIdLabel } from "@/lib/user/profile-types";
 
 type AppUser = { name: string; email: string; avatar: string };
 

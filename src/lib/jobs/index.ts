@@ -4,9 +4,9 @@ import {
   type ApplicationStep,
   type Opportunity,
   type OpportunityTab,
-} from "@/lib/opportunities";
+} from "@/lib/jobs/opportunities";
 import { asNumber, idHex, formatZodError } from "@/lib/utils";
-import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/rich-text";
+import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/core/rich-text";
 import {
   customQuestionsSchema,
   normalizeCustomQuestions,

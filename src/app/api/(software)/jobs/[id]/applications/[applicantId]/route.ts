@@ -22,7 +22,7 @@ import {
   hasGrantedPurposes,
 } from "@/lib/compliance/consent";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 
 type RouteContext = {

@@ -3,7 +3,7 @@ import "server-only";
 import { Resend } from "resend";
 
 /** Prefer RESEND_API_KEY; RESEND_API accepted as an alias. */
-export function getResendApiKey(): string | null {
+function getResendApiKey(): string | null {
   const key =
     process.env.RESEND_API_KEY?.trim() || process.env.RESEND_API?.trim();
   return key || null;

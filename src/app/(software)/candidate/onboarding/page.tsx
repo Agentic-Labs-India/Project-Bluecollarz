@@ -7,7 +7,7 @@ import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
 import {
   getProfileHomePath,
   normalizeProfileType,
-} from "@/lib/profile-types";
+} from "@/lib/user/profile-types";
 
 export default function CandidateOnboardingPage() {
   return (

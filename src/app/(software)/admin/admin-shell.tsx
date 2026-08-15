@@ -1,7 +1,7 @@
 "use client";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { ADMIN_NAV } from "@/lib/routes";
+import { ADMIN_NAV } from "@/lib/core/routes";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (

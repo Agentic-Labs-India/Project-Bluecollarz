@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth/auth-client";
-import type { ProfileType } from "@/lib/profile-types";
-import { getProfileIdLabel } from "@/lib/profile-types";
+import type { ProfileType } from "@/lib/user/profile-types";
+import { getProfileIdLabel } from "@/lib/user/profile-types";
 
 export function DeleteAccountSection({
   profileType,

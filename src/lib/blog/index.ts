@@ -6,7 +6,7 @@ import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { deleteBlobUrls } from "@/lib/blob/delete";
 import { isBlogCoverImageUrl } from "@/lib/blob/pathname";
-import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/rich-text";
+import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/core/rich-text";
 import { idHex } from "@/lib/utils";
 import {
   slugifyBlogTitle,
@@ -18,7 +18,7 @@ import {
 export type { BlogDetail, BlogListItem, BlogStatus, SeoTitleScore, SeoTitleScoreLevel } from "@/lib/blog/types";
 export { BLOG_STATUSES, scoreSeoTitle, slugifyBlogTitle } from "@/lib/blog/types";
 
-export const PUBLISHED_BLOGS_CACHE_TAG = "published-blogs";
+const PUBLISHED_BLOGS_CACHE_TAG = "published-blogs";
 
 /** ~1 day revalidate; stale-while-revalidate for 1h; expire after 1 week idle. */
 const BLOG_CACHE_LIFE = {
@@ -40,7 +40,7 @@ const BLOG_LIST_PROJECTION = {
   updatedAt: 1,
 } as const;
 
-export function revalidatePublishedBlogsCache() {
+function revalidatePublishedBlogsCache() {
   revalidateTag(PUBLISHED_BLOGS_CACHE_TAG, "max");
 }
 

@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { PlatformTermsGate } from "@/components/compliance/platform-terms-gate";
-import { HIRE_NAV } from "@/lib/routes";
+import { HIRE_NAV } from "@/lib/core/routes";
 
 export function HireShell({ children }: { children: React.ReactNode }) {
   return (

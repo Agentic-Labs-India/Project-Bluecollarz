@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth/auth-client";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { AppNavItem } from "@/lib/routes";
+import type { AppNavItem } from "@/lib/core/routes";
 
 export function AppRailSidebar({
   items,

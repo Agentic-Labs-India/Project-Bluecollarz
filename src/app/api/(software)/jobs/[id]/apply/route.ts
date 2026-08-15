@@ -4,7 +4,7 @@ import type { JobDocument } from "@/lib/jobs";
 import { normalizeStepTemplates } from "@/lib/jobs";
 import type { ApplicationDocument } from "@/lib/jobs/applications";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 import {
   isCandidateProfileComplete,

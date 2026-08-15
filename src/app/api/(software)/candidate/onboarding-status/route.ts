@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
 
 /** Lightweight completeness check for proxy / client gates. */

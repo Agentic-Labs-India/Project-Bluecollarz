@@ -37,8 +37,8 @@ import {
   slugifyBlogTitle,
 } from "@/lib/blog/types";
 import { uploadBlob } from "@/lib/blob/upload";
-import { formatDateTimeShort } from "@/lib/dates";
-import { htmlToPlainText } from "@/lib/rich-text";
+import { formatDateTimeShort } from "@/lib/core/dates";
+import { htmlToPlainText } from "@/lib/core/rich-text";
 import { cn } from "@/lib/utils";
 
 function label(status: string) {

@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AdminUserListItem } from "@/lib/admin/queries";
-import { getProfileIdLabel } from "@/lib/profile-types";
+import { getProfileIdLabel } from "@/lib/user/profile-types";
 
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email;

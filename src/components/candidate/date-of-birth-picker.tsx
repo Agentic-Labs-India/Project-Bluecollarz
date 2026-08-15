@@ -13,7 +13,7 @@ import {
   dateOnlyToLocalDate,
   formatDateOnly,
   formatDateOnlyDisplay,
-} from "@/lib/dates";
+} from "@/lib/core/dates";
 import { cn } from "@/lib/utils";
 
 /** Calendar picker; value is `yyyy-MM-dd` (empty when unset). Persists as BSON Date. */

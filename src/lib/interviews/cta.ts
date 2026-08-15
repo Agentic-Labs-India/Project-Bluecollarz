@@ -1,5 +1,5 @@
 import type { ApplicationStatus } from "@/lib/jobs/applications";
-import type { Opportunity } from "@/lib/opportunities";
+import type { Opportunity } from "@/lib/jobs/opportunities";
 
 export type OpportunityCta =
   | { type: "profile" }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import {
   DIGILOCKER_REQUIRED_PURPOSES,
   hasGrantedPurposes,
@@ -15,7 +15,7 @@ import {
   DIGILOCKER_OAUTH_COOKIE,
   OAUTH_MAX_AGE_SEC,
   sealOAuthCookie,
-} from "@/lib/digilocker";
+} from "@/lib/kyc/digilocker";
 
 /** Redirects to DigiLocker MeriPehchaan authorize. */
 export async function GET(req: NextRequest) {

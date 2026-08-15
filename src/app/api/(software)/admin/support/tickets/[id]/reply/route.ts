@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { sanitizeEmailComposeHtml } from "@/lib/admin/email-html";
 import {
   formatSenderFrom,
   getResendClient,
   getResendFromEmail,
 } from "@/lib/admin/resend";
-import { htmlToPlainText } from "@/lib/rich-text";
+import { htmlToPlainText } from "@/lib/core/rich-text";
 import {
   assignSupportTicket,
   getSupportTicket,

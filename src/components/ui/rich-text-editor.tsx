@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { sanitizeRichTextHtml } from "@/lib/rich-text";
+import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
 
 function isEditorAlive(editor: Editor | null): editor is Editor {
   if (!editor || editor.isDestroyed) return false;

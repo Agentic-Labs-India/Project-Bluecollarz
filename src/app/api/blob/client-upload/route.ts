@@ -1,7 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { requireUser } from "@/lib/api/session";
+import { requireUser } from "@/lib/auth/session";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import {
   BLOB_MAX_BYTES,

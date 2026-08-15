@@ -10,7 +10,7 @@ import {
   type InterviewDocument,
 } from "@/lib/interviews";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

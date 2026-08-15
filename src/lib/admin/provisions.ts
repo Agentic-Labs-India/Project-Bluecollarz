@@ -1,5 +1,5 @@
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
-import type { ProfileType } from "@/lib/profile-types";
+import type { ProfileType } from "@/lib/user/profile-types";
 
 export type ProvisionProfileType = Extract<ProfileType, "hire" | "admin">;
 

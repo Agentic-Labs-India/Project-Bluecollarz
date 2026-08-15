@@ -26,7 +26,7 @@ import {
   listStatesForCountry,
   normalizeResidencePlace,
   stateCodeFromName,
-} from "@/lib/geo/places";
+} from "@/lib/core/geo/places";
 
 type ResidenceValue = {
   country: string;

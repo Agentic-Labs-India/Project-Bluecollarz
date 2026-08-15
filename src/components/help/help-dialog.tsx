@@ -59,15 +59,15 @@ import { authClient } from "@/lib/auth/auth-client";
 import {
   HELP_SUGGESTIONS,
   type HelpInputMode,
-} from "@/lib/help/prompt";
-import { speakText } from "@/lib/voice/speak";
+} from "@/lib/support/prompt";
+import { speakText } from "@/lib/ai/voice/speak";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
   type TtsLanguageCode,
-} from "@/lib/voice/languages";
-import { TTS_VOICE } from "@/lib/voice/style";
-import { transcribeBlob } from "@/lib/voice/transcribe";
+} from "@/lib/ai/voice/languages";
+import { TTS_VOICE } from "@/lib/ai/voice/style";
+import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { cn } from "@/lib/utils";
 
 function messageText(message: UIMessage): string {

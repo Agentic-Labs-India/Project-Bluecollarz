@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { sanitizeRichTextHtml } from "@/lib/rich-text";
+import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
 
 /** Render sanitized rich-text HTML (job overview, etc.). */
 export function RichTextContent({

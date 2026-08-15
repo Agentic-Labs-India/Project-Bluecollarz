@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
-import { resolveTtsLanguage } from "@/lib/voice/languages";
-import { sanitizeForTts, TTS_VOICE } from "@/lib/voice/style";
+import { resolveTtsLanguage } from "@/lib/ai/voice/languages";
+import { sanitizeForTts, TTS_VOICE } from "@/lib/ai/voice/style";
 
 export const maxDuration = 30;
 

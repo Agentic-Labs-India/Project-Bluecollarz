@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/api/session";
-import { PROFILE_TYPES } from "@/lib/profile-types";
+import { requireProfile } from "@/lib/auth/session";
+import { PROFILE_TYPES } from "@/lib/user/profile-types";
 import {
   listSupportTickets,
   updateSupportTicketStatus,

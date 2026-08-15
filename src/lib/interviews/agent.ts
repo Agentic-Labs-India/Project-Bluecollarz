@@ -3,9 +3,9 @@ import { z } from "zod";
 import { getGatewayModel } from "@/lib/ai/gateway-model";
 import type { AiInterviewStageId } from "@/lib/interviews";
 
-import { htmlToPlainText } from "@/lib/rich-text";
-import { voiceLanguagePrompt, VOICE_TOOL_DATA_PROMPT } from "@/lib/voice/languages";
-import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
+import { htmlToPlainText } from "@/lib/core/rich-text";
+import { voiceLanguagePrompt, VOICE_TOOL_DATA_PROMPT } from "@/lib/ai/voice/languages";
+import { VOICE_DELIVERY_PROMPT } from "@/lib/ai/voice/style";
 
 const gatewayModel = getGatewayModel();
 

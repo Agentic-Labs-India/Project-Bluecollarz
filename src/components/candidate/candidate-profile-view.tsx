@@ -26,7 +26,7 @@ import {
   countryCodeFromName,
   normalizeCountryNames,
   normalizeResidencePlace,
-} from "@/lib/geo/places";
+} from "@/lib/core/geo/places";
 import { BadgeCheckIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
 import { PrimaryDither } from "@/components/landing/primary-dither";
 import Link from "next/link";

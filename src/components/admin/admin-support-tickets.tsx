@@ -38,8 +38,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { getProfileIdLabel, PROFILE_TYPES } from "@/lib/profile-types";
-import { formatDateTimeShort } from "@/lib/dates";
+import { getProfileIdLabel, PROFILE_TYPES } from "@/lib/user/profile-types";
+import { formatDateTimeShort } from "@/lib/core/dates";
 import type {
   SupportAssignee,
   SupportPriority,

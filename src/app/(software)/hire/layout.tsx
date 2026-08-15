@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth/auth";
 import {
   getProfileHomePath,
   normalizeProfileType,
-} from "@/lib/profile-types";
+} from "@/lib/user/profile-types";
 
 /** Hire area: only `hire` profiles. Others are sent to their home. */
 export default function HireLayout({

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   requireProfile,
   rethrowIfPrerenderAbort,
-} from "@/lib/api/session";
+} from "@/lib/auth/session";
 import { listJobsUnderVerification } from "@/lib/admin/job-verification";
 import { ensureIndexes } from "@/lib/db/indexes";
 

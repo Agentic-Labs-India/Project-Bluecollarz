@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   requireProfile,
   rethrowIfPrerenderAbort,
-} from "@/lib/api/session";
-import { listRecruiterInquiries } from "@/lib/recruiter-inquiries";
-import { RECRUITER_INQUIRY_STATUSES } from "@/lib/recruiter-inquiries/types";
+} from "@/lib/auth/session";
+import { listRecruiterInquiries } from "@/lib/hire/inquiries";
+import { RECRUITER_INQUIRY_STATUSES } from "@/lib/hire/inquiries/types";
 
 /** Admin inbox for recruiter access requests. */
 export async function GET(req: NextRequest) {

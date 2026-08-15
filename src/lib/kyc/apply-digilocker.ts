@@ -1,6 +1,6 @@
 import "server-only";
-import type { DigilockerKycPayload } from "@/lib/digilocker";
-import { parseDateOnly } from "@/lib/dates";
+import type { DigilockerKycPayload } from "@/lib/kyc/digilocker";
+import { parseDateOnly } from "@/lib/core/dates";
 import type { UserKyc } from "@/lib/kyc/types";
 
 function normName(value: string | null | undefined) {
@@ -12,7 +12,7 @@ function normName(value: string | null | undefined) {
 }
 
 /** DigiLocker DOB → `yyyy-MM-dd`. */
-export function digilockerDobToWire(dob: string | null): string | null {
+function digilockerDobToWire(dob: string | null): string | null {
   if (!dob?.trim()) return null;
   const raw = dob.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
@@ -29,14 +29,14 @@ export function digilockerDobToWire(dob: string | null): string | null {
   return null;
 }
 
-export function aadhaarLast4FromMasked(uidMasked: string | null): string | null {
+function aadhaarLast4FromMasked(uidMasked: string | null): string | null {
   if (!uidMasked) return null;
   const digits = uidMasked.replace(/\D/g, "");
   if (digits.length < 4) return null;
   return digits.slice(-4);
 }
 
-export function parseDigilockerPhone(phone: string | null): {
+function parseDigilockerPhone(phone: string | null): {
   phoneNumber: number | null;
   phoneCountryCode: number | null;
 } {

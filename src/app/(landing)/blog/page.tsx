@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { listPublishedBlogsPublic } from "@/lib/blog";
-import { formatDateTimeShort } from "@/lib/dates";
+import { formatDateTimeShort } from "@/lib/core/dates";
 
 export const metadata = {
   title: "Blog · Blucollarz",

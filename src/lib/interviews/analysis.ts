@@ -6,7 +6,7 @@ import type {
   InterviewStageId,
   InterviewTranscriptTurn,
 } from "@/lib/interviews";
-import { htmlToPlainText } from "@/lib/rich-text";
+import { htmlToPlainText } from "@/lib/core/rich-text";
 
 const gatewayModel = getGatewayModel();
 

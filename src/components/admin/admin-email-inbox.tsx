@@ -35,7 +35,7 @@ import type {
   AdminEmailListItem,
 } from "@/lib/admin/resend";
 import { authClient } from "@/lib/auth/auth-client";
-import { formatDateTimeShort } from "@/lib/dates";
+import { formatDateTimeShort } from "@/lib/core/dates";
 import { cn } from "@/lib/utils";
 
 type Box = "sending" | "receiving";

@@ -14,8 +14,8 @@ import {
   saveProfileVoiceLanguage,
   VOICE_LANGUAGE_OPTIONS,
   type TtsLanguageCode,
-} from "@/lib/voice/languages";
-import { TTS_VOICE } from "@/lib/voice/style";
+} from "@/lib/ai/voice/languages";
+import { TTS_VOICE } from "@/lib/ai/voice/style";
 
 /** Settings control for profile.voiceLanguage (onboarding + interviews). */
 export function AppLanguageSetting() {

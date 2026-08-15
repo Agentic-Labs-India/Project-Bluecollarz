@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { getGatewayModel } from "@/lib/ai/gateway-model";
-import { requireProfile } from "@/lib/api/session";
-import { sanitizeRichTextHtml } from "@/lib/rich-text";
+import { requireProfile } from "@/lib/auth/session";
+import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
 
 export const maxDuration = 60;
 

@@ -13,7 +13,7 @@ import {
   dialCodeForIso,
   isoForDialCode,
   listDialCodes,
-} from "@/lib/phone";
+} from "@/lib/core/phone";
 import { cn } from "@/lib/utils";
 
 /** Country calling code + national number — both stored as numbers. */

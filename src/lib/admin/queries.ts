@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
-import type { ProfileType } from "@/lib/profile-types";
+import type { ProfileType } from "@/lib/user/profile-types";
 import { ensureIndexes } from "@/lib/db/indexes";
 import type { KycFields } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";

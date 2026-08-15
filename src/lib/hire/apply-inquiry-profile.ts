@@ -6,7 +6,7 @@ import {
   type HireProfileFields,
   type HireProfileFromInquiry,
 } from "@/lib/hire/profile";
-import type { RecruiterInquiryListItem } from "@/lib/recruiter-inquiries/types";
+import type { RecruiterInquiryListItem } from "@/lib/hire/inquiries/types";
 
 type HireUserDoc = HireProfileFields & {
   _id: unknown;
@@ -22,7 +22,7 @@ function escapeRegex(value: string) {
 }
 
 /** Mongo $set for inquiry-sourced hire company + contact phone. */
-export function hireCompanySetFromInquiry(
+function hireCompanySetFromInquiry(
   profile: HireProfileFromInquiry,
 ): Record<string, unknown> {
   const $set: Record<string, unknown> = {
@@ -74,7 +74,7 @@ export async function applyHireProfileToUserByEmail(
   return true;
 }
 
-export async function applyHireProfileToUserById(
+async function applyHireProfileToUserById(
   userId: string,
   profile: HireProfileFromInquiry,
 ): Promise<boolean> {

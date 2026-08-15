@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
-import { formatDateOnly } from "@/lib/dates";
+import { requireProfile } from "@/lib/auth/session";
+import { formatDateOnly } from "@/lib/core/dates";
 import {
   type DigilockerKycView,
   type DigilockerStatusResponse,
-} from "@/lib/digilocker";
+} from "@/lib/kyc/digilocker";
 import { isIdentityVerified, type KycFields } from "@/lib/kyc";
 
 type UserDoc = KycFields & {

@@ -7,9 +7,9 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { requireUser } from "@/lib/api/session";
+import { requireUser } from "@/lib/auth/session";
 import { getGatewayModel } from "@/lib/ai/gateway-model";
-import { buildHelpSystemPrompt } from "@/lib/help/prompt";
+import { buildHelpSystemPrompt } from "@/lib/support/prompt";
 import { createSupportTicket } from "@/lib/support/tickets";
 import {
   SUPPORT_PRIORITIES,

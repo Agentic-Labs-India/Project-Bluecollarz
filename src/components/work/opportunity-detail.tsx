@@ -19,9 +19,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
-import type { Opportunity } from "@/lib/opportunities";
+import type { Opportunity } from "@/lib/jobs/opportunities";
 import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
-import { formatJobPlaceLabel } from "@/lib/geo/places";
+import { formatJobPlaceLabel } from "@/lib/core/geo/places";
 import { resolveOpportunityCta } from "@/lib/interviews/cta";
 import { cn } from "@/lib/utils";
 

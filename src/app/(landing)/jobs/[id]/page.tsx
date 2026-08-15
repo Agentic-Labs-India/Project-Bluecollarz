@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { RichTextContent } from "@/components/ui/rich-text-content";
-import { formatJobPlaceLabel } from "@/lib/geo/places";
+import { formatJobPlaceLabel } from "@/lib/core/geo/places";
 import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import { getPublishedJobPublic } from "@/lib/jobs/queries";
-import { htmlToPlainText } from "@/lib/rich-text";
+import { htmlToPlainText } from "@/lib/core/rich-text";
 
 type PageProps = {
   params: Promise<{ id: string }>;

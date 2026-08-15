@@ -4,7 +4,7 @@ import React, { Suspense, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PlatformTermsGate } from "@/components/compliance/platform-terms-gate";
-import { CANDIDATE_NAV } from "@/lib/routes";
+import { CANDIDATE_NAV } from "@/lib/core/routes";
 
 const isFullBleed = (pathname: string) =>
   pathname.startsWith("/candidate/explore") ||

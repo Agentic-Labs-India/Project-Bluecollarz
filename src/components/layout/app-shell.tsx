@@ -7,7 +7,7 @@ import { AppBottomNav } from "@/components/layout/app-bottom-nav";
 import { AppTopBar } from "@/components/layout/app-top-bar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import type { AppNavItem } from "@/lib/routes";
+import type { AppNavItem } from "@/lib/core/routes";
 
 /**
  * Shared application shell: desktop icon-rail sidebar, mobile top logo bar,

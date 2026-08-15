@@ -24,7 +24,7 @@ import {
   useChatUserAvatar,
 } from "@/components/candidate/chat-avatars";
 import { APP_PAGE_MAX } from "@/components/layout/app-page";
-import { speakText } from "@/lib/voice/speak";
+import { speakText } from "@/lib/ai/voice/speak";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
@@ -32,9 +32,9 @@ import {
   VOICE_LANGUAGE_OPTIONS,
   isTtsLanguageCode,
   type TtsLanguageCode,
-} from "@/lib/voice/languages";
-import { TTS_VOICE } from "@/lib/voice/style";
-import { transcribeBlob } from "@/lib/voice/transcribe";
+} from "@/lib/ai/voice/languages";
+import { TTS_VOICE } from "@/lib/ai/voice/style";
+import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
 

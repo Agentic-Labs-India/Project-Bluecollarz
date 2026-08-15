@@ -22,11 +22,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { formatDateTimeShort } from "@/lib/dates";
+import { formatDateTimeShort } from "@/lib/core/dates";
 import type {
   RecruiterInquiryListItem,
   RecruiterInquiryStatus,
-} from "@/lib/recruiter-inquiries/types";
+} from "@/lib/hire/inquiries/types";
 import { cn } from "@/lib/utils";
 
 function Field({ label, value }: { label: string; value?: string | null }) {

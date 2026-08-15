@@ -10,9 +10,9 @@ import {
   type CandidateProfileFields,
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { formatDateOnly, parseDateOnly } from "@/lib/dates";
+import { formatDateOnly, parseDateOnly } from "@/lib/core/dates";
 import { isIdentityVerified } from "@/lib/kyc";
 
 type UserDoc = CandidateProfileFields & {

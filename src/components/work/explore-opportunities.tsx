@@ -27,8 +27,8 @@ import {
   OPPORTUNITY_TAB_LABELS,
   type Opportunity,
   type OpportunityTab,
-} from "@/lib/opportunities";
-import { stateName } from "@/lib/geo/places";
+} from "@/lib/jobs/opportunities";
+import { stateName } from "@/lib/core/geo/places";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 

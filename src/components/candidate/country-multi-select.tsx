@@ -16,7 +16,7 @@ import {
 import {
   listCountryNames,
   normalizeCountryNames,
-} from "@/lib/geo/places";
+} from "@/lib/core/geo/places";
 
 const COUNTRY_NAMES = listCountryNames();
 

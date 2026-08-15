@@ -1,4 +1,4 @@
-import type { ProfileType } from "@/lib/profile-types";
+import type { ProfileType } from "@/lib/user/profile-types";
 
 export const SUPPORT_PROBLEM_TYPES = [
   "account",

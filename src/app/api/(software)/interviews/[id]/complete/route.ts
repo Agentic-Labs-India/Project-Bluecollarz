@@ -5,7 +5,7 @@ import { isCustomQuestionsStage } from "@/lib/interviews";
 import { analyzeInterviewTranscript } from "@/lib/interviews/analysis";
 import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;

@@ -12,7 +12,7 @@ import {
 import { AppPage } from "@/components/layout/app-page";
 import { KycPageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
-import type { DigilockerStatusResponse } from "@/lib/digilocker";
+import type { DigilockerStatusResponse } from "@/lib/kyc/digilocker";
 import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 
 function Field({ label, value }: { label: string; value?: string | null }) {

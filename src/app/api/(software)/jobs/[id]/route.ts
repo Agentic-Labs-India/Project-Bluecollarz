@@ -12,7 +12,7 @@ import {
 } from "@/lib/jobs";
 import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireUser, requireProfile } from "@/lib/api/session";
+import { requireUser, requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 
 type RouteContext = { params: Promise<{ id: string }> };

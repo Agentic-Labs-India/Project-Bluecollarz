@@ -33,7 +33,7 @@ export function blobPathname(...parts: (string | number)[]): string {
 }
 
 /** Reject path traversal / weird segments before prefix checks. */
-export function isSafeBlobPathname(pathname: string): boolean {
+function isSafeBlobPathname(pathname: string): boolean {
   const clean = pathname.replace(/^\/+/, "");
   if (!clean || clean.includes("..") || clean.includes("\\")) return false;
   if (clean.split("/").some((seg) => !seg || seg === "." || seg === "..")) {
@@ -42,7 +42,7 @@ export function isSafeBlobPathname(pathname: string): boolean {
   return true;
 }
 
-export function isUnderBlobRoot(pathname: string): boolean {
+function isUnderBlobRoot(pathname: string): boolean {
   if (!isSafeBlobPathname(pathname)) return false;
   const root = getBlobRoot();
   const clean = pathname.replace(/^\/+/, "");
@@ -62,23 +62,6 @@ export function isVercelBlobUrl(url: string): boolean {
   try {
     const host = new URL(url).hostname;
     return host.endsWith("blob.vercel-storage.com");
-  } catch {
-    return false;
-  }
-}
-
-/** True if the blob URL's object path is under `{DB_NAME}/`. */
-export function isBlobUrlUnderRoot(url: string): boolean {
-  if (!isVercelBlobUrl(url)) return false;
-  try {
-    const root = getBlobRoot();
-    const { pathname } = new URL(url);
-    const decoded = decodeURIComponent(pathname);
-    return (
-      decoded.includes(`/${root}/`) ||
-      decoded.startsWith(`/${root}/`) ||
-      decoded === `/${root}`
-    );
   } catch {
     return false;
   }

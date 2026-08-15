@@ -14,7 +14,7 @@ import {
   getResendClient,
   getResendFromEmail,
 } from "@/lib/admin/resend";
-import { countryName, stateName } from "@/lib/geo/places";
+import { countryName, stateName } from "@/lib/core/geo/places";
 import { idHex } from "@/lib/utils";
 import { appendPlacementAuditEvent } from "@/lib/compliance/placement-audit";
 import type { Resend } from "resend";

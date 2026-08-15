@@ -1,4 +1,4 @@
-import type { TtsLanguageCode } from "@/lib/voice/languages";
+import type { TtsLanguageCode } from "@/lib/ai/voice/languages";
 
 /** Shared TTS delivery settings — keep every utterance sounding the same. */
 export const TTS_VOICE = {

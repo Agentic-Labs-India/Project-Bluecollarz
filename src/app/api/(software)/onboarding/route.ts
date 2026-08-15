@@ -22,15 +22,15 @@ import {
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
 import { getGatewayModel } from "@/lib/ai/gateway-model";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import {
   voiceLanguagePrompt,
   VOICE_TOOL_DATA_PROMPT,
   TTS_LANGUAGE_CODES,
-} from "@/lib/voice/languages";
-import { VOICE_DELIVERY_PROMPT } from "@/lib/voice/style";
-import { lookupPlaceOptions } from "@/lib/geo/places";
-import { parseDateOnly } from "@/lib/dates";
+} from "@/lib/ai/voice/languages";
+import { VOICE_DELIVERY_PROMPT } from "@/lib/ai/voice/style";
+import { lookupPlaceOptions } from "@/lib/core/geo/places";
+import { parseDateOnly } from "@/lib/core/dates";
 import { isIdentityVerified } from "@/lib/kyc";
 
 export const maxDuration = 90;

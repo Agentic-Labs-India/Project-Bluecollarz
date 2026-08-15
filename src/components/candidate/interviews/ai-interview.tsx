@@ -46,14 +46,14 @@ import {
   UserChatAvatar,
   useChatUserAvatar,
 } from "@/components/candidate/chat-avatars";
-import { speakText } from "@/lib/voice/speak";
+import { speakText } from "@/lib/ai/voice/speak";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
   type TtsLanguageCode,
-} from "@/lib/voice/languages";
-import { TTS_VOICE } from "@/lib/voice/style";
-import { transcribeBlob } from "@/lib/voice/transcribe";
+} from "@/lib/ai/voice/languages";
+import { TTS_VOICE } from "@/lib/ai/voice/style";
+import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 

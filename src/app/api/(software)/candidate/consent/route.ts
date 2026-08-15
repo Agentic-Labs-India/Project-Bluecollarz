@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   requireProfile,
   rethrowIfPrerenderAbort,
-} from "@/lib/api/session";
+} from "@/lib/auth/session";
 import {
   appendConsentEvent,
   CONSENT_NOTICE_VERSION,

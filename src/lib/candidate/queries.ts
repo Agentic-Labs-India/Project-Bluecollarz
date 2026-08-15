@@ -85,7 +85,7 @@ function toIsoDate(value: unknown): string {
  * Roles the candidate has applied to OR interviewed for, with stage progress.
  * Newest activity first.
  */
-export async function getCandidateApplications(
+async function getCandidateApplications(
   userId: string,
 ): Promise<CandidateApplicationListItem[]> {
   await ensureIndexes();

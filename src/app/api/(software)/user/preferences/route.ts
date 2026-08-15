@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
-import { requireUser } from "@/lib/api/session";
+import { requireUser } from "@/lib/auth/session";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
   toUserPreferences,

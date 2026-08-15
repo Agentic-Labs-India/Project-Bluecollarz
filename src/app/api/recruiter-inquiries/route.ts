@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRecruiterInquiry } from "@/lib/recruiter-inquiries";
-import { recruiterInquiryCreateSchema } from "@/lib/recruiter-inquiries/types";
+import { createRecruiterInquiry } from "@/lib/hire/inquiries";
+import { recruiterInquiryCreateSchema } from "@/lib/hire/inquiries/types";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
-import { resolveCountryName } from "@/lib/geo/places";
+import { resolveCountryName } from "@/lib/core/geo/places";
 
 /** Public recruiter access request — no auth. */
 export async function POST(req: NextRequest) {

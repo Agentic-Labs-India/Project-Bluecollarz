@@ -14,11 +14,11 @@ import {
 } from "@/components/ui/select";
 import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
 import { PrimaryDither } from "@/components/landing/primary-dither";
-import { listCountries } from "@/lib/geo/places";
+import { listCountries } from "@/lib/core/geo/places";
 import {
   COMPANY_SIZES,
   RECRUITER_INDUSTRIES,
-} from "@/lib/recruiter-inquiries/types";
+} from "@/lib/hire/inquiries/types";
 
 export function RecruiterAccessForm() {
   const countries = useMemo(() => listCountries(), []);

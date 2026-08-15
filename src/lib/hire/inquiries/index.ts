@@ -12,7 +12,7 @@ import type {
   RecruiterInquiryCreateInput,
   RecruiterInquiryListItem,
   RecruiterInquiryStatus,
-} from "@/lib/recruiter-inquiries/types";
+} from "@/lib/hire/inquiries/types";
 
 type RecruiterInquiryDoc = {
   _id: ObjectId;
@@ -144,15 +144,6 @@ export async function listRecruiterInquiries(opts?: {
     items: docs.slice(0, limit).map(toListItem),
     hasMore,
   };
-}
-
-export async function getRecruiterInquiry(
-  id: string,
-): Promise<RecruiterInquiryListItem | null> {
-  if (!isId(id)) return null;
-  await ensureIndexes();
-  const doc = await collection().findOne({ _id: matchId(id) as never });
-  return doc ? toListItem(doc) : null;
 }
 
 export async function reviewRecruiterInquiry(opts: {

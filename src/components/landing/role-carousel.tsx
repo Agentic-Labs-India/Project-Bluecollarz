@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import { LoginButton } from "@/components/auth/login-button";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
-import { stateName } from "@/lib/geo/places";
+import { stateName } from "@/lib/core/geo/places";
 import type { LandingRole } from "@/lib/jobs/queries";
 import { cn } from "@/lib/utils";
 

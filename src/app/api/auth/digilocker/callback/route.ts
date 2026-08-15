@@ -7,7 +7,7 @@ import {
   exchangeAuthorizationCode,
   gatherDigilockerKyc,
   openOAuthCookie,
-} from "@/lib/digilocker";
+} from "@/lib/kyc/digilocker";
 import {
   compareIdentity,
   digilockerProfileSet,

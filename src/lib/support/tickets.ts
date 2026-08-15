@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
-import type { ProfileType } from "@/lib/profile-types";
+import type { ProfileType } from "@/lib/user/profile-types";
 import { idHex } from "@/lib/utils";
 import type {
   SupportAssignee,

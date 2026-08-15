@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
-import { PROFILE_BASE_ROUTES } from "@/lib/routes";
+import { PROFILE_BASE_ROUTES } from "@/lib/core/routes";
 import {
   getProfileBasePath,
   getProfileHomePath,
   normalizeProfileType,
   type ProfileType,
-} from "@/lib/profile-types";
+} from "@/lib/user/profile-types";
 
 const createRouteMatcher = (patterns: string[]) => {
   const regexes = patterns.map((pattern) => {

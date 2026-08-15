@@ -29,8 +29,8 @@ import {
   type JobCreateInput,
 } from "@/lib/jobs";
 import { customQuestionsSchema } from "@/lib/jobs/custom-questions";
-import { listCountries, listStatesForCountry, countryName, stateName } from "@/lib/geo/places";
-import { OPPORTUNITY_TAB_LABELS } from "@/lib/opportunities";
+import { listCountries, listStatesForCountry, countryName, stateName } from "@/lib/core/geo/places";
+import { OPPORTUNITY_TAB_LABELS } from "@/lib/jobs/opportunities";
 import { JobOverviewAiMaker } from "@/components/hire/job-overview-ai-maker";
 import { CustomQuestionsBuilder } from "@/components/hire/custom-questions-builder";
 import { LockIcon } from "lucide-react";

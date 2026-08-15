@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/api/session";
-import { reviewRecruiterInquiry } from "@/lib/recruiter-inquiries";
+import { requireProfile } from "@/lib/auth/session";
+import { reviewRecruiterInquiry } from "@/lib/hire/inquiries";
 import { formatZodError } from "@/lib/utils";
 
 type RouteContext = { params: Promise<{ id: string }> };

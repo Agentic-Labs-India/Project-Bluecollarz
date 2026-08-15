@@ -18,7 +18,7 @@ import {
   revalidatePublishedJobsCache,
 } from "@/lib/jobs/queries";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireUser, requireProfile } from "@/lib/api/session";
+import { requireUser, requireProfile } from "@/lib/auth/session";
 import { getHireProfileComplete } from "@/lib/hire/queries";
 import { idHex } from "@/lib/utils";
 

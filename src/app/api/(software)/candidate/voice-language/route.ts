@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
   isTtsLanguageCode,
   resolveTtsLanguage,
   type TtsLanguageCode,
-} from "@/lib/voice/languages";
+} from "@/lib/ai/voice/languages";
 
 /**
  * Set the candidate's Sarvam voice locale (onboarding picker / profile).

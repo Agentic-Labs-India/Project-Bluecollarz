@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
-import { normalizeProfileType, type ProfileType } from "@/lib/profile-types";
+import { normalizeProfileType, type ProfileType } from "@/lib/user/profile-types";
 
 interface AuthContext {
   id: string;

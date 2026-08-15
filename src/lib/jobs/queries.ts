@@ -13,7 +13,7 @@ import type {
   ApplicationDocument,
   ApplicationStatus,
 } from "@/lib/jobs/applications";
-import type { Opportunity, OpportunityTab } from "@/lib/opportunities";
+import type { Opportunity, OpportunityTab } from "@/lib/jobs/opportunities";
 import { idHex } from "@/lib/utils";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {

@@ -1,10 +1,10 @@
-import type { ProfileType } from "@/lib/profile-types";
+import type { ProfileType } from "@/lib/user/profile-types";
 import {
   SUPPORT_PRIORITIES,
   SUPPORT_PROBLEM_TYPES,
   SUPPORT_SERIOUSNESS,
 } from "@/lib/support/types";
-import { voiceLanguagePrompt } from "@/lib/voice/languages";
+import { voiceLanguagePrompt } from "@/lib/ai/voice/languages";
 
 /** Product knowledge for the in-app Help assistant. */
 export function buildHelpSystemPrompt(

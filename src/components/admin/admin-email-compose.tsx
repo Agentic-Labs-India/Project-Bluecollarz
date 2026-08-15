@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { htmlToPlainText } from "@/lib/rich-text";
+import { htmlToPlainText } from "@/lib/core/rich-text";
 
 function parseAddressList(raw: string): string[] {
   return raw

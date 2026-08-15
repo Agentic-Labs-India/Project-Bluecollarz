@@ -1,7 +1,7 @@
 "use client";
 
-import { resolveTtsLanguage } from "@/lib/voice/languages";
-import { sanitizeForTts, TTS_VOICE } from "@/lib/voice/style";
+import { resolveTtsLanguage } from "@/lib/ai/voice/languages";
+import { sanitizeForTts, TTS_VOICE } from "@/lib/ai/voice/style";
 
 /**
  * Speak text via Sarvam HTTP stream (/api/voice/tts).

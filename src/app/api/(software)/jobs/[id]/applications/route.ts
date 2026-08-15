@@ -16,7 +16,7 @@ import type {
   InterviewStageId,
 } from "@/lib/interviews";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { toHireAssuranceView, withheldHireAssuranceView } from "@/lib/compliance/arm";
 import {
   HIRE_RELEASE_REQUIRED_PURPOSES,

@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { formatZodError } from "@/lib/utils";
-import { formatDateOnly, parseDateOnly } from "@/lib/dates";
+import { formatDateOnly, parseDateOnly } from "@/lib/core/dates";
 import {
   normalizeCountryNames,
   normalizeResidencePlace,
-} from "@/lib/geo/places";
-import { TTS_LANGUAGE_CODES } from "@/lib/voice/languages";
+} from "@/lib/core/geo/places";
+import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
 
 /** Candidate fields stored on the Users document (work profiles). */
 export interface CandidateEducationEntry {

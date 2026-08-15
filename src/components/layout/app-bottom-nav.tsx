@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { AppNavItem } from "@/lib/routes";
+import type { AppNavItem } from "@/lib/core/routes";
 
 /** Fixed bottom navigation shown only on mobile. */
 export function AppBottomNav({ items }: { items: AppNavItem[] }) {

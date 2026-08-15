@@ -6,7 +6,7 @@ import { isAiInterviewStage, isCustomQuestionsStage } from "@/lib/interviews";
 import { buildInterviewAgent } from "@/lib/interviews/agent";
 import { isInterviewKickoffText } from "@/lib/interviews/labels";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/api/session";
+import { requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/auth-client";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
-import { getProfileHomePath } from "@/lib/profile-types";
+import { getProfileHomePath } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
 
 export function LoginButton({
