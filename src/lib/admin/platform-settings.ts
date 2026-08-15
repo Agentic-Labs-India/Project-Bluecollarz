@@ -2,15 +2,18 @@ import "server-only";
 
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { z } from "zod";
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
-import { defaultPlatformSettings } from "@/lib/admin/platform-settings-defaults";
+import {
+  defaultPlatformSettings,
+  parseLanguageList,
+} from "@/lib/admin/platform-settings-defaults";
 import {
   LLM_TEMPERATURE_KEYS,
-  PROMPT_KEYS,
   type LlmTemperatureKey,
   type PlatformSettingsPublic,
+  PROMPT_KEYS,
   type PromptKey,
 } from "@/lib/admin/platform-settings-types";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
 export const PLATFORM_SETTINGS_CACHE_TAG = "platform-settings";
 export const PLATFORM_SETTINGS_ID = "default";
@@ -22,7 +25,7 @@ const grievanceSchema = z.object({
   email: z.string().trim().email().max(200).or(z.literal("")),
   phone: z.string().trim().max(40),
   address: z.string().trim().max(400),
-  languages: z.string().trim().max(120),
+  languages: z.array(z.string().trim().min(1).max(40)).max(12),
 });
 
 const temperaturesSchema = z.object({
@@ -122,6 +125,10 @@ function mergeSettings(
     grievanceOfficer: {
       ...defaults.grievanceOfficer,
       ...stored?.grievanceOfficer,
+      languages: parseLanguageList(
+        stored?.grievanceOfficer?.languages ??
+          defaults.grievanceOfficer.languages,
+      ),
     },
     llm: {
       model: stored?.llm?.model?.trim() || defaults.llm.model,
@@ -165,9 +172,13 @@ export async function savePlatformSettings(input: {
   updatedBy: string;
 }): Promise<PlatformSettingsPublic> {
   const now = new Date();
+  const languages = parseLanguageList(input.patch.grievanceOfficer.languages);
   const doc: PlatformSettingsDocument = {
     _id: PLATFORM_SETTINGS_ID,
-    grievanceOfficer: input.patch.grievanceOfficer,
+    grievanceOfficer: {
+      ...input.patch.grievanceOfficer,
+      languages: languages.length ? languages : ["Hindi", "English"],
+    },
     llm: input.patch.llm,
     voice: input.patch.voice,
     prompts: input.patch.prompts,

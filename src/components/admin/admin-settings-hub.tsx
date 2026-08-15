@@ -33,7 +33,7 @@ const COPY: Record<Tab, string> = {
     "Sarvam TTS and STT. Changes save automatically and apply on the next voice request.",
   llm: "Vercel AI Gateway model and per-surface temperature. Applies on the next AI request.",
   grievance:
-    "Shown on /grievance. Name, phone, and postal address are required to leave interim status.",
+    "Shown on /grievance. Email is published; add a named officer, phone, and street address when appointed.",
   prompts:
     "System prompts for help, onboarding, interviews, scoring, and writers.",
   flow: "Candidate, recruiter, and admin — the real sequence, and where this page feeds every AI call.",

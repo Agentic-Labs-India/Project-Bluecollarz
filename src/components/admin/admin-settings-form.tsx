@@ -330,8 +330,9 @@ export function AdminSettingsForm({
       {section === "grievance" ? (
         <section className="border-border space-y-4 border p-4">
           <p className="text-muted-foreground text-xs">
-            Shown on /grievance. Name, phone, and postal address are required to
-            leave interim status. Do not invent a person.
+            Shown on /grievance. Email is required. Add a named officer, phone,
+            and street address when appointed. Until then the grievance desk
+            email is published.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="go-name" label="Name">
@@ -383,17 +384,20 @@ export function AdminSettingsForm({
             <Field id="go-languages" label="Languages">
               <Input
                 id="go-languages"
-                value={go.languages}
+                value={go.languages.join(", ")}
                 onChange={(e) =>
                   setForm((p) => ({
                     ...p,
                     grievanceOfficer: {
                       ...p.grievanceOfficer,
-                      languages: e.target.value,
+                      languages: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
                     },
                   }))
                 }
-                placeholder="Hindi,English"
+                placeholder="Hindi, English"
               />
             </Field>
           </div>

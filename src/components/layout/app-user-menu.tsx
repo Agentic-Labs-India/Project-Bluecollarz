@@ -26,6 +26,7 @@ import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { HelpDialog, HelpMenuButton } from "@/components/help";
 import {
+  syncAnalyticsConsentWithAccount,
   writeAnalyticsConsent,
   applyGtagConsent,
 } from "@/lib/compliance/analytics";
@@ -138,16 +139,18 @@ export function AppUserMenu({
   const [prefs, setPrefs] = React.useState<UserPreferences>({
     cookiesEnabled: false,
     notificationsEnabled: true,
+    platformTermsAccepted: false,
+    platformTermsVersion: null,
+    platformTermsAcceptedAt: null,
   });
   const [loaded, setLoaded] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
 
   const loadPreferences = React.useEffectEvent(async () => {
     try {
+      await syncAnalyticsConsentWithAccount();
       const next = await fetchUserPreferences();
       setPrefs(next);
-      writeAnalyticsConsent(next.cookiesEnabled ? "granted" : "denied");
-      applyGtagConsent(next.cookiesEnabled);
       setLoaded(true);
     } catch {
       setLoaded(true);

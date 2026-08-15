@@ -1,8 +1,8 @@
 import "server-only";
 
 import { ObjectId } from "mongodb";
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 import { getGrievanceOfficer } from "@/lib/compliance/grievance";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
 export const BREACH_STATUSES = [
   "detected",
@@ -89,22 +89,28 @@ export async function updateBreachIncident(input: {
 }
 
 /** Plain-language notification template for ops / email desk. */
-export async function breachNotificationCopy(
-  incident: BreachIncidentDocument,
-) {
+export async function breachNotificationCopy(incident: BreachIncidentDocument) {
   const go = await getGrievanceOfficer();
   return {
     subject: `Personal data breach notice — ${incident.incidentId}`,
     body: [
       `We are writing about a personal data incident (${incident.incidentId}).`,
       "",
-      incident.summary,
+      `Nature, extent and timing: ${incident.summary}`,
       "",
       `Status: ${incident.status}.`,
-      `Grievance Officer: ${go.name} <${go.email}>`,
-      `You may also contact the Data Protection Board of India if unresolved.`,
+      "Likely consequences: we will describe any risk to you in follow-up if it is more than this summary.",
+      "Measures we have taken: we are investigating, containing the incident, and limiting further access.",
+      "What you can do: do not share one-time codes; change your Google password if you used that account elsewhere; contact us if you see unexpected sign-in activity.",
+      "",
+      `Contact for queries: ${go.name} <${go.email}>`,
+      go.phone ? `Phone: ${go.phone}` : "",
+      `Postal: ${go.postalAddress}`,
+      "You may also complain to the Data Protection Board of India.",
       `OWRC helpline: ${go.owrcHelpline}`,
-    ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 }
 

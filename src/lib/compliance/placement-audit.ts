@@ -1,12 +1,7 @@
 import "server-only";
 
 import { ObjectId } from "mongodb";
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
-
-/** Feature flag — counsel-gated Model 2 stubs. */
-export function isPlacementAuditEnabled(): boolean {
-  return process.env.ENABLE_PLACEMENT_AUDIT === "1";
-}
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
 export interface PlacementAuditEventDocument {
   _id?: ObjectId;
@@ -19,27 +14,14 @@ export interface PlacementAuditEventDocument {
   createdAt: Date;
 }
 
-const ALWAYS_RECORD_KINDS = new Set(["job_published_after_admin_verify"]);
-
-/**
- * Append an immutable placement/journey audit event.
- * Job-publish events always persist. Other Model 2 kinds no-op unless
- * ENABLE_PLACEMENT_AUDIT=1.
- */
+/** Append an immutable placement/journey audit event. */
 export async function appendPlacementAuditEvent(input: {
   kind: string;
   jobId?: string;
   applicantId?: string;
   raRcNumber?: string;
   payload?: Record<string, unknown>;
-}): Promise<PlacementAuditEventDocument | null> {
-  if (
-    !ALWAYS_RECORD_KINDS.has(input.kind) &&
-    !isPlacementAuditEnabled()
-  ) {
-    return null;
-  }
-
+}): Promise<PlacementAuditEventDocument> {
   const doc: PlacementAuditEventDocument = {
     eventId: new ObjectId().toHexString(),
     jobId: input.jobId ?? null,
@@ -51,9 +33,7 @@ export async function appendPlacementAuditEvent(input: {
   };
   await client
     .db(DB_NAME)
-    .collection<PlacementAuditEventDocument>(
-      COLLECTIONS.PLACEMENT_AUDIT_EVENTS,
-    )
+    .collection<PlacementAuditEventDocument>(COLLECTIONS.PLACEMENT_AUDIT_EVENTS)
     .insertOne(doc);
   return doc;
 }

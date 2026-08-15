@@ -1,5 +1,9 @@
-import type { Collection, CreateIndexesOptions, IndexSpecification } from "mongodb";
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
+import type {
+  Collection,
+  CreateIndexesOptions,
+  IndexSpecification,
+} from "mongodb";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
 /** Kept here (not in @/lib/jobs) so ensureIndexes stays free of app domain imports. */
 const JOB_INDEX_SPECS = [
@@ -37,6 +41,8 @@ const RECRUITER_INQUIRY_INDEX_SPECS = [
 const USER_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
   { key: { email: 1 }, options: {} },
+  /** Re-consent campaigns: users still on an older notice version. */
+  { key: { platformTermsVersion: 1 }, options: {} },
 ] as const;
 
 const BLOG_INDEX_SPECS = [
@@ -101,7 +107,8 @@ async function ensureIndex(
     if (code !== 85 && code !== 86) throw error;
 
     const name =
-      (typeof options.name === "string" && options.name) || defaultIndexName(key);
+      (typeof options.name === "string" && options.name) ||
+      defaultIndexName(key);
     await collection.dropIndex(name);
     await collection.createIndex(key, options);
   }

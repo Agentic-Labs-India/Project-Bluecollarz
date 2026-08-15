@@ -21,10 +21,9 @@ export interface KycPublicState {
   aadhaarLast4: string | null;
 }
 
-function asIso(value: Date | string | null | undefined): string | null {
-  if (!value) return null;
-  if (value instanceof Date) return value.toISOString();
-  return String(value) || null;
+function asIso(value: Date | null | undefined): string | null {
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return null;
+  return value.toISOString();
 }
 
 export function isIdentityVerified(doc: KycFields | null | undefined): boolean {
@@ -37,12 +36,12 @@ export function toKycPublicState(
   const pack = doc?.kyc ?? null;
   return {
     isKycVerified: isIdentityVerified(doc),
-    provider: pack?.provider ? String(pack.provider) : null,
+    provider: pack?.provider ?? null,
     verifiedAt: asIso(pack?.verifiedAt),
     updatedAt: asIso(pack?.updatedAt),
-    gender: pack?.gender ? String(pack.gender) : null,
-    pan: pack?.pan ? String(pack.pan) : null,
-    aadhaarLast4: pack?.aadhaarLast4 ? String(pack.aadhaarLast4) : null,
+    gender: pack?.gender ?? null,
+    pan: pack?.pan ?? null,
+    aadhaarLast4: pack?.aadhaarLast4 ?? null,
   };
 }
 

@@ -1,7 +1,7 @@
 # Record of Processing Activities (RoPA)
 
 Internal register — keep current. Feeds Schedule 5 of the RA Partnership Agreement.
-Owner: Grievance Officer. Review cadence: quarterly (provisional).
+Owner: Grievance desk. Review cadence: quarterly.
 
 | Activity | Data used | Purpose | Basis | Shared with | Retention |
 | --- | --- | --- | --- | --- | --- |

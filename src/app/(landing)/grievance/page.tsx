@@ -4,7 +4,7 @@ import { getGrievanceOfficer } from "@/lib/compliance/grievance";
 export const metadata = {
   title: "Grievance Officer · Blucollarz",
   description:
-    "Grievance Officer and Data Protection contact for Blucollarz under the DPDP Act, 2023.",
+    "Data protection contact and grievance redressal for Blucollarz under the DPDP Act, 2023 and DPDP Rules, 2025.",
 };
 
 export default async function GrievancePage() {
@@ -14,17 +14,13 @@ export default async function GrievancePage() {
     <main className="mx-auto w-full max-w-5xl px-6 pt-28 pb-8 md:px-8 md:pt-32">
       <LegalDoc
         title="Grievance Officer"
-        updated="August 14, 2026 · Artifact 4"
+        updated="August 15, 2026 · DPDP Rules, 2025"
       >
-        {go.interim ? (
-          <p className="border-border bg-muted/40 border p-3 text-sm">
-            Interim contact — set{" "}
-            <code className="text-foreground">DPDP_GRIEVANCE_OFFICER_*</code>{" "}
-            env vars when counsel confirms the named officer.
-          </p>
-        ) : null}
-
         <LegalSection title="Contact">
+          <p>
+            Business contact of the person able to answer questions about how
+            Blucollarz Technologies Private Limited processes personal data.
+          </p>
           <ul className="list-disc space-y-2 ps-5">
             <li>
               <strong className="text-foreground font-medium">Role:</strong>{" "}
@@ -43,10 +39,12 @@ export default async function GrievancePage() {
                 {go.email}
               </a>
             </li>
-            <li>
-              <strong className="text-foreground font-medium">Phone:</strong>{" "}
-              {go.phone}
-            </li>
+            {go.phone ? (
+              <li>
+                <strong className="text-foreground font-medium">Phone:</strong>{" "}
+                {go.phone}
+              </li>
+            ) : null}
             <li>
               <strong className="text-foreground font-medium">
                 Postal address:
@@ -54,28 +52,48 @@ export default async function GrievancePage() {
               {go.postalAddress}
             </li>
             <li>
-              <strong className="text-foreground font-medium">Languages:</strong>{" "}
-              {go.languages.join(", ")}
+              <strong className="text-foreground font-medium">
+                Languages:
+              </strong>{" "}
+              {go.languages.join(", ")} (other Eighth Schedule languages on
+              request)
             </li>
             <li>
               <strong className="text-foreground font-medium">
                 Response commitment:
               </strong>{" "}
-              Acknowledge within {go.acknowledgeHours} hours; resolve within{" "}
-              {go.resolveDays} days (provisional until DPDP Rules timelines are
-              finalised)
+              Acknowledge within {go.acknowledgeHours} hours; resolve grievances
+              within a reasonable period not exceeding {go.resolveDays} days
             </li>
           </ul>
         </LegalSection>
 
-        <LegalSection title="Escalation path">
+        <LegalSection title="How to exercise your rights">
           <ol className="list-decimal space-y-2 ps-5">
-            <li>Grievance Officer (above).</li>
+            <li>
+              Signed in: open Settings → Data rights. We identify you by the
+              email on that account. Keep the request ID we show after you
+              submit.
+            </li>
+            <li>
+              Email {go.email} from the same address, or include that address
+              and your request ID.
+            </li>
+            <li>
+              Rights: access, correction/completion, erasure, withdraw consent,
+              nominate another person, or raise a grievance.
+            </li>
+          </ol>
+        </LegalSection>
+
+        <LegalSection title="Escalation">
+          <ol className="list-decimal space-y-2 ps-5">
+            <li>Grievance desk (above).</li>
             <li>
               If unresolved, internal escalation to Blucollarz leadership via
               the same email.
             </li>
-            <li>You may approach the Data Protection Board of India.</li>
+            <li>You may complain to the Data Protection Board of India.</li>
           </ol>
         </LegalSection>
 

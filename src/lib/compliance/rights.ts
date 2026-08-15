@@ -1,11 +1,9 @@
 import "server-only";
 
 import { ObjectId } from "mongodb";
-import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
+import { getCandidateProfileByUserId } from "@/lib/candidate/queries";
 import { listConsentEvents } from "@/lib/compliance/consent";
-import {
-  getCandidateProfileByUserId,
-} from "@/lib/candidate/queries";
+import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { toKycPublicState } from "@/lib/kyc";
 
 export const RIGHTS_REQUEST_TYPES = [
@@ -29,13 +27,10 @@ export const RIGHTS_REQUEST_STATUSES = [
 
 export type RightsRequestStatus = (typeof RIGHTS_REQUEST_STATUSES)[number];
 
-/** Provisional until DPDP Rules notify final periods. */
-export const RIGHTS_ACKNOWLEDGE_HOURS = Number(
-  process.env.DPDP_RIGHTS_ACK_HOURS || 72,
-);
-export const RIGHTS_RESOLVE_DAYS = Number(
-  process.env.DPDP_RIGHTS_RESOLVE_DAYS || 30,
-);
+export {
+  RIGHTS_ACKNOWLEDGE_HOURS,
+  RIGHTS_RESOLVE_DAYS,
+} from "@/lib/compliance/timelines";
 
 export interface RightsRequestDocument {
   _id?: ObjectId;
@@ -215,9 +210,7 @@ export function serializeRightsRequest(
     details: doc.details,
     nomineeName: doc.nomineeName ?? null,
     nomineeEmail: doc.nomineeEmail ?? null,
-    ...(opts?.includeAdminNotes
-      ? { adminNotes: doc.adminNotes ?? null }
-      : {}),
+    ...(opts?.includeAdminNotes ? { adminNotes: doc.adminNotes ?? null } : {}),
     email: doc.email,
     dataPrincipalId: doc.dataPrincipalId,
     createdAt: doc.createdAt.toISOString(),

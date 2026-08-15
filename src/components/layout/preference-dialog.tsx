@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { UserPreferences } from "@/lib/user/preferences";
+import type {
+  UserPreferences,
+  UserPreferencesUpdate,
+} from "@/lib/user/preferences";
 
 export type PreferenceKind = "cookies" | "notifications";
 
@@ -29,8 +31,8 @@ const COPY: Record<
       "Essential cookies keep you signed in. Optional analytics cookies are off until you allow them.",
     details: [
       "Essential cookies keep you logged in and protect your account.",
-      "Analytics cookies (Google Analytics) measure usage only if you allow them.",
-      "Turning analytics off stops gtag; you stay signed in with essential cookies.",
+      "Analytics cookies (Google Analytics) measure usage only if you Allow them.",
+      "Reject or turn analytics off anytime — same control, as easy as Allow. You stay signed in.",
     ],
     toggleLabel: "Allow analytics cookies",
   },
@@ -110,7 +112,7 @@ export async function fetchUserPreferences(): Promise<UserPreferences> {
 }
 
 export async function patchUserPreferences(
-  patch: Partial<UserPreferences>,
+  patch: UserPreferencesUpdate,
 ): Promise<UserPreferences> {
   const res = await fetch("/api/user/preferences", {
     method: "PATCH",

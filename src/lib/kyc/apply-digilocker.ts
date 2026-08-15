@@ -68,7 +68,7 @@ function normalizeGender(raw: string | null | undefined): string | null {
 
 type IdentityProfile = {
   phoneNumber?: number | null;
-  dateOfBirth?: Date | string | null;
+  dateOfBirth?: Date | null;
   pan?: string | null;
   aadhaarLast4?: string | null;
   gender?: string | null;
@@ -99,7 +99,7 @@ export function identityMismatches(
   if (
     profile.phoneNumber != null &&
     dlPhone != null &&
-    Number(profile.phoneNumber) !== dlPhone
+    profile.phoneNumber !== dlPhone
   ) {
     errors.push("Phone on DigiLocker does not match your profile.");
   }

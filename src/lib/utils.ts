@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { ZodError } from "zod";
 
@@ -29,6 +29,13 @@ export function asNumber(value: unknown, fallback = 0): number {
     if (Number.isFinite(n)) return n;
   }
   return fallback;
+}
+
+/** Env/JSON → positive integer, else fallback. */
+export function asPositiveInt(value: unknown, fallback: number): number {
+  const n = asNumber(value, Number.NaN);
+  if (!Number.isInteger(n) || n <= 0) return fallback;
+  return n;
 }
 
 /** Flatten a Zod error into a single message. */

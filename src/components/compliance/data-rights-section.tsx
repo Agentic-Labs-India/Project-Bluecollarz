@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 
 const TYPES = [
   { value: "access", label: "Access / export my data" },
   { value: "correction", label: "Correction / completion" },
   { value: "erasure", label: "Request erasure (use Delete account to erase)" },
-  { value: "withdraw", label: "Withdraw consent (stops DigiLocker, hire release, interviews)" },
+  {
+    value: "withdraw",
+    label: "Withdraw consent (stops DigiLocker, hire release, interviews)",
+  },
   { value: "nominate", label: "Nominate someone" },
   { value: "grievance", label: "Grievance" },
 ] as const;
@@ -92,8 +95,7 @@ export function DataRightsSection() {
         setMessage("Access request recorded. Export downloaded.");
       } else {
         setMessage(
-          json.message ||
-            `Request ${json.item?.requestId ?? ""} submitted.`,
+          json.message || `Request ${json.item?.requestId ?? ""} submitted.`,
         );
         if (type === "erasure") {
           document.getElementById("delete-account")?.scrollIntoView({
@@ -114,15 +116,16 @@ export function DataRightsSection() {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Access or export your data, request correction, withdraw consent
-        (stops DigiLocker and interview release), nominate someone, or raise a
-        grievance. Correction is completed by updating your{" "}
+        Access or export your data, request correction, withdraw consent (stops
+        DigiLocker and interview release), nominate someone, or raise a
+        grievance. We identify you by the email on this signed-in account.
+        Correction is completed by updating your{" "}
         <a href="/candidate/profile" className="text-foreground underline">
           profile
         </a>
         . To erase your account and data, use Delete account below after
-        submitting an erasure request. Provisional timelines: acknowledge in
-        72h, resolve in 30 days. See{" "}
+        submitting an erasure request. We acknowledge promptly (target 72 hours)
+        and resolve grievances within 90 days. See{" "}
         <a href="/grievance" className="text-foreground underline">
           Grievance Officer
         </a>
@@ -197,7 +200,9 @@ export function DataRightsSection() {
       ) : null}
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      {message ? <p className="text-sm text-sky-700 dark:text-sky-400">{message}</p> : null}
+      {message ? (
+        <p className="text-sm text-sky-700 dark:text-sky-400">{message}</p>
+      ) : null}
 
       <Button
         type="button"
@@ -224,7 +229,9 @@ export function DataRightsSection() {
               <li key={item.requestId} className="border-border border p-2">
                 <span className="font-medium capitalize">{item.type}</span>
                 {" · "}
-                <span className="capitalize">{item.status.replace("_", " ")}</span>
+                <span className="capitalize">
+                  {item.status.replace("_", " ")}
+                </span>
                 <span className="text-muted-foreground block text-xs">
                   {new Date(item.createdAt).toLocaleString()} · {item.requestId}
                 </span>

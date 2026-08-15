@@ -3,6 +3,24 @@ import { DEFAULT_GATEWAY_MODEL } from "@/lib/ai/gateway-model";
 import { VOICE_DELIVERY_PROMPT } from "@/lib/ai/voice/style";
 import { DEFAULT_HELP_SYSTEM_PROMPT } from "@/lib/support/prompt";
 
+export function parseLanguageList(value: unknown): string[] {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const next = item.trim();
+    if (!next || seen.has(next.toLowerCase())) continue;
+    seen.add(next.toLowerCase());
+    out.push(next);
+  }
+  return out;
+}
+
 export function envGrievanceOfficerDefaults() {
   return {
     name: process.env.DPDP_GRIEVANCE_OFFICER_NAME?.trim() || "",
@@ -10,9 +28,12 @@ export function envGrievanceOfficerDefaults() {
       process.env.DPDP_GRIEVANCE_OFFICER_EMAIL?.trim() ||
       "support@blucollarz.com",
     phone: process.env.DPDP_GRIEVANCE_OFFICER_PHONE?.trim() || "",
-    address: process.env.DPDP_GRIEVANCE_OFFICER_ADDRESS?.trim() || "",
-    languages:
-      process.env.DPDP_GRIEVANCE_OFFICER_LANGUAGES?.trim() || "Hindi,English",
+    address:
+      process.env.DPDP_GRIEVANCE_OFFICER_ADDRESS?.trim() ||
+      "Hyderabad, Telangana, India",
+    languages: parseLanguageList(
+      process.env.DPDP_GRIEVANCE_OFFICER_LANGUAGES || "Hindi,English",
+    ),
   };
 }
 

@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
-import { ensureIndexes } from "@/lib/db/indexes";
+  appendConsentEvent,
+  CONSENT_PURPOSES,
+  getActivePurposes,
+} from "@/lib/compliance/consent";
+import {
+  getGrievanceOfficer,
+  toGrievanceContactPayload,
+} from "@/lib/compliance/grievance";
 import {
   buildAccessExport,
   createRightsRequest,
@@ -14,11 +19,7 @@ import {
   RIGHTS_RESOLVE_DAYS,
   serializeRightsRequest,
 } from "@/lib/compliance/rights";
-import {
-  appendConsentEvent,
-  CONSENT_PURPOSES,
-  getActivePurposes,
-} from "@/lib/compliance/consent";
+import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
 
 const createSchema = z.object({
@@ -42,19 +43,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(pack);
     }
 
+    const go = await getGrievanceOfficer();
     const items = await listRightsRequestsForUser(auth.user.id);
     return NextResponse.json({
       items: items.map((item) => serializeRightsRequest(item)),
       timelines: {
         acknowledgeHours: RIGHTS_ACKNOWLEDGE_HOURS,
         resolveDays: RIGHTS_RESOLVE_DAYS,
-        provisional: true,
       },
+      identifiers: [
+        "Signed-in account email",
+        "Rights request ID shown after you submit",
+      ],
+      contact: toGrievanceContactPayload(go),
     });
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/candidate/rights:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -77,7 +86,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (parsed.data.type === "nominate") {
-      if (!parsed.data.nomineeName?.trim() || !parsed.data.nomineeEmail?.trim()) {
+      if (
+        !parsed.data.nomineeName?.trim() ||
+        !parsed.data.nomineeEmail?.trim()
+      ) {
         return NextResponse.json(
           { error: "Nominee name and email are required" },
           { status: 400 },
@@ -112,9 +124,11 @@ export async function POST(req: NextRequest) {
       exportPack = await buildAccessExport(auth.user.id);
     }
 
+    const go = await getGrievanceOfficer();
     return NextResponse.json({
       item: serializeRightsRequest(doc),
       export: exportPack,
+      contact: toGrievanceContactPayload(go),
       ...(parsed.data.type === "withdraw"
         ? {
             message:
@@ -135,6 +149,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("POST /api/candidate/rights:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

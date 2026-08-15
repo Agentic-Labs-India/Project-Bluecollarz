@@ -4,6 +4,7 @@ import {
   DIGILOCKER_REQUIRED_PURPOSES,
   hasGrantedPurposes,
 } from "@/lib/compliance/consent";
+import { parseDateOnly } from "@/lib/core/dates";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
       code,
       codeVerifier: oauth.codeVerifier,
     });
-    const verifiedAtIso = new Date().toISOString();
+    const verifiedAt = new Date();
     const payload = await gatherDigilockerKyc({
       accessToken: token.access_token,
       idToken: token.id_token,
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
           typeof existing?.phoneNumber === "number"
             ? existing.phoneNumber
             : null,
-        dateOfBirth: (existing?.dateOfBirth as Date | string | null) ?? null,
+        dateOfBirth: parseDateOnly(existing?.dateOfBirth),
         pan: existingKyc?.pan ?? null,
         aadhaarLast4: existingKyc?.aadhaarLast4 ?? null,
         gender: existingKyc?.gender ?? null,
@@ -131,7 +132,7 @@ export async function GET(req: NextRequest) {
 
     let profileUpdate: ReturnType<typeof digilockerProfileSet>;
     try {
-      profileUpdate = digilockerProfileSet(payload, new Date(verifiedAtIso));
+      profileUpdate = digilockerProfileSet(payload, verifiedAt);
     } catch (ageError) {
       return redirectWithError(
         req,

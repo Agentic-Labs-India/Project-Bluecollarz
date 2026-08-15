@@ -4,22 +4,33 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth/auth-client";
 import {
-  readAnalyticsConsent,
-  writeAnalyticsConsent,
   applyGtagConsent,
+  readAnalyticsConsent,
+  syncAnalyticsConsentWithAccount,
+  writeAnalyticsConsent,
 } from "@/lib/compliance/analytics";
 
 /**
  * Analytics cookie banner — essential auth cookies always allowed.
- * Signed-in users also sync `users.cookiesEnabled` so rail prefs match.
+ * Allow / Reject only. Signed-in users sync `users.cookiesEnabled`.
  */
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const { data: session } = authClient.useSession();
 
   useEffect(() => {
-    setVisible(readAnalyticsConsent() === null);
-  }, []);
+    let cancelled = false;
+    const run = async () => {
+      if (session?.user) {
+        await syncAnalyticsConsentWithAccount();
+      }
+      if (!cancelled) setVisible(readAnalyticsConsent() === null);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user]);
 
   const choose = async (granted: boolean) => {
     writeAnalyticsConsent(granted ? "granted" : "denied");
@@ -45,7 +56,7 @@ export function CookieBanner() {
       <p className="text-muted-foreground min-w-0 flex-1 text-xs leading-snug md:text-sm md:leading-relaxed">
         We use essential cookies to keep you signed in. Optional analytics
         cookies (Google Analytics) help us improve the product — off until you
-        allow them.{" "}
+        Allow them. Reject is as easy as Allow.{" "}
         <a href="/privacy" className="text-foreground underline">
           Privacy
         </a>

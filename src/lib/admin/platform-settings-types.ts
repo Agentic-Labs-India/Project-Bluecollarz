@@ -30,7 +30,7 @@ export interface GrievanceOfficerSettings {
   email: string;
   phone: string;
   address: string;
-  languages: string;
+  languages: string[];
 }
 
 export interface LlmSettings {

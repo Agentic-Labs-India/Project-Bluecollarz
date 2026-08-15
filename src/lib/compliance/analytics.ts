@@ -35,6 +35,47 @@ declare global {
   }
 }
 
+/**
+ * Browser choice wins when the user already Allow/Reject'd.
+ * If they have not chosen on this device, pull the signed-in account.
+ */
+export async function syncAnalyticsConsentWithAccount(): Promise<
+  boolean | null
+> {
+  if (typeof window === "undefined") return null;
+  const local = readAnalyticsConsent();
+  try {
+    const res = await fetch("/api/user/preferences");
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      preferences?: { cookiesEnabled?: boolean };
+    };
+    const serverGranted = json.preferences?.cookiesEnabled === true;
+
+    if (local === "granted" || local === "denied") {
+      const want = local === "granted";
+      if (want !== serverGranted) {
+        await fetch("/api/user/preferences", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cookiesEnabled: want }),
+        });
+      }
+      applyGtagConsent(want);
+      return want;
+    }
+
+    if (serverGranted) {
+      writeAnalyticsConsent("granted");
+      applyGtagConsent(true);
+      return true;
+    }
+    return false;
+  } catch {
+    return null;
+  }
+}
+
 export function applyGtagConsent(granted: boolean) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];

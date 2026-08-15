@@ -36,9 +36,7 @@ export default function TermsPage() {
               Complete required profile information before applying to roles or
               starting interviews when prompted by the Service.
             </li>
-            <li>
-              Represent your experience and qualifications honestly.
-            </li>
+            <li>Represent your experience and qualifications honestly.</li>
             <li>
               Complete AI interviews yourself; do not misrepresent authorship of
               responses or recordings.
@@ -129,13 +127,13 @@ export default function TermsPage() {
 
         <LegalSection title="10. Limitation of liability">
           <p>
-            To the fullest extent permitted by law, Blucollarz and its affiliates
-            will not be liable for indirect, incidental, special, consequential,
-            or punitive damages, or any loss of profits, data, or goodwill,
-            arising from your use of the Service. Our aggregate liability for
-            claims relating to the Service will not exceed the greater of (a)
-            amounts you paid us for the Service in the 12 months before the
-            claim or (b) USD 100, if you have not paid us.
+            To the fullest extent permitted by law, Blucollarz and its
+            affiliates will not be liable for indirect, incidental, special,
+            consequential, or punitive damages, or any loss of profits, data, or
+            goodwill, arising from your use of the Service. Our aggregate
+            liability for claims relating to the Service will not exceed the
+            greater of (a) amounts you paid us for the Service in the 12 months
+            before the claim or (b) USD 100, if you have not paid us.
           </p>
         </LegalSection>
 
@@ -163,6 +161,20 @@ export default function TermsPage() {
               href="mailto:support@blucollarz.com"
             >
               support@blucollarz.com
+            </a>
+            . Personal data:{" "}
+            <a
+              className="text-foreground underline underline-offset-4"
+              href="/privacy"
+            >
+              Privacy Notice
+            </a>{" "}
+            and{" "}
+            <a
+              className="text-foreground underline underline-offset-4"
+              href="/grievance"
+            >
+              Grievance
             </a>
             .
           </p>

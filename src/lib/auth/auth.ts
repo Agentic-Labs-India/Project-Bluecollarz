@@ -1,9 +1,9 @@
 import { betterAuth } from "better-auth";
-import { nextCookies } from "better-auth/next-js";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
-import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
+import { nextCookies } from "better-auth/next-js";
 import { consumeUserProvision } from "@/lib/admin/provisions";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
+import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
 
 const APP_NAME = "Blucollarz";
 
@@ -40,13 +40,23 @@ export const auth = betterAuth({
       cookiesEnabled: {
         type: "boolean",
         required: false,
-        defaultValue: true,
+        defaultValue: false,
         input: false,
       },
       notificationsEnabled: {
         type: "boolean",
         required: false,
         defaultValue: true,
+        input: false,
+      },
+      platformTermsVersion: {
+        type: "number",
+        required: false,
+        input: false,
+      },
+      platformTermsAcceptedAt: {
+        type: "date",
+        required: false,
         input: false,
       },
       /** DigiLocker identity verified — set by KYC callback, not client-writable. */

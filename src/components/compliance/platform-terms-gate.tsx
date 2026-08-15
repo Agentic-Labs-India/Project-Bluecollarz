@@ -1,33 +1,100 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { authClient } from "@/lib/auth/auth-client";
+import { useEffect, useState } from "react";
+import {
+  fetchUserPreferences,
+  patchUserPreferences,
+} from "@/components/layout/preference-dialog";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth/auth-client";
+import {
+  asTermsVersion,
+  hasAcceptedPlatformTerms,
+  PLATFORM_TERMS_VERSION,
+  platformTermsStorageKey,
+  toAcceptedAtIso,
+} from "@/lib/user/preferences";
 
-const STORAGE_KEY = "blucollarz_platform_terms_v1";
+const STORAGE_KEY = platformTermsStorageKey();
+const STORAGE_VALUE = String(PLATFORM_TERMS_VERSION);
 
 /**
  * First-session gate: privacy/terms acknowledgment before using the app.
- * Separate from DigiLocker purpose consent (Artifact 2).
+ * Source of truth is the Users document. localStorage is a per-device cache
+ * keyed by notice version so a v2 notice cannot be auto-accepted from v1.
  */
 export function PlatformTermsGate() {
   const { data: session, isPending } = authClient.useSession();
   const [open, setOpen] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const sessionUser = session?.user as
+    | {
+        id?: string;
+        platformTermsVersion?: number | string | null;
+        platformTermsAcceptedAt?: Date | string | null;
+      }
+    | undefined;
+  const userId = sessionUser?.id;
+  const sessionTermsVersion = asTermsVersion(sessionUser?.platformTermsVersion);
+  const sessionTermsAt = toAcceptedAtIso(sessionUser?.platformTermsAcceptedAt);
 
   useEffect(() => {
-    if (isPending || !session?.user) {
+    if (isPending || !userId) {
       setOpen(false);
       return;
     }
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      setOpen(raw !== "1");
-    } catch {
-      setOpen(true);
-    }
-  }, [isPending, session?.user]);
+    let cancelled = false;
+    const run = async () => {
+      if (hasAcceptedPlatformTerms(sessionTermsVersion, sessionTermsAt)) {
+        try {
+          localStorage.setItem(STORAGE_KEY, STORAGE_VALUE);
+        } catch {
+          /* ignore */
+        }
+        if (!cancelled) setOpen(false);
+        return;
+      }
+
+      try {
+        const prefs = await fetchUserPreferences();
+        if (cancelled) return;
+        if (prefs.platformTermsAccepted) {
+          try {
+            localStorage.setItem(STORAGE_KEY, STORAGE_VALUE);
+          } catch {
+            /* ignore */
+          }
+          setOpen(false);
+          return;
+        }
+      } catch {
+        /* fall through */
+      }
+      if (cancelled) return;
+
+      try {
+        if (
+          localStorage.getItem(STORAGE_KEY) === STORAGE_VALUE ||
+          localStorage.getItem("blucollarz_platform_terms_v1") === "1"
+        ) {
+          await patchUserPreferences({ platformTermsAccepted: true });
+          if (!cancelled) setOpen(false);
+          return;
+        }
+      } catch {
+        /* still need an on-screen accept */
+      }
+      if (!cancelled) setOpen(true);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isPending, userId, sessionTermsVersion, sessionTermsAt]);
 
   if (!open) return null;
 
@@ -86,16 +153,33 @@ export function PlatformTermsGate() {
             Blucollarz.
           </span>
         </label>
+        {error ? (
+          <p className="text-destructive mt-2 text-sm">{error}</p>
+        ) : null}
         <Button
           className="mt-4 w-full"
-          disabled={!accepted}
+          disabled={!accepted || saving}
           onClick={() => {
-            try {
-              localStorage.setItem(STORAGE_KEY, "1");
-            } catch {
-              /* ignore */
-            }
-            setOpen(false);
+            void (async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await patchUserPreferences({ platformTermsAccepted: true });
+                try {
+                  localStorage.setItem(STORAGE_KEY, STORAGE_VALUE);
+                } catch {
+                  /* ignore */
+                }
+                await authClient.getSession();
+                setOpen(false);
+              } catch {
+                setError(
+                  "Could not save. Check your connection and try again.",
+                );
+              } finally {
+                setSaving(false);
+              }
+            })();
           }}
         >
           Continue
