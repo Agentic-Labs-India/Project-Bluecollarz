@@ -41,35 +41,33 @@ export function CookieBanner() {
   if (!visible) return null;
 
   return (
-    <div className="border-border bg-canvas fixed inset-x-0 bottom-0 z-90 border-t p-4 shadow-sm">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          We use essential cookies to keep you signed in. Optional analytics
-          cookies (Google Analytics) help us improve the product — off until you
-          allow them.{" "}
-          <a href="/privacy" className="text-foreground underline">
-            Privacy
-          </a>
-        </p>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              void choose(false);
-            }}
-          >
-            Reject analytics
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              void choose(true);
-            }}
-          >
-            Allow analytics
-          </Button>
-        </div>
+    <div className="border-border bg-canvas fixed inset-x-0 bottom-0 z-90 border-t p-4 shadow-sm md:inset-x-auto md:right-6 md:bottom-6 md:w-80 md:border md:shadow-lg">
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        We use essential cookies to keep you signed in. Optional analytics
+        cookies (Google Analytics) help us improve the product — off until you
+        allow them.{" "}
+        <a href="/privacy" className="text-foreground underline">
+          Privacy
+        </a>
+      </p>
+      <div className="mt-3 flex flex-row gap-2 md:flex-col">
+        <Button
+          className="max-md:order-2 md:w-full"
+          onClick={() => {
+            void choose(true);
+          }}
+        >
+          Allow
+        </Button>
+        <Button
+          variant="outline"
+          className="max-md:order-1 md:w-full"
+          onClick={() => {
+            void choose(false);
+          }}
+        >
+          Reject
+        </Button>
       </div>
     </div>
   );

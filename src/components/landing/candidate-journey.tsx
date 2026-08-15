@@ -12,6 +12,7 @@ import AdmitOneTicket, {
   TICKET_GEOMETRY,
   TICKET_LAYOUT,
 } from "@/components/landing/ticket";
+import { cn } from "@/lib/utils";
 
 type JourneyStep = {
   code: string;
@@ -52,6 +53,15 @@ const STEPS: JourneyStep[] = [
   },
 ];
 
+const PLACEMENT = [
+  "md:col-start-1 md:row-start-1",
+  "md:col-start-1 md:row-start-2",
+  "md:col-start-1 md:row-start-3",
+  "md:col-start-1 md:row-start-4",
+  "md:col-start-2 md:row-start-1",
+  "md:col-start-2 md:row-start-2 md:row-span-3",
+] as const;
+
 const PRIMARY_LAYOUT = {
   ...TICKET_LAYOUT,
   inkColor: "#ffffff",
@@ -59,11 +69,6 @@ const PRIMARY_LAYOUT = {
   watermarkOpacity: 0.35,
   stubOpacity: 0.92,
 };
-
-function ticketWidth() {
-  if (typeof window === "undefined") return 640;
-  return Math.min(720, Math.max(300, window.innerWidth - 64));
-}
 
 function JourneyStepNumber({ value }: { value: string }) {
   const mask = `url("data:image/svg+xml,${encodeURIComponent(
@@ -73,7 +78,7 @@ function JourneyStepNumber({ value }: { value: string }) {
   return (
     <span
       aria-hidden
-      className="relative block h-20 w-14 shrink-0 sm:h-24 sm:w-16 md:h-28 md:w-[4.5rem]"
+      className="relative block h-11 w-8 shrink-0 sm:h-12 sm:w-9"
       style={{
         WebkitMaskImage: mask,
         maskImage: mask,
@@ -97,18 +102,54 @@ function JourneyStepNumber({ value }: { value: string }) {
   );
 }
 
-export function CandidateJourney() {
-  const [width, setWidth] = useState(640);
+function VisaTicket() {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const ticketRef = useRef<HTMLSpanElement>(null);
   const ticketNonce = useRecoverWebGlCanvas(ticketRef);
+  const [width, setWidth] = useState(360);
 
   useEffect(() => {
-    const update = () => setWidth(ticketWidth());
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () =>
+      setWidth(Math.min(520, Math.max(240, el.clientWidth)));
     update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
+  return (
+    <div ref={wrapRef} className="mt-auto flex w-full flex-1 items-center justify-center pt-4">
+      <LoginButton className="group w-full cursor-pointer rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:outline-none disabled:opacity-70">
+        <span className="sr-only">Visa approved — start now and sign in</span>
+        <span
+          ref={ticketRef}
+          className="block w-full transition-transform duration-300 group-hover:-translate-y-0.5 group-active:translate-y-0"
+        >
+          <AdmitOneTicket
+            key={ticketNonce}
+            name="Visa Approved"
+            presenter="Blucollarz"
+            event="Work abroad"
+            venue="Take off"
+            dates="Start now"
+            stubText="Go"
+            watermark="VISA"
+            width={width}
+            geometry={TICKET_GEOMETRY}
+            layout={PRIMARY_LAYOUT}
+            texture={PRIMARY_TICKET_TEXTURE}
+            className="font-heading shadow-[0_18px_50px_-28px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
+            tilt={{ maxTilt: 7, scale: 1.015, glare: 0.14 }}
+          />
+        </span>
+      </LoginButton>
+    </div>
+  );
+}
+
+export function CandidateJourney() {
   return (
     <section
       aria-labelledby="candidate-journey-heading"
@@ -127,69 +168,38 @@ export function CandidateJourney() {
           </p>
         </div>
 
-        <ul className="mt-8 grid gap-2 sm:mt-10 sm:grid-cols-2 lg:grid-cols-3">
+        <ol className="mt-8 grid grid-cols-1 gap-2 sm:mt-10 md:grid-cols-2 md:grid-rows-4">
           {STEPS.map((step, index) => {
             const number = String(index + 1);
+            const isFinale = index === STEPS.length - 1;
             return (
               <li
                 key={step.code}
-                className="border-border bg-card flex items-center gap-4 border px-4 py-4 sm:gap-5 sm:px-5 sm:py-5"
+                className={cn(
+                  "border-border bg-card flex h-full gap-3 border px-3 py-3 sm:gap-4 sm:px-4",
+                  isFinale
+                    ? "flex-col md:min-h-0"
+                    : "items-center",
+                  PLACEMENT[index],
+                )}
               >
-                <JourneyStepNumber value={number} />
-                <div className="min-w-0">
-                  <p className="text-foreground text-sm leading-snug font-semibold">
-                    <span className="sr-only">Step {number}. </span>
-                    {step.title}
-                  </p>
-                  <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed sm:text-[13px]">
-                    {step.body}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <JourneyStepNumber value={number} />
+                  <div className="min-w-0">
+                    <h3 className="font-heading text-foreground text-sm font-semibold tracking-tight sm:text-base">
+                      <span className="sr-only">Step {number}. </span>
+                      {step.title}
+                    </h3>
+                    <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs leading-relaxed sm:text-[13px]">
+                      {step.body}
+                    </p>
+                  </div>
                 </div>
+                {isFinale ? <VisaTicket /> : null}
               </li>
             );
           })}
-        </ul>
-
-        <div className="border-border bg-card mt-2 flex min-h-64 flex-col items-center justify-center gap-6 border px-4 py-10 sm:min-h-72 sm:px-8 sm:py-14 lg:min-h-80">
-          <div className="max-w-lg text-center">
-            <p className="text-mute text-[11px] font-medium tracking-[0.14em] uppercase sm:text-xs">
-              Finale
-            </p>
-            <p className="font-heading text-foreground mt-2 text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">
-              Your Ticket to Abroad!!!
-            </p>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-              Tap the pass to sign in and start your journey.
-            </p>
-          </div>
-
-          <LoginButton className="group cursor-pointer rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:outline-none disabled:opacity-70">
-            <span className="sr-only">
-              Your Ticket to Abroad — start now and sign in
-            </span>
-            <span
-              ref={ticketRef}
-              className="block transition-transform duration-300 group-hover:-translate-y-0.5 group-active:translate-y-0"
-            >
-              <AdmitOneTicket
-                key={ticketNonce}
-                name="Your Ticket is Ready"
-                presenter="Blucollarz"
-                event="Start For Free"
-                venue="Work abroad"
-                dates="Start now"
-                stubText="Go"
-                watermark="LET'S"
-                width={width}
-                geometry={TICKET_GEOMETRY}
-                layout={PRIMARY_LAYOUT}
-                texture={PRIMARY_TICKET_TEXTURE}
-                className="font-heading shadow-[0_18px_50px_-28px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
-                tilt={{ maxTilt: 7, scale: 1.015, glare: 0.14 }}
-              />
-            </span>
-          </LoginButton>
-        </div>
+        </ol>
       </div>
     </section>
   );
