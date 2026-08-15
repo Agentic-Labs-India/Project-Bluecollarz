@@ -503,7 +503,12 @@ export function AdminSupportTickets() {
         >
           <SheetHeader className="border-border border-b pb-4">
             <SheetTitle className="text-base leading-snug">
-              {detail?.summary || (detailLoading ? "Loading…" : "Ticket")}
+              {detail?.summary || (
+                <>
+                  <span className="sr-only">Ticket</span>
+                  {detailLoading ? <Skeleton className="h-5 w-56" /> : "Ticket"}
+                </>
+              )}
             </SheetTitle>
             <SheetDescription>
               {detail ? (
@@ -529,7 +534,7 @@ export function AdminSupportTickets() {
                   )}
                 </span>
               ) : (
-                "Fetching ticket…"
+                <span className="sr-only">Fetching ticket</span>
               )}
             </SheetDescription>
           </SheetHeader>

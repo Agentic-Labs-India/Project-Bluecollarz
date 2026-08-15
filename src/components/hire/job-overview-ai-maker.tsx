@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextContent } from "@/components/ui/rich-text-content";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type JobOverviewAiMakerProps = {
   /** Prefill from the job form when available. */
@@ -172,12 +173,16 @@ export function JobOverviewAiMaker({
               <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Generated overview
               </p>
-              {loading ? (
-                <p className="text-muted-foreground text-xs">Generating…</p>
-              ) : null}
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-3 text-sm">
-              {previewHtml ? (
+              {loading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/6" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : previewHtml ? (
                 <RichTextContent html={previewHtml} />
               ) : (
                 <p className="text-muted-foreground text-sm leading-relaxed">

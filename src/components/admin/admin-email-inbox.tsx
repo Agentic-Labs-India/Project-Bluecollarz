@@ -399,7 +399,12 @@ export function AdminEmailInbox() {
         >
           <SheetHeader className="border-border border-b pb-4">
             <SheetTitle className="text-base leading-snug">
-              {detail?.subject || (detailLoading ? "Loading…" : "Email")}
+              {detail?.subject || (
+                <>
+                  <span className="sr-only">Email</span>
+                  {detailLoading ? <Skeleton className="h-5 w-56" /> : "Email"}
+                </>
+              )}
             </SheetTitle>
             <SheetDescription>
               {detail ? (
@@ -421,7 +426,7 @@ export function AdminEmailInbox() {
                   <span className="block">{formatWhen(detail.createdAt)}</span>
                 </span>
               ) : (
-                "Fetching message…"
+                <span className="sr-only">Fetching message</span>
               )}
             </SheetDescription>
           </SheetHeader>

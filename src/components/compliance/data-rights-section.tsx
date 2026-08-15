@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TYPES = [
   { value: "access", label: "Access / export my data" },
@@ -215,7 +216,10 @@ export function DataRightsSection() {
           Your requests
         </p>
         {loading ? (
-          <p className="text-muted-foreground text-sm">Loading…</p>
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
         ) : items.length === 0 ? (
           <p className="text-muted-foreground text-sm">None yet.</p>
         ) : (

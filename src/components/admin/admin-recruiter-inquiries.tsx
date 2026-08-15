@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -260,11 +261,20 @@ export function AdminRecruiterInquiries() {
           className="flex w-full flex-col gap-0 sm:max-w-xl!"
         >
           <SheetHeader className="border-border border-b pb-4">
-            <SheetTitle>{selected?.companyName || "Inquiry"}</SheetTitle>
+            <SheetTitle>
+              {selected?.companyName || (
+                <>
+                  <span className="sr-only">Inquiry</span>
+                  <Skeleton className="h-5 w-40" />
+                </>
+              )}
+            </SheetTitle>
             <SheetDescription>
-              {selected
-                ? `${selected.contactName} · ${selected.email}`
-                : "Loading…"}
+              {selected ? (
+                `${selected.contactName} · ${selected.email}`
+              ) : (
+                <Skeleton className="h-4 w-48" />
+              )}
             </SheetDescription>
           </SheetHeader>
 

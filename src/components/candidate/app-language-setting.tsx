@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -75,27 +76,26 @@ export function AppLanguageSetting() {
           <p className="text-destructive mt-1.5 text-xs">{error}</p>
         ) : null}
       </div>
-      <Select
-        value={value}
-        onValueChange={(v) => void onChange(v)}
-        disabled={loading || saving}
-      >
-        <SelectTrigger
-          className="w-40 shrink-0"
-          aria-label="App Language"
+      {loading ? (
+        <Skeleton className="h-9 w-40 shrink-0" />
+      ) : (
+        <Select
+          value={value}
+          onValueChange={(v) => void onChange(v)}
+          disabled={saving}
         >
-          <SelectValue
-            placeholder={loading ? "Loading…" : "Select language"}
-          />
-        </SelectTrigger>
-        <SelectContent>
-          {VOICE_LANGUAGE_OPTIONS.map((opt) => (
-            <SelectItem key={opt.code} value={opt.code}>
-              {opt.nativeLabel} ({opt.label})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectTrigger className="w-40 shrink-0" aria-label="App Language">
+            <SelectValue placeholder="Select language" />
+          </SelectTrigger>
+          <SelectContent>
+            {VOICE_LANGUAGE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.code} value={opt.code}>
+                {opt.nativeLabel} ({opt.label})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }

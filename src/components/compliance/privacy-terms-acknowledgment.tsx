@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ConsentSnapshot = {
   active?: {
@@ -64,13 +65,15 @@ export function PrivacyTermsAcknowledgment({
         />
         <span className="space-y-1">
           <span className="text-foreground block text-sm font-medium">
-            {showConsentPanel
-              ? loading
-                ? "Loading consent…"
-                : purposes.length
-                  ? "Verification consent on file"
-                  : "No verification consent recorded yet"
-              : "Platform privacy & terms"}
+            {showConsentPanel && loading ? (
+              <Skeleton className="h-4 w-44" />
+            ) : showConsentPanel ? (
+              purposes.length
+                ? "Verification consent on file"
+                : "No verification consent recorded yet"
+            ) : (
+              "Platform privacy & terms"
+            )}
           </span>
           <span className="text-muted-foreground block text-xs">
             {showConsentPanel

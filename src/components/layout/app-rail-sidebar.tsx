@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AppRailNav } from "@/components/layout/app-rail-nav";
 import { AppUserMenu } from "@/components/layout/app-user-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sidebar,
   SidebarContent,
@@ -26,13 +27,9 @@ export function AppRailSidebar({
   profileHref: string;
 } & React.ComponentProps<typeof Sidebar>) {
   const isMobile = useIsMobile();
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
 
-  const loggedInUser = session?.user || {
-    name: "Loading...",
-    email: "Loading...",
-    image: "",
-  };
+  const loggedInUser = session?.user;
 
   // Mobile uses AppBottomNav only — never mount the rail or its sheet/avatar.
   if (isMobile) return null;
@@ -60,14 +57,20 @@ export function AppRailSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-0 p-0">
-        <AppUserMenu
-          profileHref={profileHref}
-          user={{
-            name: loggedInUser.name,
-            email: loggedInUser.email,
-            avatar: loggedInUser.image || "",
-          }}
-        />
+        {isPending || !loggedInUser ? (
+          <div className="flex justify-center p-2">
+            <Skeleton className="size-8 rounded-full" />
+          </div>
+        ) : (
+          <AppUserMenu
+            profileHref={profileHref}
+            user={{
+              name: loggedInUser.name || "",
+              email: loggedInUser.email || "",
+              avatar: loggedInUser.image || "",
+            }}
+          />
+        )}
       </SidebarFooter>
     </Sidebar>
   );

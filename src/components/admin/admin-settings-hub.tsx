@@ -13,6 +13,7 @@ import {
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import type { AdminUserListItem } from "@/lib/admin/queries";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TABS = [
   { value: "admins", label: "Admin" },
@@ -40,6 +41,42 @@ const COPY: Record<Tab, string> = {
 
 function isConfigSection(tab: Tab): tab is AdminSettingsSection {
   return tab !== "admins";
+}
+
+function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
+  if (section === "flow") {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 3 }).map((_, col) => (
+          <div key={col} className="space-y-2">
+            <Skeleton className="h-3 w-16" />
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (section === "prompts") {
+    return (
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full" />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="max-w-xl space-y-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="space-y-1.5">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function AdminConfigurationPanel({
@@ -75,7 +112,7 @@ function AdminConfigurationPanel({
     return <p className="text-destructive text-sm">{error}</p>;
   }
   if (!settings || !defaults) {
-    return <p className="text-muted-foreground text-sm">Loading…</p>;
+    return <SettingsSkeleton section={section} />;
   }
   return (
     <AdminSettingsForm
@@ -121,7 +158,7 @@ export function AdminSettingsHub({
   initialItems: AdminUserListItem[];
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<SettingsSkeleton section="voice" />}>
       <AdminSettingsHubInner initialItems={initialItems} />
     </Suspense>
   );
