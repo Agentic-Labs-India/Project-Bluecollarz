@@ -200,6 +200,12 @@ export const jobCreateSchema = z.object({
   priority: z.enum(JOB_PRIORITIES).optional(),
   applicationStepTemplates: applicationStepsSchema,
   customQuestions: customQuestionsSchema.optional(),
+  /** MEA Recruiting Agent RC number — optional until Model 2 binding. */
+  raRcNumber: z.preprocess((val) => {
+    if (val === null || val === undefined) return null;
+    const s = String(val).trim();
+    return s.length ? s : null;
+  }, z.string().max(64).nullable().optional()),
   publish: z.boolean().optional(),
 });
 
@@ -391,6 +397,7 @@ export function buildJobDocument(
     customQuestions,
     status: publish ? "underVerification" : "draft",
     publishedAt: null,
+    raRcNumber: input.raRcNumber?.trim() || null,
     createdAt: now,
     updatedAt: now,
   };

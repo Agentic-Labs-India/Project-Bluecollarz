@@ -19,9 +19,12 @@ export interface PlacementAuditEventDocument {
   createdAt: Date;
 }
 
+const ALWAYS_RECORD_KINDS = new Set(["job_published_after_admin_verify"]);
+
 /**
  * Append an immutable placement/journey audit event.
- * No-ops (returns null) unless ENABLE_PLACEMENT_AUDIT=1.
+ * Job-publish events always persist. Other Model 2 kinds no-op unless
+ * ENABLE_PLACEMENT_AUDIT=1.
  */
 export async function appendPlacementAuditEvent(input: {
   kind: string;
@@ -30,7 +33,12 @@ export async function appendPlacementAuditEvent(input: {
   raRcNumber?: string;
   payload?: Record<string, unknown>;
 }): Promise<PlacementAuditEventDocument | null> {
-  if (!isPlacementAuditEnabled()) return null;
+  if (
+    !ALWAYS_RECORD_KINDS.has(input.kind) &&
+    !isPlacementAuditEnabled()
+  ) {
+    return null;
+  }
 
   const doc: PlacementAuditEventDocument = {
     eventId: new ObjectId().toHexString(),

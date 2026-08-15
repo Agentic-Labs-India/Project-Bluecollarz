@@ -44,6 +44,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },
   { title: "Blog", url: "/admin/blog", icon: FileText },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 /** Base path for each profile area; everything under these requires auth. */

@@ -9,7 +9,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 pt-28 pb-8 md:px-8 md:pt-32">
-      <LegalDoc title="Privacy Notice" updated="August 14, 2026 · Version 1.0">
+      <LegalDoc title="Privacy Notice" updated="August 15, 2026 · Version 1.1">
         <p className="border-border bg-muted/40 border p-3 text-sm">
           Pending counsel clearance before relying on this notice for live
           placements. Data Fiduciary: Blucollarz Technologies Private Limited.
@@ -88,6 +88,10 @@ export default function PrivacyPage() {
               Operate your account, communicate with you, and keep a secure
               audit record of journey events
             </li>
+            <li>
+              Evaluate you for a role using AI interviews, scores, transcripts,
+              and optional recordings when you grant evaluation consent
+            </li>
             <li>Detect fraud, protect workers, and comply with law</li>
           </ul>
         </LegalSection>
@@ -95,11 +99,13 @@ export default function PrivacyPage() {
         <LegalSection title="1.4 Legal basis — your consent">
           <p>
             We process verification data on the basis of your consent, given
-            through our Consent Notice before DigiLocker collection. Consent is
-            purpose-specific and recorded immutably. You can withdraw it at any
-            time from Settings or by contacting the Grievance Officer. Certain
-            steps may also rely on legal obligation (for example
-            emigration-clearance requirements).
+            through our Consent Notice before DigiLocker collection. You must
+            hear the notice (Read aloud) before agreeing; agreement is recorded
+            as a voice confirmation. Consent is purpose-specific (including a
+            separate evaluation purpose for interviews) and recorded immutably.
+            You can withdraw it at any time from Settings or by contacting the
+            Grievance Officer. Certain steps may also rely on legal obligation
+            (for example emigration-clearance requirements).
           </p>
         </LegalSection>
 
@@ -117,7 +123,11 @@ export default function PrivacyPage() {
         <LegalSection title="1.6 Who we share data with">
           <ul className="list-disc space-y-2 ps-5">
             <li>
-              Vetted employers — conclusions &amp; assurance levels only
+              Vetted employers — verification conclusions and assurance levels,
+              plus allowlisted resume fields used for matching (not email,
+              phone, PAN, Aadhaar, date of birth, or address). Interview scores,
+              transcripts, recordings, and answers only if you granted
+              evaluation consent
             </li>
             <li>
               Licensed Recruiting Agent — data needed to perform regulated
@@ -153,7 +163,10 @@ export default function PrivacyPage() {
             Under the Digital Personal Data Protection Act, 2023 you can ask us
             for access, correction/completion, erasure, withdrawal of consent,
             nomination, and grievance. Start in Settings (Data rights) or email
-            the Grievance Officer. See{" "}
+            the Grievance Officer. Correction is completed by updating your
+            profile. Erasure is completed with Delete account after we can
+            verify it is you — submitting an erasure request does not wipe the
+            account by itself. See{" "}
             <a className="text-foreground underline underline-offset-4" href="/grievance">
               /grievance
             </a>

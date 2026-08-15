@@ -27,6 +27,7 @@ export const COLLECTIONS = {
   RIGHTS_REQUESTS: "RightsRequests",
   PLACEMENT_AUDIT_EVENTS: "PlacementAuditEvents",
   BREACH_INCIDENTS: "BreachIncidents",
+  PLATFORM_SETTINGS: "PlatformSettings",
 } as const;
 
 /** 24-char hex Mongo id. */

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
 import { resolveTtsLanguage } from "@/lib/ai/voice/languages";
-import { sanitizeForTts, TTS_VOICE } from "@/lib/ai/voice/style";
+import { sanitizeForTts } from "@/lib/ai/voice/style";
+import { getAiRuntime } from "@/lib/ai/runtime";
 
 export const maxDuration = 30;
 
@@ -34,9 +35,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing text" }, { status: 400 });
     }
 
+    const settings = await getAiRuntime();
+    const voice = settings.voice;
     const languageCode = resolveTtsLanguage(
       typeof body?.language_code === "string" ? body.language_code : null,
-      TTS_VOICE.languageCode,
+      resolveTtsLanguage(voice.ttsLanguageCode),
     );
 
     const upstream = await fetch("https://api.sarvam.ai/text-to-speech/stream", {
@@ -48,12 +51,12 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         text,
         target_language_code: languageCode,
-        model: TTS_VOICE.model,
-        speaker: TTS_VOICE.speaker,
-        pace: TTS_VOICE.pace,
-        temperature: TTS_VOICE.temperature,
-        output_audio_codec: TTS_VOICE.outputAudioCodec,
-        output_audio_bitrate: TTS_VOICE.outputAudioBitrate,
+        model: voice.ttsModel,
+        speaker: voice.ttsSpeaker,
+        pace: voice.ttsPace,
+        temperature: voice.ttsTemperature,
+        output_audio_codec: voice.ttsCodec,
+        output_audio_bitrate: voice.ttsBitrate,
       }),
     });
 

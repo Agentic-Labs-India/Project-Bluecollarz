@@ -111,7 +111,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const agent = buildInterviewAgent({
+  const agent = await buildInterviewAgent({
     interviewId: idHex(interview._id) || id,
     stageId: interview.stageId,
     jobTitle: interview.jobTitle,

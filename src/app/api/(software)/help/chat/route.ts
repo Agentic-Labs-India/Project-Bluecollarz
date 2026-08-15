@@ -8,8 +8,12 @@ import {
 } from "ai";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
-import { getGatewayModel } from "@/lib/ai/gateway-model";
-import { buildHelpSystemPrompt } from "@/lib/support/prompt";
+import {
+  getAiRuntime,
+  llmModel,
+  llmTemp,
+  renderHelpPrompt,
+} from "@/lib/ai/runtime";
 import { createSupportTicket } from "@/lib/support/tickets";
 import {
   SUPPORT_PRIORITIES,
@@ -19,8 +23,6 @@ import {
 } from "@/lib/support/types";
 
 export const maxDuration = 60;
-
-const gatewayModel = getGatewayModel();
 
 /** Turns sent to the model (short context window). */
 const HELP_MODEL_MESSAGE_LIMIT = 16;
@@ -70,11 +72,16 @@ export async function POST(request: Request) {
   // Ticket transcript uses the fuller recent history, not just the model window.
   const transcript = transcriptFromMessages(messages);
 
+  const settings = await getAiRuntime();
   const result = streamText({
-    model: gatewayModel,
-    instructions: buildHelpSystemPrompt(auth.user.profileType, languageCode),
+    model: llmModel(settings),
+    instructions: renderHelpPrompt(
+      settings,
+      auth.user.profileType,
+      languageCode,
+    ),
     messages: await convertToModelMessages(recent),
-    temperature: 0.4,
+    temperature: llmTemp(settings, "help"),
     stopWhen: isStepCount(6),
     tools: {
       createSupportTicket: tool({

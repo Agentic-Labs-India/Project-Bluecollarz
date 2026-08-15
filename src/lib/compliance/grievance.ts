@@ -1,7 +1,9 @@
 /**
- * Grievance Officer / Data Protection contact — env-driven for ops scale.
- * Fill via env; never invent a person in code.
+ * Grievance Officer / Data Protection contact.
+ * Admin Settings is the source of truth; env is fallback until saved.
  */
+
+import { getPlatformSettings } from "@/lib/admin/platform-settings";
 
 export interface GrievanceOfficerPublic {
   role: string;
@@ -16,17 +18,14 @@ export interface GrievanceOfficerPublic {
   interim: boolean;
 }
 
-export function getGrievanceOfficer(): GrievanceOfficerPublic {
-  const name = process.env.DPDP_GRIEVANCE_OFFICER_NAME?.trim();
-  const email =
-    process.env.DPDP_GRIEVANCE_OFFICER_EMAIL?.trim() ||
-    "support@blucollarz.com";
-  const phone = process.env.DPDP_GRIEVANCE_OFFICER_PHONE?.trim();
-  const postalAddress =
-    process.env.DPDP_GRIEVANCE_OFFICER_ADDRESS?.trim() || "";
-  const languages = (
-    process.env.DPDP_GRIEVANCE_OFFICER_LANGUAGES || "Hindi,English"
-  )
+export async function getGrievanceOfficer(): Promise<GrievanceOfficerPublic> {
+  const settings = await getPlatformSettings();
+  const g = settings.grievanceOfficer;
+  const name = g.name.trim();
+  const email = g.email.trim() || "support@blucollarz.com";
+  const phone = g.phone.trim();
+  const postalAddress = g.address.trim();
+  const languages = (g.languages || "Hindi,English")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);

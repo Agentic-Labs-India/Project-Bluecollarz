@@ -4,16 +4,16 @@ Manual checks before claiming packet-aligned:
 
 1. Hire list + applicant detail: **no email, phone, PAN, Aadhaar, DOB, address** — only allowlisted resume fields + `assurance` (AL + per-attribute status). Nested education/work are field-allowlisted.
 2. DigiLocker **start and callback** require active identity+contact consent (current notice version). Withdraw mid-OAuth blocks the write.
-3. Consent panel: purpose toggles, **Read aloud**, **I agree**, **Not now**, **Withdraw**, **Ask me a question → OWRC 1800 11 3090**.
-4. Granting consent appends `ConsentEvents`; withdraw appends new row (history intact). Method is `voice_tap` after Read aloud. Settings → Withdraw consent also appends withdrawn.
-5. After withdraw, hire APIs return withheld assurance (AL0) — raw KYC stays fiduciary-side only.
-6. `/privacy` and `/grievance` public; GO fields driven by `DPDP_GRIEVANCE_OFFICER_*` env.
+3. Consent panel: purpose toggles (including **evaluation**), **Read aloud** (required, including compact mode), **I agree** disabled until Read aloud, **Not now**, **Withdraw**, **Ask me a question → OWRC 1800 11 3090**. Notice version **1.1**.
+4. Granting consent appends `ConsentEvents`; withdraw appends new row (history intact). Grant method must be `voice_tap` (server rejects other methods). Settings → Withdraw consent also appends withdrawn.
+5. After withdraw, hire APIs return withheld assurance (AL0) — raw KYC stays fiduciary-side only. Interview scores, transcripts, recordings, and custom answers are withheld without **evaluation** consent (`interviewRelease`).
+6. `/privacy` and `/grievance` public; GO fields driven by `DPDP_GRIEVANCE_OFFICER_*` env. Page stays interim until name, phone, and postal address are set.
 7. Analytics off by default; cookie banner; signed-in banner/rail sync `users.cookiesEnabled`.
-8. Settings → Access request downloads JSON export; `/admin/rights` queue works (admin notes not returned to workers).
+8. Settings → Access request downloads JSON export; `/admin/rights` queue works (admin notes not returned to workers). Correction points to `/candidate/profile`. Erasure is **not** auto-delete: log the request, then Delete account (`#delete-account`) after identity checks.
 9. `/admin/breaches` can open incident + mark Board/principal notified (copy preview).
 10. Account delete removes apps/interviews/blobs/inquiries/consent/rights.
-11. DOB under 16 rejected on profile save; DigiLocker under-16 blocked.
+11. DOB under 16 rejected on profile save; DigiLocker **requires DOB** and blocks under-16.
 12. DigiLocker stores `kyc.attributes` eight-attribute map (education/pcc/passport remain `not_started` until pipelines ship).
-13. `ENABLE_PLACEMENT_AUDIT=1` records job publish events; `jobs.raRcNumber` field ready for RA binding.
+13. Job-publish audit (`job_published_after_admin_verify`) **always** records. Other Model 2 kinds still need `ENABLE_PLACEMENT_AUDIT=1`. `jobs.raRcNumber` is writable on the hire job form and admin approve sheet.
 
 Not legal advice — counsel must clear notices, name the Grievance Officer, and Emigration Model 2 before live placements.

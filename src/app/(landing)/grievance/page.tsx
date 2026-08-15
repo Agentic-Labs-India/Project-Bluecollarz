@@ -7,8 +7,8 @@ export const metadata = {
     "Grievance Officer and Data Protection contact for Blucollarz under the DPDP Act, 2023.",
 };
 
-export default function GrievancePage() {
-  const go = getGrievanceOfficer();
+export default async function GrievancePage() {
+  const go = await getGrievanceOfficer();
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 pt-28 pb-8 md:px-8 md:pt-32">

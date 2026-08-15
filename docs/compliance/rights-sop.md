@@ -7,8 +7,8 @@ Internal SOP aligned to counsel packet Artifact 3.
 | Right | Worker ask | Our action |
 | --- | --- | --- |
 | Access | Summary of data + who shared with | JSON export from Settings / rights API |
-| Correction | Fix wrong / complete missing | Update profile; re-verify if needed; log |
-| Erasure | Delete data | Account delete cascade (+ inquiries, consent, rights) |
+| Correction | Fix wrong / complete missing | Worker updates `/candidate/profile`; request is logged; re-verify if needed |
+| Erasure | Delete data | **Do not auto-delete from the queue.** Verify identity, then the worker completes erasure via Delete account (cascade: apps, interviews, blobs, inquiries, consent, rights) |
 | Withdraw consent | Stop consent-based processing | Append `withdrawn` ConsentEvent; DigiLocker gated |
 | Nominate | Name someone to act | Rights request with nominee fields |
 | Grievance | Complaint | Route to Grievance Officer (`/grievance`) |
@@ -29,6 +29,6 @@ Internal SOP aligned to counsel packet Artifact 3.
 
 ## Product surfaces
 
-- Candidate: `/candidate/settings` → Data rights
-- Admin: `/admin/rights`
+- Candidate: `/candidate/settings` → Data rights; correction via `/candidate/profile`; erasure via Delete account (`#delete-account`) after the request is logged
+- Admin: `/admin/rights` (queue only — resolving an erasure request does not delete the account)
 - APIs: `/api/candidate/rights`, `/api/admin/rights`

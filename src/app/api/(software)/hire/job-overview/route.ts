@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getGatewayModel } from "@/lib/ai/gateway-model";
+import {
+  getAiRuntime,
+  llmModel,
+  llmTemp,
+  renderJobOverviewPrompt,
+} from "@/lib/ai/runtime";
 import { requireProfile } from "@/lib/auth/session";
 import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
 
 export const maxDuration = 60;
-
-const gatewayModel = getGatewayModel();
 
 const requestSchema = z.object({
   roleType: z.string().trim().min(2).max(120),
@@ -97,24 +100,12 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .join("\n");
 
+    const settings = await getAiRuntime();
     const { output } = await generateText({
-      model: gatewayModel,
+      model: llmModel(settings),
+      temperature: llmTemp(settings, "jobOverview"),
       output: Output.object({ schema: overviewSchema }),
-      prompt: `You write clear, industry-standard job overviews for Blucollarz — a platform for blue-collar and skilled-trade hiring (warehouse, construction, driving, facilities, manufacturing, field service, hospitality ops, etc.).
-
-Write practical hiring copy a site supervisor or recruiter would post. No fluff, no corporate buzzwords, no DEI boilerplate, no emoji.
-
-Rules:
-- Plain, direct English. Short sentences.
-- Responsibilities and requirements must be specific and checkable on a worksite.
-- Match the experience level given (do not over-qualify entry roles or under-qualify senior ones).
-- Prefer tools, safety, licenses, physical demands, and shift/site realities when relevant.
-- Do not invent company names, exact salaries, or fake certifications the recruiter did not mention.
-- If must-haves were provided, weave them into requirements without repeating word-for-word as filler.
-- Always return niceToHave as an array (use [] if none) and workingConditions as a string (use "" if none).
-
-Recruiter brief:
-${contextLines}`,
+      prompt: renderJobOverviewPrompt(settings, contextLines),
     });
 
     if (!output) {

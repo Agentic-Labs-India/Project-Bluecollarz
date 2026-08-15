@@ -78,6 +78,7 @@ type ApplicantDetailResponse = {
     partTimeCompensation: number | null;
   };
   assurance: HireAssuranceView;
+  interviewRelease?: boolean;
   interviews: InterviewDetail[];
 };
 
@@ -717,11 +718,22 @@ export function ApplicantSheet({
                   </AccordionContent>
                 </AccordionItem>
 
+                {data.interviewRelease === false ? (
+                  <p className="text-muted-foreground px-1 py-3 text-sm">
+                    Interview transcripts, recordings, scores, and answers are
+                    withheld. The candidate has not granted evaluation consent.
+                  </p>
+                ) : null}
+
                 <AccordionItem value="ai-communication">
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
                       {interviewStageTitle("ai-communication")}
-                      {communication?.analysis?.overall != null ? (
+                      {data.interviewRelease === false ? (
+                        <Badge variant="outline" className="font-normal">
+                          Withheld
+                        </Badge>
+                      ) : communication?.analysis?.overall != null ? (
                         <Badge className="tabular-nums">
                           {communication.analysis.overall}/10
                         </Badge>
@@ -735,7 +747,11 @@ export function ApplicantSheet({
                     </span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    {communication ? (
+                    {data.interviewRelease === false ? (
+                      <p className="text-sm">
+                        Withheld until the candidate grants evaluation consent.
+                      </p>
+                    ) : communication ? (
                       <InterviewAccordionBody interview={communication} />
                     ) : (
                       <p className="text-sm">
@@ -749,7 +765,11 @@ export function ApplicantSheet({
                   <AccordionTrigger>
                     <span className="flex items-center gap-2">
                       {interviewStageTitle("ai-domain")}
-                      {domain?.analysis?.overall != null ? (
+                      {data.interviewRelease === false ? (
+                        <Badge variant="outline" className="font-normal">
+                          Withheld
+                        </Badge>
+                      ) : domain?.analysis?.overall != null ? (
                         <Badge className="tabular-nums">
                           {domain.analysis.overall}/10
                         </Badge>
@@ -761,7 +781,11 @@ export function ApplicantSheet({
                     </span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    {domain ? (
+                    {data.interviewRelease === false ? (
+                      <p className="text-sm">
+                        Withheld until the candidate grants evaluation consent.
+                      </p>
+                    ) : domain ? (
                       <InterviewAccordionBody interview={domain} />
                     ) : (
                       <p className="text-sm">
@@ -776,14 +800,21 @@ export function ApplicantSheet({
                     <span className="flex items-center gap-2">
                       {interviewStageTitle("custom-questions")}
                       <Badge variant="outline" className="font-normal">
-                        {customQuestions
-                          ? customQuestions.status
-                          : "Not started"}
+                        {data.interviewRelease === false
+                          ? "Withheld"
+                          : customQuestions
+                            ? customQuestions.status
+                            : "Not started"}
                       </Badge>
                     </span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    {customQuestions ? (
+                    {data.interviewRelease === false ? (
+                      <p className="text-sm">
+                        Answers are withheld until the candidate grants
+                        evaluation consent.
+                      </p>
+                    ) : customQuestions ? (
                       <CustomQuestionsAccordionBody
                         interview={customQuestions}
                       />

@@ -152,16 +152,19 @@ export function digilockerProfileSet(
 
   const dobWire = digilockerDobToWire(dl.dob);
   const dob = dobWire ? parseDateOnly(dobWire) : null;
-  if (dob) {
-    const cutoff = new Date();
-    cutoff.setFullYear(cutoff.getFullYear() - 16);
-    if (dob > cutoff) {
-      throw new Error(
-        "You must be at least 16 years old to complete DigiLocker verification on Blucollarz",
-      );
-    }
-    $set.dateOfBirth = dob;
+  if (!dob) {
+    throw new Error(
+      "DigiLocker did not return a date of birth. We cannot confirm you are at least 16, so verification cannot complete.",
+    );
   }
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 16);
+  if (dob > cutoff) {
+    throw new Error(
+      "You must be at least 16 years old to complete DigiLocker verification on Blucollarz",
+    );
+  }
+  $set.dateOfBirth = dob;
 
   if (dl.address?.trim()) $set.location = dl.address.trim();
 

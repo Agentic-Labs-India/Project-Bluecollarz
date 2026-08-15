@@ -15,7 +15,14 @@ import { formatZodError } from "@/lib/utils";
 type RouteContext = { params: Promise<{ id: string }> };
 
 const reviewSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("approve") }),
+  z.object({
+    action: z.literal("approve"),
+    raRcNumber: z.preprocess((val) => {
+      if (typeof val !== "string") return undefined;
+      const s = val.trim();
+      return s.length ? s : undefined;
+    }, z.string().max(64).optional()),
+  }),
   z.object({
     action: z.literal("deny"),
     reason: z
@@ -75,6 +82,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         const item = await approveJobVerification({
           id,
           reviewerName: auth.user.name,
+          raRcNumber: parsed.data.raRcNumber,
         });
         return NextResponse.json({ item });
       }

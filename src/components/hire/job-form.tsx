@@ -52,6 +52,7 @@ const defaultValues: JobFormValues = {
   priority: "medium",
   applicationStepTemplates: DEFAULT_APPLICATION_STEP_TEMPLATES,
   customQuestions: [],
+  raRcNumber: null,
   publish: false,
 };
 
@@ -231,6 +232,23 @@ export function JobForm({
             placeholder="$100 – $130 / hour"
             required
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="raRcNumber">Recruiting Agent RC number</Label>
+          <Input
+            id="raRcNumber"
+            value={values.raRcNumber ?? ""}
+            onChange={(e) =>
+              update("raRcNumber", e.target.value.trim() ? e.target.value : null)
+            }
+            placeholder="MEA RA RC number (optional)"
+            maxLength={64}
+          />
+          <p className="text-muted-foreground text-xs">
+            Used for Emigration Model 2 binding when a licensed RA is attached
+            to this role.
+          </p>
         </div>
 
         <div className="space-y-2">

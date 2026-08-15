@@ -20,6 +20,7 @@ import { requireProfile } from "@/lib/auth/session";
 import { toHireAssuranceView, withheldHireAssuranceView } from "@/lib/compliance/arm";
 import {
   HIRE_RELEASE_REQUIRED_PURPOSES,
+  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
   principalsWithGrantedPurposes,
 } from "@/lib/compliance/consent";
 import { idHex } from "@/lib/utils";
@@ -141,10 +142,16 @@ async function enrichApplicants(
   }
 
   const userMap = new Map(users.map((user) => [idHex(user._id), user]));
-  const releaseOk = await principalsWithGrantedPurposes(
-    applicantHexes,
-    HIRE_RELEASE_REQUIRED_PURPOSES,
-  );
+  const [releaseOk, interviewReleaseOk] = await Promise.all([
+    principalsWithGrantedPurposes(
+      applicantHexes,
+      HIRE_RELEASE_REQUIRED_PURPOSES,
+    ),
+    principalsWithGrantedPurposes(
+      applicantHexes,
+      INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+    ),
+  ]);
 
   return docs.map((doc) => {
     const applicantHex = idHex(doc.applicantId);
@@ -159,7 +166,9 @@ async function enrichApplicants(
       image: user?.image ?? null,
       status: doc.status,
       appliedAt: doc.createdAt.toISOString(),
-      interviews: interviewsByApplicant.get(applicantHex) ?? [],
+      interviews: interviewReleaseOk.has(applicantHex)
+        ? (interviewsByApplicant.get(applicantHex) ?? [])
+        : [],
       identityAssured: assurance.identityAssured,
       assuranceLevel: assurance.level,
     };

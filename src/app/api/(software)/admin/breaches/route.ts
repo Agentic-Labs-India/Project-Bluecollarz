@@ -38,7 +38,9 @@ export async function GET() {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
     const items = await listBreachIncidents();
-    return NextResponse.json({ items: items.map(serializeBreach) });
+    return NextResponse.json({
+      items: await Promise.all(items.map(serializeBreach)),
+    });
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/breaches:", error);
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
       ...parsed.data,
       createdBy: auth.user.id,
     });
-    return NextResponse.json({ item: serializeBreach(item) });
+    return NextResponse.json({ item: await serializeBreach(item) });
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("POST /api/admin/breaches:", error);
@@ -92,7 +94,7 @@ export async function PATCH(req: NextRequest) {
     if (!item) {
       return NextResponse.json({ error: "Incident not found" }, { status: 404 });
     }
-    return NextResponse.json({ item: serializeBreach(item) });
+    return NextResponse.json({ item: await serializeBreach(item) });
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/admin/breaches:", error);

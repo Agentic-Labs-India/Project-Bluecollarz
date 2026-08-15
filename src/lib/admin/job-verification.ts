@@ -33,6 +33,7 @@ export type AdminJobVerificationItem = AdminJobVerificationListItem & {
   stateLabel: string | null;
   stages: string[];
   customQuestions: string[];
+  raRcNumber: string | null;
 };
 
 type UserEmailDoc = {
@@ -91,6 +92,7 @@ function toDetailItem(
     customQuestions: normalizeCustomQuestions(doc.customQuestions).map(
       (q) => q.prompt,
     ),
+    raRcNumber: doc.raRcNumber ?? null,
   };
 }
 
@@ -172,6 +174,7 @@ async function sendJobReviewEmail(opts: {
 export async function approveJobVerification(opts: {
   id: string;
   reviewerName?: string | null;
+  raRcNumber?: string | null;
 }): Promise<AdminJobVerificationItem> {
   const { id, reviewerName } = opts;
   if (!isId(id)) throw new Error("Invalid job id");
@@ -192,6 +195,9 @@ export async function approveJobVerification(opts: {
     throw new Error("Recruiter email not found — cannot send approval email");
   }
 
+  const raRcNumber =
+    opts.raRcNumber?.trim() || existing.raRcNumber?.trim() || null;
+
   const now = new Date();
   const updated = await collection.findOneAndUpdate(
     { _id: matchId(id) as never, status: "underVerification" },
@@ -200,6 +206,7 @@ export async function approveJobVerification(opts: {
         status: "published",
         publishedAt: existing.publishedAt ?? now,
         updatedAt: now,
+        raRcNumber,
       },
     },
     { returnDocument: "after" },
@@ -207,7 +214,7 @@ export async function approveJobVerification(opts: {
   if (!updated) throw new Error("Update failed");
   revalidatePublishedJobsCache();
 
-  // No-ops unless ENABLE_PLACEMENT_AUDIT=1.
+  // Job-publish events always persist (RA binding trail).
   await appendPlacementAuditEvent({
     kind: "job_published_after_admin_verify",
     jobId: id,

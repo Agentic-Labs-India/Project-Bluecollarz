@@ -89,8 +89,10 @@ export async function updateBreachIncident(input: {
 }
 
 /** Plain-language notification template for ops / email desk. */
-export function breachNotificationCopy(incident: BreachIncidentDocument) {
-  const go = getGrievanceOfficer();
+export async function breachNotificationCopy(
+  incident: BreachIncidentDocument,
+) {
+  const go = await getGrievanceOfficer();
   return {
     subject: `Personal data breach notice — ${incident.incidentId}`,
     body: [
@@ -106,7 +108,7 @@ export function breachNotificationCopy(incident: BreachIncidentDocument) {
   };
 }
 
-export function serializeBreach(doc: BreachIncidentDocument) {
+export async function serializeBreach(doc: BreachIncidentDocument) {
   return {
     incidentId: doc.incidentId,
     title: doc.title,
@@ -124,6 +126,6 @@ export function serializeBreach(doc: BreachIncidentDocument) {
     createdBy: doc.createdBy,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
-    notificationPreview: breachNotificationCopy(doc),
+    notificationPreview: await breachNotificationCopy(doc),
   };
 }

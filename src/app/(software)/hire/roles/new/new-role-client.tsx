@@ -29,6 +29,7 @@ function buildJobPayload(values: JobFormValues, publish: boolean) {
     priority: values.priority,
     applicationStepTemplates: steps?.length ? steps : undefined,
     customQuestions: values.customQuestions ?? [],
+    raRcNumber: values.raRcNumber?.trim() || null,
     publish,
   };
 }

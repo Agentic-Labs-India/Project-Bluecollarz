@@ -94,11 +94,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (parsed.data.action === "grant" && parsed.data.method !== "voice_tap") {
+      return NextResponse.json(
+        {
+          error:
+            "Read the notice aloud first. Agreement must be recorded as a voice confirmation.",
+        },
+        { status: 400 },
+      );
+    }
+
     const event = await appendConsentEvent({
       dataPrincipalId: auth.user.id,
       purposes: parsed.data.purposes,
       status: parsed.data.action === "grant" ? "granted" : "withdrawn",
-      method: parsed.data.method ?? "web_tap",
+      method:
+        parsed.data.action === "grant"
+          ? "voice_tap"
+          : (parsed.data.method ?? "web_tap"),
     });
 
     const active = await getActivePurposes(auth.user.id);

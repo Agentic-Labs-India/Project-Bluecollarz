@@ -21,14 +21,15 @@ import {
   type CandidateProfileFields,
   type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
-import { getGatewayModel } from "@/lib/ai/gateway-model";
-import { requireProfile } from "@/lib/auth/session";
 import {
-  voiceLanguagePrompt,
-  VOICE_TOOL_DATA_PROMPT,
-  TTS_LANGUAGE_CODES,
-} from "@/lib/ai/voice/languages";
-import { VOICE_DELIVERY_PROMPT } from "@/lib/ai/voice/style";
+  getAiRuntime,
+  llmModel,
+  llmTemp,
+  renderOnboardingPrompt,
+  renderProfileSummaryPrompt,
+} from "@/lib/ai/runtime";
+import { requireProfile } from "@/lib/auth/session";
+import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
 import { lookupPlaceOptions } from "@/lib/core/geo/places";
 import { parseDateOnly } from "@/lib/core/dates";
 import { isIdentityVerified } from "@/lib/kyc";
@@ -42,8 +43,6 @@ const GEO_PLACE_PROMPT = `Places (must use country-state-city official English n
 - Residence flow: country → state (if listed) → city. Each value must appear in listPlaceOptions.
 - Postal code can be free text; place names cannot.
 - Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).`;
-
-const gatewayModel = getGatewayModel();
 
 type UserDoc = CandidateProfileFields & {
   _id: unknown;
@@ -167,14 +166,8 @@ async function writeProfessionalSummary(
     )
     .join("\n");
 
-  const { text } = await generateText({
-    model: gatewayModel,
-    prompt: `Write a professional candidate summary for a job platform profile.
-Use ONLY the facts below. Do not invent employers, degrees, skills, or years.
-Tone: clear, confident, third-person or first-person is fine; 2–4 short paragraphs; plain text; no markdown bullets.
-If skills are empty, do not invent a skills list — focus on role, experience, education, and languages.
-
-Name: ${profile.name || "Candidate"}
+  const settings = await getAiRuntime();
+  const facts = `Name: ${profile.name || "Candidate"}
 Headline: ${profile.headline || "—"}
 Location: ${profile.location || "—"}
 Years of experience: ${profile.yearsExperience ?? "—"}
@@ -183,9 +176,12 @@ Skills (from resume only, may be empty): ${profile.skills.join(", ") || "—"}
 Education:
 ${edu || "—"}
 Work experience:
-${work || "—"}
+${work || "—"}`;
 
-Return ONLY the summary text.`,
+  const { text } = await generateText({
+    model: llmModel(settings),
+    temperature: llmTemp(settings, "profileSummary"),
+    prompt: renderProfileSummaryPrompt(settings, facts),
   });
 
   const cleaned = text.trim();
@@ -302,23 +298,17 @@ function asWorkList(value: unknown) {
 }
 
 async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
+  const settings = await getAiRuntime();
   const { text } = await generateText({
-    model: gatewayModel,
+    model: llmModel(settings),
+    temperature: llmTemp(settings, "resumeParse"),
     messages: [
       {
         role: "user",
         content: [
           {
             type: "text",
-            text: `Extract candidate profile JSON from this resume PDF. Return ONLY valid JSON with keys:
-phoneNumber (number|null — national digits only), phoneCountryCode (number|null — calling code, e.g. 91), headline, location, yearsExperience (number|null), skills (string[]), preferredCountries (string[]), summary (2-4 paragraphs),
-education (array of {school, degree, startYear (number|null), endYear (number|null), major, gpa (number|null)}),
-workExperience (array of {company, role, startYear (number|null), endYear (number|null), city, country, description}),
-languages (string[]), hobbies (string[]), portfolioUrl, otherLinks (string[]),
-residenceCountry, residenceState, residenceCity, residencePostalCode,
-fullTimeCompensation (number|null USD/year), partTimeCompensation (number|null USD/hour).
-Use "" / [] / null when unknown. endYear null means Present/ongoing. All numeric fields must be JSON numbers, never strings.
-For preferredCountries, residenceCountry, residenceState, and residenceCity: use official English geographic names only (e.g. "India", "Karnataka", "Bengaluru", "United Arab Emirates"). Do not use abbreviations like UAE/USA/UK.`,
+            text: settings.prompts.resumeParse,
           },
           {
             type: "file",
@@ -392,7 +382,7 @@ For preferredCountries, residenceCountry, residenceState, and residenceCity: use
   return { ok: true as const, ...result };
 }
 
-function buildAgent(
+async function buildAgent(
   userId: string,
   userName: string,
   opts: {
@@ -444,24 +434,16 @@ ${
 }
 Call selectResume at most once per session.`;
 
+  const settings = await getAiRuntime();
   return new ToolLoopAgent({
     id: "candidate-onboarding",
-    model: gatewayModel,
-    instructions: `You are Blucollarz's onboarding voice coach for candidates (workers).
-Speak in short, clear spoken sentences (1–3). The user answers by voice.
-${voiceLanguagePrompt(opts.languageCode)}
-${VOICE_DELIVERY_PROMPT}
-${VOICE_TOOL_DATA_PROMPT}
-${GEO_PLACE_PROMPT}
-${resumeContext}
-
-Interview fields only: headline/role, location, years of experience, education (at least one entry), work experience (at least one entry), and languages.
-NEVER ask about skills — skills are filled only when a resume PDF provides them. Do not invent or voice-collect skills.
-NEVER ask about professional summary — finishOnboarding generates and saves it automatically.
-NEVER ask for phone number, email, Aadhaar, PAN, gender, or date of birth — those come from DigiLocker / profile settings, not this interview.
-Never ask about work authorization, visas, work permits, citizenship, or legal eligibility to work in any country.
-Never invent facts. Prefer updateCandidateProfile for structured saves. Do not ask for or use resume URLs — PDFs are read in-memory only.
-After every updateCandidateProfile, if missing is empty / interviewComplete is true / complete is true, you MUST call finishOnboarding in the same turn.`,
+    model: llmModel(settings),
+    temperature: llmTemp(settings, "onboarding"),
+    instructions: renderOnboardingPrompt(settings, {
+      languageCode: opts.languageCode,
+      geoPlacePrompt: GEO_PLACE_PROMPT,
+      resumeContext,
+    }),
     stopWhen: isStepCount(24),
     tools: {
       selectVoiceLanguage: tool({
@@ -656,7 +638,7 @@ export async function POST(request: Request) {
     resumeApplied?.complete === true ||
     isCandidateProfileComplete(currentProfile);
 
-  const agent = buildAgent(user.id, user.name ?? "", {
+  const agent = await buildAgent(user.id, user.name ?? "", {
     resumeApplied,
     resumeParseFailed,
     languageCode,

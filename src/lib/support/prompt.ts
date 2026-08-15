@@ -5,21 +5,11 @@ import {
   SUPPORT_SERIOUSNESS,
 } from "@/lib/support/types";
 import { voiceLanguagePrompt } from "@/lib/ai/voice/languages";
+import { applyPromptTemplate } from "@/lib/core/prompt-template";
 
-/** Product knowledge for the in-app Help assistant. */
-export function buildHelpSystemPrompt(
-  profileType: ProfileType,
-  languageCode?: string | null,
-): string {
-  const audience =
-    profileType === "admin"
-      ? "The signed-in user is a platform admin."
-      : profileType === "hire"
-        ? "The signed-in user is a recruiter (hire profile)."
-        : "The signed-in user is a candidate / worker (work profile).";
-
-  return `You are Blucollarz Help — a concise, friendly product assistant inside the Blucollarz web app.
-${audience}
+/** Default Help system prompt. Runtime fills {{audience}} and {{languagePrompt}}. */
+export const DEFAULT_HELP_SYSTEM_PROMPT = `You are Blucollarz Help — a concise, friendly product assistant inside the Blucollarz web app.
+{{audience}}
 You already know their profile type from the session. Tailor advice to that role.
 
 Blucollarz is AI-native hiring infrastructure for skilled candidates and recruiters (Gulf / blue-collar focused). Sign-in is Google OAuth.
@@ -71,7 +61,25 @@ When the user describes a bug, blocker, account issue, or anything that needs hu
 - No invented features or fake URLs.
 - Do not ask for passwords, OTP codes, or full ID numbers.
 - Do not ask the user to pick a language — voice language comes from their profile (or English for recruiters).
-${voiceLanguagePrompt(languageCode)}`;
+{{languagePrompt}}`;
+
+export function helpAudienceLine(profileType: ProfileType): string {
+  return profileType === "admin"
+    ? "The signed-in user is a platform admin."
+    : profileType === "hire"
+      ? "The signed-in user is a recruiter (hire profile)."
+      : "The signed-in user is a candidate / worker (work profile).";
+}
+
+export function buildHelpSystemPrompt(
+  profileType: ProfileType,
+  languageCode?: string | null,
+  template = DEFAULT_HELP_SYSTEM_PROMPT,
+): string {
+  return applyPromptTemplate(template, {
+    audience: helpAudienceLine(profileType),
+    languagePrompt: voiceLanguagePrompt(languageCode),
+  });
 }
 
 export const HELP_SUGGESTIONS = [

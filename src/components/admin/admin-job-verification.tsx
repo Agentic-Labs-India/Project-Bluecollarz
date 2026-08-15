@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -69,6 +70,7 @@ export function AdminJobVerification() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [denyOpen, setDenyOpen] = useState(false);
   const [denyReason, setDenyReason] = useState("");
+  const [raRcNumber, setRaRcNumber] = useState("");
   const [actionLoading, setActionLoading] = useState<"approve" | "deny" | null>(
     null,
   );
@@ -123,6 +125,7 @@ export function AdminJobVerification() {
           return;
         }
         setDetail(json.item);
+        setRaRcNumber(json.item.raRcNumber ?? "");
       } catch {
         if (!cancelled) {
           toast.error("Failed to load job details");
@@ -145,7 +148,10 @@ export function AdminJobVerification() {
       const res = await fetch(`/api/admin/jobs/${selectedId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "approve" }),
+        body: JSON.stringify({
+          action: "approve",
+          raRcNumber: raRcNumber.trim() || undefined,
+        }),
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
@@ -314,6 +320,16 @@ export function AdminJobVerification() {
                   label="Custom questions"
                   items={detail.customQuestions}
                 />
+                <div className="space-y-2">
+                  <Label htmlFor="ra-rc-number">Recruiting Agent RC number</Label>
+                  <Input
+                    id="ra-rc-number"
+                    value={raRcNumber}
+                    onChange={(e) => setRaRcNumber(e.target.value)}
+                    placeholder="MEA RA RC number for Model 2 binding"
+                    maxLength={64}
+                  />
+                </div>
               </>
             )}
           </div>

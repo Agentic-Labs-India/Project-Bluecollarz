@@ -60,15 +60,11 @@ Blucollarz connects skilled people with hiring teams through AI onboarding, resu
 
 ## Models used per feature
 
-All LLM features go through the **Vercel AI Gateway**. The model id is configurable:
-
-```text
-AI_GATEWAY_MODEL  →  defaults to  openai/gpt-4o
-```
+All LLM features go through the **Vercel AI Gateway**. The model id is set in **Admin → Settings** (cached). Code default if nothing is saved yet: `openai/gpt-4o`. `AI_GATEWAY_API_KEY` is still required; the model id is not read from env.
 
 | Feature | Model / provider | How it’s used |
 |---------|------------------|---------------|
-| Candidate onboarding agent | `openai/gpt-4o` (or `AI_GATEWAY_MODEL`) | `ToolLoopAgent` — chat + tools to update profile |
+| Candidate onboarding agent | Admin Settings LLM (default `openai/gpt-4o`) | `ToolLoopAgent` — chat + tools to update profile |
 | Resume / PDF → profile | same | `generateText` on PDF bytes → structured JSON → MongoDB |
 | Communication interview (live chat) | same | `ToolLoopAgent` id `ai-communication-interview` |
 | Communication interview (scoring) | same | `generateText` + structured `Output.object` scores |
@@ -92,7 +88,7 @@ flowchart LR
   end
 
   subgraph Gateway["Vercel AI Gateway"]
-    LLM["openai/gpt-4o<br/>or AI_GATEWAY_MODEL"]
+    LLM["Admin Settings LLM"]
   end
 
   Mic --> STT
@@ -531,7 +527,7 @@ bun run lint    # Biome
 | `BETTER_AUTH_URL` | Auth base URL |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `MONGODB_URI` / `DB_NAME` | Database |
-| `AI_GATEWAY_MODEL` | Optional; default `openai/gpt-4o` |
+| `AI_GATEWAY_API_KEY` | Vercel AI Gateway credential (not the model id) |
 | `SARVAM_API_KEY` | TTS + STT |
 | `RESEND_API_KEY` (or `RESEND_API`) | Admin email desk |
 | `RESEND_FROM_EMAIL` | From address for admin compose |

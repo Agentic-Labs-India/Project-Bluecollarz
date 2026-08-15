@@ -14,12 +14,15 @@ const PURPOSE_LABELS: Record<string, string> = {
   qualification: "Educational certificates — to verify your qualifications",
   background: "Police Clearance Certificate — for a background conclusion",
   passport: "Passport — for identity and emigration processing",
+  evaluation:
+    "AI interviews, transcripts, and optional recording — to evaluate you for a role",
 };
 
 const PLAIN_LANGUAGE = [
   "Before you continue, we need your permission to check and use your details.",
   "We will check your documents through DigiLocker and other official sources to verify who you are, your qualifications, and your background.",
   "We will show only the results of those checks to trusted employers — never your actual documents.",
+  "If you agree to evaluation, we may share interview scores, transcripts, and recordings with the employer for that role.",
   "A licensed recruiting agent will use your details to recruit you for a job, as the law requires.",
   "You pay nothing. Ever. Employers pay us.",
   "You can see, correct, or delete your data any time, and withdraw this permission any time.",
@@ -57,7 +60,7 @@ export function ConsentNoticePanel({
   const [saving, setSaving] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState("");
-  const [noticeVersion, setNoticeVersion] = useState("1.0");
+  const [noticeVersion, setNoticeVersion] = useState("1.1");
   const [available, setAvailable] = useState<string[]>(
     Object.keys(PURPOSE_LABELS),
   );
@@ -72,6 +75,7 @@ export function ConsentNoticePanel({
     qualification: true,
     background: false,
     passport: false,
+    evaluation: true,
   });
   const [usedVoice, setUsedVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -238,17 +242,21 @@ export function ConsentNoticePanel({
           <p className="text-muted-foreground text-sm leading-relaxed">
             {PLAIN_LANGUAGE}
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={speaking}
-            onClick={() => void readAloud()}
-          >
-            {speaking ? "Reading…" : "Read aloud"}
-          </Button>
         </div>
-      ) : null}
+      ) : (
+        <p className="text-foreground text-sm font-medium">
+          Purpose consent (notice v{noticeVersion})
+        </p>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={speaking}
+        onClick={() => void readAloud()}
+      >
+        {speaking ? "Reading…" : usedVoice ? "Read aloud again" : "Read aloud"}
+      </Button>
 
       <div className="space-y-3">
         {available.map((purpose) => (
@@ -292,7 +300,7 @@ export function ConsentNoticePanel({
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          disabled={saving || !hasIdentityBundle}
+          disabled={saving || !hasIdentityBundle || !usedVoice}
           onClick={() => void grant()}
         >
           I agree
@@ -322,6 +330,11 @@ export function ConsentNoticePanel({
       {!hasIdentityBundle ? (
         <p className="text-muted-foreground text-xs">
           Turn on identity and contact to continue DigiLocker verification.
+        </p>
+      ) : null}
+      {hasIdentityBundle && !usedVoice ? (
+        <p className="text-muted-foreground text-xs">
+          Tap Read aloud first. Agreement is recorded as a voice confirmation.
         </p>
       ) : null}
     </div>

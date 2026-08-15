@@ -1,14 +1,16 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getGatewayModel } from "@/lib/ai/gateway-model";
 import type {
   CommunicationAnalysis,
   InterviewStageId,
   InterviewTranscriptTurn,
 } from "@/lib/interviews";
-import { htmlToPlainText } from "@/lib/core/rich-text";
-
-const gatewayModel = getGatewayModel();
+import {
+  getAiRuntime,
+  llmModel,
+  llmTemp,
+  renderAnalysisPrompt,
+} from "@/lib/ai/runtime";
 
 const analysisSchema = z.object({
   clarity: z.number().min(0).max(10),
@@ -20,43 +22,6 @@ const analysisSchema = z.object({
   strengths: z.array(z.string().min(1).max(200)).max(6),
   improvements: z.array(z.string().min(1).max(200)).max(6),
 });
-
-function analysisPrompt(opts: {
-  stageId: InterviewStageId;
-  jobTitle: string;
-  jobOverview?: string;
-  dialogue: string;
-}): string {
-  if (opts.stageId === "ai-domain") {
-    const overview =
-      htmlToPlainText(opts.jobOverview ?? "").trim() ||
-      "(no overview provided)";
-    return `You are scoring a candidate's DOMAIN interview for the role "${opts.jobTitle}".
-Use the role overview as the ground truth for what matters:
-"""
-${overview.slice(0, 6000)}
-"""
-Map scores as:
-- clarity = how clearly they explain domain concepts
-- fluency = how smoothly they reason through domain topics
-- confidence = composure when discussing the domain
-- professionalism = judgment and workplace maturity in domain scenarios
-Focus on domain knowledge, practical judgment, and role fit — not pure soft skills.
-Score each dimension 0–10. Be fair and specific.
-Return strengths and improvements as short actionable bullets.
-
-Transcript:
-${opts.dialogue || "(empty transcript)"}`;
-  }
-
-  return `You are scoring a candidate's COMMUNICATION interview for the role "${opts.jobTitle}".
-Focus only on communication skills (clarity, fluency, confidence, professionalism) — not domain expertise.
-Score each dimension 0–10. Be fair and specific.
-Return strengths and improvements as short actionable bullets.
-
-Transcript:
-${opts.dialogue || "(empty transcript)"}`;
-}
 
 /** Score interview transcript via AI Gateway (prompt varies by stage). */
 export async function analyzeInterviewTranscript(opts: {
@@ -70,11 +35,13 @@ export async function analyzeInterviewTranscript(opts: {
     .join("\n");
 
   try {
+    const settings = await getAiRuntime();
     const { output } = await generateText({
-      model: gatewayModel,
+      model: llmModel(settings),
+      temperature: llmTemp(settings, "analysis"),
       output: Output.object({ schema: analysisSchema }),
-      prompt: analysisPrompt({
-        stageId: opts.stageId,
+      prompt: renderAnalysisPrompt(settings, {
+        domain: opts.stageId === "ai-domain",
         jobTitle: opts.jobTitle,
         jobOverview: opts.jobOverview,
         dialogue,

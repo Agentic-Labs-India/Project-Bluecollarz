@@ -118,9 +118,19 @@ export async function POST(req: NextRequest) {
       ...(parsed.data.type === "withdraw"
         ? {
             message:
-              "Consent withdrawn. DigiLocker and employer assurance release are blocked until you grant again.",
+              "Consent withdrawn. DigiLocker, employer assurance, and interview release are blocked until you grant again.",
           }
-        : {}),
+        : parsed.data.type === "correction"
+          ? {
+              message:
+                "Correction request recorded. Update the relevant fields on your profile; we will re-verify if needed.",
+            }
+          : parsed.data.type === "erasure"
+            ? {
+                message:
+                  "Erasure request recorded. Use Delete account on this page to complete erasure after identity checks.",
+              }
+            : {}),
     });
   } catch (error) {
     rethrowIfPrerenderAbort(error);

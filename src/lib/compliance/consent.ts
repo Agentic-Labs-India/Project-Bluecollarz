@@ -4,7 +4,7 @@ import { ObjectId } from "mongodb";
 import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
 
 /** Consent notice version — bump when Artifact 2 text changes. */
-export const CONSENT_NOTICE_VERSION = "1.0";
+export const CONSENT_NOTICE_VERSION = "1.1";
 
 export const CONSENT_PURPOSES = [
   "identity",
@@ -12,6 +12,7 @@ export const CONSENT_PURPOSES = [
   "qualification",
   "background",
   "passport",
+  "evaluation",
 ] as const;
 
 export type ConsentPurpose = (typeof CONSENT_PURPOSES)[number];
@@ -39,6 +40,11 @@ export const DIGILOCKER_REQUIRED_PURPOSES: ConsentPurpose[] = [
 
 /** Hire-facing assurance release also requires active identity+contact consent. */
 export const HIRE_RELEASE_REQUIRED_PURPOSES = DIGILOCKER_REQUIRED_PURPOSES;
+
+/** Transcripts and recordings are released to the hirer only with this purpose. */
+export const INTERVIEW_RELEASE_REQUIRED_PURPOSES: ConsentPurpose[] = [
+  "evaluation",
+];
 
 export function isConsentPurpose(value: string): value is ConsentPurpose {
   return (CONSENT_PURPOSES as readonly string[]).includes(value);

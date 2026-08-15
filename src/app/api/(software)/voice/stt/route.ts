@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
+import { getAiRuntime } from "@/lib/ai/runtime";
 
 export const maxDuration = 30;
 
@@ -43,17 +44,20 @@ export async function POST(req: NextRequest) {
               : "speech.webm";
     const cleanFile = new File([audio], filename, { type: baseType });
 
+    const settings = await getAiRuntime();
+    const voice = settings.voice;
+
     const sarvamForm = new FormData();
     sarvamForm.append("file", cleanFile, filename);
-    sarvamForm.append("model", "saaras:v3");
-    sarvamForm.append("mode", "transcribe");
+    sarvamForm.append("model", voice.sttModel);
+    sarvamForm.append("mode", voice.sttMode);
 
     const language = formData.get("language_code");
     sarvamForm.append(
       "language_code",
       typeof language === "string" && language.trim()
         ? language.trim()
-        : "en-IN",
+        : voice.ttsLanguageCode || "en-IN",
     );
 
     const res = await fetch("https://api.sarvam.ai/speech-to-text", {

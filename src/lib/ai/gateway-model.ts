@@ -1,4 +1,2 @@
-/** Shared Vercel AI Gateway model id for all LLM routes. */
-export function getGatewayModel(): string {
-  return process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-4o";
-}
+/** Code default when Admin → Settings has no saved model id. Not read from env. */
+export const DEFAULT_GATEWAY_MODEL = "openai/gpt-4o";

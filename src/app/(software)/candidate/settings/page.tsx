@@ -63,7 +63,10 @@ export default function CandidateSettingsPage() {
 
       <DataRightsSection />
 
-      <section className="border-destructive/20 bg-card rounded-none border p-5 shadow-sm">
+      <section
+        id="delete-account"
+        className="border-destructive/20 bg-card rounded-none border p-5 shadow-sm"
+      >
         <p className="text-destructive mb-4 text-xs font-medium tracking-wide uppercase">
           Danger zone
         </p>

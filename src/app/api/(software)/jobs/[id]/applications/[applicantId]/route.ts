@@ -19,6 +19,7 @@ import {
 } from "@/lib/compliance/arm";
 import {
   HIRE_RELEASE_REQUIRED_PURPOSES,
+  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
   hasGrantedPurposes,
 } from "@/lib/compliance/consent";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -92,6 +93,10 @@ export async function GET(_req: Request, context: RouteContext) {
       applicantId,
       HIRE_RELEASE_REQUIRED_PURPOSES,
     );
+    const interviewReleaseOk = await hasGrantedPurposes(
+      applicantId,
+      INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+    );
     const assurance = releaseOk
       ? toHireAssuranceView(user)
       : withheldHireAssuranceView();
@@ -110,15 +115,17 @@ export async function GET(_req: Request, context: RouteContext) {
       stageId: doc.stageId,
       status: doc.status,
       jobTitle: doc.jobTitle,
-      analysis: doc.analysis ?? null,
-      videoUrl: doc.videoUrl ?? null,
+      analysis: interviewReleaseOk ? (doc.analysis ?? null) : null,
+      videoUrl: interviewReleaseOk ? (doc.videoUrl ?? null) : null,
       customQuestions: doc.customQuestions ?? [],
-      customAnswers: doc.customAnswers ?? [],
-      transcript: (doc.transcript ?? []).map((t) => ({
-        role: t.role,
-        text: t.text,
-        at: t.at instanceof Date ? t.at.toISOString() : String(t.at),
-      })),
+      customAnswers: interviewReleaseOk ? (doc.customAnswers ?? []) : [],
+      transcript: interviewReleaseOk
+        ? (doc.transcript ?? []).map((t) => ({
+            role: t.role,
+            text: t.text,
+            at: t.at instanceof Date ? t.at.toISOString() : String(t.at),
+          }))
+        : [],
       startedAt:
         doc.startedAt instanceof Date
           ? doc.startedAt.toISOString()
@@ -142,6 +149,7 @@ export async function GET(_req: Request, context: RouteContext) {
       },
       profile,
       assurance,
+      interviewRelease: interviewReleaseOk,
       interviews,
     });
   } catch (error) {

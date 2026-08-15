@@ -59,6 +59,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
         priority: doc.priority,
         applicationStepTemplates: doc.applicationStepTemplates,
         customQuestions: normalizeCustomQuestions(doc.customQuestions),
+        raRcNumber: doc.raRcNumber ?? null,
       },
     });
   } catch (error) {
@@ -119,7 +120,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     };
 
     for (const [key, value] of Object.entries(fields)) {
-      if (value === null && (key === "countryCode" || key === "stateCode")) {
+      if (
+        value === null &&
+        (key === "countryCode" || key === "stateCode" || key === "raRcNumber")
+      ) {
         $unset[key] = "";
       } else if (value !== undefined && value !== null) {
         $set[key] = value;

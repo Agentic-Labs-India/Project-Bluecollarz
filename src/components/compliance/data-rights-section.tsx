@@ -10,7 +10,7 @@ const TYPES = [
   { value: "access", label: "Access / export my data" },
   { value: "correction", label: "Correction / completion" },
   { value: "erasure", label: "Request erasure (use Delete account to erase)" },
-  { value: "withdraw", label: "Withdraw consent (stops DigiLocker + hire release)" },
+  { value: "withdraw", label: "Withdraw consent (stops DigiLocker, hire release, interviews)" },
   { value: "nominate", label: "Nominate someone" },
   { value: "grievance", label: "Grievance" },
 ] as const;
@@ -94,6 +94,12 @@ export function DataRightsSection() {
           json.message ||
             `Request ${json.item?.requestId ?? ""} submitted.`,
         );
+        if (type === "erasure") {
+          document.getElementById("delete-account")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
       }
       setDetails("");
       await load();
@@ -110,10 +116,15 @@ export function DataRightsSection() {
         <h2 className="text-foreground text-sm font-medium">Data rights</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           Access or export your data, request correction, withdraw consent
-          (stops DigiLocker and employer assurance release), nominate someone,
-          or raise a grievance. To erase your account and data, use Delete
-          account below. Provisional timelines: acknowledge in 72h, resolve in
-          30 days. See{" "}
+          (stops DigiLocker, employer assurance, and interview release),
+          nominate someone, or raise a grievance. Correction is completed by
+          updating your{" "}
+          <a href="/candidate/profile" className="text-foreground underline">
+            profile
+          </a>
+          . To erase your account and data, use Delete account below after
+          submitting an erasure request. Provisional timelines: acknowledge in
+          72h, resolve in 30 days. See{" "}
           <a href="/grievance" className="text-foreground underline">
             Grievance Officer
           </a>
@@ -149,6 +160,22 @@ export function DataRightsSection() {
           placeholder="Describe what you need"
         />
       </div>
+
+      {type === "correction" ? (
+        <p className="text-muted-foreground text-xs">
+          This logs a correction request. Also update the fields on your{" "}
+          <a href="/candidate/profile" className="text-foreground underline">
+            profile
+          </a>
+          .
+        </p>
+      ) : null}
+      {type === "erasure" ? (
+        <p className="text-muted-foreground text-xs">
+          Submitting records the request. Erasure is completed with Delete
+          account below after we can verify it is you.
+        </p>
+      ) : null}
 
       {type === "nominate" ? (
         <div className="grid gap-3 sm:grid-cols-2">
