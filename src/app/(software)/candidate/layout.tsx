@@ -10,8 +10,8 @@ import {
 
 /**
  * Candidate area: only `work` profiles. Hire profiles are sent to their home.
- * Onboarding gate lives in `(app)/layout.tsx` so `/candidate/onboarding`
- * stays reachable while the rest of the app is locked.
+ * Onboarding then KYC live outside `(app)/layout.tsx` so those
+ * steps stay reachable while the rest of the app is locked.
  */
 export default function CandidateLayout({
   children,

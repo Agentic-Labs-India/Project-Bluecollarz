@@ -1,6 +1,8 @@
 "use client";
 
+import { RotateCwIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -19,16 +21,13 @@ const PURPOSE_LABELS: Record<string, string> = {
     "AI interviews, transcripts, and optional recording — to evaluate you for a role",
 };
 
-const PLAIN_LANGUAGE = [
-  "Before you continue, we need your permission to check and use your details.",
-  "We will check your documents through DigiLocker and other official sources to verify who you are, your qualifications, and your background.",
-  "We will show only the results of those checks to trusted employers — never your actual documents.",
-  "If you agree to evaluation, we may share interview scores, transcripts, and recordings with the employer for that role.",
-  "A licensed recruiting agent will use your details to recruit you for a job, as the law requires.",
-  "You pay nothing. Ever. Employers pay us.",
-  "You can see, correct, or delete your data any time, and withdraw this permission any time.",
-  "We will never sell your data or charge you.",
-].join(" ");
+/** Spoken + on-screen notice v1.1 — keep short for TTS. */
+const PLAIN_LANGUAGE =
+  "We verify you through DigiLocker. Employers see results, not your documents. Interview scores may be shared for that job. A licensed recruiter places you. You pay nothing. You can view, fix, delete, or withdraw anytime. We never sell your data. Please give access to all the documents required to move ahead.";
+
+function offToggles(purposes: string[]): Record<string, boolean> {
+  return Object.fromEntries(purposes.map((p) => [p, false]));
+}
 
 type ConsentActive = {
   purposes: string[];
@@ -48,15 +47,17 @@ type ConsentApiResponse = {
  */
 export function ConsentNoticePanel({
   className,
-  onGranted,
-  onDeferred,
   compact = false,
+  variant = "manage",
+  verifyHref,
 }: {
   className?: string;
-  onGranted?: () => void;
-  onDeferred?: () => void;
   compact?: boolean;
+  /** KYC gate: all switches start off; Agree and Verify only when all are on. */
+  variant?: "kyc" | "manage";
+  verifyHref?: string;
 }) {
+  const isKyc = variant === "kyc";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -70,16 +71,12 @@ export function ConsentNoticePanel({
     noticeVersion: null,
     grantedAt: null,
   });
-  const [toggles, setToggles] = useState<Record<string, boolean>>({
-    identity: true,
-    contact: true,
-    qualification: true,
-    background: false,
-    passport: false,
-    evaluation: true,
-  });
+  const [toggles, setToggles] = useState<Record<string, boolean>>(() =>
+    offToggles(Object.keys(PURPOSE_LABELS)),
+  );
   const [usedVoice, setUsedVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const autoPlayedRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,14 +88,9 @@ export function ConsentNoticePanel({
       setNoticeVersion(json.noticeVersion);
       setAvailable(json.availablePurposes);
       setActive(json.active);
-      setToggles((prev) => {
-        const next = { ...prev };
-        for (const p of json.availablePurposes) {
-          next[p] = json.active.purposes.includes(p)
-            ? true
-            : (prev[p] ?? false);
-        }
-        if (json.active.purposes.length) {
+      setToggles(() => {
+        const next = offToggles(json.availablePurposes);
+        if (!isKyc && json.active.purposes.length) {
           for (const p of json.availablePurposes) {
             next[p] = json.active.purposes.includes(p);
           }
@@ -110,53 +102,121 @@ export function ConsentNoticePanel({
     } finally {
       setLoading(false);
     }
+  }, [isKyc]);
+
+  const stopNotice = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.onended = null;
+      audio.onerror = null;
+      if (audio.src) URL.revokeObjectURL(audio.src);
+      audioRef.current = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeaking(false);
   }, []);
+
+  const playNotice = useCallback(
+    async (waitUntilEnded: boolean) => {
+      stopNotice();
+      setSpeaking(true);
+      setError("");
+      try {
+        const res = await fetch("/api/voice/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: PLAIN_LANGUAGE }),
+        });
+        if (!res.ok) {
+          if ("speechSynthesis" in window) {
+            const utter = new SpeechSynthesisUtterance(PLAIN_LANGUAGE);
+            utter.lang = "en-IN";
+            window.speechSynthesis.cancel();
+            setUsedVoice(true);
+            if (waitUntilEnded) {
+              await new Promise<void>((resolve, reject) => {
+                utter.onend = () => {
+                  setSpeaking(false);
+                  resolve();
+                };
+                utter.onerror = () => {
+                  setSpeaking(false);
+                  reject(new Error("Could not play audio"));
+                };
+                window.speechSynthesis.speak(utter);
+              });
+            } else {
+              utter.onend = () => setSpeaking(false);
+              utter.onerror = () => setSpeaking(false);
+              window.speechSynthesis.speak(utter);
+            }
+            return;
+          }
+          throw new Error("Could not play audio");
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        setUsedVoice(true);
+        const ended = new Promise<void>((resolve, reject) => {
+          audio.onended = () => {
+            setSpeaking(false);
+            resolve();
+          };
+          audio.onerror = () => {
+            setSpeaking(false);
+            reject(new Error("Could not play audio"));
+          };
+        });
+        await audio.play();
+        if (waitUntilEnded) await ended;
+      } catch (e: unknown) {
+        setSpeaking(false);
+        setError(e instanceof Error ? e.message : "Could not read aloud");
+        throw e;
+      }
+    },
+    [stopNotice],
+  );
 
   useEffect(() => {
     void load();
     return () => {
-      audioRef.current?.pause();
-      if (audioRef.current?.src) URL.revokeObjectURL(audioRef.current.src);
+      stopNotice();
     };
-  }, [load]);
+  }, [load, stopNotice]);
+
+  useEffect(() => {
+    if (!isKyc || loading || autoPlayedRef.current) return;
+    autoPlayedRef.current = true;
+    void playNotice(false).catch(() => undefined);
+  }, [isKyc, loading, playNotice]);
 
   const selected = available.filter((p) => toggles[p]);
-  const hasIdentityBundle =
-    selected.includes("identity") && selected.includes("contact");
+  const allOn =
+    available.length > 0 && available.every((p) => Boolean(toggles[p]));
+  const canAgreeAndVerify = isKyc && allOn && !saving;
 
-  const readAloud = async () => {
-    setSpeaking(true);
-    setError("");
-    try {
-      const res = await fetch("/api/voice/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: PLAIN_LANGUAGE }),
-      });
-      if (!res.ok) {
-        // Fallback: browser speech synthesis (still counts as voice confirmation).
-        if ("speechSynthesis" in window) {
-          const utter = new SpeechSynthesisUtterance(PLAIN_LANGUAGE);
-          utter.lang = "en-IN";
-          window.speechSynthesis.cancel();
-          window.speechSynthesis.speak(utter);
-          setUsedVoice(true);
-          return;
-        }
-        throw new Error("Could not play audio");
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      if (audioRef.current?.src) URL.revokeObjectURL(audioRef.current.src);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      setUsedVoice(true);
-      await audio.play();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not read aloud");
-    } finally {
-      setSpeaking(false);
-    }
+  const grantPurposes = async (purposes: string[]) => {
+    const res = await fetch("/api/candidate/consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "grant",
+        purposes,
+        method: "voice_tap",
+      }),
+    });
+    const json = (await res.json().catch(() => ({}))) as ConsentApiResponse & {
+      error?: string;
+    };
+    if (!res.ok) throw new Error(json.error || "Could not save consent");
+    setActive(json.active);
+    return json;
   };
 
   const grant = async () => {
@@ -167,21 +227,30 @@ export function ConsentNoticePanel({
     setSaving(true);
     setError("");
     try {
-      const res = await fetch("/api/candidate/consent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "grant",
-          purposes: selected,
-          method: usedVoice ? "voice_tap" : "web_tap",
-        }),
-      });
-      const json = (await res.json().catch(() => ({}))) as ConsentApiResponse & {
-        error?: string;
-      };
-      if (!res.ok) throw new Error(json.error || "Could not save consent");
-      setActive(json.active);
-      onGranted?.();
+      if (!usedVoice) {
+        await playNotice(false);
+      }
+      await grantPurposes(selected);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not save consent");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const agreeAndVerify = async () => {
+    if (!allOn) return;
+    setSaving(true);
+    setError("");
+    try {
+      if (!usedVoice) {
+        await playNotice(true);
+      }
+      await grantPurposes(available);
+      if (verifyHref) {
+        window.location.assign(verifyHref);
+        return;
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not save consent");
     } finally {
@@ -220,6 +289,14 @@ export function ConsentNoticePanel({
     }
   };
 
+  const onSpeakerClick = () => {
+    if (speaking) {
+      stopNotice();
+      return;
+    }
+    void playNotice(false).catch(() => undefined);
+  };
+
   if (loading) {
     return (
       <div className={cn("border-border space-y-2 border p-4", className)}>
@@ -231,110 +308,150 @@ export function ConsentNoticePanel({
   }
 
   return (
-    <div className={cn("border-border bg-card space-y-4 border p-5", className)}>
-      {!compact ? (
-        <div className="space-y-2">
-          <p className="text-foreground text-sm font-medium">
-            Before you continue — your permission (notice v{noticeVersion})
-          </p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {PLAIN_LANGUAGE}
-          </p>
-        </div>
-      ) : (
-        <p className="text-foreground text-sm font-medium">
-          Purpose consent (notice v{noticeVersion})
-        </p>
-      )}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={speaking}
-        onClick={() => void readAloud()}
-      >
-        {speaking ? "Reading…" : usedVoice ? "Read aloud again" : "Read aloud"}
-      </Button>
-
-      <div className="space-y-3">
-        {available.map((purpose) => (
-          <div
-            key={purpose}
-            className="flex items-start justify-between gap-3"
-          >
-            <Label
-              htmlFor={`consent-${purpose}`}
-              className="text-foreground cursor-pointer text-sm leading-snug font-normal"
-            >
-              {PURPOSE_LABELS[purpose] ?? purpose}
-            </Label>
-            <Switch
-              id={`consent-${purpose}`}
-              checked={Boolean(toggles[purpose])}
-              onCheckedChange={(checked) =>
-                setToggles((prev) => ({ ...prev, [purpose]: checked }))
-              }
-            />
+    <div
+      className={cn("border-border bg-card overflow-hidden border", className)}
+    >
+      {isKyc ? <PrimaryDitherBand seed="kyc-consent-notice" /> : null}
+      <div className="space-y-4 p-5">
+        {!compact ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="text-foreground text-sm font-medium">
+                Before you continue (notice v{noticeVersion})
+              </p>
+              {isKyc ? (
+                <button
+                  type="button"
+                  onClick={onSpeakerClick}
+                  className="text-foreground hover:text-primary focus-visible:ring-ring relative inline-flex size-8 shrink-0 items-center justify-center focus-visible:ring-1 focus-visible:outline-none"
+                  aria-label={speaking ? "Mute notice" : "Play notice again"}
+                >
+                  {speaking ? (
+                    <VolumeXIcon className="size-4" />
+                  ) : (
+                    <span className="relative inline-flex">
+                      <Volume2Icon className="size-4" />
+                      <RotateCwIcon className="absolute -right-1.5 -bottom-1 size-2.5" />
+                    </span>
+                  )}
+                </button>
+              ) : null}
+            </div>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              {PLAIN_LANGUAGE}
+            </p>
           </div>
-        ))}
+        ) : (
+          <p className="text-foreground text-sm font-medium">
+            Purpose consent (notice v{noticeVersion})
+          </p>
+        )}
+        {!isKyc ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={speaking || saving}
+            onClick={() => void playNotice(false).catch(() => undefined)}
+          >
+            {speaking ? "Reading…" : usedVoice ? "Read aloud again" : "Read aloud"}
+          </Button>
+        ) : null}
+
+        <div className="space-y-3">
+          {available.map((purpose) => (
+            <div
+              key={purpose}
+              className="flex items-start justify-between gap-3"
+            >
+              <Label
+                htmlFor={`consent-${purpose}`}
+                className="text-foreground cursor-pointer text-sm leading-snug font-normal"
+              >
+                {PURPOSE_LABELS[purpose] ?? purpose}
+              </Label>
+              <Switch
+                id={`consent-${purpose}`}
+                checked={Boolean(toggles[purpose])}
+                onCheckedChange={(checked) =>
+                  setToggles((prev) => ({ ...prev, [purpose]: checked }))
+                }
+              />
+            </div>
+          ))}
+        </div>
+
+        {active.grantedAt && !isKyc ? (
+          <p className="text-muted-foreground text-xs">
+            Active consent recorded {new Date(active.grantedAt).toLocaleString()}
+            {active.noticeVersion ? ` · notice v${active.noticeVersion}` : null}
+            {active.purposes.length
+              ? ` · ${active.purposes.join(", ")}`
+              : " · none active"}
+          </p>
+        ) : null}
+
+        {error ? <p className="text-destructive text-sm">{error}</p> : null}
+
+        {isKyc ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <Button
+              type="button"
+              size="lg"
+              className="w-full sm:w-auto"
+              disabled={!canAgreeAndVerify}
+              onClick={() => void agreeAndVerify()}
+            >
+              Agree and Verify
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto"
+              asChild
+            >
+              <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
+                Ask me a question → OWRC {OWRC_HELP_LINE}
+              </a>
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              disabled={saving || speaking || !selected.length || !usedVoice}
+              onClick={() => void grant()}
+            >
+              I agree
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving || !active.purposes.length}
+              onClick={() => void withdrawAll()}
+            >
+              Withdraw
+            </Button>
+            <Button type="button" variant="ghost" asChild>
+              <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
+                Ask me a question → OWRC {OWRC_HELP_LINE}
+              </a>
+            </Button>
+          </div>
+        )}
+
+        {!isKyc && !selected.length ? (
+          <p className="text-muted-foreground text-xs">
+            Turn on identity and contact to continue DigiLocker verification.
+          </p>
+        ) : null}
+        {!isKyc && selected.length > 0 && !usedVoice ? (
+          <p className="text-muted-foreground text-xs">
+            Tap Read aloud first. Agreement is recorded as a voice confirmation.
+          </p>
+        ) : null}
       </div>
-
-      {active.grantedAt ? (
-        <p className="text-muted-foreground text-xs">
-          Active consent recorded {new Date(active.grantedAt).toLocaleString()}
-          {active.noticeVersion ? ` · notice v${active.noticeVersion}` : null}
-          {active.purposes.length
-            ? ` · ${active.purposes.join(", ")}`
-            : " · none active"}
-        </p>
-      ) : (
-        <p className="text-muted-foreground text-xs">
-          No consent on file yet. DigiLocker requires identity + contact.
-        </p>
-      )}
-
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
-
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          disabled={saving || !hasIdentityBundle || !usedVoice}
-          onClick={() => void grant()}
-        >
-          I agree
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={saving}
-          onClick={() => onDeferred?.()}
-        >
-          Not now
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={saving || !active.purposes.length}
-          onClick={() => void withdrawAll()}
-        >
-          Withdraw
-        </Button>
-        <Button type="button" variant="ghost" asChild>
-          <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
-            Ask me a question → OWRC {OWRC_HELP_LINE}
-          </a>
-        </Button>
-      </div>
-      {!hasIdentityBundle ? (
-        <p className="text-muted-foreground text-xs">
-          Turn on identity and contact to continue DigiLocker verification.
-        </p>
-      ) : null}
-      {hasIdentityBundle && !usedVoice ? (
-        <p className="text-muted-foreground text-xs">
-          Tap Read aloud first. Agreement is recorded as a voice confirmation.
-        </p>
-      ) : null}
     </div>
   );
 }

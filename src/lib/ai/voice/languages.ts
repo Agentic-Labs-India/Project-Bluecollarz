@@ -60,6 +60,27 @@ export function languageLabel(code: string | null | undefined): string {
   return LABELS[resolveTtsLanguage(code)] ?? code;
 }
 
+/** Spoken resume-picker question. Keep "resume" / "PDF" in English. */
+const RESUME_VOICE_PROMPT: Record<TtsLanguageCode, string> = {
+  "en-IN": "Do you have a resume PDF to upload?",
+  "hi-IN": "क्या आपके पास अपलोड करने के लिए resume PDF है?",
+  "bn-IN": "আপনার কাছে আপলোড করার জন্য resume PDF আছে কি?",
+  "gu-IN": "તમારી પાસે અપલોડ કરવા માટે resume PDF છે?",
+  "kn-IN": "ನಿಮ್ಮ ಬಳಿ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು resume PDF ಇದೆಯೇ?",
+  "ml-IN": "നിങ്ങളുടെ കൈയിൽ അപ്‌ലോഡ് ചെയ്യാൻ resume PDF ഉണ്ടോ?",
+  "mr-IN": "तुमच्याकडे अपलोड करण्यासाठी resume PDF आहे का?",
+  "od-IN": "ଆପଣଙ୍କ ପାଖରେ ଅପଲୋଡ୍ କରିବାକୁ resume PDF ଅଛି କି?",
+  "pa-IN": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਅਪਲੋਡ ਕਰਨ ਲਈ resume PDF ਹੈ?",
+  "ta-IN": "உங்களிடம் அப்லோட் செய்ய resume PDF இருக்கா?",
+  "te-IN": "మీ దగ్గర అప్‌లోడ్ చేయడానికి resume PDF ఉందా?",
+};
+
+export function resumeVoicePrompt(
+  code: string | null | undefined,
+): string {
+  return RESUME_VOICE_PROMPT[resolveTtsLanguage(code)];
+}
+
 /** Load profile.voiceLanguage for work candidates (null if unset). */
 export async function fetchProfileVoiceLanguage(): Promise<TtsLanguageCode | null> {
   try {

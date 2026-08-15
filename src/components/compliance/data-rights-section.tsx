@@ -112,26 +112,22 @@ export function DataRightsSection() {
   };
 
   return (
-    <section className="border-border/80 bg-card mb-6 space-y-4 border p-5 shadow-sm">
-      <div>
-        <h2 className="text-foreground text-sm font-medium">Data rights</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Access or export your data, request correction, withdraw consent
-          (stops DigiLocker, employer assurance, and interview release),
-          nominate someone, or raise a grievance. Correction is completed by
-          updating your{" "}
-          <a href="/candidate/profile" className="text-foreground underline">
-            profile
-          </a>
-          . To erase your account and data, use Delete account below after
-          submitting an erasure request. Provisional timelines: acknowledge in
-          72h, resolve in 30 days. See{" "}
-          <a href="/grievance" className="text-foreground underline">
-            Grievance Officer
-          </a>
-          .
-        </p>
-      </div>
+    <div className="space-y-4">
+      <p className="text-muted-foreground text-sm">
+        Access or export your data, request correction, withdraw consent
+        (stops DigiLocker and interview release), nominate someone, or raise a
+        grievance. Correction is completed by updating your{" "}
+        <a href="/candidate/profile" className="text-foreground underline">
+          profile
+        </a>
+        . To erase your account and data, use Delete account below after
+        submitting an erasure request. Provisional timelines: acknowledge in
+        72h, resolve in 30 days. See{" "}
+        <a href="/grievance" className="text-foreground underline">
+          Grievance Officer
+        </a>
+        .
+      </p>
 
       <div className="space-y-2">
         <Label htmlFor="rights-type">Request type</Label>
@@ -237,6 +233,6 @@ export function DataRightsSection() {
           </ul>
         )}
       </div>
-    </section>
+    </div>
   );
 }

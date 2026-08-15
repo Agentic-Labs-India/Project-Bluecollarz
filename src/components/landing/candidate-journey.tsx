@@ -23,22 +23,22 @@ const STEPS: JourneyStep[] = [
   {
     code: "01",
     title: "Get onboarded with AI",
-    body: "Voice onboarding builds your profile and matches verified roles to your trade.",
+    body: "Voice onboarding collects currently working as, years of experience, education, work experience, and languages.",
   },
   {
     code: "02",
+    title: "Verify with DigiLocker",
+    body: "Identity comes from DigiLocker: name, date of birth, phone, location, gender, PAN, and Aadhaar.",
+  },
+  {
+    code: "03",
     title: "Send your application",
     body: "Apply once with a complete profile — no repetitive forms or paperwork.",
   },
   {
-    code: "03",
+    code: "04",
     title: "Clear AI interviews",
     body: "Show communication and domain skills in structured, fair interviews.",
-  },
-  {
-    code: "04",
-    title: "Get selected & verified",
-    body: "The recruiter selects you and DigiLocker confirms your identity.",
   },
   {
     code: "05",

@@ -11,14 +11,8 @@ import {
   toCandidateProfileData,
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
-import type { KycFields } from "@/lib/kyc";
+import { toHireSafeProfile } from "@/lib/compliance/arm";
 import {
-  toHireAssuranceView,
-  toHireSafeProfile,
-  withheldHireAssuranceView,
-} from "@/lib/compliance/arm";
-import {
-  HIRE_RELEASE_REQUIRED_PURPOSES,
   INTERVIEW_RELEASE_REQUIRED_PURPOSES,
   hasGrantedPurposes,
 } from "@/lib/compliance/consent";
@@ -75,31 +69,23 @@ export async function GET(_req: Request, context: RouteContext) {
 
     const user = await db
       .collection<
-        CandidateProfileFields &
-          KycFields & {
-            name?: string;
-            email?: string;
-            image?: string;
-          }
+        CandidateProfileFields & {
+          name?: string;
+          email?: string;
+          image?: string;
+        }
       >(COLLECTIONS.USERS_COLLECTION)
       .findOne({ _id: matchId(applicantId) as never });
 
     const rawProfile = toCandidateProfileData(user);
-    /** Conclusions + allowlisted resume fields — never email/phone/IDs. */
+    /** Allowlisted resume fields — never email/phone/IDs. */
     const profile = toHireSafeProfile({
       ...rawProfile,
     } as Record<string, unknown>);
-    const releaseOk = await hasGrantedPurposes(
-      applicantId,
-      HIRE_RELEASE_REQUIRED_PURPOSES,
-    );
     const interviewReleaseOk = await hasGrantedPurposes(
       applicantId,
       INTERVIEW_RELEASE_REQUIRED_PURPOSES,
     );
-    const assurance = releaseOk
-      ? toHireAssuranceView(user)
-      : withheldHireAssuranceView();
 
     const interviewDocs = await db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
@@ -148,7 +134,6 @@ export async function GET(_req: Request, context: RouteContext) {
         appliedAt: application.createdAt.toISOString(),
       },
       profile,
-      assurance,
       interviewRelease: interviewReleaseOk,
       interviews,
     });

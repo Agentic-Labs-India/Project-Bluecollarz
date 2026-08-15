@@ -18,7 +18,7 @@ const FAQS = [
     id: "onboarding",
     question: "What happens during AI onboarding?",
     answer:
-      "You talk through your experience, skills, and preferences. Blucollarz turns that into a structured profile that recruiters can review — so you are not stuck rewriting the same resume for every job.",
+      "You talk through currently working as, years of experience, education, work experience, and languages. A resume PDF can fill those fields (and skills). Identity — name, date of birth, phone, location, gender, PAN, Aadhaar — comes next from DigiLocker, not this interview.",
   },
   {
     id: "roles",
@@ -36,7 +36,7 @@ const FAQS = [
     id: "selection",
     question: "When do I verify my identity?",
     answer:
-      "Identity checks kick in after a recruiter selects you. DigiLocker and document verification confirm who you are before medical and visa steps — so your details stay protected until there is a real hire path.",
+      "Right after voice onboarding you verify with DigiLocker. That fills name, date of birth (18+), phone, location, gender, PAN, and Aadhaar. APAAR, education certificates, and passport are separate later steps.",
   },
   {
     id: "medical-visa",

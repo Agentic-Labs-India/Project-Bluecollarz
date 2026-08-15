@@ -21,7 +21,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CandidateProfileData } from "@/lib/candidate/profile";
-import type { ApplicationStatus } from "@/lib/jobs/applications";
+import {
+  APPLICATION_STATUS_LABELS,
+  type ApplicationStatus,
+} from "@/lib/jobs/applications";
 import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
 import {
@@ -41,20 +44,6 @@ type InterviewDetail = {
   transcript: Array<{ role: "assistant" | "user"; text: string; at: string }>;
   startedAt: string;
   completedAt: string | null;
-};
-
-type HireAssuranceView = {
-  identityAssured: boolean;
-  qualificationAssured: boolean;
-  backgroundAssured: boolean;
-  passportAssured?: boolean;
-  level: string;
-  verifiedAt: string | null;
-  provider: string | null;
-  attributes?: Record<
-    string,
-    { status: string; assuredAt?: string | null; source?: string | null }
-  >;
 };
 
 type ApplicantDetailResponse = {
@@ -77,7 +66,6 @@ type ApplicantDetailResponse = {
     fullTimeCompensation: number | null;
     partTimeCompensation: number | null;
   };
-  assurance: HireAssuranceView;
   interviewRelease?: boolean;
   interviews: InterviewDetail[];
 };
@@ -273,85 +261,6 @@ function ResumeAccordionBody({
           value={profile.partTimeCompensation}
         />
       </div>
-    </div>
-  );
-}
-
-function AssuranceAccordionBody({
-  assurance,
-}: {
-  assurance: HireAssuranceView;
-}) {
-  if (!assurance.identityAssured) {
-    return (
-      <p className="text-sm">
-        DigiLocker KYC is not complete yet. After they verify once on their
-        account, it shows as already done for every role — no per-job repeat.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge>Identity assured</Badge>
-        <Badge variant="outline" className="font-normal">
-          {assurance.level}
-        </Badge>
-        {assurance.provider ? (
-          <Badge variant="outline" className="font-normal">
-            {assurance.provider}
-          </Badge>
-        ) : null}
-        {assurance.verifiedAt ? (
-          <span className="text-muted-foreground text-xs">
-            Verified {new Date(assurance.verifiedAt).toLocaleString()}
-          </span>
-        ) : null}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <p className="text-muted-foreground text-xs">Identity</p>
-          <p className="text-sm">
-            {assurance.identityAssured ? "Assured" : "Not assured"}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Qualifications</p>
-          <p className="text-sm">
-            {assurance.qualificationAssured ? "Assured" : "Not released"}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Background</p>
-          <p className="text-sm">
-            {assurance.backgroundAssured ? "Assured" : "Not released"}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground text-xs">Passport</p>
-          <p className="text-sm">
-            {assurance.passportAssured ? "Assured" : "Not released"}
-          </p>
-        </div>
-      </div>
-      {assurance.attributes ? (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {Object.entries(assurance.attributes).map(([key, row]) => (
-            <div
-              key={key}
-              className="border-border/60 flex items-center justify-between border px-2 py-1.5 text-xs"
-            >
-              <span className="capitalize">{key}</span>
-              <span className="text-muted-foreground">{row.status}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        Employers receive verification conclusions only — never PAN, Aadhaar,
-        passport numbers, email, phone, or raw DigiLocker documents.
-      </p>
     </div>
   );
 }
@@ -639,18 +548,13 @@ export function ApplicantSheet({
                   </SheetDescription>
                   {data ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="capitalize">
-                        {data.application.status}
+                      <Badge variant="secondary">
+                        {APPLICATION_STATUS_LABELS[
+                          data.application.status as ApplicationStatus
+                        ] ?? data.application.status}
                       </Badge>
-                      {data.assurance.identityAssured ? (
-                        <Badge>Identity assured</Badge>
-                      ) : (
-                        <Badge variant="outline" className="font-normal">
-                          KYC pending
-                        </Badge>
-                      )}
                       <span className="text-muted-foreground text-xs">
-                        Applied{" "}
+                        Submitted{" "}
                         {new Date(
                           data.application.appliedAt,
                         ).toLocaleDateString()}
@@ -679,7 +583,6 @@ export function ApplicantSheet({
                 type="multiple"
                 defaultValue={[
                   "resume",
-                  "assurance",
                   "ai-communication",
                   "ai-domain",
                 ]}
@@ -697,24 +600,6 @@ export function ApplicantSheet({
                   </AccordionTrigger>
                   <AccordionContent>
                     <ResumeAccordionBody profile={profile} />
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="assurance">
-                  <AccordionTrigger>
-                    <span className="flex items-center gap-2">
-                      Identity assurance
-                      {data.assurance.identityAssured ? (
-                        <Badge>{data.assurance.level}</Badge>
-                      ) : (
-                        <Badge variant="outline" className="font-normal">
-                          Pending
-                        </Badge>
-                      )}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <AssuranceAccordionBody assurance={data.assurance} />
                   </AccordionContent>
                 </AccordionItem>
 

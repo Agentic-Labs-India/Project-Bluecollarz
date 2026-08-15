@@ -32,14 +32,10 @@ export interface ConsentEventDocument {
   status: ConsentStatus;
 }
 
-/** DigiLocker identity verification requires these purposes currently granted. */
+/** DigiLocker identity verification requires every purpose currently granted. */
 export const DIGILOCKER_REQUIRED_PURPOSES: ConsentPurpose[] = [
-  "identity",
-  "contact",
+  ...CONSENT_PURPOSES,
 ];
-
-/** Hire-facing assurance release also requires active identity+contact consent. */
-export const HIRE_RELEASE_REQUIRED_PURPOSES = DIGILOCKER_REQUIRED_PURPOSES;
 
 /** Transcripts and recordings are released to the hirer only with this purpose. */
 export const INTERVIEW_RELEASE_REQUIRED_PURPOSES: ConsentPurpose[] = [

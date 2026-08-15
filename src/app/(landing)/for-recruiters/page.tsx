@@ -56,7 +56,8 @@ export default function ForRecruitersPage() {
             Blucollarz replaces that grind with a single AI stack: candidates
             build profiles, sit structured interviews, and answer your custom
             questions before you ever open a file. You shortlist from scored
-            evidence — then AI KYC verifies identity when you select someone.
+            evidence. Identity is already verified with DigiLocker before they
+            apply.
           </p>
           <DocCallout title="Provisioned hire access" variant="default">
             <p>
@@ -96,8 +97,8 @@ export default function ForRecruitersPage() {
                 body: "Generate industry-standard role overviews from a short brief. Publish-ready JD copy without a writing committee.",
               },
               {
-                title: "AI KYC",
-                body: "Document authenticity checks before storage. Hirers only see verified identity packs — not raw unverified uploads.",
+                title: "DigiLocker KYC",
+                body: "Candidates verify identity after onboarding, before they apply. Recruiters review applications as Submitted, Selected, or Rejected.",
               },
             ]}
           />
@@ -145,7 +146,7 @@ export default function ForRecruitersPage() {
               },
               {
                 title: "You decide",
-                body: "Select or reject from the sheet. Selected workers complete AI KYC; verified docs surface only after pass.",
+                body: "Select or reject from the sheet. Status is Submitted, Selected, or Rejected.",
               },
             ]}
           />
@@ -169,7 +170,7 @@ export default function ForRecruitersPage() {
             items={[
               "Workers who finished AI onboarding with structured profiles",
               "Applicants with communication, domain, and custom-question history on the role",
-              "Selected candidates who can complete AI KYC for verified document sharing",
+              "Candidates who finished onboarding and DigiLocker identity verification",
             ]}
           />
         </DocSection>
@@ -187,11 +188,11 @@ export default function ForRecruitersPage() {
               },
               {
                 title: "Applicant table",
-                body: "Status, interview progress, and AI KYC Done badges when identity is verified.",
+                body: "Status, interview progress, and scores. Application status is Submitted, Selected, or Rejected.",
               },
               {
                 title: "Applicant sheet",
-                body: "Resume context, scores, summaries, strengths, recordings, transcripts, custom answers, and KYC previews.",
+                body: "Resume context, scores, summaries, strengths, recordings, transcripts, and custom answers.",
               },
               {
                 title: "Select / reject",
@@ -234,38 +235,25 @@ export default function ForRecruitersPage() {
               },
               {
                 title: "Applicants for a role",
-                body: "Open a role to review the applicant table with interview and KYC indicators.",
+                body: "Open a role to review the applicant table with interview scores.",
               },
               {
                 title: "Applicant detail sheet",
-                body: "Dive into one candidate: profile, interviews, recording, custom answers, KYC when verified.",
+                body: "Dive into one candidate: profile, interviews, recording, and custom answers.",
               },
               {
                 title: "Decision",
-                body: "Select or reject. Selected candidates are prompted toward KYC when required.",
+                body: "Select or reject. Status is Submitted, Selected, or Rejected.",
               },
             ]}
           />
         </DocSection>
 
-        <DocSection id="kyc" number="09" title="KYC for hirers">
+        <DocSection id="kyc" number="09" title="Identity">
           <p>
-            Identity documents are not a free-for-all upload. Order of
-            operations: AI authenticity check first, storage only on pass, then
-            recruiter visibility.
-          </p>
-          <DocTable
-            headers={["Document", "Notes"]}
-            rows={[
-              ["Aadhaar front + back", "Required for verification"],
-              ["PAN", "May be deferred with undertaking"],
-              ["Passport", "May be deferred with undertaking"],
-            ]}
-          />
-          <p>
-            When verified, you see an{" "}
-            <strong className="text-foreground">AI KYC Done</strong> badge plus
-            previews and the AI summary. Until then, documents stay hidden.
+            Candidates complete DigiLocker KYC after onboarding, before they
+            browse roles. Identity is not a per-job step. Applicant status is
+            Submitted, Selected, or Rejected.
           </p>
         </DocSection>
       </DocPage>

@@ -17,9 +17,7 @@ import type {
 } from "@/lib/interviews";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireProfile } from "@/lib/auth/session";
-import { toHireAssuranceView, withheldHireAssuranceView } from "@/lib/compliance/arm";
 import {
-  HIRE_RELEASE_REQUIRED_PURPOSES,
   INTERVIEW_RELEASE_REQUIRED_PURPOSES,
   principalsWithGrantedPurposes,
 } from "@/lib/compliance/consent";
@@ -31,8 +29,6 @@ interface UserDoc {
   _id: unknown;
   name?: string;
   image?: string;
-  isKycVerified?: boolean;
-  kyc?: unknown;
 }
 
 function scoreFromAnalysis(
@@ -109,7 +105,7 @@ async function enrichApplicants(
     db
       .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
       .find({ _id: { $in: matchIds(applicantHexes) as never } })
-      .project({ name: 1, image: 1, isKycVerified: 1, kyc: 1 })
+      .project({ name: 1, image: 1 })
       .toArray(),
     db
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
@@ -142,23 +138,14 @@ async function enrichApplicants(
   }
 
   const userMap = new Map(users.map((user) => [idHex(user._id), user]));
-  const [releaseOk, interviewReleaseOk] = await Promise.all([
-    principalsWithGrantedPurposes(
-      applicantHexes,
-      HIRE_RELEASE_REQUIRED_PURPOSES,
-    ),
-    principalsWithGrantedPurposes(
-      applicantHexes,
-      INTERVIEW_RELEASE_REQUIRED_PURPOSES,
-    ),
-  ]);
+  const interviewReleaseOk = await principalsWithGrantedPurposes(
+    applicantHexes,
+    INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+  );
 
   return docs.map((doc) => {
     const applicantHex = idHex(doc.applicantId);
     const user = userMap.get(applicantHex);
-    const assurance = releaseOk.has(applicantHex)
-      ? toHireAssuranceView(user as never)
-      : withheldHireAssuranceView();
     return {
       id: idHex(doc._id),
       applicantId: applicantHex,
@@ -169,8 +156,6 @@ async function enrichApplicants(
       interviews: interviewReleaseOk.has(applicantHex)
         ? (interviewsByApplicant.get(applicantHex) ?? [])
         : [],
-      identityAssured: assurance.identityAssured,
-      assuranceLevel: assurance.level,
     };
   });
 }

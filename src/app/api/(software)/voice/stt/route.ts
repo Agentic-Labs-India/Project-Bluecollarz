@@ -6,7 +6,8 @@ import { getAiRuntime } from "@/lib/ai/runtime";
 export const maxDuration = 30;
 
 /**
- * Sarvam STT REST (Saaras v3) for short VAD clips (≤30s).
+ * Sarvam STT REST (Saaras v3) for VAD clips.
+ * REST rejects audio over 30s — VAD caps listen time in `STT_LISTEN_CAP_MS`.
  * Clients pass profile voice language_code (defaults to en-IN).
  */
 export async function POST(req: NextRequest) {

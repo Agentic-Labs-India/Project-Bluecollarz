@@ -1,13 +1,16 @@
 "use client";
 
+import { STT_LISTEN_CAP_MS } from "@/lib/ai/voice/stt-limits";
+
 /**
  * Simple energy-based VAD on a mic stream.
  * When voice rises above threshold → onSpeechStart
- * After sustained silence → onSpeechEnd with the recorded audio blob
+ * After sustained silence OR the STT listen cap → onSpeechEnd with the clip
  *
  * Tuned for natural / slow speech: longer end-of-utterance silence,
  * brief dips between words don't reset onset, and recording starts on
  * the first loud frame so the opening words aren't chopped.
+ * Clips are capped so Sarvam REST STT (30s) does not reject them.
  */
 export type VadController = {
   stop: () => void;
@@ -31,12 +34,18 @@ export async function startVadLoop(opts: {
   silenceMs?: number;
   /** Continuous-ish speech needed before the utterance is “confirmed”. */
   speechMs?: number;
+  /**
+   * Hard stop so the clip stays under the STT REST duration limit.
+   * The agent then replies and VAD listens again.
+   */
+  maxSpeechMs?: number;
 }): Promise<VadController> {
   // Softer threshold so quiet / slow talkers still register.
   const threshold = opts.threshold ?? 0.028;
   // Slow speakers often pause 1–1.5s between phrases — don't cut them off.
   const silenceMs = opts.silenceMs ?? 1800;
   const speechMs = opts.speechMs ?? 180;
+  const maxSpeechMs = opts.maxSpeechMs ?? STT_LISTEN_CAP_MS;
   /** Ignore single quiet frames during onset / between syllables. */
   const onsetHangoverMs = 280;
   const ownsStream = !opts.stream;
@@ -75,6 +84,8 @@ export async function startVadLoop(opts: {
   let stopped = false;
   let rafId = 0;
   let lastLevelEmit = 0;
+  /** True from endSegment() until onstop — don't start a second clip. */
+  let flushing = false;
 
   let segmentRecorder: MediaRecorder | null = null;
   let segmentChunks: Blob[] = [];
@@ -113,6 +124,7 @@ export async function startVadLoop(opts: {
     const rec = segmentRecorder;
     segmentRecorder = null;
     if (!rec || rec.state === "inactive") return;
+    flushing = true;
     try {
       if (rec.state === "recording") rec.requestData();
     } catch {
@@ -125,8 +137,21 @@ export async function startVadLoop(opts: {
       segmentChunks = [];
       // Accept shorter clips — slow one-word answers are still valid.
       if (blob.size > 250) opts.onSpeechEnd(blob);
+      flushing = false;
     };
-    rec.stop();
+    try {
+      rec.stop();
+    } catch {
+      flushing = false;
+    }
+  };
+
+  const finishUtterance = () => {
+    speaking = false;
+    tentative = false;
+    speechStartedAt = 0;
+    loudAccumMs = 0;
+    endSegment();
   };
 
   const resetOnset = () => {
@@ -158,12 +183,15 @@ export async function startVadLoop(opts: {
     }
 
     if (opts.isPaused()) {
+      flushing = false;
       if (speaking || tentative) {
         cancelSegment();
         resetOnset();
       }
       return;
     }
+
+    if (flushing) return;
 
     const loud = rms >= threshold;
 
@@ -190,11 +218,20 @@ export async function startVadLoop(opts: {
         resetOnset();
       }
     } else if (speaking && now - lastLoudAt >= silenceMs) {
-      speaking = false;
-      tentative = false;
-      speechStartedAt = 0;
-      loudAccumMs = 0;
-      endSegment();
+      finishUtterance();
+    }
+
+    if (
+      (speaking || tentative) &&
+      speechStartedAt > 0 &&
+      now - speechStartedAt >= maxSpeechMs
+    ) {
+      if (speaking) {
+        finishUtterance();
+      } else {
+        cancelSegment();
+        resetOnset();
+      }
     }
   };
 

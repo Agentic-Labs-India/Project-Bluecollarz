@@ -1,23 +1,18 @@
 import "server-only";
+import {
+  formatDateOnly,
+  isAtLeast18YearsOld,
+  parseDateOnly,
+} from "@/lib/core/dates";
 import type { DigilockerKycPayload } from "@/lib/kyc/digilocker";
-import { parseDateOnly } from "@/lib/core/dates";
 import type { UserKyc } from "@/lib/kyc/types";
 
-function normName(value: string | null | undefined) {
-  return (value || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** DigiLocker DOB → `yyyy-MM-dd`. */
 function digilockerDobToWire(dob: string | null): string | null {
   if (!dob?.trim()) return null;
   const raw = dob.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
 
-  const slash = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  const slash = raw.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
   if (slash) {
     return `${slash[3]}-${slash[2].padStart(2, "0")}-${slash[1].padStart(2, "0")}`;
   }
@@ -62,45 +57,41 @@ function parseDigilockerPhone(phone: string | null): {
   return { phoneNumber: Number(digits), phoneCountryCode: 91 };
 }
 
-function normalizeGender(raw: string | null): string | null {
+function normalizeGender(raw: string | null | undefined): string | null {
   if (!raw?.trim()) return null;
   const g = raw.trim().toUpperCase();
   if (g === "M" || g === "MALE") return "M";
   if (g === "F" || g === "FEMALE") return "F";
   if (g === "T" || g === "TRANSGENDER") return "T";
-  return raw.trim();
+  return raw.trim().toUpperCase();
 }
 
-export function compareIdentity(
-  profile: {
-    name?: string | null;
-    location?: string | null;
-    phoneNumber?: number | null;
-    dateOfBirth?: Date | string | null;
-    pan?: string | null;
-  },
+type IdentityProfile = {
+  phoneNumber?: number | null;
+  dateOfBirth?: Date | string | null;
+  pan?: string | null;
+  aadhaarLast4?: string | null;
+  gender?: string | null;
+};
+
+/**
+ * DigiLocker is the identity source. Google display names are ignored.
+ * If a field is already on the profile (re-verify), it must match.
+ */
+export function identityMismatches(
+  profile: IdentityProfile,
   dl: DigilockerKycPayload,
 ): string[] {
-  const mismatches: string[] = [];
-  const pName = normName(profile.name);
-  const dName = normName(dl.name);
-  if (pName && dName && pName !== dName) {
-    mismatches.push(
-      `Name differs (profile: "${profile.name}", DigiLocker: "${dl.name}"). Profile updated to DigiLocker name.`,
-    );
-  }
+  const errors: string[] = [];
 
-  const pLoc = (profile.location || "").trim().toLowerCase();
-  const dLoc = (dl.address || "").trim().toLowerCase();
-  if (
-    pLoc &&
-    dLoc &&
-    pLoc !== dLoc &&
-    !dLoc.includes(pLoc) &&
-    !pLoc.includes(dLoc)
-  ) {
-    mismatches.push(
-      "Location/address differs from DigiLocker; profile address updated from DigiLocker.",
+  if (!dl.name?.trim()) errors.push("DigiLocker did not return a name.");
+
+  const pDob = formatDateOnly(profile.dateOfBirth);
+  const dDob = digilockerDobToWire(dl.dob);
+  if (!dDob) errors.push("DigiLocker did not return a date of birth.");
+  else if (pDob && pDob !== dDob) {
+    errors.push(
+      "Date of birth on DigiLocker does not match your profile. KYC must be done by the same person.",
     );
   }
 
@@ -110,74 +101,50 @@ export function compareIdentity(
     dlPhone != null &&
     Number(profile.phoneNumber) !== dlPhone
   ) {
-    mismatches.push(
-      "Phone differs from DigiLocker; profile phone updated from DigiLocker.",
-    );
-  }
-
-  const dlDob = digilockerDobToWire(dl.dob);
-  if (profile.dateOfBirth && dlDob) {
-    const pDob =
-      profile.dateOfBirth instanceof Date
-        ? profile.dateOfBirth.toISOString().slice(0, 10)
-        : String(profile.dateOfBirth).slice(0, 10);
-    if (pDob && pDob !== dlDob) {
-      mismatches.push(
-        "Date of birth differs from DigiLocker; profile DOB updated from DigiLocker.",
-      );
-    }
+    errors.push("Phone on DigiLocker does not match your profile.");
   }
 
   const pPan = (profile.pan || "").trim().toUpperCase();
   const dPan = (dl.pan || "").trim().toUpperCase();
   if (pPan && dPan && pPan !== dPan) {
-    mismatches.push(
-      "PAN differs from DigiLocker; profile PAN updated from DigiLocker.",
-    );
+    errors.push("PAN on DigiLocker does not match your profile.");
   }
 
-  return mismatches;
+  const dAadhaar = aadhaarLast4FromMasked(dl.uidMasked);
+  const pAadhaar = (profile.aadhaarLast4 || "").replace(/\D/g, "").slice(-4);
+  if (pAadhaar.length === 4 && dAadhaar && pAadhaar !== dAadhaar) {
+    errors.push("Aadhaar on DigiLocker does not match your profile.");
+  }
+
+  const pGender = normalizeGender(profile.gender);
+  const dGender = normalizeGender(dl.gender);
+  if (pGender && dGender && pGender !== dGender) {
+    errors.push("Gender on DigiLocker does not match your profile.");
+  }
+
+  return errors;
 }
 
-/** Mongo update for DigiLocker verification → profile + nested `kyc`. */
+/** Mongo update after identity has already matched. */
 export function digilockerProfileSet(
   dl: DigilockerKycPayload,
   verifiedAt: Date,
 ): { $set: Record<string, unknown> } {
-  const $set: Record<string, unknown> = {
-    isKycVerified: true,
-  };
-
-  if (dl.name?.trim()) $set.name = dl.name.trim();
-
   const dobWire = digilockerDobToWire(dl.dob);
   const dob = dobWire ? parseDateOnly(dobWire) : null;
   if (!dob) {
+    throw new Error("DigiLocker did not return a date of birth.");
+  }
+  if (!isAtLeast18YearsOld(dob)) {
     throw new Error(
-      "DigiLocker did not return a date of birth. We cannot confirm you are at least 16, so verification cannot complete.",
+      "You must be at least 18 years old to complete DigiLocker verification on Blucollarz",
     );
   }
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - 16);
-  if (dob > cutoff) {
-    throw new Error(
-      "You must be at least 16 years old to complete DigiLocker verification on Blucollarz",
-    );
-  }
-  $set.dateOfBirth = dob;
-
-  if (dl.address?.trim()) $set.location = dl.address.trim();
-
-  const pin = dl.address?.match(/\b(\d{6})\b/)?.[1];
-  if (pin) $set.residencePostalCode = pin;
 
   const { phoneNumber, phoneCountryCode } = parseDigilockerPhone(dl.phone);
-  if (phoneNumber !== null) $set.phoneNumber = phoneNumber;
-  if (phoneCountryCode !== null) $set.phoneCountryCode = phoneCountryCode;
-
   const aadhaarLast4 = aadhaarLast4FromMasked(dl.uidMasked);
   const pan = dl.pan?.trim() ? dl.pan.trim().toUpperCase() : null;
-  const iso = verifiedAt.toISOString();
+
   const kyc: UserKyc = {
     provider: "digilocker",
     verifiedAt,
@@ -185,31 +152,18 @@ export function digilockerProfileSet(
     aadhaarLast4,
     pan,
     gender: normalizeGender(dl.gender),
-    apaarId: dl.apaarId?.trim() ? dl.apaarId.trim() : null,
-    attributes: {
-      pan: {
-        status: pan ? "assured" : "needs_review",
-        assuredAt: pan ? iso : null,
-        source: "digilocker",
-      },
-      aadhaar: {
-        status: aadhaarLast4 ? "assured" : "needs_review",
-        assuredAt: aadhaarLast4 ? iso : null,
-        source: "digilocker",
-      },
-      name: { status: "assured", assuredAt: iso, source: "digilocker" },
-      email: { status: "assured", assuredAt: iso, source: "account" },
-      mobile: {
-        status: phoneNumber !== null ? "assured" : "needs_review",
-        assuredAt: phoneNumber !== null ? iso : null,
-        source: "digilocker",
-      },
-      education: { status: "not_started", assuredAt: null, source: null },
-      pcc: { status: "not_started", assuredAt: null, source: null },
-      passport: { status: "not_started", assuredAt: null, source: null },
-    },
   };
-  $set.kyc = kyc;
+
+  const $set: Record<string, unknown> = {
+    isKycVerified: true,
+    dateOfBirth: dob,
+    kyc,
+  };
+
+  if (dl.name?.trim()) $set.name = dl.name.trim();
+  if (phoneNumber !== null) $set.phoneNumber = phoneNumber;
+  if (phoneCountryCode !== null) $set.phoneCountryCode = phoneCountryCode;
+  if (dl.address?.trim()) $set.location = dl.address.trim();
 
   return { $set };
 }

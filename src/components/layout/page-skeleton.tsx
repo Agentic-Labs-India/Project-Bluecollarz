@@ -1,6 +1,5 @@
 import { AppPage } from "@/components/layout/app-page";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 /** Profile header + form fields skeleton. */
 export function ProfilePageSkeleton() {
@@ -28,27 +27,27 @@ export function ProfilePageSkeleton() {
   );
 }
 
-/** KYC upload page skeleton. */
+/** KYC consent / verified-identity card skeleton. */
 export function KycPageSkeleton() {
   return (
-    <AppPage className="space-y-8">
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-full max-w-lg" />
-      </div>
-      <div className="flex flex-col gap-3 md:flex-row">
-        {Array.from({ length: 3 }, (_, i) => (
-          <div
-            key={i}
-            className="border-border w-full flex-1 space-y-3 border p-4"
-          >
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-9 w-full" />
+    <AppPage>
+      <div className="border-border overflow-hidden border">
+        <Skeleton className="h-1.5 w-full" />
+        <div className="space-y-4 p-5">
+          <Skeleton className="h-4 w-56" />
+          <Skeleton className="h-16 w-full" />
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="flex items-center justify-between gap-3">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-6 w-10 shrink-0" />
+            </div>
+          ))}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Skeleton className="h-11 w-full sm:w-40" />
+            <Skeleton className="h-11 w-full sm:w-64" />
           </div>
-        ))}
+        </div>
       </div>
-      <Skeleton className="h-11 w-full" />
     </AppPage>
   );
 }

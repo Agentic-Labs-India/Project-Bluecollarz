@@ -6,7 +6,7 @@ Owner: Grievance Officer. Review cadence: quarterly (provisional).
 | Activity | Data used | Purpose | Basis | Shared with | Retention |
 | --- | --- | --- | --- | --- | --- |
 | Onboarding & profile | Name, email, mobile, profile fields | Create account | Consent / contract | — | Account life |
-| Identity verification | PAN, Aadhaar (masked), DigiLocker attrs, DOB | Verify identity; confirm age ≥ 16 | Consent | RA (for placement) | Per law / account |
+| Identity verification | PAN, Aadhaar (masked), DigiLocker attrs, DOB | Verify identity; confirm age ≥ 18 | Consent | RA (for placement) | Per law / account |
 | Qualification check | Educational certs | Verify qualification | Consent | Employer (conclusion) | Per law |
 | Background check | PCC (Passport Seva) | Background conclusion | Consent | Employer (conclusion) | Per law |
 | Consent management | ConsentEvents (notice v1.1; voice_tap grant) | Prove lawful basis | Legal obligation | — | Long / immutable until erasure policy |

@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireProfile } from "@/lib/auth/session";
+import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
 import {
   DIGILOCKER_REQUIRED_PURPOSES,
   hasGrantedPurposes,
 } from "@/lib/compliance/consent";
-import { isId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
   buildAuthorizeUrl,
@@ -29,24 +29,23 @@ export async function GET(req: NextRequest) {
 
   try {
     await ensureIndexes();
+    if (!(await isCandidateOnboardingDone(auth.user.id))) {
+      return NextResponse.redirect(
+        new URL("/candidate/onboarding", req.nextUrl.origin),
+      );
+    }
+
     const consented = await hasGrantedPurposes(
       auth.user.id,
       DIGILOCKER_REQUIRED_PURPOSES,
     );
     if (!consented) {
-      const jobId = req.nextUrl.searchParams.get("jobId");
-      const base =
-        typeof jobId === "string" && isId(jobId)
-          ? `/candidate/kyc?jobId=${jobId}&consent=required`
-          : "/candidate/kyc?consent=required";
-      return NextResponse.redirect(new URL(base, req.nextUrl.origin));
+      return NextResponse.redirect(
+        new URL("/candidate/kyc?consent=required", req.nextUrl.origin),
+      );
     }
 
-    const jobId = req.nextUrl.searchParams.get("jobId");
-    const returnTo =
-      typeof jobId === "string" && isId(jobId)
-        ? `/candidate/kyc?jobId=${jobId}`
-        : "/candidate/kyc";
+    const returnTo = "/candidate/kyc";
 
     const state = createOAuthState();
     const codeVerifier = createCodeVerifier();

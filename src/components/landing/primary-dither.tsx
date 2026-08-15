@@ -180,8 +180,6 @@ export type PrimaryDitherProps = {
   blur?: boolean;
   /** Light primary wash over the dither. */
   wash?: boolean;
-  /** @deprecated Ignored — all decorative fills share one live WebGL source. */
-  live?: boolean;
   /** When false, copy the shared shader once (admin cards). Default true. */
   animate?: boolean;
 };

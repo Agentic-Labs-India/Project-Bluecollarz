@@ -13,6 +13,7 @@ import {
   dateOnlyToLocalDate,
   formatDateOnly,
   formatDateOnlyDisplay,
+  MIN_ACCOUNT_AGE_YEARS,
 } from "@/lib/core/dates";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,11 @@ export function DateOfBirthPicker({
   const selected = dateOnlyToLocalDate(value);
   const today = new Date();
   const startMonth = new Date(today.getFullYear() - 100, 0, 1);
-  const endMonth = today;
+  const maxDob = new Date(
+    today.getFullYear() - MIN_ACCOUNT_AGE_YEARS,
+    today.getMonth(),
+    today.getDate(),
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,8 +60,8 @@ export function DateOfBirthPicker({
           selected={selected}
           defaultMonth={selected ?? new Date(today.getFullYear() - 25, 0, 1)}
           startMonth={startMonth}
-          endMonth={endMonth}
-          disabled={{ after: today }}
+          endMonth={maxDob}
+          disabled={{ after: maxDob }}
           onSelect={(date) => {
             onChange(date ? formatDateOnly(date) : "");
             setOpen(false);

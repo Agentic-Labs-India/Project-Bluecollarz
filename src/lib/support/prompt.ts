@@ -15,19 +15,19 @@ You already know their profile type from the session. Tailor advice to that role
 Blucollarz is AI-native hiring infrastructure for skilled candidates and recruiters (Gulf / blue-collar focused). Sign-in is Google OAuth.
 
 ## Candidate (work) flow
-1. Onboarding — voice-guided AI coach builds a profile (or PDF resume parse). Needed: phone, headline, location, experience, skills, summary, education, work experience, languages.
-2. Home dashboard — application stats and next actions.
-3. Explore opportunities — browse published roles, apply, then complete AI interviews.
-4. AI Communication interview — camera + mic + entire-screen share; scored on clarity, fluency, confidence, professionalism.
-5. AI Domain interview — role-aware questions from the job overview; same device rules.
-6. After interviews, wait for recruiter selection.
-7. If selected — complete DigiLocker KYC (e-Aadhaar via MeriPehchaan). No document uploads; retrieved DigiLocker JSON is shown on screen and not stored in the database.
+1. Onboarding — voice-guided AI coach (or PDF resume parse). Needed: currently working as, years of experience, education, work experience, languages. Skills come from a resume PDF only. Summary is generated at the end.
+2. DigiLocker KYC — required next. Identity only: name, date of birth (18+), phone, location, gender, PAN, Aadhaar last 4. Email stays from Google. APAAR, marksheets, and passport are later modules.
+3. Home dashboard — application stats and next actions.
+4. Explore opportunities — browse published roles. Application status is Submitted, Selected, or Rejected.
+5. AI Communication interview — camera + mic + entire-screen share; scored on clarity, fluency, confidence, professionalism.
+6. AI Domain interview — role-aware questions from the job overview; same device rules.
+7. After interviews, wait for recruiter selection.
 
 ## Recruiter (hire) flow
 1. Company profile setup.
 2. Post / manage roles.
 3. Review applicants: resume, interview scores, recordings, transcripts.
-4. Select or reject. Selected candidates who finish DigiLocker KYC show “DigiLocker KYC Done”.
+4. Select or reject. Status shown as Submitted, Selected, or Rejected.
 
 ## Admin flow
 - Manage recruiters/admins, email desk, and support tickets in /admin.

@@ -1,19 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { CheckCircle2Icon, XCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import {
-  ArrowLeftIcon,
-  CheckCircle2Icon,
-  ShieldCheckIcon,
-  XCircleIcon,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 import { AppPage } from "@/components/layout/app-page";
 import { KycPageSkeleton } from "@/components/layout/page-skeleton";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
 import type { DigilockerStatusResponse } from "@/lib/kyc/digilocker";
-import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
+
+const OWRC_HELP_LINE = "1800 11 3090";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -25,13 +23,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export function KycVerification({
-  jobId,
-  jobTitle,
-}: {
-  jobId?: string | null;
-  jobTitle?: string | null;
-}) {
+export function KycVerification() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<DigilockerStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,13 +36,17 @@ export function KycVerification({
       const message = searchParams.get("message");
       const qs = message ? `?message=${encodeURIComponent(message)}` : "";
       const res = await fetch(`/api/auth/digilocker/status${qs}`);
-      const json = (await res.json().catch(() => ({}))) as DigilockerStatusResponse & {
+      const json = (await res
+        .json()
+        .catch(() => ({}))) as DigilockerStatusResponse & {
         error?: string;
       };
       if (!res.ok) throw new Error(json.error || "Failed to load KYC status");
       setStatus(json);
     } catch (e: unknown) {
-      setLoadError(e instanceof Error ? e.message : "Failed to load KYC status");
+      setLoadError(
+        e instanceof Error ? e.message : "Failed to load KYC status",
+      );
     } finally {
       setLoading(false);
     }
@@ -76,61 +72,45 @@ export function KycVerification({
   const data = status?.data;
   const verified = status?.isKycVerified === true;
   const failed =
-    status?.status === "failed" ||
-    searchParams.get("digilocker") === "error";
-  const startHref = jobId
-    ? `/api/auth/digilocker/start?jobId=${jobId}`
-    : "/api/auth/digilocker/start";
+    status?.status === "failed" || searchParams.get("digilocker") === "error";
 
   return (
     <AppPage>
-      <header className="mb-8">
-        <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
-          KYC verification
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-          Verify with DigiLocker. Matching identity fields update your profile
-          and lock phone, DOB, address, PAN, Aadhaar, and gender.
-          {jobTitle ? (
-            <>
-              {" "}
-              Required for{" "}
-              <span className="text-foreground font-medium">{jobTitle}</span>.
-            </>
-          ) : null}
-        </p>
-      </header>
-
       {failed && status?.error ? (
-        <div className="border-destructive/30 bg-destructive/5 mb-8 border p-5">
+        <div className="border-destructive/30 bg-destructive/5 mb-5 border p-5">
           <div className="flex items-start gap-3">
             <XCircleIcon className="text-destructive mt-0.5 size-5 shrink-0" />
             <div>
               <p className="text-foreground font-medium">Verification failed</p>
-              <p className="text-muted-foreground mt-1 text-sm">{status.error}</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {status.error}
+              </p>
             </div>
           </div>
         </div>
       ) : null}
 
       {verified ? (
-        <div className="border-border bg-card mb-8 space-y-5 border p-5">
-          <div className="flex items-start gap-3">
-            <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-sky-600 dark:text-sky-400" />
-            <div>
-              <p className="text-foreground font-medium">Identity verified</p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Saved on your account from DigiLocker. Locked fields can no
-                longer be edited.
-                {status?.verifiedAt
-                  ? ` · ${new Date(status.verifiedAt).toLocaleString()}`
-                  : null}
-              </p>
+        <div className="border-border bg-card overflow-hidden border">
+          <PrimaryDitherBand seed="kyc-verified" />
+          <div className="space-y-4 p-5">
+            <div className="flex items-start gap-3">
+              <CheckCircle2Icon className="text-primary mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="text-foreground text-sm font-medium">
+                  Identity verified
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                  Name, date of birth, phone, location, gender, PAN, and Aadhaar
+                  are saved from DigiLocker.
+                  {status?.verifiedAt
+                    ? ` · ${new Date(status.verifiedAt).toLocaleString()}`
+                    : null}
+                </p>
+              </div>
             </div>
-          </div>
 
-          {data ? (
-            <div className="border-border/70 space-y-4 border-t pt-4">
+            {data ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Name" value={data.name} />
                 <Field label="Date of birth" value={data.dateOfBirth} />
@@ -138,81 +118,48 @@ export function KycVerification({
                 <Field
                   label="Aadhaar (last 4)"
                   value={
-                    data.aadhaarLast4
-                      ? `XXXXXXXX${data.aadhaarLast4}`
-                      : null
+                    data.aadhaarLast4 ? `XXXXXXXX${data.aadhaarLast4}` : null
                   }
                 />
                 <Field label="PAN" value={data.pan} />
-                <Field label="APAAR ID" value={data.apaarId} />
                 <Field label="Email" value={data.email} />
                 <Field label="Phone" value={data.phone} />
                 <Field label="Address" value={data.address} />
                 <Field label="Provider" value={data.provider} />
               </div>
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="outline">
-              <Link href="/candidate/profile">
-                <ArrowLeftIcon className="size-4" />
-                Back
-              </Link>
-            </Button>
-            {jobId ? (
-              <Button asChild variant="outline">
-                <Link href={`/candidate/explore?jobId=${jobId}`}>
-                  Return to opportunity
-                </Link>
-              </Button>
             ) : null}
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+              <Button size="lg" className="w-full sm:w-auto" asChild>
+                <Link href="/candidate/home">Continue</Link>
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+                asChild
+              >
+                <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
+                  Ask me a question → OWRC {OWRC_HELP_LINE}
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       ) : (
         <div className="space-y-5">
           {searchParams.get("consent") === "required" ? (
             <p className="border-border bg-muted/40 border p-3 text-sm">
-              DigiLocker needs your recorded consent for identity and contact
-              first.
+              Turn on every switch, then Agree and Verify.
             </p>
           ) : null}
           <ConsentNoticePanel
-            onDeferred={() => {
-              window.location.href = jobId
-                ? `/candidate/explore?jobId=${jobId}`
-                : "/candidate/home";
-            }}
+            variant="kyc"
+            verifyHref="/api/auth/digilocker/start"
           />
-          <div className="border-border bg-card space-y-5 border p-5">
-            <div className="flex items-start gap-3">
-              <ShieldCheckIcon className="text-primary mt-0.5 size-5 shrink-0" />
-              <div>
-                <p className="text-foreground font-medium">
-                  Verify with DigiLocker
-                </p>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  After you agree above, continue on MeriPehchaan. We save
-                  verified identity fields to your account — not raw DigiLocker
-                  XML. Employers only see assurance conclusions.
-                </p>
-              </div>
-            </div>
-            <Button asChild size="lg" className="w-full sm:w-auto">
-              <a href={startHref}>Verify with DigiLocker</a>
-            </Button>
-          </div>
         </div>
       )}
-
-      {jobId ? (
-        <Button asChild variant="ghost" className="mt-4">
-          <Link href={`/candidate/explore?jobId=${jobId}`}>
-            <ArrowLeftIcon className="size-4" />
-            Back to role
-          </Link>
-        </Button>
-      ) : null}
     </AppPage>
   );
 }

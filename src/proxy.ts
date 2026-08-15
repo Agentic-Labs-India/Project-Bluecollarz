@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
+import { type NextRequest, NextResponse } from "next/server";
 import { PROFILE_BASE_ROUTES } from "@/lib/core/routes";
 import {
   getProfileBasePath,
@@ -45,8 +45,9 @@ const isProtectedRoute = createRouteMatcher(
   PROFILE_BASE_ROUTES.map((route) => route + "(.*)"),
 );
 
-const isCandidateOnboardingAllowed = createRouteMatcher([
+const isCandidatePreAppAllowed = createRouteMatcher([
   "/candidate/onboarding",
+  "/candidate/kyc",
   "/candidate/settings",
   "/api/(.*)",
 ]);
@@ -74,17 +75,26 @@ async function getSessionUser(req: NextRequest): Promise<SessionUser | null> {
   return null;
 }
 
-async function isCandidateComplete(req: NextRequest): Promise<boolean> {
+async function getCandidateGate(req: NextRequest): Promise<{
+  complete: boolean;
+  kycVerified: boolean;
+}> {
   try {
     const origin = req.nextUrl.origin;
     const res = await fetch(`${origin}/api/candidate/onboarding-status`, {
       headers: { cookie: req.headers.get("cookie") || "" },
     });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { complete?: boolean };
-    return Boolean(data.complete);
+    if (!res.ok) return { complete: false, kycVerified: false };
+    const data = (await res.json()) as {
+      complete?: boolean;
+      kycVerified?: boolean;
+    };
+    return {
+      complete: Boolean(data.complete),
+      kycVerified: Boolean(data.kycVerified),
+    };
   } catch {
-    return false;
+    return { complete: false, kycVerified: false };
   }
 }
 
@@ -121,10 +131,13 @@ export async function proxy(req: NextRequest) {
     }
     const profileType = normalizeProfileType(user.profileType ?? undefined);
     if (profileType === "work") {
-      const complete = await isCandidateComplete(req);
-      return NextResponse.redirect(
-        new URL(complete ? "/candidate/home" : "/candidate/onboarding", req.url),
-      );
+      const { complete, kycVerified } = await getCandidateGate(req);
+      const next = !complete
+        ? "/candidate/onboarding"
+        : !kycVerified
+          ? "/candidate/kyc"
+          : "/candidate/home";
+      return NextResponse.redirect(new URL(next, req.url));
     }
     return NextResponse.redirect(
       new URL(getProfileHomePath(profileType), req.url),
@@ -147,17 +160,20 @@ export async function proxy(req: NextRequest) {
         );
       }
 
-      // Work candidates must finish onboarding before using the candidate app.
+      // Work candidates: onboarding, then DigiLocker KYC, then the app.
       if (
         profileType === "work" &&
         pathname.startsWith("/candidate") &&
-        !isCandidateOnboardingAllowed(req)
+        !isCandidatePreAppAllowed(req)
       ) {
-        const complete = await isCandidateComplete(req);
+        const { complete, kycVerified } = await getCandidateGate(req);
         if (!complete) {
           return NextResponse.redirect(
             new URL("/candidate/onboarding", req.url),
           );
+        }
+        if (!kycVerified) {
+          return NextResponse.redirect(new URL("/candidate/kyc", req.url));
         }
       }
     } catch {

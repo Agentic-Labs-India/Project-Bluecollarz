@@ -7,7 +7,7 @@ import {
 
 /* ── types ── */
 
-export interface DigilockerIssuedDoc {
+interface DigilockerIssuedDoc {
   doctype: string;
   name: string;
   issuer: string;
@@ -24,14 +24,7 @@ export interface DigilockerKycPayload {
   uidMasked: string | null;
   address: string | null;
   pan: string | null;
-  email: string | null;
   phone: string | null;
-  apaarId: string | null;
-  education: string[];
-  documents: DigilockerIssuedDoc[];
-  source: "eaadhaar_xml" | "acr" | "profile";
-  note: string | null;
-  verifiedAt: string;
 }
 
 /** KYC page view — sourced from Users Mongo document. */
@@ -41,7 +34,6 @@ export interface DigilockerKycView {
   gender: string | null;
   aadhaarLast4: string | null;
   pan: string | null;
-  apaarId: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -155,7 +147,9 @@ function cfg() {
   const clientId = process.env.DIGILOCKER_CLIENT_ID?.trim() ?? "";
   const clientSecret = process.env.DIGILOCKER_CLIENT_SECRET?.trim() ?? "";
   if (!clientId || !clientSecret) {
-    throw new Error("DIGILOCKER_CLIENT_ID and DIGILOCKER_CLIENT_SECRET required");
+    throw new Error(
+      "DIGILOCKER_CLIENT_ID and DIGILOCKER_CLIENT_SECRET required",
+    );
   }
   const base =
     process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") ||
@@ -170,12 +164,11 @@ function cfg() {
     issuedUrl: `${DIGILOCKER_OAUTH_BASE}/2/files/issued`,
     xmlUriBase: `${DIGILOCKER_OAUTH_BASE}/1/xml`,
     redirectUri: `${base}/api/auth/digilocker/callback`,
-    scope:
-      "files.issueddocs openid userdetails email address picture apaardetails",
+    scope: "files.issueddocs openid userdetails email address picture",
     acr: "aadhaar pan email mobile user_alias",
     amr: "all aadhaar pan",
     dlFlow: "signin",
-    reqDoctype: "ADHAR PANCR SSCER HSCER ABCID DGMST",
+    reqDoctype: "ADHAR PANCR",
   };
 }
 
@@ -256,12 +249,14 @@ export async function exchangeAuthorizationCode(opts: {
 
 function attr(xml: string, tag: string, name: string) {
   return (
-    xml.match(
-      new RegExp(
-        `<(?:[\\w.-]+:)?${tag}\\b[^>]*\\b${name}\\s*=\\s*"([^"]*)"`,
-        "i",
-      ),
-    )?.[1]?.trim() || null
+    xml
+      .match(
+        new RegExp(
+          `<(?:[\\w.-]+:)?${tag}\\b[^>]*\\b${name}\\s*=\\s*"([^"]*)"`,
+          "i",
+        ),
+      )?.[1]
+      ?.trim() || null
   );
 }
 function anyAttr(xml: string, name: string) {
@@ -276,7 +271,10 @@ function maskUid(uid: string | null) {
   return digits.length >= 4 ? `XXXXXXXX${digits.slice(-4)}` : null;
 }
 function joinAddr(parts: Array<string | null | undefined>) {
-  const s = parts.map((p) => p?.trim()).filter(Boolean).join(", ");
+  const s = parts
+    .map((p) => p?.trim())
+    .filter(Boolean)
+    .join(", ");
   return s || null;
 }
 
@@ -340,7 +338,9 @@ function parseAadhaarXml(xml: string) {
     gender: attr(xml, "Poi", "gender") || attr(xml, "Person", "gender"),
     uidMasked: maskUid(uid),
     address: joinAddr([
-      attr(xml, "Poa", "co") || attr(xml, "Poa", "careof") || anyAttr(xml, "co"),
+      attr(xml, "Poa", "co") ||
+        attr(xml, "Poa", "careof") ||
+        anyAttr(xml, "co"),
       attr(xml, "Poa", "house") || anyAttr(xml, "house"),
       attr(xml, "Poa", "street") || anyAttr(xml, "street"),
       attr(xml, "Poa", "lm") || anyAttr(xml, "lm"),
@@ -360,24 +360,25 @@ function parsePanXml(xml: string) {
     if (v) return v;
   }
   return (
-    xml.match(
-      /<(?:[\w.-]+:)?(?:PAN|PermanentAccountNumber)\b[^>]*>([^<]+)</i,
-    )?.[1]?.trim() || null
+    xml
+      .match(
+        /<(?:[\w.-]+:)?(?:PAN|PermanentAccountNumber)\b[^>]*>([^<]+)</i,
+      )?.[1]
+      ?.trim() || null
   );
 }
 
 function parseIssuedList(raw: unknown): DigilockerIssuedDoc[] {
-  const bag =
-    Array.isArray(raw)
-      ? raw
-      : raw && typeof raw === "object"
-        ? (() => {
-            const o = raw as Record<string, unknown>;
-            return (
-              [o.items, o.docs, o.documents, o.data].find(Array.isArray) ?? []
-            );
-          })()
-        : [];
+  const bag = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object"
+      ? (() => {
+          const o = raw as Record<string, unknown>;
+          return (
+            [o.items, o.docs, o.documents, o.data].find(Array.isArray) ?? []
+          );
+        })()
+      : [];
 
   const out: DigilockerIssuedDoc[] = [];
   for (const item of bag) {
@@ -402,26 +403,11 @@ function parseIssuedList(raw: unknown): DigilockerIssuedDoc[] {
   return out;
 }
 
-const EDU = new Set([
-  "SSCER",
-  "HSCER",
-  "DEGCR",
-  "DGMST",
-  "DGCER",
-  "DIPLO",
-  "MARKS",
-  "TRANS",
-]);
-
 function kind(doc: DigilockerIssuedDoc) {
   const hay = `${doc.name} ${doc.doctype} ${doc.uri}`.toLowerCase();
   if (doc.doctype === "PANCR" || /\bpan\b/.test(hay)) return "pan" as const;
-  if (doc.doctype === "ABCID" || /apaar|academic bank/.test(hay))
-    return "apaar" as const;
   if (doc.doctype === "ADHAR" || /aadhaar|aadhar/.test(hay))
     return "aadhaar" as const;
-  if (EDU.has(doc.doctype) || /marksheet|degree|diploma|ssc|hsc/.test(hay))
-    return "edu" as const;
   return "other" as const;
 }
 
@@ -438,17 +424,12 @@ async function fetchXml(accessToken: string, uri: string, base: string) {
   }
 }
 
-function appendNote(cur: string | null, next: string) {
-  return [cur, next].filter(Boolean).join(" ") || null;
-}
-
 /* ── gather ── */
 
 export async function gatherDigilockerKyc(opts: {
   accessToken: string;
   idToken?: string;
   tokenEaadhaar?: string;
-  verifiedAt: string;
 }): Promise<DigilockerKycPayload> {
   const c = cfg();
   const auth = { Authorization: `Bearer ${opts.accessToken}` };
@@ -484,25 +465,16 @@ export async function gatherDigilockerKyc(opts: {
     uidMasked: maskUid(claim(claims, ["masked_aadhaar"])),
     address: addressFromClaims(claims),
     pan: claim(claims, ["pan_number"]),
-    email: claim(claims, ["email", "email_id"]),
     phone: claim(claims, ["phone_number", "mobile", "phone"]),
-    apaarId: claim(claims, [
-      "apaar_id",
-      "apaarid",
-      "apaarId",
-      "apaar",
-      "APAAR",
-    ]),
-    education: [],
-    documents: [],
-    source: claims?.masked_aadhaar ? "acr" : "profile",
-    note: null,
-    verifiedAt: opts.verifiedAt,
   };
 
   try {
-    const res = await fetch(c.eaadhaarUrl, { headers: auth, cache: "no-store" });
-    if (!res.ok) throw new Error(await apiError(res, `e-Aadhaar ${res.status}`));
+    const res = await fetch(c.eaadhaarUrl, {
+      headers: auth,
+      cache: "no-store",
+    });
+    if (!res.ok)
+      throw new Error(await apiError(res, `e-Aadhaar ${res.status}`));
     const parsed = parseAadhaarXml(
       Buffer.from(await res.arrayBuffer()).toString("utf8"),
     );
@@ -511,41 +483,21 @@ export async function gatherDigilockerKyc(opts: {
     out.gender = parsed.gender || out.gender;
     out.uidMasked = parsed.uidMasked || out.uidMasked;
     out.address = parsed.address || out.address;
-    out.source = "eaadhaar_xml";
-  } catch (e) {
-    if (!out.address) {
-      out.note = appendNote(
-        out.note,
-        e instanceof Error
-          ? `e-Aadhaar XML: ${e.message}`
-          : "e-Aadhaar XML denied",
-      );
-    }
+  } catch {
+    // e-Aadhaar XML is optional when address already came from claims.
   }
 
   try {
     const res = await fetch(c.issuedUrl, { headers: auth, cache: "no-store" });
     if (!res.ok) throw new Error(await apiError(res, `issued ${res.status}`));
     const docs = parseIssuedList(await res.json());
-    out.documents = docs;
-
-    if (docs.length === 0) {
-      out.note = appendNote(
-        out.note,
-        "No issued documents in OAuth consent — allow APAAR/Aadhaar/PAN/marksheets on DigiLocker.",
-      );
-    }
 
     for (const doc of docs) {
       const k = kind(doc);
-      if (k === "edu" && !out.education.includes(doc.name)) {
-        out.education.push(doc.name);
-      }
-
+      if (k !== "pan" && k !== "aadhaar") continue;
       const needXml =
         (k === "pan" && !out.pan) ||
-        (k === "aadhaar" && (!out.address || !out.uidMasked)) ||
-        (k === "apaar" && !out.apaarId);
+        (k === "aadhaar" && (!out.address || !out.uidMasked));
       if (!needXml) continue;
 
       const xml = await fetchXml(opts.accessToken, doc.uri, c.xmlUriBase);
@@ -557,22 +509,10 @@ export async function gatherDigilockerKyc(opts: {
         out.address = a.address || out.address;
         out.uidMasked = a.uidMasked || out.uidMasked;
         out.name = a.name || out.name;
-        if (a.address) out.source = "eaadhaar_xml";
-      }
-      if (k === "apaar" && !out.apaarId) {
-        out.apaarId =
-          anyAttr(xml, "apaarid") ||
-          anyAttr(xml, "apaar") ||
-          anyAttr(xml, "number") ||
-          doc.uri.match(/ABCID-([A-Za-z0-9]+)/i)?.[1] ||
-          doc.name;
       }
     }
-  } catch (e) {
-    out.note = appendNote(
-      out.note,
-      e instanceof Error ? `Issued docs: ${e.message}` : "Issued docs failed",
-    );
+  } catch {
+    // Issued-doc XML is optional when PAN / Aadhaar already came from claims.
   }
 
   if (!out.name) {

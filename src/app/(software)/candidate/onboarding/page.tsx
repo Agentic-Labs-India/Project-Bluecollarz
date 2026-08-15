@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { OnboardingAgent } from "@/components/candidate/onboarding-agent";
 import { auth } from "@/lib/auth/auth";
-import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
+import { getCandidateGateStatus } from "@/lib/candidate/queries";
 import {
   getProfileHomePath,
   normalizeProfileType,
@@ -29,8 +29,9 @@ async function OnboardingPageGate() {
     redirect(getProfileHomePath(profileType));
   }
 
-  if (await isCandidateOnboardingDone(user.id)) {
-    redirect("/candidate/home");
+  const { complete, kycVerified } = await getCandidateGateStatus(user.id);
+  if (complete) {
+    redirect(kycVerified ? "/candidate/home" : "/candidate/kyc");
   }
 
   return <OnboardingAgent />;

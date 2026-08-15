@@ -9,19 +9,6 @@ export interface UserKyc {
   aadhaarLast4?: string | null;
   pan?: string | null;
   gender?: string | null;
-  apaarId?: string | null;
-  /**
-   * Optional persisted Attribute Release Matrix conclusions.
-   * Shape matches `AttributeAssuranceMap` in `@/lib/compliance/arm`.
-   */
-  attributes?: Record<
-    string,
-    {
-      status: string;
-      assuredAt?: string | null;
-      source?: string | null;
-    }
-  >;
 }
 
 /** KYC fields on a Users document. */

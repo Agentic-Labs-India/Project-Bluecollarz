@@ -362,34 +362,27 @@ export function AdminAiFlow({
           </svg>
 
           <div className="relative z-10 grid grid-cols-3">
-            <Lane title="Candidate" note="Work sign-in. KYC is optional.">
+            <Lane title="Candidate" note="Work sign-in. KYC after onboarding.">
               <Box id="c-signin" title="Sign in" detail="Work profile." />
               <ArrowDown />
               <Box
                 id="c-onboard"
                 ai
                 title="Onboarding voice"
-                detail="Profile, language, places, resume parse."
+                detail="Education, experience, languages."
                 meta={`t ${t.onboarding} · onboarding`}
               />
-              <Fork
-                rightLabel="optional"
-                rightDashed
-                left={
-                  <Box
-                    id="c-explore"
-                    title="Explore"
-                    detail="Published roles."
-                  />
-                }
-                right={
-                  <Box
-                    id="c-kyc"
-                    aside
-                    title="DigiLocker KYC"
-                    detail="Not a gate. Consent 1.1."
-                  />
-                }
+              <ArrowDown />
+              <Box
+                id="c-kyc"
+                title="DigiLocker KYC"
+                detail="Name, DOB 18+, phone, location, PAN, Aadhaar."
+              />
+              <ArrowDown />
+              <Box
+                id="c-explore"
+                title="Explore"
+                detail="Published roles."
               />
               <ArrowDown />
               <Box
@@ -499,7 +492,7 @@ export function AdminAiFlow({
               <Box
                 id="r-apps"
                 title="Applicants"
-                detail="No PII. KYC + scores are consent-gated."
+                detail="Submitted / Selected / Rejected. Scores are consent-gated."
               />
               <Fork
                 left={

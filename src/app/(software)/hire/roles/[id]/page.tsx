@@ -17,10 +17,11 @@ import {
 import { ApplicantSheet } from "@/components/hire/applicant-sheet";
 import { RoleSheet } from "@/components/hire/role-sheet";
 import { AppPage } from "@/components/layout/app-page";
-import type {
-  ApplicantInterviewScore,
-  ApplicantListItem,
-  PaginatedApplicantsResponse,
+import {
+  APPLICATION_STATUS_LABELS,
+  type ApplicantInterviewScore,
+  type ApplicantListItem,
+  type PaginatedApplicantsResponse,
 } from "@/lib/jobs/applications";
 import type { InterviewStageId } from "@/lib/interviews";
 import { JOB_STATUS_LABELS } from "@/lib/jobs";
@@ -160,15 +161,6 @@ export default function RoleCandidatesPage() {
                 <p className="text-foreground truncate font-medium">
                   {row.original.name ?? "Candidate"}
                 </p>
-                {row.original.identityAssured ? (
-                  <Badge className="shrink-0 font-normal">
-                    {row.original.assuranceLevel}
-                  </Badge>
-                ) : row.original.status === "selected" ? (
-                  <Badge variant="outline" className="shrink-0 font-normal">
-                    Identity pending
-                  </Badge>
-                ) : null}
               </div>
               <p className="text-muted-foreground truncate text-xs">
                 Contact via licensed RA — not released to employers
@@ -197,8 +189,8 @@ export default function RoleCandidatesPage() {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => (
-          <Badge variant="secondary" className="capitalize">
-            {row.original.status}
+          <Badge variant="secondary">
+            {APPLICATION_STATUS_LABELS[row.original.status]}
           </Badge>
         ),
       },
@@ -301,7 +293,7 @@ export default function RoleCandidatesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="applied">Applied</SelectItem>
+                <SelectItem value="applied">Submitted</SelectItem>
                 <SelectItem value="selected">Selected</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>

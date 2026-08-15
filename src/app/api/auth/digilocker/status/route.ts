@@ -80,7 +80,6 @@ export async function GET(req: NextRequest) {
           gender: pack?.gender ? String(pack.gender) : null,
           aadhaarLast4: pack?.aadhaarLast4 ? String(pack.aadhaarLast4) : null,
           pan: pack?.pan ? String(pack.pan) : null,
-          apaarId: pack?.apaarId ? String(pack.apaarId) : null,
           email: user?.email ? String(user.email) : null,
           phone: phoneDisplay(user ?? {}),
           address: user?.location ? String(user.location) : null,

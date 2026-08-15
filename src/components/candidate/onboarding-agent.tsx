@@ -1,45 +1,58 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
 import {
   DefaultChatTransport,
   isTextUIPart,
   isToolUIPart,
   lastAssistantMessageIsCompleteWithToolCalls,
 } from "ai";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckIcon, MicIcon, UploadIcon, Volume2Icon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Banner } from "@/components/ui/banner";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 import {
-  startVadLoop,
-  type VadController,
-} from "@/components/candidate/interviews/vad";
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   AssistantAvatar,
   UserChatAvatar,
   useChatUserAvatar,
 } from "@/components/candidate/chat-avatars";
+import {
+  startVadLoop,
+  type VadController,
+} from "@/components/candidate/interviews/vad";
 import { APP_PAGE_MAX } from "@/components/layout/app-page";
-import { speakText } from "@/lib/ai/voice/speak";
+import { Badge } from "@/components/ui/badge";
+import { Banner } from "@/components/ui/banner";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchProfileVoiceLanguage,
-  languageLabel,
-  saveProfileVoiceLanguage,
-  VOICE_LANGUAGE_OPTIONS,
   isTtsLanguageCode,
+  languageLabel,
+  resumeVoicePrompt,
+  saveProfileVoiceLanguage,
   type TtsLanguageCode,
+  VOICE_LANGUAGE_OPTIONS,
 } from "@/lib/ai/voice/languages";
+import { speakText } from "@/lib/ai/voice/speak";
 import { TTS_VOICE } from "@/lib/ai/voice/style";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { cn } from "@/lib/utils";
-import type { UIMessage } from "ai";
 
 const LANG_TOOL = "tool-selectVoiceLanguage" as const;
 const RESUME_TOOL = "tool-selectResume" as const;
+const RESUME_PICK_STATUS = "Choose a resume option in the chat to continue.";
+
+function isPickerOpen(state: string) {
+  return state === "input-available" || state === "approval-requested";
+}
 
 type LangToolPart = {
   type: typeof LANG_TOOL;
@@ -70,19 +83,42 @@ function resumeToolParts(message: UIMessage) {
 }
 
 function needsLanguagePick(message: UIMessage) {
-  return langToolParts(message).some(
-    (p) => p.state === "input-available" || p.state === "approval-requested",
-  );
+  return langToolParts(message).some((p) => isPickerOpen(p.state));
 }
 
 function needsResumePick(message: UIMessage) {
-  return resumeToolParts(message).some(
-    (p) => p.state === "input-available" || p.state === "approval-requested",
-  );
+  return resumeToolParts(message).some((p) => isPickerOpen(p.state));
 }
 
 function isClientPickerTool(type: string) {
   return type === LANG_TOOL || type === RESUME_TOOL;
+}
+
+function waitingPickerStatus(awaitingResume: boolean) {
+  if (awaitingResume) return RESUME_PICK_STATUS;
+  return null;
+}
+
+function openPickerPrompt(
+  parts: Array<{ state: string; input?: { prompt?: string } }>,
+) {
+  return parts.find((p) => isPickerOpen(p.state))?.input?.prompt?.trim() || "";
+}
+
+/** Spoken line when the model opened a picker without chat text. */
+function pickerFallbackText(
+  message: UIMessage,
+  voiceLanguage: TtsLanguageCode,
+): string | null {
+  if (needsLanguagePick(message)) {
+    return (
+      openPickerPrompt(langToolParts(message)) || "Which language should we use?"
+    );
+  }
+  if (needsResumePick(message)) {
+    return resumeVoicePrompt(voiceLanguage);
+  }
+  return null;
 }
 
 /** Kickoff prompts are sent to the model but should not appear in the chat UI. */
@@ -98,16 +134,13 @@ function isHiddenInChat(message: UIMessage) {
 
 function LanguagePickerInChat({
   prompt,
-  selectedCode,
   disabled,
   onSelect,
 }: {
   prompt?: string;
-  selectedCode?: string | null;
   disabled?: boolean;
   onSelect: (code: TtsLanguageCode) => void;
 }) {
-  const confirmed = Boolean(selectedCode);
   return (
     <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
       <p className="text-foreground text-sm leading-snug">
@@ -119,22 +152,18 @@ function LanguagePickerInChat({
         className="grid grid-cols-2 gap-1.5"
       >
         {VOICE_LANGUAGE_OPTIONS.map((opt) => {
-          const isSelected = selectedCode === opt.code;
           return (
             <button
               key={opt.code}
               type="button"
               role="option"
-              aria-selected={isSelected}
-              disabled={disabled || confirmed}
+              aria-selected={false}
+              disabled={disabled}
               onClick={() => onSelect(opt.code)}
               className={cn(
-                "border-border flex items-center gap-2 border px-2.5 py-2 text-left transition-colors",
+                "border-border bg-background/80 flex items-center gap-2 border px-2.5 py-2 text-left transition-colors",
                 "hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
-                "disabled:pointer-events-none",
-                isSelected
-                  ? "border-primary bg-primary/10"
-                  : "bg-background/80 disabled:opacity-60",
+                "disabled:pointer-events-none disabled:opacity-60",
               )}
             >
               <span className="min-w-0 flex-1">
@@ -145,9 +174,6 @@ function LanguagePickerInChat({
                   {opt.label}
                 </span>
               </span>
-              {isSelected ? (
-                <CheckIcon className="text-primary size-3.5 shrink-0" />
-              ) : null}
             </button>
           );
         })}
@@ -157,14 +183,14 @@ function LanguagePickerInChat({
 }
 
 function ResumePickerInChat({
-  prompt,
+  languageCode,
   selected,
   disabled,
   uploading,
   onUpload,
   onSkip,
 }: {
-  prompt?: string;
+  languageCode?: TtsLanguageCode | null;
   selected?: "upload" | "skip" | null;
   disabled?: boolean;
   uploading?: boolean;
@@ -175,7 +201,7 @@ function ResumePickerInChat({
   return (
     <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
       <p className="text-foreground text-sm leading-snug">
-        {prompt?.trim() || ""}
+        {resumeVoicePrompt(languageCode)}
       </p>
       <div
         role="listbox"
@@ -285,7 +311,7 @@ export function OnboardingAgent() {
   const vadRef = useRef<VadController | null>(null);
   const doneRef = useRef(false);
   const languageLockedRef = useRef(false);
-  const resumeGateRef = useRef(false);
+  const pickerGateRef = useRef(false);
   const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
 
   const transport = useMemo(
@@ -293,9 +319,7 @@ export function OnboardingAgent() {
       new DefaultChatTransport({
         api: "/api/onboarding",
         body: () => ({
-          language_code: languageLockedRef.current
-            ? voiceLanguageRef.current
-            : null,
+          language_code: voiceLanguageRef.current,
         }),
       }),
     [],
@@ -323,7 +347,25 @@ export function OnboardingAgent() {
   const awaitingResume = messages.some(
     (m) => m.role === "assistant" && needsResumePick(m),
   );
-  resumeGateRef.current = awaitingResume || uploading;
+  pickerGateRef.current = awaitingResume || uploading;
+
+  const haltMic = useCallback(() => {
+    pausedRef.current = true;
+    vadRef.current?.stop();
+    vadRef.current = null;
+    setListening(false);
+  }, []);
+
+  const markCompleteAndGoHome = useCallback(
+    (delayMs: number) => {
+      doneRef.current = true;
+      setDone(true);
+      haltMic();
+      setStatus("Profile complete — taking you to KYC…");
+      setTimeout(() => router.replace("/candidate/kyc"), delayMs);
+    },
+    [haltMic, router],
+  );
 
   const actionCue: ActionCue = (() => {
     if (done) {
@@ -365,19 +407,23 @@ export function OnboardingAgent() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isStreaming]);
 
-  const lockLanguage = (code: TtsLanguageCode) => {
+  const lockLanguage = useCallback((code: TtsLanguageCode) => {
     languageLockedRef.current = true;
     voiceLanguageRef.current = code;
     setVoiceLanguage(code);
     setStatus(`${languageLabel(code)} selected — continuing…`);
-  };
+  }, []);
 
   const capturePickBaseline = (toolCallId: string) => {
     const host = messages.find(
       (m) =>
         m.role === "assistant" &&
-        (langToolParts(m).some((p) => p.toolCallId === toolCallId) ||
-          resumeToolParts(m).some((p) => p.toolCallId === toolCallId)),
+        m.parts.some(
+          (p) =>
+            isToolUIPart(p) &&
+            isClientPickerTool(p.type) &&
+            p.toolCallId === toolCallId,
+        ),
     );
     if (!host) return;
     const existingText = host.parts
@@ -407,7 +453,7 @@ export function OnboardingAgent() {
           streamingRef.current ||
           doneRef.current ||
           !languageLockedRef.current ||
-          resumeGateRef.current,
+          pickerGateRef.current,
         onLevel: setLevel,
         onSpeechStart: () => {
           setListening(true);
@@ -421,7 +467,7 @@ export function OnboardingAgent() {
               streamingRef.current ||
               doneRef.current ||
               !languageLockedRef.current ||
-              resumeGateRef.current
+              pickerGateRef.current
             ) {
               return;
             }
@@ -450,19 +496,19 @@ export function OnboardingAgent() {
 
       if (!startedRef.current) {
         startedRef.current = true;
-        if (existingLanguage) {
-          setStatus("Starting onboarding…");
-          await sendMessage({
-            text: "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first, then ask ONLY for missing interview fields. Never ask for skills or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).",
-            metadata: { hideInChat: true },
-          });
-        } else {
-          setStatus("Starting onboarding — pick your language in chat…");
-          await sendMessage({
-            text: "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile and ask ONLY for missing interview fields. Never ask for skills or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).",
-            metadata: { hideInChat: true },
-          });
-        }
+        const alreadyHasLanguage = Boolean(existingLanguage);
+        setStatus(
+          alreadyHasLanguage
+            ? "Starting onboarding…"
+            : "Starting onboarding — pick your language in chat…",
+        );
+        const kickoff = alreadyHasLanguage
+          ? "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first."
+          : "Hi — I just signed in as a candidate. Please ask me to select my language in the chat, then call getCandidateProfile.";
+        await sendMessage({
+          text: `${kickoff} Interview currently working as (headline), years of experience, education, work experience, and languages. Never ask for identity (name, email, phone, location, gender, PAN, DOB, Aadhaar), skills, or professional summary. If interview fields are done, call finishOnboarding (it writes the summary).`,
+          metadata: { hideInChat: true },
+        });
       }
     } catch {
       setMicError("Microphone permission is required for voice onboarding.");
@@ -470,22 +516,22 @@ export function OnboardingAgent() {
     }
   };
 
-  // Speak finished assistant text after language is locked.
+  // Speak finished assistant text. Language picker uses default English TTS;
+  // resume picker always uses the selected voice language.
   useEffect(() => {
     if (isStreaming || !micReady || doneRef.current) return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
     if (!last) return;
 
-    if (needsLanguagePick(last)) {
-      pausedRef.current = true;
-      setStatus("Pick a language in the chat to continue.");
-      return;
-    }
-
-    const awaitingResume = needsResumePick(last);
-    if (awaitingResume) {
-      pausedRef.current = true;
-    }
+    const resumeHost = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant" && needsResumePick(m));
+    const awaitingLanguage = needsLanguagePick(last);
+    const awaitingResume = Boolean(resumeHost);
+    const pickerHint = awaitingLanguage
+      ? "Pick a language in the chat to continue."
+      : waitingPickerStatus(awaitingResume);
+    if (pickerHint) pausedRef.current = true;
 
     for (const part of langToolParts(last)) {
       if (part.state === "output-available") {
@@ -494,39 +540,44 @@ export function OnboardingAgent() {
       }
     }
 
-    if (!languageLockedRef.current) return;
+    if (!languageLockedRef.current && !awaitingLanguage) return;
 
-    const text = last.parts
+    let text = last.parts
       .filter(isTextUIPart)
       .map((p) => p.text)
       .join(" ")
       .trim();
+    const speakId = resumeHost?.id ?? last.id;
+    if (awaitingResume) {
+      // After getCandidateProfile / updateCandidateProfile the model often
+      // opens selectResume with no chat text, or with English. Speak the
+      // localized question in the language they already picked.
+      text = resumeVoicePrompt(voiceLanguageRef.current);
+    } else if (!text) {
+      text = pickerFallbackText(last, voiceLanguageRef.current) ?? "";
+    }
 
     const baseline = pickBaselineRef.current;
-    if (baseline && baseline.id === last.id) {
+    if (baseline && baseline.id === last.id && !awaitingResume) {
       if (!text || text === baseline.text) {
         pausedRef.current = true;
-        setStatus(awaitingResume ? "Choose a resume option in the chat to continue." : "Continuing…");
+        setStatus(pickerHint ?? "Continuing…");
         return;
       }
       pickBaselineRef.current = null;
-    } else if (baseline && baseline.id !== last.id) {
+    } else if (baseline && (baseline.id !== last.id || awaitingResume)) {
       pickBaselineRef.current = null;
     }
 
     if (!text) {
-      if (awaitingResume) {
-        setStatus("Choose a resume option in the chat to continue.");
-      }
+      if (pickerHint) setStatus(pickerHint);
       return;
     }
-    if (spokenTextByIdRef.current.get(last.id) === text) {
-      if (awaitingResume) {
-        setStatus("Choose a resume option in the chat to continue.");
-      }
+    if (spokenTextByIdRef.current.get(speakId) === text) {
+      if (pickerHint) setStatus(pickerHint);
       return;
     }
-    spokenTextByIdRef.current.set(last.id, text);
+    spokenTextByIdRef.current.set(speakId, text);
 
     const finished = last.parts.some((p) => {
       if (!isToolUIPart(p) || p.state !== "output-available") return false;
@@ -554,14 +605,13 @@ export function OnboardingAgent() {
       busyUtteranceRef.current = false;
 
       if (finished) {
-        doneRef.current = true;
-        setDone(true);
+        markCompleteAndGoHome(1200);
+        return;
+      }
+
+      if (pickerHint) {
         pausedRef.current = true;
-        vadRef.current?.stop();
-        vadRef.current = null;
-        setListening(false);
-        setStatus("Profile complete — taking you to your dashboard…");
-        setTimeout(() => router.replace("/candidate/home"), 1200);
+        setStatus(pickerHint);
         return;
       }
 
@@ -572,30 +622,23 @@ export function OnboardingAgent() {
           complete?: boolean;
         };
         if (res.ok && json.complete === true) {
-          doneRef.current = true;
-          setDone(true);
-          pausedRef.current = true;
-          vadRef.current?.stop();
-          vadRef.current = null;
-          setListening(false);
-          setStatus("Profile complete — taking you to your dashboard…");
-          setTimeout(() => router.replace("/candidate/home"), 800);
+          markCompleteAndGoHome(800);
           return;
         }
       } catch {
         // ignore — keep listening
       }
 
-      if (awaitingResume) {
-        pausedRef.current = true;
-        setStatus("Choose a resume option in the chat to continue.");
-        return;
-      }
-
       pausedRef.current = false;
       setStatus("Speak when ready — I'm listening.");
     })();
-  }, [messages, isStreaming, micReady, router]);
+  }, [
+    messages,
+    isStreaming,
+    micReady,
+    lockLanguage,
+    markCompleteAndGoHome,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -607,15 +650,21 @@ export function OnboardingAgent() {
     capturePickBaseline(toolCallId);
     pausedRef.current = true;
     lockLanguage(code);
-    void saveProfileVoiceLanguage(code).catch(() => undefined);
-    void addToolOutput({
-      tool: "selectVoiceLanguage",
-      toolCallId,
-      output: {
-        language_code: code,
-        label: languageLabel(code),
-      },
-    });
+    void (async () => {
+      try {
+        await saveProfileVoiceLanguage(code);
+      } catch {
+        // TTS already uses the locked language.
+      }
+      void addToolOutput({
+        tool: "selectVoiceLanguage",
+        toolCallId,
+        output: {
+          language_code: code,
+          label: languageLabel(code),
+        },
+      });
+    })();
   };
 
   const onSkipResume = (toolCallId: string) => {
@@ -660,8 +709,9 @@ export function OnboardingAgent() {
       const dt = new DataTransfer();
       dt.items.add(file);
       await sendMessage({
-        text: "I attached my resume PDF. Extract my profile from it and fast-forward onboarding — only ask for anything still missing.",
+        text: "Resume PDF attached. Stay in my selected voice language. Extract the profile and only ask what is still missing.",
         files: dt.files,
+        metadata: { hideInChat: true },
       });
     } catch {
       setStatus("Could not read that PDF. Try again.");
@@ -745,16 +795,11 @@ export function OnboardingAgent() {
                     </span>
                   ) : null}
                   {langParts
-                    .filter(
-                      (part) =>
-                        part.state === "input-available" ||
-                        part.state === "approval-requested",
-                    )
+                    .filter((part) => isPickerOpen(part.state))
                     .map((part) => (
                       <LanguagePickerInChat
                         key={part.toolCallId}
                         prompt={part.input?.prompt}
-                        selectedCode={null}
                         disabled={isStreaming}
                         onSelect={(code) =>
                           onPickLanguage(part.toolCallId, code)
@@ -762,15 +807,11 @@ export function OnboardingAgent() {
                       />
                     ))}
                   {resumeParts
-                    .filter(
-                      (part) =>
-                        part.state === "input-available" ||
-                        part.state === "approval-requested",
-                    )
+                    .filter((part) => isPickerOpen(part.state))
                     .map((part) => (
                       <ResumePickerInChat
                         key={part.toolCallId}
-                        prompt={part.input?.prompt}
+                        languageCode={voiceLanguage}
                         selected={resumeChoice}
                         disabled={isStreaming}
                         uploading={uploading}

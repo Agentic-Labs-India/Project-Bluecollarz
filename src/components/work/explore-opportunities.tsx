@@ -86,7 +86,7 @@ function OpportunityCard({
       : applicationStatus === "rejected"
         ? "Rejected"
         : hasApplied
-          ? "Applied"
+          ? "Submitted"
           : null;
 
   const bandLabel = stateName(countryCode, stateCode);
@@ -257,13 +257,11 @@ export function ExploreOpportunities({
   initialOpportunities = [],
   initialApplicationStatuses = {},
   initialProfileComplete = false,
-  initialKycVerified = false,
   initialJobId = null,
 }: {
   initialOpportunities?: Opportunity[];
   initialApplicationStatuses?: Record<string, ApplicationStatus>;
   initialProfileComplete?: boolean;
-  initialKycVerified?: boolean;
   /** Deep-link from home / other pages: open this job in the detail panel. */
   initialJobId?: string | null;
 } = {}) {
@@ -292,7 +290,6 @@ export function ExploreOpportunities({
   const [profileComplete, setProfileComplete] = useState(
     initialProfileComplete,
   );
-  const [kycVerified, setKycVerified] = useState(initialKycVerified);
   const [applying, setApplying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
@@ -339,7 +336,6 @@ export function ExploreOpportunities({
     setOpportunities(initialOpportunities);
     setApplicationStatuses(initialApplicationStatuses);
     setProfileComplete(initialProfileComplete);
-    setKycVerified(initialKycVerified);
     filtersDirty.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seed keyed by initialJobId
   }, [initialJobId]);
@@ -349,7 +345,6 @@ export function ExploreOpportunities({
     applicationStatuses?: Record<string, ApplicationStatus>;
     appliedJobIds?: string[];
     profileComplete?: boolean;
-    kycVerified?: boolean;
   }) => {
     setOpportunities(json.items ?? []);
     if (json.applicationStatuses) {
@@ -363,9 +358,6 @@ export function ExploreOpportunities({
     }
     if (typeof json.profileComplete === "boolean") {
       setProfileComplete(json.profileComplete);
-    }
-    if (typeof json.kycVerified === "boolean") {
-      setKycVerified(json.kycVerified);
     }
   };
 
@@ -716,7 +708,6 @@ export function ExploreOpportunities({
               }
               applying={applying}
               profileComplete={profileComplete}
-              kycVerified={kycVerified}
               startingInterview={startingInterview}
               onApply={() => applyToJob(selectedOpportunity.id)}
               onStartCommunicationInterview={() =>

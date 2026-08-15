@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
       ...(parsed.data.type === "withdraw"
         ? {
             message:
-              "Consent withdrawn. DigiLocker, employer assurance, and interview release are blocked until you grant again.",
+              "Consent withdrawn. DigiLocker and interview release are blocked until you grant again.",
           }
         : parsed.data.type === "correction"
           ? {

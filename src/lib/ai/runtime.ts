@@ -6,14 +6,14 @@ import {
 } from "@/lib/admin/platform-settings";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import {
+  VOICE_TOOL_DATA_PROMPT,
+  voiceLanguagePrompt,
+} from "@/lib/ai/voice/languages";
+import {
   applyPromptTemplate,
   ensurePromptContains,
 } from "@/lib/core/prompt-template";
 import { htmlToPlainText } from "@/lib/core/rich-text";
-import {
-  VOICE_TOOL_DATA_PROMPT,
-  voiceLanguagePrompt,
-} from "@/lib/ai/voice/languages";
 import { helpAudienceLine } from "@/lib/support/prompt";
 import type { ProfileType } from "@/lib/user/profile-types";
 
@@ -64,8 +64,21 @@ export function renderOnboardingPrompt(
     voiceDelivery: settings.prompts.voiceDelivery,
     voiceToolData: VOICE_TOOL_DATA_PROMPT,
     geoPlacePrompt: vars.geoPlacePrompt,
-  });
-  return ensurePromptContains(rendered, vars.resumeContext, "Session state:");
+  })
+    .replace(
+      /NEVER ask for phone number, email, Aadhaar, PAN(?:, gender, or date of birth|, or gender)[^\n]*/g,
+      "NEVER ask for name, email, phone, location, gender, PAN, date of birth, or Aadhaar — DigiLocker KYC fills identity after this interview.",
+    )
+    .replace(/Age gate:[^\n]*\n?/g, "")
+    .replace(
+      /Interview fields only:[^\n]*/g,
+      "Interview fields only: currently working as (headline / current role), years of experience (number, 0 is ok), education (at least one entry), work experience (at least one entry), and languages.",
+    );
+  return ensurePromptContains(
+    ensurePromptContains(rendered, vars.resumeContext, "Session state:"),
+    languagePrompt,
+    "Language:",
+  );
 }
 
 export function renderInterviewPrompt(
@@ -122,8 +135,7 @@ export function renderAnalysisPrompt(
   },
 ): string {
   const overview =
-    htmlToPlainText(opts.jobOverview ?? "").trim() ||
-    "(no overview provided)";
+    htmlToPlainText(opts.jobOverview ?? "").trim() || "(no overview provided)";
   const template = opts.domain
     ? settings.prompts.interviewAnalysisDomain
     : settings.prompts.interviewAnalysisCommunication;

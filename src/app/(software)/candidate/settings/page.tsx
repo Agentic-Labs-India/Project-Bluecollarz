@@ -2,6 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { AppPage } from "@/components/layout/app-page";
 import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
@@ -47,21 +53,42 @@ export default function CandidateSettingsPage() {
         <div className="p-5">
           <AppLanguageSetting />
         </div>
-
-        <div className="space-y-3 p-5">
-          <div>
-            <Label className="text-foreground text-sm font-medium">
-              Privacy &amp; terms
-            </Label>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Platform notices and DigiLocker purpose consent.
-            </p>
-          </div>
-          <PrivacyTermsAcknowledgment showConsentPanel />
-        </div>
       </section>
 
-      <DataRightsSection />
+      <section className="border-border/80 bg-card mb-6 rounded-none border px-5 shadow-sm">
+        <Accordion type="multiple">
+          <AccordionItem value="privacy">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="block">
+                <span className="text-foreground block text-sm font-medium">
+                  Privacy &amp; terms
+                </span>
+                <span className="text-muted-foreground mt-1 block text-sm font-normal">
+                  Platform notices and DigiLocker purpose consent.
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="text-foreground">
+              <PrivacyTermsAcknowledgment showConsentPanel />
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="rights">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="block">
+                <span className="text-foreground block text-sm font-medium">
+                  Data rights
+                </span>
+                <span className="text-muted-foreground mt-1 block text-sm font-normal">
+                  Access, correction, erasure, withdraw consent, or grievance.
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="text-foreground">
+              <DataRightsSection />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </section>
 
       <section
         id="delete-account"

@@ -82,7 +82,7 @@ export default function AboutPage() {
             },
             {
               title: "Verified identity",
-              body: "AI KYC on Aadhaar, PAN, and passport — documents stored only after authenticity checks pass.",
+              body: "DigiLocker after onboarding — name, date of birth, phone, location, gender, PAN, and Aadhaar.",
             },
           ]}
         />
@@ -113,7 +113,7 @@ export default function AboutPage() {
             [
               "work",
               "Candidate / worker",
-              "Landing “Get Job” → onboarding → home",
+              "Landing “Get Job” → onboarding → DigiLocker KYC → home",
             ],
             [
               "hire",
@@ -134,7 +134,11 @@ export default function AboutPage() {
             },
             {
               title: "Finish AI onboarding",
-              body: "Optional resume PDF plus a voice agent that collects missing profile fields.",
+              body: "Optional resume PDF plus a voice agent that collects currently working as, years of experience, education, work experience, and languages.",
+            },
+            {
+              title: "DigiLocker KYC",
+              body: "Identity is filled from DigiLocker: name, date of birth, phone, location, gender, PAN, and Aadhaar.",
             },
             {
               title: "Explore and interview",
@@ -142,11 +146,7 @@ export default function AboutPage() {
             },
             {
               title: "Apply",
-              body: "Submit an application once interview stages for that role are done.",
-            },
-            {
-              title: "KYC if selected",
-              body: "When a recruiter selects you, complete AI KYC so verified documents can be shared.",
+              body: "Submit an application once interview stages for that role are done. Status is Submitted, Selected, or Rejected.",
             },
           ]}
         />
@@ -167,7 +167,7 @@ export default function AboutPage() {
             },
             {
               title: "Review applicants",
-              body: "See resume context, interview scores, recordings, transcripts, and KYC when verified.",
+              body: "See resume context, interview scores, recordings, and transcripts. Application status is Submitted, Selected, or Rejected.",
             },
             {
               title: "Select or reject",
@@ -203,7 +203,7 @@ export default function AboutPage() {
             ],
             [
               "KYC verification",
-              "Vision checks for authenticity and tampering before storage",
+              "DigiLocker after onboarding — name, DOB 18+, phone, location, gender, PAN, Aadhaar",
             ],
           ]}
         />
@@ -218,17 +218,18 @@ export default function AboutPage() {
 
       <DocSection id="identity-kyc" number="06" title="Identity & KYC">
         <p>
-          When a candidate is selected, they complete AI KYC. Aadhaar front and
-          back are required. PAN and Passport may be deferred with a
-          submit-later undertaking. Documents must match the logged-in profile
-          name, date of birth, and address where those fields exist.
+          After voice onboarding, candidates verify with DigiLocker
+          (MeriPehchaan). Identity — name, date of birth (18+), phone, location,
+          gender, PAN, and Aadhaar — is written from DigiLocker. Email stays
+          from Google sign-in. Recruiters do not see KYC badges on job
+          applications; they see Submitted, Selected, or Rejected.
         </p>
         <DocList
           items={[
-            "AI runs first — Blob upload happens only if verification passes",
-            "Failed checks return reasons; nothing sensitive is stored on fail",
-            "Recruiters see an “AI KYC Done” badge and document previews only after verified status",
-            "Deferred PAN/Passport remain visible to hirers as pending later under undertaking",
+            "Onboarding collects currently working as, years of experience, education, work experience, and languages",
+            "DigiLocker is required before home and explore",
+            "Under-18 dates of birth from DigiLocker are rejected",
+            "APAAR, education certificates, and passport are later modules",
           ]}
         />
       </DocSection>

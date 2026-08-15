@@ -1,18 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile } from "@/lib/auth/session";
 import {
+  type CandidateProfileFields,
+  type CandidateProfileUpdateInput,
   candidateProfileUpdateSchema,
   candidateUpdateToMongo,
   formatCandidateProfileError,
   isCandidateProfileComplete,
+  isUnderageZodError,
   sanitizeGeoProfileFields,
   toCandidateProfileData,
-  type CandidateProfileFields,
-  type CandidateProfileUpdateInput,
+  UNDERAGE_ERROR_CODE,
+  UNDERAGE_MESSAGE,
 } from "@/lib/candidate/profile";
-import { requireProfile } from "@/lib/auth/session";
-import { ensureIndexes } from "@/lib/db/indexes";
 import { formatDateOnly, parseDateOnly } from "@/lib/core/dates";
+import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import { isIdentityVerified } from "@/lib/kyc";
 
 type UserDoc = CandidateProfileFields & {
@@ -65,7 +68,10 @@ export async function GET() {
     });
   } catch (error) {
     console.error("GET /api/candidate/profile:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -80,6 +86,16 @@ export async function PUT(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const parsed = candidateProfileUpdateSchema.safeParse(body);
     if (!parsed.success) {
+      if (isUnderageZodError(parsed.error)) {
+        return NextResponse.json(
+          {
+            error: UNDERAGE_MESSAGE,
+            code: UNDERAGE_ERROR_CODE,
+            underage: true,
+          },
+          { status: 403 },
+        );
+      }
       return NextResponse.json(
         { error: formatCandidateProfileError(parsed.error) },
         { status: 400 },
@@ -88,7 +104,9 @@ export async function PUT(req: NextRequest) {
 
     const db = client.db(DB_NAME);
     const filter = { _id: matchId(auth.user.id) as never };
-    const existing = await db.collection<UserDoc>(COLLECTIONS.USERS_COLLECTION).findOne(filter);
+    const existing = await db
+      .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
+      .findOne(filter);
     const data = sanitizeGeoProfileFields(
       lockIdentityFields(parsed.data, existing),
     );
@@ -111,12 +129,16 @@ export async function PUT(req: NextRequest) {
     const complete = isCandidateProfileComplete(merged);
     const { $set, $unset } = candidateUpdateToMongo(data, complete);
 
-    await db.collection(COLLECTIONS.USERS_COLLECTION).updateOne(
-      filter,
-      Object.keys($unset).length ? { $set, $unset } : { $set },
-    );
+    await db
+      .collection(COLLECTIONS.USERS_COLLECTION)
+      .updateOne(
+        filter,
+        Object.keys($unset).length ? { $set, $unset } : { $set },
+      );
 
-    const user = await db.collection<UserDoc>(COLLECTIONS.USERS_COLLECTION).findOne(filter);
+    const user = await db
+      .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
+      .findOne(filter);
     const profile = toCandidateProfileData(user);
     return NextResponse.json({
       profile,
@@ -124,6 +146,9 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error) {
     console.error("PUT /api/candidate/profile:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

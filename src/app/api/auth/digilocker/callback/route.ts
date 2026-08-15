@@ -1,6 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
+import {
+  DIGILOCKER_REQUIRED_PURPOSES,
+  hasGrantedPurposes,
+} from "@/lib/compliance/consent";
+import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
+import {
+  digilockerProfileSet,
+  identityMismatches,
+  type UserKyc,
+} from "@/lib/kyc";
 import {
   cookieOptions,
   DIGILOCKER_OAUTH_COOKIE,
@@ -8,28 +18,14 @@ import {
   gatherDigilockerKyc,
   openOAuthCookie,
 } from "@/lib/kyc/digilocker";
-import {
-  compareIdentity,
-  digilockerProfileSet,
-  type UserKyc,
-} from "@/lib/kyc";
-import {
-  DIGILOCKER_REQUIRED_PURPOSES,
-  hasGrantedPurposes,
-} from "@/lib/compliance/consent";
 
 function appOrigin(req: NextRequest) {
   return (
-    process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") ||
-    req.nextUrl.origin
+    process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") || req.nextUrl.origin
   );
 }
 
-function redirectWithError(
-  req: NextRequest,
-  returnTo: string,
-  error: string,
-) {
+function redirectWithError(req: NextRequest, returnTo: string, error: string) {
   const url = new URL(returnTo, appOrigin(req));
   url.searchParams.set("digilocker", "error");
   url.searchParams.set("message", error.slice(0, 220));
@@ -42,7 +38,7 @@ function redirectWithError(
 }
 
 /**
- * DigiLocker callback → gather KYC → set isKycVerified + nested `kyc` pack.
+ * DigiLocker callback → match identity to this profile → set isKycVerified.
  */
 export async function GET(req: NextRequest) {
   const oauth = openOAuthCookie(
@@ -71,49 +67,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const token = await exchangeAuthorizationCode({
-      code,
-      codeVerifier: oauth.codeVerifier,
-    });
-    const verifiedAtIso = new Date().toISOString();
-    const payload = await gatherDigilockerKyc({
-      accessToken: token.access_token,
-      idToken: token.id_token,
-      tokenEaadhaar: token.eaadhaar,
-      verifiedAt: verifiedAtIso,
-    });
-
-    await ensureIndexes();
-    const filter = { _id: matchId(oauth.userId) as never };
-    const existing = await client
-      .db(DB_NAME)
-      .collection(COLLECTIONS.USERS_COLLECTION)
-      .findOne(filter, {
-        projection: {
-          name: 1,
-          location: 1,
-          phoneNumber: 1,
-          dateOfBirth: 1,
-          kyc: 1,
-        },
-      });
-
-    const existingKyc = (existing?.kyc as UserKyc | undefined) ?? null;
-    const mismatches = compareIdentity(
-      {
-        name: existing?.name ? String(existing.name) : null,
-        location: existing?.location ? String(existing.location) : null,
-        phoneNumber:
-          typeof existing?.phoneNumber === "number"
-            ? existing.phoneNumber
-            : null,
-        dateOfBirth: (existing?.dateOfBirth as Date | string | null) ?? null,
-        pan: existingKyc?.pan ?? null,
-      },
-      payload,
-    );
-    if (mismatches.length) {
-      payload.note = [payload.note, ...mismatches].filter(Boolean).join(" ");
+    if (!(await isCandidateOnboardingDone(oauth.userId))) {
+      return redirectWithError(
+        req,
+        "/candidate/onboarding",
+        "Finish onboarding before DigiLocker KYC.",
+      );
     }
 
     const consentOk = await hasGrantedPurposes(
@@ -124,8 +83,50 @@ export async function GET(req: NextRequest) {
       return redirectWithError(
         req,
         returnTo,
-        "Consent for identity and contact is required (or was withdrawn). Open KYC, grant consent, then try DigiLocker again.",
+        "Turn on every permission, then Agree and Verify, before DigiLocker.",
       );
+    }
+
+    const token = await exchangeAuthorizationCode({
+      code,
+      codeVerifier: oauth.codeVerifier,
+    });
+    const verifiedAtIso = new Date().toISOString();
+    const payload = await gatherDigilockerKyc({
+      accessToken: token.access_token,
+      idToken: token.id_token,
+      tokenEaadhaar: token.eaadhaar,
+    });
+
+    await ensureIndexes();
+    const filter = { _id: matchId(oauth.userId) as never };
+    const existing = await client
+      .db(DB_NAME)
+      .collection(COLLECTIONS.USERS_COLLECTION)
+      .findOne(filter, {
+        projection: {
+          phoneNumber: 1,
+          dateOfBirth: 1,
+          kyc: 1,
+        },
+      });
+
+    const existingKyc = (existing?.kyc as UserKyc | undefined) ?? null;
+    const mismatches = identityMismatches(
+      {
+        phoneNumber:
+          typeof existing?.phoneNumber === "number"
+            ? existing.phoneNumber
+            : null,
+        dateOfBirth: (existing?.dateOfBirth as Date | string | null) ?? null,
+        pan: existingKyc?.pan ?? null,
+        aadhaarLast4: existingKyc?.aadhaarLast4 ?? null,
+        gender: existingKyc?.gender ?? null,
+      },
+      payload,
+    );
+    if (mismatches.length) {
+      return redirectWithError(req, returnTo, mismatches.join(" "));
     }
 
     let profileUpdate: ReturnType<typeof digilockerProfileSet>;

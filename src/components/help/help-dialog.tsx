@@ -196,12 +196,14 @@ export function HelpDialog({
               );
               if (!data.ok || !data.transcript) {
                 setVoiceStatus(data.error || "Didn't catch that — try again.");
+                pausedRef.current = false;
                 return;
               }
               setVoiceStatus("Thinking…");
               await sendMessage({ text: data.transcript });
             } catch {
               setVoiceStatus("Voice failed. Speak again when ready.");
+              pausedRef.current = false;
             } finally {
               busyRef.current = false;
             }

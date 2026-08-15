@@ -1,10 +1,16 @@
-import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import {
-  isCandidateProfileComplete,
-  toCandidateProfileData,
   type CandidateProfileData,
   type CandidateProfileFields,
+  isCandidateProfileComplete,
+  toCandidateProfileData,
 } from "@/lib/candidate/profile";
+import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import {
+  INTERVIEW_STAGE_IDS,
+  type InterviewDocument,
+  type InterviewStageId,
+} from "@/lib/interviews";
 import type { JobDocument } from "@/lib/jobs";
 import type {
   ApplicationDocument,
@@ -13,12 +19,7 @@ import type {
   CandidateInterviewStageStatus,
   CandidatePipelineStatus,
 } from "@/lib/jobs/applications";
-import {
-  INTERVIEW_STAGE_IDS,
-  type InterviewDocument,
-  type InterviewStageId,
-} from "@/lib/interviews";
-import { ensureIndexes } from "@/lib/db/indexes";
+import { isIdentityVerified } from "@/lib/kyc";
 import { idHex } from "@/lib/utils";
 
 type UserDoc = CandidateProfileFields & {
@@ -49,6 +50,22 @@ export async function isCandidateOnboardingDone(
   // Always validate live mandatory fields (not only the stored flag),
   // so newly required fields re-open onboarding for incomplete profiles.
   return isCandidateProfileComplete(profile);
+}
+
+export async function getCandidateGateStatus(userId: string): Promise<{
+  complete: boolean;
+  kycVerified: boolean;
+}> {
+  if (!userId) return { complete: false, kycVerified: false };
+  const db = client.db(DB_NAME);
+  const doc = await db
+    .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
+    .findOne({ _id: matchId(userId) as never });
+  if (!doc) return { complete: false, kycVerified: false };
+  return {
+    complete: isCandidateProfileComplete(toCandidateProfileData(doc)),
+    kycVerified: isIdentityVerified(doc),
+  };
 }
 
 function statsFromApplications(
@@ -196,7 +213,10 @@ async function getCandidateApplications(
       jobPay: job?.pay ?? "—",
       jobStatus: job?.status ?? "missing",
       status: application?.status ?? "interviewing",
-      appliedAt: application?.createdAt ?? interview?.earliestStart ?? new Date(0).toISOString(),
+      appliedAt:
+        application?.createdAt ??
+        interview?.earliestStart ??
+        new Date(0).toISOString(),
       interviews: INTERVIEW_STAGE_IDS.map((stageId) => {
         const hit = byStage?.get(stageId);
         return {
@@ -209,8 +229,7 @@ async function getCandidateApplications(
   });
 
   items.sort(
-    (a, b) =>
-      new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime(),
+    (a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime(),
   );
   return items;
 }
@@ -225,20 +244,4 @@ export async function getCandidateDashboard(userId: string): Promise<{
     applications,
     stats: statsFromApplications(applications),
   };
-}
-
-/** Title of a published role (for KYC / deep-link context). */
-export async function getPublishedJobTitle(
-  jobId: string,
-): Promise<string | null> {
-  if (!jobId) return null;
-  await ensureIndexes();
-  const job = await client
-    .db(DB_NAME)
-    .collection<JobDocument>(COLLECTIONS.JOBS)
-    .findOne(
-      { _id: matchId(jobId) as never, status: "published" },
-      { projection: { title: 1 } },
-    );
-  return job?.title ?? null;
 }

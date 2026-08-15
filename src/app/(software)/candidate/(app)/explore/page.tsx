@@ -26,7 +26,6 @@ export default async function ExplorePage({
     ReturnType<typeof getPublishedOpportunities>
   >["applicationStatuses"] = {};
   let initialProfileComplete = false;
-  let initialKycVerified = false;
 
   if (user?.id) {
     const result = await getPublishedOpportunities({
@@ -39,7 +38,6 @@ export default async function ExplorePage({
     initialOpportunities = result.items;
     initialApplicationStatuses = result.applicationStatuses;
     initialProfileComplete = result.profileComplete;
-    initialKycVerified = result.kycVerified;
   }
 
   return (
@@ -48,7 +46,6 @@ export default async function ExplorePage({
         initialOpportunities={initialOpportunities}
         initialApplicationStatuses={initialApplicationStatuses}
         initialProfileComplete={initialProfileComplete}
-        initialKycVerified={initialKycVerified}
         initialJobId={initialJobId}
       />
     </Suspense>

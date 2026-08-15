@@ -1,15 +1,13 @@
 import { connection } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
-import type { ProfileType } from "@/lib/user/profile-types";
-import { ensureIndexes } from "@/lib/db/indexes";
-import type { KycFields } from "@/lib/kyc";
-import { idHex } from "@/lib/utils";
 import {
   deleteUserProvision,
   listUserProvisions,
-  upsertUserProvision,
   type ProvisionProfileType,
+  upsertUserProvision,
 } from "@/lib/admin/provisions";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import type { ProfileType } from "@/lib/user/profile-types";
 import {
   CANDIDATE_ONLY_USER_FIELDS,
   HIRE_ONLY_USER_FIELDS,
@@ -17,6 +15,7 @@ import {
   LEGACY_USER_FIELDS,
   unsetFields,
 } from "@/lib/user/role-fields";
+import { idHex } from "@/lib/utils";
 
 export interface AdminUserListItem {
   id: string;
@@ -29,7 +28,7 @@ export interface AdminUserListItem {
   pending: boolean;
 }
 
-type UserDoc = KycFields & {
+type UserDoc = {
   _id: unknown;
   name?: string | null;
   email?: string | null;
@@ -48,8 +47,7 @@ async function applyProfileTypeCleanup(
     .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION);
   const filter = { _id: matchId(userId) as never };
 
-  const dropCandidate =
-    profileType === "hire" || profileType === "admin";
+  const dropCandidate = profileType === "hire" || profileType === "admin";
   const dropHire = profileType === "work" || profileType === "admin";
 
   const $unset = {

@@ -9,20 +9,16 @@ export type OpportunityCta =
   | { type: "apply" }
   | { type: "applied" }
   | { type: "rejected" }
-  | { type: "selected" }
-  | { type: "kyc_complete" };
+  | { type: "selected" };
 
 /** Decide the primary footer action from profile + stage progress + application status. */
 export function resolveOpportunityCta(opts: {
   opportunity: Opportunity;
   profileComplete: boolean;
   applicationStatus?: ApplicationStatus | null;
-  kycVerified?: boolean;
 }): OpportunityCta {
   if (opts.applicationStatus === "rejected") return { type: "rejected" };
-  if (opts.applicationStatus === "selected") {
-    return opts.kycVerified ? { type: "kyc_complete" } : { type: "selected" };
-  }
+  if (opts.applicationStatus === "selected") return { type: "selected" };
   if (opts.applicationStatus === "applied") return { type: "applied" };
 
   const steps = opts.opportunity.applicationSteps;

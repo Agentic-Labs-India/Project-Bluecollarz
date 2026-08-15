@@ -58,11 +58,7 @@ export function parseDateOnly(value: unknown): Date | null {
 export function dateOnlyToLocalDate(value: unknown): Date | undefined {
   const date = parseDateOnly(value);
   if (!date) return undefined;
-  return new Date(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-  );
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
 /** `yyyy-MM-dd` or "". */
@@ -82,6 +78,17 @@ export function formatDateOnlyDisplay(value: unknown): string {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+export const MIN_ACCOUNT_AGE_YEARS = 18;
+
+/** True when `value` is a calendar date at least 18 years before today. */
+export function isAtLeast18YearsOld(value: unknown): boolean {
+  const dob = parseDateOnly(value);
+  if (!dob) return false;
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - MIN_ACCOUNT_AGE_YEARS);
+  return dob <= cutoff;
 }
 
 /** Compact local date-time for admin tables (e.g. "Jul 24, 7:39 PM"). */

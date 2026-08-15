@@ -4,6 +4,16 @@ const APPLICATION_STATUSES = ["applied", "selected", "rejected"] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 export { APPLICATION_STATUSES };
 
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  applied: "Submitted",
+  selected: "Selected",
+  rejected: "Rejected",
+};
+
+export function applicationStatusLabel(status: ApplicationStatus): string {
+  return APPLICATION_STATUS_LABELS[status];
+}
+
 /** A work-profile user's application to a published job. */
 export interface ApplicationDocument {
   _id: unknown;
@@ -75,8 +85,6 @@ export interface ApplicantListItem {
   status: ApplicationDocument["status"];
   appliedAt: string;
   interviews: ApplicantInterviewScore[];
-  identityAssured: boolean;
-  assuranceLevel: string;
 }
 
 export interface PaginatedApplicantsResponse {

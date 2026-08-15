@@ -22,7 +22,6 @@ import {
   type CandidateProfileFields,
 } from "@/lib/candidate/profile";
 import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
-import type { KycFields } from "@/lib/kyc";
 
 /** Shared tag so landing + explore job lists invalidate together. */
 export const PUBLISHED_JOBS_CACHE_TAG = "published-jobs";
@@ -53,8 +52,6 @@ export interface OpportunitiesResult {
   /** Per-job application status for the signed-in candidate. */
   applicationStatuses: Record<string, ApplicationStatus>;
   profileComplete: boolean;
-  /** True when the candidate has completed DigiLocker KYC. */
-  kycVerified: boolean;
 }
 
 /** Serializable published job for the Data Cache (no Mongo ObjectIds / Dates). */
@@ -286,16 +283,13 @@ export async function getPublishedOpportunities(opts: {
   let appliedJobIds: string[] = [];
   let applicationStatuses: Record<string, ApplicationStatus> = {};
   let profileComplete = false;
-  let kycVerified = false;
   let completedByJob = new Map<string, Set<string>>();
 
   if (isWorkViewer) {
     await ensureIndexes();
     const db = client.db(DB_NAME);
     const userDoc = await db
-      .collection<CandidateProfileFields & KycFields>(
-        COLLECTIONS.USERS_COLLECTION,
-      )
+      .collection<CandidateProfileFields>(COLLECTIONS.USERS_COLLECTION)
       .findOne(
         { _id: matchId(opts.viewerId) as never },
         {
@@ -309,7 +303,6 @@ export async function getPublishedOpportunities(opts: {
             education: 1,
             workExperience: 1,
             languages: 1,
-            isKycVerified: 1,
           },
         },
       );
@@ -317,7 +310,6 @@ export async function getPublishedOpportunities(opts: {
     profileComplete = isCandidateProfileComplete(
       toCandidateProfileData(userDoc),
     );
-    kycVerified = userDoc?.isKycVerified === true;
 
     if (jobs.length) {
       const jobIdHexes = jobs.map((job) => job.id).filter(Boolean);
@@ -360,7 +352,6 @@ export async function getPublishedOpportunities(opts: {
     appliedJobIds,
     applicationStatuses,
     profileComplete,
-    kycVerified,
   };
 }
 

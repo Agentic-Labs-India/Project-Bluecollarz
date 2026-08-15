@@ -1,11 +1,16 @@
 import { z } from "zod";
-import { formatZodError } from "@/lib/utils";
-import { formatDateOnly, parseDateOnly } from "@/lib/core/dates";
+import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
+import {
+  formatDateOnly,
+  isAtLeast18YearsOld,
+  parseDateOnly,
+} from "@/lib/core/dates";
 import {
   normalizeCountryNames,
   normalizeResidencePlace,
 } from "@/lib/core/geo/places";
-import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
+import type { UserKyc } from "@/lib/kyc/types";
+import { formatZodError } from "@/lib/utils";
 
 /** Candidate fields stored on the Users document (work profiles). */
 export interface CandidateEducationEntry {
@@ -62,15 +67,7 @@ export interface CandidateProfileFields {
   /** DigiLocker-verified identity flag. */
   isKycVerified?: boolean;
   /** Nested DigiLocker identity pack. */
-  kyc?: {
-    provider?: string;
-    verifiedAt?: Date | string | null;
-    updatedAt?: Date | string | null;
-    aadhaarLast4?: string | null;
-    pan?: string | null;
-    gender?: string | null;
-    apaarId?: string | null;
-  } | null;
+  kyc?: UserKyc | null;
 }
 
 export interface EducationFormEntry {
@@ -125,12 +122,18 @@ export interface CandidateProfileData {
   gender: string;
   pan: string;
   aadhaarLast4: string;
-  apaarId: string;
+}
+
+export const UNDERAGE_ERROR_CODE = "UNDERAGE";
+export const UNDERAGE_MESSAGE =
+  "Blucollarz is only for people 18 and older. Come back when you are 18.";
+
+export function isUnderageZodError(error: z.ZodError): boolean {
+  return error.issues.some((issue) => issue.message === UNDERAGE_MESSAGE);
 }
 
 export const CANDIDATE_MANDATORY_FIELDS = [
   "headline",
-  "location",
   "yearsExperience",
   "summary",
   "education",
@@ -138,7 +141,8 @@ export const CANDIDATE_MANDATORY_FIELDS = [
   "languages",
 ] as const;
 
-export type CandidateMandatoryField = (typeof CANDIDATE_MANDATORY_FIELDS)[number];
+export type CandidateMandatoryField =
+  (typeof CANDIDATE_MANDATORY_FIELDS)[number];
 
 export const HOBBY_PRESETS = [
   "Football",
@@ -210,7 +214,6 @@ export const emptyCandidateProfileData = (): CandidateProfileData => ({
   gender: "",
   pan: "",
   aadhaarLast4: "",
-  apaarId: "",
 });
 
 const optionalTrimmed = (max: number) =>
@@ -220,13 +223,16 @@ const optionalTrimmed = (max: number) =>
   }, z.string().max(max));
 
 const stringListSchema = (maxItems: number, maxLen: number) =>
-  z.preprocess((val) => {
-    if (!Array.isArray(val)) return [];
-    return val
-      .map((s) => String(s ?? "").trim())
-      .filter(Boolean)
-      .slice(0, maxItems);
-  }, z.array(z.string().min(1).max(maxLen)).max(maxItems));
+  z.preprocess(
+    (val) => {
+      if (!Array.isArray(val)) return [];
+      return val
+        .map((s) => String(s ?? "").trim())
+        .filter(Boolean)
+        .slice(0, maxItems);
+    },
+    z.array(z.string().min(1).max(maxLen)).max(maxItems),
+  );
 
 const skillsSchema = stringListSchema(40, 80);
 const countriesSchema = stringListSchema(20, 80);
@@ -234,19 +240,32 @@ const languagesSchema = stringListSchema(20, 80);
 const hobbiesSchema = stringListSchema(30, 80);
 const otherLinksSchema = stringListSchema(10, 500);
 
-const voiceLanguageSchema = z.preprocess((val) => {
-  if (val === null || val === undefined) return "";
-  return String(val).trim();
-}, z.union([z.enum(TTS_LANGUAGE_CODES), z.literal("")]));
+const voiceLanguageSchema = z.preprocess(
+  (val) => {
+    if (val === null || val === undefined) return "";
+    return String(val).trim();
+  },
+  z.union([z.enum(TTS_LANGUAGE_CODES), z.literal("")]),
+);
 
 const nullableYear = z.number().int().min(1900).max(2100).nullable();
 const nullableGpa = z.number().finite().min(0).max(10).nullable();
 const nullableYearsExperience = z.number().int().min(0).max(80).nullable();
-const nullableFullTimePay = z.number().finite().min(0).max(10_000_000).nullable();
+const nullableFullTimePay = z
+  .number()
+  .finite()
+  .min(0)
+  .max(10_000_000)
+  .nullable();
 const nullablePartTimePay = z.number().finite().min(0).max(10_000).nullable();
 /** Phone / dial code — numbers only (null when unset). */
 const nullablePhoneNumber = z.number().int().positive().nullable();
-const nullablePhoneCountryCode = z.number().int().positive().max(9999).nullable();
+const nullablePhoneCountryCode = z
+  .number()
+  .int()
+  .positive()
+  .max(9999)
+  .nullable();
 
 const educationEntrySchema = z.object({
   school: optionalTrimmed(200),
@@ -282,25 +301,26 @@ const workListSchema = z.preprocess((val) => {
  * `z.date()` cannot convert to JSON Schema (breaks AI tool registration).
  * Mongo still stores BSON Date via candidateUpdateToMongo.
  */
-const dateOfBirthSchema = z.preprocess((val) => {
-  if (val === null || val === undefined || val === "") return null;
-  if (val instanceof Date) {
-    const formatted = formatDateOnly(val);
-    return formatted || null;
-  }
-  const parsed = parseDateOnly(val);
-  return parsed ? formatDateOnly(parsed) : null;
-}, z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()]).refine(
-  (value) => {
-    if (!value) return true;
-    const dob = parseDateOnly(value);
-    if (!dob) return false;
-    const cutoff = new Date();
-    cutoff.setFullYear(cutoff.getFullYear() - 16);
-    return dob <= cutoff;
+const dateOfBirthSchema = z.preprocess(
+  (val) => {
+    if (val === null || val === undefined || val === "") return null;
+    if (val instanceof Date) {
+      const formatted = formatDateOnly(val);
+      return formatted || null;
+    }
+    const parsed = parseDateOnly(val);
+    return parsed ? formatDateOnly(parsed) : null;
   },
-  { message: "You must be at least 16 years old to use Blucollarz" },
-));
+  z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null()]).refine(
+    (value) => {
+      if (!value) return true;
+      const dob = parseDateOnly(value);
+      if (!dob) return false;
+      return isAtLeast18YearsOld(dob);
+    },
+    { message: UNDERAGE_MESSAGE },
+  ),
+);
 
 export const candidateProfileUpdateSchema = z.object({
   phoneNumber: nullablePhoneNumber,
@@ -438,7 +458,6 @@ export function toCandidateProfileData(
     gender: doc.kyc?.gender ?? "",
     pan: doc.kyc?.pan ?? "",
     aadhaarLast4: doc.kyc?.aadhaarLast4 ?? "",
-    apaarId: doc.kyc?.apaarId ?? "",
   };
 }
 
@@ -460,8 +479,7 @@ export function getMissingCandidateFields(
 ): CandidateMandatoryField[] {
   const missing: CandidateMandatoryField[] = [];
   if (!profile.headline.trim()) missing.push("headline");
-  if (!profile.location.trim()) missing.push("location");
-  if (profile.yearsExperience === null) missing.push("yearsExperience");
+  if (profile.yearsExperience == null) missing.push("yearsExperience");
   if (!profile.summary.trim() || profile.summary.trim().length < 40) {
     missing.push("summary");
   }
@@ -494,8 +512,7 @@ export function isCandidateProfileComplete(
 }
 
 export const CANDIDATE_FIELD_LABELS: Record<CandidateMandatoryField, string> = {
-  headline: "current role or headline",
-  location: "location",
+  headline: "currently working as",
   yearsExperience: "years of experience",
   summary: "professional summary / resume content",
   education: "education",

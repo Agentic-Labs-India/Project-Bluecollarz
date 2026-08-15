@@ -63,10 +63,9 @@ export default function PrivacyPage() {
             </li>
           </ul>
           <p>
-            We also generate verification{" "}
-            <strong className="text-foreground font-medium">conclusions</strong>{" "}
-            (assurance levels). Those conclusions — not your raw documents —
-            are what we make available to vetted employers.
+            We generate identity conclusions from DigiLocker for Blucollarz
+            verification. Employers see allowlisted resume fields and interview
+            evidence — not your raw documents or KYC identifiers.
           </p>
         </LegalSection>
 
@@ -77,8 +76,8 @@ export default function PrivacyPage() {
               conclusions
             </li>
             <li>
-              Present verified conclusions (never raw documents) to vetted
-              employers for matching
+              Match you to roles using allowlisted resume fields and interview
+              evidence — never raw DigiLocker documents or KYC identifiers
             </li>
             <li>
               Enable a licensed Recruiting Agent to carry out regulated
@@ -123,11 +122,10 @@ export default function PrivacyPage() {
         <LegalSection title="1.6 Who we share data with">
           <ul className="list-disc space-y-2 ps-5">
             <li>
-              Vetted employers — verification conclusions and assurance levels,
-              plus allowlisted resume fields used for matching (not email,
-              phone, PAN, Aadhaar, date of birth, or address). Interview scores,
-              transcripts, recordings, and answers only if you granted
-              evaluation consent
+              Vetted employers — allowlisted resume fields used for matching
+              (not email, phone, PAN, Aadhaar, date of birth, or address).
+              Interview scores, transcripts, recordings, and answers only if you
+              granted evaluation consent
             </li>
             <li>
               Licensed Recruiting Agent — data needed to perform regulated
@@ -192,8 +190,8 @@ export default function PrivacyPage() {
 
         <LegalSection title="1.11 Children">
           <p>
-            Blucollarz is not directed to children under 16. We do not knowingly
-            collect personal data from children under 16.
+            Blucollarz is not directed to children under 18. We do not knowingly
+            collect personal data from children under 18.
           </p>
         </LegalSection>
 

@@ -1,14 +1,25 @@
 import {
   createAgentUIStreamResponse,
+  generateText,
   isStepCount,
   ToolLoopAgent,
   tool,
-  generateText,
 } from "ai";
 import { z } from "zod";
-import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
+import {
+  getAiRuntime,
+  llmModel,
+  llmTemp,
+  renderOnboardingPrompt,
+  renderProfileSummaryPrompt,
+} from "@/lib/ai/runtime";
+import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
+import { requireProfile } from "@/lib/auth/session";
 import {
   CANDIDATE_FIELD_LABELS,
+  type CandidateProfileData,
+  type CandidateProfileFields,
+  type CandidateProfileUpdateInput,
   candidateProfileUpdateSchema,
   candidateUpdateToMongo,
   getMissingCandidateFields,
@@ -17,32 +28,20 @@ import {
   isInterviewFieldsComplete,
   mergeCandidateProfilePatch,
   toCandidateProfileData,
-  type CandidateProfileData,
-  type CandidateProfileFields,
-  type CandidateProfileUpdateInput,
 } from "@/lib/candidate/profile";
-import {
-  getAiRuntime,
-  llmModel,
-  llmTemp,
-  renderOnboardingPrompt,
-  renderProfileSummaryPrompt,
-} from "@/lib/ai/runtime";
-import { requireProfile } from "@/lib/auth/session";
-import { TTS_LANGUAGE_CODES } from "@/lib/ai/voice/languages";
-import { lookupPlaceOptions } from "@/lib/core/geo/places";
 import { parseDateOnly } from "@/lib/core/dates";
+import { lookupPlaceOptions } from "@/lib/core/geo/places";
+import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { isIdentityVerified } from "@/lib/kyc";
 
 export const maxDuration = 90;
 
 const GEO_PLACE_PROMPT = `Places (must use country-state-city official English names):
-- residenceCountry, residenceState, residenceCity, and preferredCountries must match the geo library — never invent names or use nicknames (e.g. use "United Arab Emirates" not "UAE"; "United States" not "USA").
-- Before saving those fields, call listPlaceOptions to look up valid names.
-- preferredCountries: array of official country names only.
-- Residence flow: country → state (if listed) → city. Each value must appear in listPlaceOptions.
-- Postal code can be free text; place names cannot.
-- Numeric fields (yearsExperience, startYear, endYear, gpa, fullTimeCompensation, partTimeCompensation) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).`;
+- Do not interview location, residence, or identity — DigiLocker KYC fills those after onboarding.
+- Do interview currently working as (save as headline) and years of experience (JSON number, including 0).
+- If you save preferredCountries from a resume, they must match the geo library — never invent names or use nicknames (e.g. use "United Arab Emirates" not "UAE"; "United States" not "USA").
+- Before saving preferredCountries, call listPlaceOptions to look up valid names.
+- Numeric fields (yearsExperience, startYear, endYear, gpa) must be JSON numbers, never strings. Use null for unknown or ongoing endYear (Present).`;
 
 type UserDoc = CandidateProfileFields & {
   _id: unknown;
@@ -98,6 +97,7 @@ async function saveProfile(
         ),
       )
     : patch;
+
   const mergedInput = mergeCandidateProfilePatch(
     current,
     safePatch as Partial<CandidateProfileUpdateInput>,
@@ -340,19 +340,12 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
   const skills = asStringList(extracted.skills);
 
   const result = await saveProfile(userId, {
-    // Only write phone when the resume actually has one — never wipe existing.
-    ...(typeof extracted.phoneNumber === "number"
-      ? { phoneNumber: extracted.phoneNumber }
-      : {}),
-    ...(typeof extracted.phoneCountryCode === "number"
-      ? { phoneCountryCode: extracted.phoneCountryCode }
-      : {}),
     headline: String(extracted.headline ?? ""),
-    location: String(extracted.location ?? ""),
     yearsExperience: asNullableInt(extracted.yearsExperience),
     // Skills only from resume PDF — never from voice interview.
     ...(skills.length ? { skills } : {}),
     preferredCountries,
+    // Identity (phone, location, DOB, name) comes from DigiLocker KYC — not the PDF.
     // Summary is AI-generated at the end of onboarding — do not take from PDF.
     ...(education.length ? { education } : {}),
     ...(workExperience.length ? { workExperience } : {}),
@@ -360,19 +353,12 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
     ...(hobbies.length ? { hobbies } : {}),
     ...(otherLinks.length ? { otherLinks } : {}),
     portfolioUrl: String(extracted.portfolioUrl ?? ""),
-    residenceCountry: String(extracted.residenceCountry ?? ""),
-    residenceState: String(extracted.residenceState ?? ""),
-    residenceCity: String(extracted.residenceCity ?? ""),
-    residencePostalCode: String(extracted.residencePostalCode ?? ""),
     fullTimeCompensation: asNullableNumber(extracted.fullTimeCompensation),
     partTimeCompensation: asNullableNumber(extracted.partTimeCompensation),
   });
 
   // If interview fields are already full after resume, generate summary now.
-  if (
-    result.interviewComplete &&
-    !isCandidateProfileComplete(result.profile)
-  ) {
+  if (result.interviewComplete && !isCandidateProfileComplete(result.profile)) {
     return {
       ok: true as const,
       ...(await generateAndSaveSummary(userId)),
@@ -406,13 +392,13 @@ Congratulate ${userName || "the candidate"} briefly and call finishOnboarding im
       ? `IMPORTANT — resume already processed this turn:
 The candidate attached a resume PDF. It was parsed and saved (skills come from the PDF only).
 ${missingLine}
-Ask only for those missing interview fields, one at a time. Never re-ask fields already filled.
+Speak in their selected voice language. Ask only for those missing interview fields, one at a time. Never re-ask fields already filled.
 NEVER ask about skills or professional summary.
-If nothing is missing, congratulate them and call finishOnboarding (summary is auto-written there).`
+If nothing is missing, congratulate them in that language and call finishOnboarding (summary is auto-written there).`
       : opts.resumeParseFailed
         ? `IMPORTANT — the candidate attached a resume PDF but automatic extraction failed.
 ${missingLine}
-Tell them briefly, then interview only the missing interview fields one at a time. Use updateCandidateProfile after each useful answer.
+Tell them briefly in their selected voice language, then interview only the missing interview fields one at a time. Use updateCandidateProfile after each useful answer.
 NEVER ask about skills or professional summary.`
         : `Profile state: ${missingLine}
 
@@ -420,13 +406,13 @@ Flow:
 1. ${
             opts.languageCode
               ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language.`
-              : `If voice language is not set yet, call selectVoiceLanguage first (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
+              : `If voice language is not set yet, say one short spoken sentence asking them to pick a language, then call selectVoiceLanguage (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
           }
-2. Immediately call getCandidateProfile (do this every session after language is set). Ask ONLY for fields listed in missing — never re-ask filled ones.
-3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most interview fields are already filled.
-4. If has_resume is true: PDF is parsed automatically (skills may come from PDF). Ask only remaining interview fields.
+2. Immediately call getCandidateProfile (do this every session after language is set). Ask ONLY for fields listed in missing — currently working as (headline), years of experience, education, work experience, and languages. Never re-ask filled ones. Never ask identity fields (name, email, phone, location, gender, PAN, DOB, Aadhaar).
+3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence in their voice language asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most interview fields are already filled.
+4. If has_resume is true: PDF is parsed automatically (education, work, languages, and skills may come from PDF). Ask only remaining interview fields.
 5. If has_resume is false (or resume skipped): interview only missing interview fields, one at a time. Use updateCandidateProfile after each useful answer.
-6. As soon as missing is empty, congratulate them, say they will go to the dashboard, and call finishOnboarding — do NOT ask them to dictate a summary; finishOnboarding writes it.
+6. As soon as missing is empty, congratulate them, say they will continue to DigiLocker KYC, and call finishOnboarding — do NOT ask them to dictate a summary; finishOnboarding writes it.
 ${
   opts.languageCode
     ? "Do not call selectVoiceLanguage — language is already on the profile."
@@ -448,7 +434,7 @@ Call selectResume at most once per session.`;
     tools: {
       selectVoiceLanguage: tool({
         description:
-          "Ask the candidate to pick their spoken language for voice sessions. Call this FIRST before greeting. Wait for their selection.",
+          "Show the spoken-language picker in chat. Speak a short question first, then call this and wait for their selection. Call FIRST before other onboarding questions.",
         inputSchema: z.object({
           prompt: z
             .string()
@@ -459,7 +445,7 @@ Call selectResume at most once per session.`;
       }),
       selectResume: tool({
         description:
-          "Show Upload / No resume buttons in chat. Call AFTER you speak a short question about having a resume PDF. Wait for their selection. Skip if most profile fields are already filled.",
+          "Show Upload / No resume buttons in chat. Speak a short question in the candidate's voice language first (also pass it as prompt), then wait for their selection. Call AFTER language is set. Skip if most interview fields are already filled.",
         inputSchema: z.object({
           prompt: z
             .string()
@@ -470,7 +456,7 @@ Call selectResume at most once per session.`;
       }),
       listPlaceOptions: tool({
         description:
-          "Look up valid country / state / city names from the country-state-city library. Call before saving residenceCountry, residenceState, residenceCity, or preferredCountries. Omit country to list countries; pass country to list states (or cities if none); pass country+state to list cities. Optional query filters the list.",
+          "Look up valid country / state / city names from the country-state-city library for preferredCountries. Call before saving preferredCountries. Omit country to list countries; pass country to list states (or cities if none); pass country+state to list cities. Optional query filters the list. Do not collect residence or address — DigiLocker KYC fills location.",
         inputSchema: z.object({
           country: z
             .string()
@@ -507,27 +493,27 @@ Call selectResume at most once per session.`;
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields from the voice interview. Always pass field values in clear English. Do not set skills or summary here.",
+          "Partially update candidate profile fields from the voice interview. Always pass field values in clear English. headline = currently working as (current role / job title). yearsExperience = total years as a JSON number (0 is ok). Do not set skills or summary here.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
           preferredCountries: z.array(z.string()).optional(),
           languages: z.array(z.string()).optional(),
           voiceLanguage: z.enum(TTS_LANGUAGE_CODES).optional(),
           hobbies: z.array(z.string()).optional(),
           otherLinks: z.array(z.string()).optional(),
-          dateOfBirth: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .nullable()
-            .optional()
-            .describe("Date of birth as yyyy-MM-dd, or null"),
         }),
         execute: async (input) => {
           const rest = { ...input } as Partial<CandidateProfileUpdateInput>;
-          // Voice interview must never set these.
+          // Voice interview must never set identity or auto-generated fields.
           delete rest.phoneNumber;
           delete rest.phoneCountryCode;
           delete rest.skills;
           delete rest.summary;
+          delete rest.dateOfBirth;
+          delete rest.location;
+          delete rest.residenceCountry;
+          delete rest.residenceState;
+          delete rest.residenceCity;
+          delete rest.residencePostalCode;
           let result = await saveProfile(userId, rest);
           if (result.interviewComplete && !result.complete) {
             result = await generateAndSaveSummary(userId);
@@ -536,7 +522,7 @@ Call selectResume at most once per session.`;
             return {
               ...result,
               finished: true,
-              redirectTo: "/candidate/home",
+              redirectTo: "/candidate/kyc",
             };
           }
           return result;
@@ -573,7 +559,7 @@ Call selectResume at most once per session.`;
           return {
             ok: true,
             finished: true,
-            redirectTo: "/candidate/home",
+            redirectTo: "/candidate/kyc",
             ...result,
           };
         },
@@ -606,7 +592,7 @@ export async function POST(request: Request) {
     return new Response("Expected { messages: unknown[] }", { status: 400 });
   }
 
-  const languageCode =
+  const languageFromBody =
     typeof (body as { language_code?: unknown }).language_code === "string"
       ? (body as { language_code: string }).language_code
       : null;
@@ -631,6 +617,8 @@ export async function POST(request: Request) {
 
   // Seed live interview gaps (skills/summary are never asked).
   const currentProfile = await loadProfile(user.id);
+  const languageCode =
+    languageFromBody || currentProfile.voiceLanguage || null;
   const missingLabels = getMissingInterviewFields(currentProfile).map(
     (k) => CANDIDATE_FIELD_LABELS[k],
   );

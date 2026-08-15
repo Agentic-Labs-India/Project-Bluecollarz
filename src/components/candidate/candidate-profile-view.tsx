@@ -489,12 +489,6 @@ export function CandidateProfileView() {
                   />
                 )}
               </div>
-              {profile.apaarId ? (
-                <div className="space-y-2">
-                  <Label>APAAR ID</Label>
-                  <Input value={profile.apaarId} disabled />
-                </div>
-              ) : null}
             </>
           ) : (
             <div className="space-y-2">

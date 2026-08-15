@@ -2,15 +2,16 @@ import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CandidateApplicationListItem } from "@/lib/jobs/applications";
+import {
+  APPLICATION_STATUS_LABELS,
+  type CandidateApplicationListItem,
+} from "@/lib/jobs/applications";
 
 function applicationStatusLabel(
   status: CandidateApplicationListItem["status"],
 ): string {
-  if (status === "selected") return "Selected";
-  if (status === "rejected") return "Rejected";
   if (status === "interviewing") return "Interviewing";
-  return "Applied";
+  return APPLICATION_STATUS_LABELS[status];
 }
 
 function applicationStatusVariant(
@@ -25,7 +26,7 @@ function applicationStatusVariant(
 function activityLabel(app: CandidateApplicationListItem): string {
   const date = new Date(app.appliedAt).toLocaleDateString();
   if (app.status === "interviewing") return `Started ${date}`;
-  return `Applied ${date}`;
+  return `Submitted ${date}`;
 }
 
 /**

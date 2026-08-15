@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireProfile } from "@/lib/auth/session";
-import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
+import { getCandidateGateStatus } from "@/lib/candidate/queries";
 
 /** Lightweight completeness check for proxy / client gates. */
 export async function GET() {
@@ -10,8 +10,10 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   try {
-    const complete = await isCandidateOnboardingDone(auth.user.id);
-    return NextResponse.json({ complete });
+    const { complete, kycVerified } = await getCandidateGateStatus(
+      auth.user.id,
+    );
+    return NextResponse.json({ complete, kycVerified });
   } catch (error) {
     console.error("GET /api/candidate/onboarding-status:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

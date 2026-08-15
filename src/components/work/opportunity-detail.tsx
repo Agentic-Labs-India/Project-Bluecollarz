@@ -13,8 +13,11 @@ import {
   MapPinIcon,
   Maximize2Icon,
   Minimize2Icon,
+  PartyPopperIcon,
 } from "lucide-react";
 import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
+import { PrimaryDither } from "@/components/landing/primary-dither";
+import { PartyBurst } from "@/components/work/party-burst";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RichTextContent } from "@/components/ui/rich-text-content";
@@ -105,7 +108,6 @@ export function OpportunityDetail({
   applicationStatus,
   applying,
   profileComplete,
-  kycVerified,
   startingInterview,
   onApply,
   onStartCommunicationInterview,
@@ -123,7 +125,6 @@ export function OpportunityDetail({
   applicationStatus?: ApplicationStatus | null;
   applying?: boolean;
   profileComplete?: boolean;
-  kycVerified?: boolean;
   startingInterview?: boolean;
   onApply?: () => void;
   onStartCommunicationInterview?: () => void;
@@ -137,7 +138,6 @@ export function OpportunityDetail({
     opportunity,
     profileComplete: profileComplete === true,
     applicationStatus: applicationStatus ?? null,
-    kycVerified: kycVerified === true,
   });
 
   useEffect(() => {
@@ -164,10 +164,11 @@ export function OpportunityDetail({
   return (
     <aside
       className={cn(
-        "bg-background flex h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-full flex-col overflow-hidden md:h-dvh md:max-h-dvh",
+        "bg-background relative flex h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-full flex-col overflow-hidden md:h-dvh md:max-h-dvh",
         className,
       )}
     >
+      {cta.type === "selected" ? <PartyBurst /> : null}
       <header className="border-border/60 shrink-0 border-b">
         <div className={cn(APP_PAGE_GUTTER, "py-3")}>
           <AppPage className="flex items-center justify-between">
@@ -265,24 +266,28 @@ export function OpportunityDetail({
             ) : null}
           </div>
 
-          {cta.type === "rejected" ||
-          cta.type === "selected" ||
-          cta.type === "kyc_complete" ? (
+          {cta.type === "rejected" ? (
             <section className="border-border/80 bg-card mb-6 rounded-none border p-5 shadow-sm">
               <p className="text-foreground text-sm font-semibold">
-                {cta.type === "rejected"
-                  ? "Status: Not selected"
-                  : cta.type === "kyc_complete"
-                    ? "Status: Selected · KYC complete"
-                    : "Status: Selected"}
+                Status: Rejected
               </p>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {cta.type === "rejected"
-                  ? "We are really sorry — you were genuinely good. Please apply to other open roles; you can definitely get in elsewhere."
-                  : cta.type === "kyc_complete"
-                    ? "Identity verification is done. The hiring team will contact you with next steps."
-                    : "Please complete the next step: DigiLocker KYC (e-Aadhaar via MeriPehchaan)."}
+                We are really sorry — you were genuinely good. Please apply to
+                other open roles; you can definitely get in elsewhere.
               </p>
+            </section>
+          ) : cta.type === "selected" ? (
+            <section className="bg-primary relative mb-6 overflow-hidden border border-white/15 p-5">
+              <PrimaryDither seed={`selected-${opportunity.id}`} opacity={0.85} />
+              <div className="relative z-10">
+                <p className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <PartyPopperIcon className="size-4 shrink-0" />
+                  Status: Selected
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-white/80">
+                  The hiring team will contact you with next steps.
+                </p>
+              </div>
             </section>
           ) : (
             <ApplicationProgress steps={opportunity.applicationSteps} />
@@ -311,31 +316,13 @@ export function OpportunityDetail({
               </p>
             </div>
           ) : cta.type === "selected" ? (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-foreground text-sm font-medium">
-                  You&apos;re selected — complete next steps
-                </p>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Next step: DigiLocker identity verification. Sign in with
-                  MeriPehchaan and share e-Aadhaar — no document uploads on
-                  Blucollarz.
-                </p>
-              </div>
-              <Button asChild className="w-full" size="lg">
-                <Link href={`/candidate/kyc?jobId=${opportunity.id}`}>
-                  Verify with DigiLocker
-                </Link>
-              </Button>
-            </div>
-          ) : cta.type === "kyc_complete" ? (
-            <div className="space-y-1">
-              <p className="text-foreground text-sm font-medium">
-                Selected · identity verified
+            <div className="relative z-20 space-y-1">
+              <p className="text-foreground flex items-center gap-2 text-sm font-medium">
+                <PartyPopperIcon className="text-primary size-4 shrink-0" />
+                You&apos;re selected
               </p>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Your KYC is complete. The hiring team will reach out with the
-                next steps.
+                The hiring team will reach out with the next steps.
               </p>
             </div>
           ) : cta.type === "profile" ? (
@@ -381,7 +368,7 @@ export function OpportunityDetail({
               onClick={onApply}
             >
               {cta.type === "applied"
-                ? "Applied"
+                ? "Submitted"
                 : applying
                   ? "Applying…"
                   : "Apply now"}

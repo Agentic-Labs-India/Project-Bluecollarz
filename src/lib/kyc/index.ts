@@ -1,12 +1,13 @@
 /**
  * DigiLocker KYC on Users:
  *   isKycVerified: boolean
- *   kyc: { provider, verifiedAt, updatedAt, aadhaarLast4, pan, gender, apaarId }
+ *   kyc: { provider, verifiedAt, updatedAt, aadhaarLast4, pan, gender }
  *
- * Raw DigiLocker XML/JSON is never stored.
+ * Identity only (name, DOB, phone, location, PAN, Aadhaar last 4, gender).
+ * Email stays from Google. Raw DigiLocker XML/JSON is never stored.
  */
 
-export type { KycProvider, UserKyc, KycFields } from "@/lib/kyc/types";
+export type { KycFields, UserKyc } from "@/lib/kyc/types";
 
 import type { KycFields } from "@/lib/kyc/types";
 
@@ -18,7 +19,6 @@ export interface KycPublicState {
   gender: string | null;
   pan: string | null;
   aadhaarLast4: string | null;
-  apaarId: string | null;
 }
 
 function asIso(value: Date | string | null | undefined): string | null {
@@ -27,9 +27,7 @@ function asIso(value: Date | string | null | undefined): string | null {
   return String(value) || null;
 }
 
-export function isIdentityVerified(
-  doc: KycFields | null | undefined,
-): boolean {
+export function isIdentityVerified(doc: KycFields | null | undefined): boolean {
   return doc?.isKycVerified === true;
 }
 
@@ -45,11 +43,10 @@ export function toKycPublicState(
     gender: pack?.gender ? String(pack.gender) : null,
     pan: pack?.pan ? String(pack.pan) : null,
     aadhaarLast4: pack?.aadhaarLast4 ? String(pack.aadhaarLast4) : null,
-    apaarId: pack?.apaarId ? String(pack.apaarId) : null,
   };
 }
 
 export {
   digilockerProfileSet,
-  compareIdentity,
+  identityMismatches,
 } from "@/lib/kyc/apply-digilocker";
