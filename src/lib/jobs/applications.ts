@@ -61,6 +61,8 @@ export interface CandidateApplicationListItem {
   /** Formal apply date, or first interview start when not yet applied. */
   appliedAt: string;
   interviews: CandidateApplicationInterviewStage[];
+  /** Role stages configured by the hirer (resume always; others optional). */
+  stageTemplates: { id: string; label: string }[];
 }
 
 /** Compact interview scores for the applicants table. */

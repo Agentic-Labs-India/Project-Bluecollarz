@@ -3,12 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  CheckIcon,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
-  CircleIcon,
   InfoIcon,
   MapPinIcon,
   Maximize2Icon,
@@ -17,6 +14,7 @@ import {
 } from "lucide-react";
 import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
 import { PrimaryDither } from "@/components/landing/primary-dither";
+import { ApplicationStageStepper } from "@/components/work/application-stage-stepper";
 import { PartyBurst } from "@/components/work/party-burst";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,75 +24,43 @@ import type { Opportunity } from "@/lib/jobs/opportunities";
 import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import { formatJobPlaceLabel } from "@/lib/core/geo/places";
 import { resolveOpportunityCta } from "@/lib/interviews/cta";
+import { buildCandidatePipeline } from "@/lib/jobs/pipeline";
 import { cn } from "@/lib/utils";
 
 function ApplicationProgress({
-  steps,
+  opportunity,
+  applicationStatus,
+  profileComplete,
+  variant = "default",
 }: {
-  steps: Opportunity["applicationSteps"];
+  opportunity: Opportunity;
+  applicationStatus?: ApplicationStatus | null;
+  profileComplete?: boolean;
+  variant?: "default" | "dither";
 }) {
-  const completed = steps.filter((step) => step.status === "done").length;
-  const total = steps.length;
-  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const steps = buildCandidatePipeline({
+    templates: opportunity.applicationSteps,
+    profileComplete,
+    completedStageIds: opportunity.applicationSteps
+      .filter((step) => step.status === "done")
+      .map((step) => step.id),
+    applicationStatus,
+  });
 
   return (
-    <section className="border-border/80 bg-card mb-6 rounded-none border shadow-sm">
-      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
-        <h3 className="text-foreground text-sm font-semibold">Application</h3>
-        <ChevronDownIcon className="text-muted-foreground size-4" />
-      </div>
-
-      <div className="px-5 py-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="text-muted-foreground text-xs">
-            {completed} of {total} steps completed
-          </span>
-          <span className="text-foreground text-sm font-semibold tabular-nums">
-            {percent}%
-          </span>
-        </div>
-
-        <div className="bg-muted mb-5 h-2 overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full rounded-full transition-all duration-300"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-
-        <ul className="space-y-4">
-          {steps.map((step) => (
-            <li key={step.id} className="flex items-start gap-3">
-              <span
-                className={cn(
-                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full",
-                  step.status === "done"
-                    ? "bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground border bg-background",
-                )}
-              >
-                {step.status === "done" ? (
-                  <CheckIcon className="size-3" />
-                ) : (
-                  <CircleIcon className="size-3" />
-                )}
-              </span>
-              <div className="min-w-0">
-                <p className="text-foreground text-sm font-medium">{step.label}</p>
-                <p className="text-muted-foreground text-xs">{step.detail}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-          <div className="border-border/60 bg-muted/40 text-muted-foreground mt-5 flex gap-2 rounded-none border px-3 py-2.5 text-xs leading-relaxed">
+    <div className="min-w-0">
+      <ApplicationStageStepper steps={steps} variant={variant} />
+      {variant === "default" && !applicationStatus ? (
+        <div className="border-border/60 bg-muted/40 text-muted-foreground mt-4 flex gap-2 border px-3 py-2.5 text-xs leading-relaxed">
           <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
           <p>
-            Complete Resume first. When enabled by the hiring partner, finish
-            interviews and custom questions in order — then you can apply.
+            Resume is first. Comm Int, Domain, and questionnaire show only if
+            this role needs them. After you apply: Selected, Medical, Offer,
+            then Visa.
           </p>
         </div>
-      </div>
-    </section>
+      ) : null}
+    </div>
   );
 }
 
@@ -271,10 +237,15 @@ export function OpportunityDetail({
               <p className="text-foreground text-sm font-semibold">
                 Status: Rejected
               </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 mb-4 text-sm leading-relaxed">
                 We are really sorry — you were genuinely good. Please apply to
                 other open roles; you can definitely get in elsewhere.
               </p>
+              <ApplicationProgress
+                opportunity={opportunity}
+                applicationStatus={applicationStatus}
+                profileComplete={profileComplete}
+              />
             </section>
           ) : cta.type === "selected" ? (
             <section className="bg-primary relative mb-6 overflow-hidden border border-white/15 p-5">
@@ -284,13 +255,28 @@ export function OpportunityDetail({
                   <PartyPopperIcon className="size-4 shrink-0" />
                   Status: Selected
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-white/80">
-                  The hiring team will contact you with next steps.
+                <p className="mt-2 mb-4 text-sm leading-relaxed text-white/80">
+                  Medical, offer letter, and visa are next.
                 </p>
+                <ApplicationProgress
+                  opportunity={opportunity}
+                  applicationStatus={applicationStatus}
+                  profileComplete={profileComplete}
+                  variant="dither"
+                />
               </div>
             </section>
           ) : (
-            <ApplicationProgress steps={opportunity.applicationSteps} />
+            <section className="border-border/80 bg-card mb-6 rounded-none border p-5 shadow-sm">
+              <p className="text-foreground mb-4 text-sm font-semibold">
+                Application
+              </p>
+              <ApplicationProgress
+                opportunity={opportunity}
+                applicationStatus={applicationStatus}
+                profileComplete={profileComplete}
+              />
+            </section>
           )}
 
           <section className="pb-6">

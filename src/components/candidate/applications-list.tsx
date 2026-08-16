@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ApplicationStageStepper } from "@/components/work/application-stage-stepper";
 import {
   APPLICATION_STATUS_LABELS,
   type CandidateApplicationListItem,
 } from "@/lib/jobs/applications";
+import { buildCandidatePipeline } from "@/lib/jobs/pipeline";
 
 function applicationStatusLabel(
   status: CandidateApplicationListItem["status"],
@@ -29,14 +31,9 @@ function activityLabel(app: CandidateApplicationListItem): string {
   return `Submitted ${date}`;
 }
 
-/**
- * Show a single continue CTA while the candidate is still working through
- * interviews / apply — not for terminal outcomes (selected / rejected).
- */
 function needsCompleteApplication(app: CandidateApplicationListItem): boolean {
   if (app.jobStatus === "closed" || app.jobStatus === "missing") return false;
   if (app.status === "rejected" || app.status === "selected") return false;
-  // Pre-apply pipeline, or applied with a stage still open.
   if (app.status === "interviewing") return true;
   return app.interviews.some((stage) => stage.status === "in_progress");
 }
@@ -65,18 +62,25 @@ export function CandidateApplicationsList({
       <div className="border-border/60 border-b px-5 py-4">
         <h2 className="text-foreground text-lg font-semibold">Your roles</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Status and outcomes for every role you&apos;ve interviewed for or
-          applied to.
+          Every role you&apos;ve started, with the full path through visa.
         </p>
       </div>
 
       <ul className="divide-border/60 divide-y">
         {applications.map((app) => {
           const showCompleteCta = needsCompleteApplication(app);
+          const steps = buildCandidatePipeline({
+            templates: app.stageTemplates,
+            profileComplete: true,
+            completedStageIds: app.interviews
+              .filter((stage) => stage.status === "completed")
+              .map((stage) => stage.stageId),
+            applicationStatus: app.status,
+          });
 
           return (
-            <li key={app.id} className="px-5 py-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <li key={app.id} className="px-4 py-4 sm:px-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
@@ -108,6 +112,9 @@ export function CandidateApplicationsList({
                     </Link>
                   </Button>
                 ) : null}
+              </div>
+              <div className="mt-4 min-w-0">
+                <ApplicationStageStepper steps={steps} />
               </div>
             </li>
           );

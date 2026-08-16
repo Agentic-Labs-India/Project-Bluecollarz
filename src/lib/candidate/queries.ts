@@ -186,7 +186,8 @@ async function getCandidateApplications(
       title: string;
       pay: string;
       status: JobDocument["status"];
-    }>({ title: 1, pay: 1, status: 1 })
+      applicationStepTemplates?: JobDocument["applicationStepTemplates"];
+    }>({ title: 1, pay: 1, status: 1, applicationStepTemplates: 1 })
     .toArray();
 
   const jobById = new Map(
@@ -196,6 +197,7 @@ async function getCandidateApplications(
         title: job.title,
         pay: job.pay,
         status: job.status,
+        applicationStepTemplates: job.applicationStepTemplates,
       },
     ]),
   );
@@ -225,6 +227,9 @@ async function getCandidateApplications(
           overall: hit?.overall ?? null,
         };
       }),
+      stageTemplates: job?.applicationStepTemplates ?? [
+        { id: "resume", label: "Resume" },
+      ],
     };
   });
 
