@@ -52,6 +52,12 @@ const isCandidatePreAppAllowed = createRouteMatcher([
   "/api/(.*)",
 ]);
 
+const isHirePreAppAllowed = createRouteMatcher([
+  "/hire/onboarding",
+  "/hire/settings",
+  "/api/(.*)",
+]);
+
 type SessionUser = {
   id?: string | null;
   email?: string | null;
@@ -98,6 +104,20 @@ async function getCandidateGate(req: NextRequest): Promise<{
   }
 }
 
+async function getHireGate(req: NextRequest): Promise<{ complete: boolean }> {
+  try {
+    const origin = req.nextUrl.origin;
+    const res = await fetch(`${origin}/api/hire/onboarding-status`, {
+      headers: { cookie: req.headers.get("cookie") || "" },
+    });
+    if (!res.ok) return { complete: false };
+    const data = (await res.json()) as { complete?: boolean };
+    return { complete: Boolean(data.complete) };
+  } catch {
+    return { complete: false };
+  }
+}
+
 function isPathAllowedForProfile(pathname: string, profileType: ProfileType) {
   const prefix = getProfileBasePath(profileType);
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
@@ -139,6 +159,12 @@ export async function proxy(req: NextRequest) {
           : "/candidate/home";
       return NextResponse.redirect(new URL(next, req.url));
     }
+    if (profileType === "hire") {
+      const { complete } = await getHireGate(req);
+      return NextResponse.redirect(
+        new URL(complete ? "/hire/roles" : "/hire/onboarding", req.url),
+      );
+    }
     return NextResponse.redirect(
       new URL(getProfileHomePath(profileType), req.url),
     );
@@ -174,6 +200,16 @@ export async function proxy(req: NextRequest) {
         }
         if (!kycVerified) {
           return NextResponse.redirect(new URL("/candidate/kyc", req.url));
+        }
+      }
+
+      if (profileType === "hire" && pathname.startsWith("/hire")) {
+        const { complete } = await getHireGate(req);
+        if (!complete && !isHirePreAppAllowed(req)) {
+          return NextResponse.redirect(new URL("/hire/onboarding", req.url));
+        }
+        if (complete && pathname.startsWith("/hire/onboarding")) {
+          return NextResponse.redirect(new URL("/hire/roles", req.url));
         }
       }
     } catch {

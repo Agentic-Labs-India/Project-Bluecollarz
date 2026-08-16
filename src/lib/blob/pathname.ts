@@ -6,6 +6,9 @@
 export const BLOB_MAX_BYTES = 500 * 1024 * 1024; // 500 MB
 /** Multipart kicks in above this (Vercel serverless body limit ~4.5 MB). */
 export const BLOB_MULTIPART_THRESHOLD = 4 * 1024 * 1024;
+/** Company onboarding docs — hard cap (client + token route). */
+export const COMPANY_DOC_MAX_BYTES = 4 * 1024 * 1024;
+export const COMPANY_DOC_MAX_MB = 4;
 
 export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client-upload";
 
@@ -85,6 +88,21 @@ export function isInterviewRecordingUrl(
   } catch {
     return false;
   }
+}
+
+/** Hire company docs: `{DB_NAME}/users/{userId}/company/…` */
+export function isCompanyDocumentRelativePath(
+  relative: string,
+  userId: string,
+): boolean {
+  if (!userId) return false;
+  const parts = relative.split("/").filter(Boolean);
+  return (
+    parts[0] === "users" &&
+    parts[1] === userId &&
+    parts[2] === "company" &&
+    parts.length >= 4
+  );
 }
 
 /** Blog cover images: `{DB_NAME}/admin/blog/…` on Vercel Blob. */

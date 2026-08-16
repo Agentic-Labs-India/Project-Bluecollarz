@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { AdminHireOnboarding } from "@/components/admin/admin-hire-onboarding";
 import { AdminJobVerification } from "@/components/admin/admin-job-verification";
 import {
   AdminHubHeader,
@@ -15,6 +16,7 @@ const TABS = [
   { value: "accounts", label: "Accounts" },
   { value: "jobs", label: "Jobs" },
   { value: "inquiries", label: "Inquiries" },
+  { value: "onboarding", label: "Company onboarding" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["value"];
@@ -25,6 +27,8 @@ const COPY: Record<Tab, string> = {
   jobs: "Review recruiter job posts awaiting approval. Approve to publish; deny returns the role to draft.",
   inquiries:
     "Recruiter access requests from the for-recruiters form. Approve to provision hire access.",
+  onboarding:
+    "Company packs after access is approved. Verify to unlock the hire app; reject sends the recruiter back to edit.",
 };
 
 function AdminRecruitersHubInner({
@@ -43,6 +47,7 @@ function AdminRecruitersHubInner({
       </div>
       {tab === "jobs" ? <AdminJobVerification /> : null}
       {tab === "inquiries" ? <AdminRecruiterInquiries /> : null}
+      {tab === "onboarding" ? <AdminHireOnboarding /> : null}
     </>
   );
 }

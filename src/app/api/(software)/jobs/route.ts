@@ -19,7 +19,7 @@ import {
 } from "@/lib/jobs/queries";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { requireUser, requireProfile } from "@/lib/auth/session";
-import { getHireProfileComplete } from "@/lib/hire/queries";
+import { isHireCompanyVerified } from "@/lib/hire/onboarding";
 import { idHex } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
@@ -132,11 +132,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
     }
 
-    if (!(await getHireProfileComplete(hireAuth.user.id))) {
+    if (!(await isHireCompanyVerified(hireAuth.user.id))) {
       return NextResponse.json(
         {
-          error: "Complete your company profile before posting a role.",
-          code: "PROFILE_INCOMPLETE",
+          error: "Complete company onboarding before posting a role.",
+          code: "ONBOARDING_INCOMPLETE",
         },
         { status: 403 },
       );

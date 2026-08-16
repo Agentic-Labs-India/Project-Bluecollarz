@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -17,12 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AppPage } from "@/components/layout/app-page";
 import { StatCard } from "@/components/shared/stat-card";
+import { HireOnboardingPackView } from "@/components/hire/onboarding/pack-view";
 import type { HireOverview } from "@/lib/hire";
-import {
-  getMissingHireFields,
-  HIRE_FIELD_LABELS,
-  isHireProfileComplete,
-} from "@/lib/hire/profile";
+import type { HireOnboardingData } from "@/lib/hire/onboarding/types";
 
 const STATUS_LABELS: Record<string, string> = {
   published: "Live",
@@ -39,20 +34,6 @@ function formatDate(value: string | null): string {
   });
 }
 
-function Field({ label, value }: { label: string; value?: string | null }) {
-  if (!value?.trim()) return null;
-  return (
-    <div className="border-border bg-muted/20 min-w-0 border p-3">
-      <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-        {label}
-      </p>
-      <p className="text-foreground mt-1.5 text-sm wrap-break-word whitespace-pre-wrap">
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function formatPhone(
   countryCode: number | null,
   phone: number | null,
@@ -64,22 +45,28 @@ function formatPhone(
 
 export function HireProfileView({
   overview,
-  showCompletePrompt = false,
+  onboarding,
 }: {
   overview: HireOverview;
-  showCompletePrompt?: boolean;
+  onboarding: HireOnboardingData | null;
 }) {
   const { profile, account } = overview;
-  const profileComplete = isHireProfileComplete(profile);
-  const missingLabels = getMissingHireFields(profile).map(
-    (field) => HIRE_FIELD_LABELS[field],
-  );
-
-  const company = profile.companyName.trim() || "Your company";
+  const company =
+    onboarding?.identity.legalName.trim() ||
+    profile.companyName.trim() ||
+    "Your company";
   const contact =
-    profile.contactName.trim() || account.name?.trim() || "Hiring contact";
-  const email = account.email || "—";
-  const phone = formatPhone(account.phoneCountryCode, account.phoneNumber);
+    onboarding?.contacts.owner.name.trim() ||
+    profile.contactName.trim() ||
+    account.name?.trim() ||
+    "Hiring contact";
+  const email =
+    onboarding?.contacts.owner.email.trim() || account.email || "—";
+  const phone = formatPhone(
+    onboarding?.contacts.owner.phoneCountryCode ?? account.phoneCountryCode,
+    onboarding?.contacts.owner.phoneNumber ?? account.phoneNumber,
+  );
+  const website = onboarding?.identity.website.trim() || profile.website;
   const image = account.image || "";
   const initial = company.charAt(0).toUpperCase() || "H";
 
@@ -108,26 +95,9 @@ export function HireProfileView({
           Hiring profile
         </h1>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          Company details from your approved access request. These fields cannot
-          be edited here.
+          Company record from onboarding. These details cannot be edited here.
         </p>
       </div>
-
-      {showCompletePrompt || !profileComplete ? (
-        <div className="border-border bg-muted/40 mb-6 border px-4 py-3 text-sm">
-          <p className="text-foreground font-medium">
-            {showCompletePrompt
-              ? "Company details are incomplete — you cannot post a role yet."
-              : "Company profile is incomplete."}
-          </p>
-          {missingLabels.length ? (
-            <p className="text-muted-foreground mt-1 break-words">
-              Missing: {missingLabels.join(", ")}. Contact support if this
-              looks wrong.
-            </p>
-          ) : null}
-        </div>
-      ) : null}
 
       <div className="border-border/80 bg-card mb-6 w-full min-w-0 border p-4 shadow-sm sm:p-6">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:gap-5">
@@ -168,44 +138,33 @@ export function HireProfileView({
               <span className="text-foreground truncate">{phone}</span>
             </div>
           ) : null}
-          {profile.website ? (
+          {website ? (
             <div className="text-muted-foreground flex min-w-0 items-center gap-2 sm:col-span-2">
               <GlobeIcon className="size-4 shrink-0" />
               <a
                 href={
-                  profile.website.startsWith("http")
-                    ? profile.website
-                    : `https://${profile.website}`
+                  website.startsWith("http") ? website : `https://${website}`
                 }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-foreground truncate underline-offset-2 hover:underline"
               >
-                {profile.website}
+                {website}
               </a>
             </div>
           ) : null}
         </div>
-
-        <div className="border-border/60 mt-6 grid gap-3 border-t pt-6 sm:grid-cols-2">
-          <Field label="Contact name" value={profile.contactName} />
-          <Field label="Company" value={profile.companyName} />
-          <Field label="Industry" value={profile.industry} />
-          <Field
-            label="Team size"
-            value={
-              profile.companySize
-                ? `${profile.companySize} employees`
-                : null
-            }
-          />
-          <Field label="Country" value={profile.location} />
-          <Field label="Website" value={profile.website || null} />
-          <div className="sm:col-span-2">
-            <Field label="About" value={profile.about} />
-          </div>
-        </div>
       </div>
+
+      {onboarding ? (
+        <div className="border-border/80 bg-card mb-6 w-full min-w-0 border p-4 shadow-sm sm:p-6">
+          <HireOnboardingPackView
+            data={onboarding}
+            about={profile.about}
+            companySize={profile.companySize}
+          />
+        </div>
+      ) : null}
 
       <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
         {stats.map((stat) => (
@@ -300,15 +259,7 @@ export function HireProfileView({
             <div className="border-border/60 border border-dashed px-4 py-10 text-center">
               <p className="text-muted-foreground text-sm">No open roles yet.</p>
               <Button asChild size="sm" className="mt-3">
-                <Link
-                  href={
-                    profileComplete
-                      ? "/hire/roles/new"
-                      : "/hire/profile?complete=required"
-                  }
-                >
-                  Post a role
-                </Link>
+                <Link href="/hire/roles/new">Post a role</Link>
               </Button>
             </div>
           )}

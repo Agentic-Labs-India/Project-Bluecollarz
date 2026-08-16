@@ -34,6 +34,6 @@ export interface HireOverview {
     selected: number;
   };
   activeRoles: HireActiveRole[];
-  /** Company details from the approved access request (read-only). */
+  /** Access-request company fields on Users (read-only). */
   profile: HireProfileData;
 }

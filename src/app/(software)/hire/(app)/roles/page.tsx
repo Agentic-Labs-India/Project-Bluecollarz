@@ -3,14 +3,11 @@ import { redirect } from "next/navigation";
 import { HireJobsTable } from "@/components/hire/jobs-table";
 import { AppPage } from "@/components/layout/app-page";
 import { auth } from "@/lib/auth/auth";
-import { getHireProfileComplete } from "@/lib/hire/queries";
 
 export default async function HireRolesPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as { id?: string } | undefined;
   if (!user?.id) redirect("/");
-
-  const profileComplete = await getHireProfileComplete(user.id);
 
   return (
     <AppPage>
@@ -23,7 +20,7 @@ export default async function HireRolesPage() {
           candidates; denied posts return to draft with an email reason.
         </p>
       </div>
-      <HireJobsTable profileComplete={profileComplete} />
+      <HireJobsTable />
     </AppPage>
   );
 }

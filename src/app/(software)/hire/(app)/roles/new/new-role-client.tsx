@@ -55,8 +55,8 @@ export function NewRoleClient() {
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (json.code === "PROFILE_INCOMPLETE") {
-        router.push("/hire/profile?complete=required");
+      if (json.code === "ONBOARDING_INCOMPLETE") {
+        router.push("/hire/onboarding");
         return;
       }
       throw new Error(json.error || "Failed to create role");

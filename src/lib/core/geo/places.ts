@@ -65,6 +65,19 @@ export function countryName(countryCode?: string | null): string {
   return Country.getCountryByCode(countryCode)?.name ?? countryCode;
 }
 
+/** ISO 3166-1 alpha-2, or null. Accepts a code or a country name. */
+export function normalizeIsoCountryCode(raw?: string | null): string | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+  const upper = trimmed.toUpperCase();
+  if (upper.length === 2 && Country.getCountryByCode(upper)) return upper;
+  return countryCodeFromName(trimmed);
+}
+
+export function isIsoCountryCode(raw?: string | null): boolean {
+  return Boolean(normalizeIsoCountryCode(raw));
+}
+
 export function countryCodeFromName(name?: string | null): string | null {
   const resolved = resolveCountryName(name);
   if (!resolved) return null;

@@ -4,7 +4,6 @@ import type { ApplicationDocument } from "@/lib/jobs/applications";
 import type { HireActiveRole, HireOverview } from "@/lib/hire";
 import { hydrateHireProfileFromApprovedInquiry } from "@/lib/hire/apply-inquiry-profile";
 import {
-  isHireProfileComplete,
   toHireProfileData,
   type HireProfileFields,
 } from "@/lib/hire/profile";
@@ -21,28 +20,6 @@ type HireUserDoc = HireProfileFields & {
   createdAt?: Date;
 };
 
-/** Lightweight check — whether the hirer's company profile is complete enough to post roles. */
-export async function getHireProfileComplete(userId: string): Promise<boolean> {
-  await ensureIndexes();
-  if (!userId) return false;
-  const user = await client
-    .db(DB_NAME)
-    .collection<HireUserDoc>(COLLECTIONS.USERS_COLLECTION)
-    .findOne({ _id: matchId(userId) as never });
-  if (!user) return false;
-  if (!isHireProfileComplete(toHireProfileData(user)) && user.email) {
-    await hydrateHireProfileFromApprovedInquiry({
-      userId,
-      email: user.email,
-    });
-    const refreshed = await client
-      .db(DB_NAME)
-      .collection<HireUserDoc>(COLLECTIONS.USERS_COLLECTION)
-      .findOne({ _id: matchId(userId) as never });
-    return isHireProfileComplete(toHireProfileData(refreshed));
-  }
-  return isHireProfileComplete(toHireProfileData(user));
-}
 export async function getHireOverview(viewer: {
   id: string;
   email: string;

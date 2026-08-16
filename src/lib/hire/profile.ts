@@ -59,37 +59,6 @@ export function toHireProfileData(
   };
 }
 
-export type HireMandatoryField =
-  | "companyName"
-  | "industry"
-  | "companySize"
-  | "location"
-  | "about";
-
-export const HIRE_FIELD_LABELS: Record<HireMandatoryField, string> = {
-  companyName: "company name",
-  industry: "industry",
-  companySize: "company size",
-  location: "location",
-  about: "about the company",
-};
-
-export function getMissingHireFields(
-  profile: HireProfileData,
-): HireMandatoryField[] {
-  const missing: HireMandatoryField[] = [];
-  if (!profile.companyName.trim()) missing.push("companyName");
-  if (!profile.industry.trim()) missing.push("industry");
-  if (!profile.companySize.trim()) missing.push("companySize");
-  if (!profile.location.trim()) missing.push("location");
-  if (!profile.about.trim()) missing.push("about");
-  return missing;
-}
-
-export function isHireProfileComplete(profile: HireProfileData): boolean {
-  return getMissingHireFields(profile).length === 0;
-}
-
 /** Payload applied to Users when an inquiry is approved. */
 export type HireProfileFromInquiry = HireProfileFields & {
   phoneCountryCode: number;

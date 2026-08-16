@@ -38,6 +38,11 @@ const RECRUITER_INQUIRY_INDEX_SPECS = [
   { key: { email: 1, createdAt: -1 }, options: {} },
 ] as const;
 
+const HIRE_ONBOARDING_INDEX_SPECS = [
+  { key: { userId: 1 }, options: { unique: true } },
+  { key: { status: 1, submittedAt: -1, updatedAt: -1 }, options: {} },
+] as const;
+
 const USER_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
   { key: { email: 1 }, options: {} },
@@ -146,6 +151,13 @@ export async function ensureIndexes() {
     ...RECRUITER_INQUIRY_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.RECRUITER_INQUIRIES),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...HIRE_ONBOARDING_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.HIRE_ONBOARDINGS),
         spec.key,
         spec.options,
       ),

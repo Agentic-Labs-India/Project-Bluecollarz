@@ -29,11 +29,7 @@ const STATUS_VARIANT: Record<
   closed: "outline",
 };
 
-export function HireJobsTable({
-  profileComplete = false,
-}: {
-  profileComplete?: boolean;
-}) {
+export function HireJobsTable() {
   const router = useRouter();
   const [data, setData] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -199,13 +195,7 @@ export function HireJobsTable({
               </SelectContent>
             </Select>
             <Button asChild className="w-full sm:w-auto">
-              <Link
-                href={
-                  profileComplete
-                    ? "/hire/roles/new"
-                    : "/hire/profile?complete=required"
-                }
-              >
+              <Link href="/hire/roles/new">
                 <PlusIcon className="size-4" />
                 Post a role
               </Link>

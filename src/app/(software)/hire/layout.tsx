@@ -8,7 +8,11 @@ import {
   normalizeProfileType,
 } from "@/lib/user/profile-types";
 
-/** Hire area: only `hire` profiles. Others are sent to their home. */
+/**
+ * Hire area: only `hire` profiles. Others are sent to their home.
+ * Onboarding lives outside `(app)/layout.tsx` so it stays reachable
+ * while the rest of the hire app is locked.
+ */
 export default function HireLayout({
   children,
 }: {

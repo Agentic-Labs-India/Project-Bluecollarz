@@ -24,6 +24,8 @@ export type BlobUploadOptions = {
   contentType?: string;
   /** Extra JSON for the token route (auth / bookkeeping). */
   clientPayload?: Record<string, unknown>;
+  /** Override the default 500 MB cap (e.g. company docs = 4 MB). */
+  maxBytes?: number;
   onProgress?: (percent: number) => void;
 };
 
@@ -49,9 +51,10 @@ export async function uploadBlob(
   if (file.size <= 0) {
     throw new Error("Cannot upload an empty file");
   }
-  if (file.size > BLOB_MAX_BYTES) {
+  const maxBytes = opts.maxBytes ?? BLOB_MAX_BYTES;
+  if (file.size > maxBytes) {
     throw new Error(
-      `File is too large (max ${Math.round(BLOB_MAX_BYTES / (1024 * 1024))} MB)`,
+      `File is too large (max ${Math.round(maxBytes / (1024 * 1024))} MB)`,
     );
   }
 

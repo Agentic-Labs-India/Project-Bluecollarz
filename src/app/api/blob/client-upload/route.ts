@@ -5,8 +5,10 @@ import { requireUser } from "@/lib/auth/session";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import {
   BLOB_MAX_BYTES,
+  COMPANY_DOC_MAX_BYTES,
   blobPathRelativeToRoot,
   getBlobRoot,
+  isCompanyDocumentRelativePath,
 } from "@/lib/blob/pathname";
 
 /**
@@ -38,6 +40,20 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         const segments = relative.split("/").filter(Boolean);
         const kind = segments[0];
+        let maximumSizeInBytes = BLOB_MAX_BYTES;
+        let allowedContentTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "image/gif",
+          "application/pdf",
+          "video/webm",
+          "video/mp4",
+          "video/quicktime",
+          "audio/webm",
+          "audio/mpeg",
+          "audio/wav",
+        ];
 
         if (kind === "interviews") {
           if (auth.user.profileType !== "work") {
@@ -78,25 +94,28 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (segments[1] !== auth.user.id || segments.length < 3) {
             throw new Error("User uploads must be under your own folder");
           }
+          if (segments[2] === "company") {
+            if (auth.user.profileType !== "hire") {
+              throw new Error("Company document uploads require a hire profile");
+            }
+            if (!isCompanyDocumentRelativePath(relative, auth.user.id)) {
+              throw new Error("Invalid company document path");
+            }
+            maximumSizeInBytes = COMPANY_DOC_MAX_BYTES;
+            allowedContentTypes = [
+              "application/pdf",
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+            ];
+          }
         } else {
           throw new Error("Upload path not allowed");
         }
 
         return {
-          allowedContentTypes: [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/gif",
-            "application/pdf",
-            "video/webm",
-            "video/mp4",
-            "video/quicktime",
-            "audio/webm",
-            "audio/mpeg",
-            "audio/wav",
-          ],
-          maximumSizeInBytes: BLOB_MAX_BYTES,
+          allowedContentTypes,
+          maximumSizeInBytes,
           addRandomSuffix: true,
           tokenPayload: JSON.stringify({
             userId: auth.user.id,
