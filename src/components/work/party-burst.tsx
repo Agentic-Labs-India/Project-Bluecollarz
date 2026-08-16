@@ -17,10 +17,10 @@ type Particle = {
   life: number;
 };
 
-function spawn(originX: number, originY: number, dir: 1 | -1): Particle[] {
+function spawnCannon(originX: number, originY: number, dir: 1 | -1): Particle[] {
   const out: Particle[] = [];
   for (let i = 0; i < 42; i++) {
-    const speed = 7 + Math.random() * 11;
+    const speed = 3.2 + Math.random() * 5;
     const spread = (Math.random() - 0.35) * 1.15;
     out.push({
       x: originX,
@@ -30,7 +30,7 @@ function spawn(originX: number, originY: number, dir: 1 | -1): Particle[] {
       w: 4 + Math.random() * 5,
       h: 7 + Math.random() * 8,
       rot: Math.random() * Math.PI,
-      vr: (Math.random() - 0.5) * 0.4,
+      vr: (Math.random() - 0.5) * 0.18,
       color: COLORS[i % COLORS.length]!,
       life: 1,
     });
@@ -38,8 +38,31 @@ function spawn(originX: number, originY: number, dir: 1 | -1): Particle[] {
   return out;
 }
 
-/** Two party-cannon bursts from the footer corners. */
-export function PartyBurst() {
+function spawnShower(width: number): Particle[] {
+  const out: Particle[] = [];
+  const sources = 7;
+  for (let s = 0; s < sources; s++) {
+    const ox = (width / (sources + 1)) * (s + 1);
+    for (let i = 0; i < 22; i++) {
+      out.push({
+        x: ox + (Math.random() - 0.5) * 56,
+        y: -12 - Math.random() * 80,
+        vx: (Math.random() - 0.5) * 1.1,
+        vy: 0.55 + Math.random() * 1.15,
+        w: 3 + Math.random() * 4,
+        h: 6 + Math.random() * 8,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.12,
+        color: COLORS[(s + i) % COLORS.length]!,
+        life: 1,
+      });
+    }
+  }
+  return out;
+}
+
+/** Corner cannons; `shower` adds a top-down confetti rain (selected). */
+export function PartyBurst({ shower = false }: { shower?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -66,8 +89,9 @@ export function PartyBurst() {
 
     let { w, h } = size();
     let particles = [
-      ...spawn(24, h - 8, 1),
-      ...spawn(w - 24, h - 8, -1),
+      ...spawnCannon(24, h - 8, 1),
+      ...spawnCannon(w - 24, h - 8, -1),
+      ...(shower ? spawnShower(w) : []),
     ];
     let raf = 0;
     let running = true;
@@ -77,11 +101,11 @@ export function PartyBurst() {
       ctx.clearRect(0, 0, w, h);
       const next: Particle[] = [];
       for (const p of particles) {
-        p.vy += 0.22;
+        p.vy += 0.1;
         p.x += p.vx;
         p.y += p.vy;
         p.rot += p.vr;
-        p.life -= 0.012;
+        p.life -= 0.005;
         if (p.life <= 0 || p.y > h + 20) continue;
         ctx.save();
         ctx.translate(p.x, p.y);
@@ -103,7 +127,7 @@ export function PartyBurst() {
       running = false;
       window.cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [shower]);
 
   return (
     <canvas

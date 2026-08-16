@@ -13,6 +13,7 @@ function applicationStatusLabel(
   status: CandidateApplicationListItem["status"],
 ): string {
   if (status === "interviewing") return "Interviewing";
+  if (status === "applied") return "Applied 👍";
   return APPLICATION_STATUS_LABELS[status];
 }
 
@@ -28,7 +29,7 @@ function applicationStatusVariant(
 function activityLabel(app: CandidateApplicationListItem): string {
   const date = new Date(app.appliedAt).toLocaleDateString();
   if (app.status === "interviewing") return `Started ${date}`;
-  return `Submitted ${date}`;
+  return `Applied ${date}`;
 }
 
 function needsCompleteApplication(app: CandidateApplicationListItem): boolean {

@@ -34,6 +34,20 @@ function labelClass(dither: boolean, status: PipelineStepStatus) {
   return "text-foreground";
 }
 
+function reachedIndex(steps: CandidatePipelineStep[]): number {
+  const failedAt = steps.findIndex((step) => step.status === "failed");
+  if (failedAt >= 0) return failedAt;
+  const currentAt = steps.findIndex((step) => step.status === "current");
+  if (currentAt >= 0) return currentAt;
+  let cleared = 0;
+  for (let i = 0; i < steps.length; i++) {
+    const status = steps[i]?.status;
+    if (status === "done" || status === "skipped") cleared = i;
+    else break;
+  }
+  return cleared;
+}
+
 export function ApplicationStageStepper({
   steps,
   variant = "default",
@@ -43,10 +57,7 @@ export function ApplicationStageStepper({
 }) {
   const dither = variant === "dither";
   const last = steps.length - 1;
-  const failedAt = steps.findIndex((step) => step.status === "failed");
-  const currentAt = steps.findIndex((step) => step.status === "current");
-  const reached = failedAt >= 0 ? failedAt : Math.max(currentAt, 0);
-  const fill = last > 0 ? reached / last : 0;
+  const fill = last > 0 ? reachedIndex(steps) / last : 0;
 
   return (
     <ol className="relative flex w-full min-w-0 justify-between">

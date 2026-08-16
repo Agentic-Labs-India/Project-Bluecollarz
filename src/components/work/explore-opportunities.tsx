@@ -95,7 +95,7 @@ function OpportunityCard({
       : applicationStatus === "rejected"
         ? "Rejected"
         : hasApplied
-          ? "Submitted"
+          ? "Applied 👍"
           : null;
 
   const bandLabel = stateName(countryCode, stateCode);
@@ -173,14 +173,14 @@ function OpportunityCard({
 function OpportunityCardSkeleton() {
   return (
     <div className="border-border bg-card flex w-full flex-col overflow-hidden border">
-      <div className="bg-primary/80 h-6 animate-pulse" />
+      <Skeleton className="h-6 w-full" />
       <div className="flex flex-1 flex-col px-3.5 py-3">
         <div className="mb-1 flex items-start justify-between gap-2">
           <Skeleton className="h-4 w-3/5" />
           <Skeleton className="h-3 w-8" />
         </div>
         <Skeleton className="h-3.5 w-2/5" />
-        <div className="border-primary/10 mt-2 flex items-center justify-between gap-2 border-t pt-2">
+        <div className="border-border mt-2 flex items-center justify-between gap-2 border-t pt-2">
           <Skeleton className="h-3 w-16" />
           <Skeleton className="size-3.5" />
         </div>
@@ -341,6 +341,9 @@ export function ExploreOpportunities({
     initialProfileComplete,
   );
   const [applying, setApplying] = useState(false);
+  const [justAppliedJobId, setJustAppliedJobId] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [startingInterview, setStartingInterview] = useState(false);
@@ -539,6 +542,7 @@ export function ExploreOpportunities({
       const res = await fetch(`/api/jobs/${jobId}/apply`, { method: "POST" });
       if (!res.ok) throw new Error("apply failed");
       setApplicationStatuses((prev) => ({ ...prev, [jobId]: "applied" }));
+      setJustAppliedJobId(jobId);
     } catch {
       // surfaced via button state; safe to retry
     } finally {
@@ -804,6 +808,7 @@ export function ExploreOpportunities({
                 applicationStatuses[selectedOpportunity.id] ?? null
               }
               applying={applying}
+              justApplied={justAppliedJobId === selectedOpportunity.id}
               profileComplete={profileComplete}
               startingInterview={startingInterview}
               onApply={() => applyToJob(selectedOpportunity.id)}

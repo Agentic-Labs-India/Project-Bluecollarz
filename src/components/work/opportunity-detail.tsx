@@ -35,6 +35,7 @@ export function OpportunityDetail({
   hasNext,
   applicationStatus,
   applying,
+  justApplied,
   profileComplete,
   startingInterview,
   onApply,
@@ -52,6 +53,7 @@ export function OpportunityDetail({
   hasNext: boolean;
   applicationStatus?: ApplicationStatus | null;
   applying?: boolean;
+  justApplied?: boolean;
   profileComplete?: boolean;
   startingInterview?: boolean;
   onApply?: () => void;
@@ -104,7 +106,9 @@ export function OpportunityDetail({
         className,
       )}
     >
-      {cta.type === "selected" ? <PartyBurst /> : null}
+      {cta.type === "selected" || justApplied ? (
+        <PartyBurst shower={cta.type === "selected"} />
+      ) : null}
       <header className="border-border/60 shrink-0 border-b">
         <div className={cn(APP_PAGE_GUTTER, "py-3")}>
           <AppPage className="flex items-center justify-between">
@@ -310,7 +314,7 @@ export function OpportunityDetail({
               onClick={onApply}
             >
               {cta.type === "applied"
-                ? "Submitted"
+                ? "Applied 👍"
                 : applying
                   ? "Applying…"
                   : "Apply now"}

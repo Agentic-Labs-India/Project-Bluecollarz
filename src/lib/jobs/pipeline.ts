@@ -1,7 +1,7 @@
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import {
   APPLICATION_STAGE_OPTIONS,
-  normalizeStepTemplates,
+  isApplicationStageId,
 } from "@/lib/jobs/stages";
 
 export type PipelineStepStatus =
@@ -49,11 +49,10 @@ export function buildCandidatePipeline(opts: {
   completedStageIds?: Iterable<string>;
   applicationStatus?: ApplicationStatus | "interviewing" | null;
 }): CandidatePipelineStep[] {
-  const enabled = new Set(
-    normalizeStepTemplates(
-      [...(opts.stageIds ?? [])].map((id) => ({ id, label: id })),
-    ).map((step) => step.id),
-  );
+  const enabled = new Set<string>(["resume"]);
+  for (const id of opts.stageIds ?? []) {
+    if (isApplicationStageId(id)) enabled.add(id);
+  }
   const completed = new Set(opts.completedStageIds ?? []);
   const submitted =
     opts.applicationStatus === "applied" ||
@@ -82,11 +81,11 @@ export function buildCandidatePipeline(opts: {
         ? "done"
         : "pending";
 
-  return markCurrent([
-    ...pre,
-    ...POST_APPLY_STEPS.map((step) => ({
-      ...step,
-      status: step.id === "selected" ? selectedStatus : "pending",
-    })),
-  ]);
+  const post: CandidatePipelineStep[] = POST_APPLY_STEPS.map((step) => ({
+    ...step,
+    status: step.id === "selected" ? selectedStatus : "pending",
+  }));
+
+  if (!submitted) return [...markCurrent(pre), ...post];
+  return markCurrent([...pre, ...post]);
 }
