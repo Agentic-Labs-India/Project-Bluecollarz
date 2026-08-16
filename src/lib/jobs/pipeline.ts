@@ -1,10 +1,15 @@
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import {
+  APPLICATION_STAGE_OPTIONS,
   normalizeStepTemplates,
-  type ApplicationStepTemplate,
 } from "@/lib/jobs/stages";
 
-export type PipelineStepStatus = "done" | "current" | "pending" | "failed";
+export type PipelineStepStatus =
+  | "done"
+  | "current"
+  | "pending"
+  | "failed"
+  | "skipped";
 
 export interface CandidatePipelineStep {
   id: string;
@@ -38,43 +43,50 @@ function markCurrent(
   );
 }
 
-/** Full candidate journey: job stages (if enabled) then selected → medical → offer → visa. */
 export function buildCandidatePipeline(opts: {
-  templates?: ApplicationStepTemplate[];
+  stageIds?: Iterable<string>;
   profileComplete?: boolean;
   completedStageIds?: Iterable<string>;
   applicationStatus?: ApplicationStatus | "interviewing" | null;
 }): CandidatePipelineStep[] {
-  const templates = normalizeStepTemplates(opts.templates);
+  const enabled = new Set(
+    normalizeStepTemplates(
+      [...(opts.stageIds ?? [])].map((id) => ({ id, label: id })),
+    ).map((step) => step.id),
+  );
   const completed = new Set(opts.completedStageIds ?? []);
-  const profileComplete = opts.profileComplete === true;
-  const appStatus = opts.applicationStatus ?? null;
   const submitted =
-    appStatus === "applied" ||
-    appStatus === "selected" ||
-    appStatus === "rejected";
+    opts.applicationStatus === "applied" ||
+    opts.applicationStatus === "selected" ||
+    opts.applicationStatus === "rejected";
 
-  const pre: CandidatePipelineStep[] = templates.map((step) => {
-    const done =
-      submitted ||
-      (step.id === "resume" && profileComplete) ||
-      completed.has(step.id);
-    return {
-      id: step.id,
-      label: step.label,
-      shortLabel: PRE_APPLY_SHORT[step.id] ?? step.label,
-      status: done ? "done" : "pending",
-    };
-  });
+  const pre: CandidatePipelineStep[] = APPLICATION_STAGE_OPTIONS.map(
+    (stage) => ({
+      id: stage.id,
+      label: stage.label,
+      shortLabel: PRE_APPLY_SHORT[stage.id],
+      status: !enabled.has(stage.id)
+        ? "skipped"
+        : submitted ||
+            (stage.id === "resume" && opts.profileComplete) ||
+            completed.has(stage.id)
+          ? "done"
+          : "pending",
+    }),
+  );
 
-  let selectedStatus: PipelineStepStatus = "pending";
-  if (appStatus === "rejected") selectedStatus = "failed";
-  else if (appStatus === "selected") selectedStatus = "done";
+  const selectedStatus: PipelineStepStatus =
+    opts.applicationStatus === "rejected"
+      ? "failed"
+      : opts.applicationStatus === "selected"
+        ? "done"
+        : "pending";
 
-  const post: CandidatePipelineStep[] = POST_APPLY_STEPS.map((step) => ({
-    ...step,
-    status: step.id === "selected" ? selectedStatus : "pending",
-  }));
-
-  return markCurrent([...pre, ...post]);
+  return markCurrent([
+    ...pre,
+    ...POST_APPLY_STEPS.map((step) => ({
+      ...step,
+      status: step.id === "selected" ? selectedStatus : "pending",
+    })),
+  ]);
 }

@@ -227,9 +227,9 @@ async function getCandidateApplications(
           overall: hit?.overall ?? null,
         };
       }),
-      stageTemplates: job?.applicationStepTemplates ?? [
-        { id: "resume", label: "Resume" },
-      ],
+      stageIds: (job?.applicationStepTemplates ?? []).map((step) =>
+        String(step.id),
+      ),
     };
   });
 

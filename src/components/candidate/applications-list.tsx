@@ -61,16 +61,13 @@ export function CandidateApplicationsList({
     <section className="border-border/80 bg-card rounded-none border shadow-sm">
       <div className="border-border/60 border-b px-5 py-4">
         <h2 className="text-foreground text-lg font-semibold">Your roles</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Every role you&apos;ve started, with the full path through visa.
-        </p>
       </div>
 
       <ul className="divide-border/60 divide-y">
         {applications.map((app) => {
           const showCompleteCta = needsCompleteApplication(app);
           const steps = buildCandidatePipeline({
-            templates: app.stageTemplates,
+            stageIds: app.stageIds,
             profileComplete: true,
             completedStageIds: app.interviews
               .filter((stage) => stage.status === "completed")

@@ -6,7 +6,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
-  InfoIcon,
   MapPinIcon,
   Maximize2Icon,
   Minimize2Icon,
@@ -26,43 +25,6 @@ import { formatJobPlaceLabel } from "@/lib/core/geo/places";
 import { resolveOpportunityCta } from "@/lib/interviews/cta";
 import { buildCandidatePipeline } from "@/lib/jobs/pipeline";
 import { cn } from "@/lib/utils";
-
-function ApplicationProgress({
-  opportunity,
-  applicationStatus,
-  profileComplete,
-  variant = "default",
-}: {
-  opportunity: Opportunity;
-  applicationStatus?: ApplicationStatus | null;
-  profileComplete?: boolean;
-  variant?: "default" | "dither";
-}) {
-  const steps = buildCandidatePipeline({
-    templates: opportunity.applicationSteps,
-    profileComplete,
-    completedStageIds: opportunity.applicationSteps
-      .filter((step) => step.status === "done")
-      .map((step) => step.id),
-    applicationStatus,
-  });
-
-  return (
-    <div className="min-w-0">
-      <ApplicationStageStepper steps={steps} variant={variant} />
-      {variant === "default" && !applicationStatus ? (
-        <div className="border-border/60 bg-muted/40 text-muted-foreground mt-4 flex gap-2 border px-3 py-2.5 text-xs leading-relaxed">
-          <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-          <p>
-            Resume is first. Comm Int, Domain, and questionnaire show only if
-            this role needs them. After you apply: Selected, Medical, Offer,
-            then Visa.
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 export function OpportunityDetail({
   opportunity,
@@ -104,6 +66,14 @@ export function OpportunityDetail({
     opportunity,
     profileComplete: profileComplete === true,
     applicationStatus: applicationStatus ?? null,
+  });
+  const steps = buildCandidatePipeline({
+    stageIds: opportunity.applicationSteps.map((step) => step.id),
+    profileComplete,
+    completedStageIds: opportunity.applicationSteps
+      .filter((step) => step.status === "done")
+      .map((step) => step.id),
+    applicationStatus,
   });
 
   useEffect(() => {
@@ -241,11 +211,7 @@ export function OpportunityDetail({
                 We are really sorry — you were genuinely good. Please apply to
                 other open roles; you can definitely get in elsewhere.
               </p>
-              <ApplicationProgress
-                opportunity={opportunity}
-                applicationStatus={applicationStatus}
-                profileComplete={profileComplete}
-              />
+              <ApplicationStageStepper steps={steps} />
             </section>
           ) : cta.type === "selected" ? (
             <section className="bg-primary relative mb-6 overflow-hidden border border-white/15 p-5">
@@ -255,15 +221,9 @@ export function OpportunityDetail({
                   <PartyPopperIcon className="size-4 shrink-0" />
                   Status: Selected
                 </p>
-                <p className="mt-2 mb-4 text-sm leading-relaxed text-white/80">
-                  Medical, offer letter, and visa are next.
-                </p>
-                <ApplicationProgress
-                  opportunity={opportunity}
-                  applicationStatus={applicationStatus}
-                  profileComplete={profileComplete}
-                  variant="dither"
-                />
+                <div className="mt-4">
+                  <ApplicationStageStepper steps={steps} variant="dither" />
+                </div>
               </div>
             </section>
           ) : (
@@ -271,11 +231,7 @@ export function OpportunityDetail({
               <p className="text-foreground mb-4 text-sm font-semibold">
                 Application
               </p>
-              <ApplicationProgress
-                opportunity={opportunity}
-                applicationStatus={applicationStatus}
-                profileComplete={profileComplete}
-              />
+              <ApplicationStageStepper steps={steps} />
             </section>
           )}
 
