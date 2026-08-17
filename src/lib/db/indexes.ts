@@ -17,6 +17,7 @@ const JOB_INDEX_SPECS = [
 const APPLICATION_INDEX_SPECS = [
   { key: { applicantId: 1, jobId: 1 }, options: { unique: true } },
   { key: { jobId: 1, createdAt: -1 }, options: {} },
+  { key: { status: 1, createdAt: -1 }, options: {} },
 ] as const;
 
 const USER_PROVISION_INDEX_SPECS = [
@@ -84,6 +85,27 @@ const BREACH_INCIDENT_INDEX_SPECS = [
   { key: { createdAt: -1 }, options: {} },
   { key: { status: 1, createdAt: -1 }, options: {} },
   { key: { incidentId: 1 }, options: { unique: true } },
+] as const;
+
+const MEDICAL_CENTER_INDEX_SPECS = [
+  { key: { active: 1, name: 1 }, options: {} },
+  { key: { licenseNumber: 1 }, options: {} },
+] as const;
+
+const MEDICAL_APPOINTMENT_INDEX_SPECS = [
+  { key: { applicationId: 1 }, options: { unique: true } },
+  {
+    key: { centerId: 1, scheduledAt: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: { status: "scheduled" },
+    },
+  },
+  { key: { applicantId: 1, jobId: 1, status: 1 }, options: {} },
+  { key: { applicantId: 1, scheduledAt: -1 }, options: {} },
+  { key: { scheduledAt: 1 }, options: {} },
+  { key: { status: 1, scheduledAt: 1 }, options: {} },
+  { key: { centerId: 1, status: 1, scheduledAt: 1 }, options: {} },
 ] as const;
 
 let ensured = false;
@@ -203,6 +225,20 @@ export async function ensureIndexes() {
     ...BREACH_INCIDENT_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.BREACH_INCIDENTS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...MEDICAL_CENTER_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.MEDICAL_CENTERS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...MEDICAL_APPOINTMENT_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.MEDICAL_APPOINTMENTS),
         spec.key,
         spec.options,
       ),

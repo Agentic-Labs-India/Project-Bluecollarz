@@ -13,7 +13,8 @@ const isFullBleed = (pathname: string) =>
 
 const hideMobileNav = (pathname: string) =>
   pathname.startsWith("/candidate/onboarding") ||
-  pathname.startsWith("/candidate/kyc");
+  pathname.startsWith("/candidate/kyc") ||
+  pathname.startsWith("/candidate/medical");
 
 const isPreAppExempt = (pathname: string) =>
   pathname.startsWith("/candidate/onboarding") ||

@@ -1,35 +1,36 @@
 "use client";
 
+import { BadgeCheckIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { AppPage } from "@/components/layout/app-page";
-import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import {
-  emptyCandidateProfileData,
-  emptyEducationEntry,
-  emptyWorkEntry,
-  HOBBY_PRESETS,
-  type CandidateProfileData,
-  type EducationFormEntry,
-  type WorkFormEntry,
-} from "@/lib/candidate/profile";
+import { CandidateMedicalReports } from "@/components/candidate/candidate-medical-reports";
 import { CountryMultiSelect } from "@/components/candidate/country-multi-select";
 import { DateOfBirthPicker } from "@/components/candidate/date-of-birth-picker";
 import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
 import { ResidencePlaceFields } from "@/components/candidate/residence-place-fields";
+import { PrimaryDither } from "@/components/landing/primary-dither";
+import { AppPage } from "@/components/layout/app-page";
+import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  type CandidateProfileData,
+  type EducationFormEntry,
+  emptyCandidateProfileData,
+  emptyEducationEntry,
+  emptyWorkEntry,
+  HOBBY_PRESETS,
+  type WorkFormEntry,
+} from "@/lib/candidate/profile";
 import {
   countryCodeFromName,
   normalizeCountryNames,
   normalizeResidencePlace,
 } from "@/lib/core/geo/places";
-import { BadgeCheckIcon, PlusIcon, ShieldCheckIcon, XIcon } from "lucide-react";
-import { PrimaryDither } from "@/components/landing/primary-dither";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const AUTOSAVE_DEBOUNCE_MS = 700;
@@ -219,7 +220,9 @@ export function CandidateProfileView() {
         next.residenceState = place.state;
         next.residenceCity = place.city;
         setProfile(next);
-        lastSavedJsonRef.current = JSON.stringify(buildProfileSavePayload(next));
+        lastSavedJsonRef.current = JSON.stringify(
+          buildProfileSavePayload(next),
+        );
         readyRef.current = true;
         setReady(true);
       } catch (e) {
@@ -348,10 +351,7 @@ export function CandidateProfileView() {
         <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
           Profile
         </h1>
-        <p
-          className="text-muted-foreground min-h-5 text-sm"
-          aria-live="polite"
-        >
+        <p className="text-muted-foreground min-h-5 text-sm" aria-live="polite">
           {saving ? "Saving…" : saved ? "Saved" : null}
         </p>
       </div>
@@ -384,8 +384,8 @@ export function CandidateProfileView() {
           </p>
           {identityLocked ? (
             <p className="mt-2 text-xs text-white/65">
-              DigiLocker verified — phone, DOB, address, PAN, Aadhaar, and gender
-              are locked.
+              DigiLocker verified — phone, DOB, address, PAN, Aadhaar, and
+              gender are locked.
             </p>
           ) : profile.candidateOnboardingComplete ? (
             <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/65">
@@ -416,6 +416,8 @@ export function CandidateProfileView() {
         </Button>
       </div>
 
+      <CandidateMedicalReports />
+
       {/* Basics */}
       <section className="space-y-4">
         <h3 className="text-foreground text-xl font-semibold">Basics</h3>
@@ -431,9 +433,7 @@ export function CandidateProfileView() {
               countryCode={profile.phoneCountryCode}
               number={profile.phoneNumber}
               disabled={identityLocked}
-              defaultIso={
-                countryCodeFromName(profile.residenceCountry) ?? "IN"
-              }
+              defaultIso={countryCodeFromName(profile.residenceCountry) ?? "IN"}
               onChange={({ phoneCountryCode, phoneNumber }) =>
                 setProfile((p) => ({
                   ...p,
@@ -454,7 +454,10 @@ export function CandidateProfileView() {
               }
             />
           </div>
-          {identityLocked || profile.gender || profile.pan || profile.aadhaarLast4 ? (
+          {identityLocked ||
+          profile.gender ||
+          profile.pan ||
+          profile.aadhaarLast4 ? (
             <>
               <div className="space-y-2">
                 <Label>Gender</Label>
@@ -550,7 +553,10 @@ export function CandidateProfileView() {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-foreground text-xl font-semibold">
-            Education <span className="text-muted-foreground text-sm font-normal">(required)</span>
+            Education{" "}
+            <span className="text-muted-foreground text-sm font-normal">
+              (required)
+            </span>
           </h3>
           <Button
             type="button"
@@ -575,7 +581,10 @@ export function CandidateProfileView() {
         ) : null}
         <div className="space-y-4">
           {profile.education.map((entry, index) => (
-            <div key={`edu-${index}`} className="border-border space-y-3 border p-4">
+            <div
+              key={`edu-${index}`}
+              className="border-border space-y-3 border p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <p className="text-foreground text-sm font-medium">
                   {educationTitle(entry)}
@@ -686,7 +695,9 @@ export function CandidateProfileView() {
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-foreground text-xl font-semibold">
             Work experience{" "}
-            <span className="text-muted-foreground text-sm font-normal">(required)</span>
+            <span className="text-muted-foreground text-sm font-normal">
+              (required)
+            </span>
           </h3>
           <Button
             type="button"
@@ -711,7 +722,10 @@ export function CandidateProfileView() {
         ) : null}
         <div className="space-y-4">
           {profile.workExperience.map((entry, index) => (
-            <div key={`work-${index}`} className="border-border space-y-3 border p-4">
+            <div
+              key={`work-${index}`}
+              className="border-border space-y-3 border p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <p className="text-foreground text-sm font-medium">
                   {workTitle(entry)}
@@ -867,7 +881,9 @@ export function CandidateProfileView() {
         <div>
           <h3 className="text-foreground text-xl font-semibold">
             Languages{" "}
-            <span className="text-muted-foreground text-sm font-normal">(required)</span>
+            <span className="text-muted-foreground text-sm font-normal">
+              (required)
+            </span>
           </h3>
           <p className="text-muted-foreground mt-1 text-sm">
             What languages can you natively speak, read, and write?

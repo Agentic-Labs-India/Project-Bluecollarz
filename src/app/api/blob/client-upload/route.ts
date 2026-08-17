@@ -1,21 +1,23 @@
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { type HandleUploadBody, handleUpload } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth/session";
-import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import {
   BLOB_MAX_BYTES,
-  COMPANY_DOC_MAX_BYTES,
   blobPathRelativeToRoot,
+  COMPANY_DOC_MAX_BYTES,
   getBlobRoot,
   isCompanyDocumentRelativePath,
+  isMedicalReportRelativePath,
+  MEDICAL_REPORT_MAX_BYTES,
 } from "@/lib/blob/pathname";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 
 /**
  * Token-only route for browser → Vercel Blob uploads.
  * Allowed prefixes:
  * - `interviews/{interviewId}/…` (work; must own the interview)
  * - `admin/email/…` (admin only)
+ * - `admin/medical/{appointmentId}/…` (admin only)
  * - `users/{userId}/…` (own user id only)
  */
 export async function POST(request: Request): Promise<NextResponse> {
@@ -90,13 +92,33 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (segments.length < 3) {
             throw new Error("Invalid blog upload path");
           }
+        } else if (kind === "admin" && segments[1] === "medical") {
+          if (auth.user.profileType !== "admin") {
+            throw new Error("Medical report uploads require an admin profile");
+          }
+          const appointmentId = segments[2];
+          if (
+            !isId(appointmentId) ||
+            !isMedicalReportRelativePath(relative, appointmentId)
+          ) {
+            throw new Error("Invalid medical report path");
+          }
+          maximumSizeInBytes = MEDICAL_REPORT_MAX_BYTES;
+          allowedContentTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+          ];
         } else if (kind === "users") {
           if (segments[1] !== auth.user.id || segments.length < 3) {
             throw new Error("User uploads must be under your own folder");
           }
           if (segments[2] === "company") {
             if (auth.user.profileType !== "hire") {
-              throw new Error("Company document uploads require a hire profile");
+              throw new Error(
+                "Company document uploads require a hire profile",
+              );
             }
             if (!isCompanyDocumentRelativePath(relative, auth.user.id)) {
               throw new Error("Invalid company document path");

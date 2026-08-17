@@ -1,29 +1,32 @@
-import { headers } from "next/headers";
-import Link from "next/link";
 import {
   ArrowRightIcon,
   BriefcaseIcon,
   CircleCheckIcon,
   CircleXIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { headers } from "next/headers";
+import Link from "next/link";
 import { CandidateApplicationsList } from "@/components/candidate/applications-list";
+import { CandidateMedicalAppointmentCard } from "@/components/candidate/candidate-medical-appointment-card";
 import { AppPage } from "@/components/layout/app-page";
 import { StatCard } from "@/components/shared/stat-card";
+import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth/auth";
 import { getCandidateDashboard } from "@/lib/candidate/queries";
 import type { CandidateApplicationListItem } from "@/lib/jobs/applications";
+import type { CandidateMedicalAppointment } from "@/lib/medical/types";
 
 export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as { id?: string; name?: string } | undefined;
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  const { stats, applications } = user?.id
+  const { stats, applications, medicalAppointments } = user?.id
     ? await getCandidateDashboard(user.id)
     : {
         stats: { active: 0, selected: 0, closed: 0, total: 0 },
         applications: [] as CandidateApplicationListItem[],
+        medicalAppointments: [] as CandidateMedicalAppointment[],
       };
 
   const cards = [
@@ -52,6 +55,17 @@ export default async function HomePage() {
           />
         ))}
       </div>
+
+      {medicalAppointments.length ? (
+        <div className="mb-8 w-full space-y-3">
+          {medicalAppointments.map((appointment) => (
+            <CandidateMedicalAppointmentCard
+              key={appointment.id}
+              appointment={appointment}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div className="mb-8">
         <CandidateApplicationsList applications={applications} />

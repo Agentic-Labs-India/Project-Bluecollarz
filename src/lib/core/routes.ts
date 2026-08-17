@@ -8,6 +8,7 @@ import {
   Scale,
   Search,
   Settings,
+  Stethoscope,
   User,
   Users,
 } from "lucide-react";
@@ -33,6 +34,7 @@ export const HIRE_NAV: AppNavItem[] = [
 
 export const ADMIN_NAV: AppNavItem[] = [
   { title: "Recruiters", url: "/admin/recruiters", icon: Users },
+  { title: "Medical Test", url: "/admin/medical", icon: Stethoscope },
   { title: "Compliance", url: "/admin/compliance", icon: Scale },
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },

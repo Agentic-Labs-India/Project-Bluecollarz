@@ -20,6 +20,11 @@ import type {
   CandidatePipelineStatus,
 } from "@/lib/jobs/applications";
 import { isIdentityVerified } from "@/lib/kyc";
+import {
+  getMedicalStatusByApplicationIds,
+  listCandidateMedicalAppointments,
+} from "@/lib/medical/appointments";
+import type { CandidateMedicalAppointment } from "@/lib/medical/types";
 import { idHex } from "@/lib/utils";
 
 type UserDoc = CandidateProfileFields & {
@@ -233,6 +238,15 @@ async function getCandidateApplications(
     };
   });
 
+  const selectedIds = items
+    .filter((item) => item.status === "selected")
+    .map((item) => item.id);
+  const medicalByApp = await getMedicalStatusByApplicationIds(selectedIds);
+  for (const item of items) {
+    if (item.status !== "selected") continue;
+    item.medicalStatus = medicalByApp.get(item.id) ?? "pending";
+  }
+
   items.sort(
     (a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime(),
   );
@@ -243,10 +257,15 @@ async function getCandidateApplications(
 export async function getCandidateDashboard(userId: string): Promise<{
   applications: CandidateApplicationListItem[];
   stats: CandidateApplicationStats;
+  medicalAppointments: CandidateMedicalAppointment[];
 }> {
-  const applications = await getCandidateApplications(userId);
+  const [applications, medicalAppointments] = await Promise.all([
+    getCandidateApplications(userId),
+    listCandidateMedicalAppointments(userId),
+  ]);
   return {
     applications,
     stats: statsFromApplications(applications),
+    medicalAppointments,
   };
 }

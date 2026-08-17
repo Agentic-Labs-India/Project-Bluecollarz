@@ -3,6 +3,7 @@ import {
   APPLICATION_STAGE_OPTIONS,
   isApplicationStageId,
 } from "@/lib/jobs/stages";
+import type { MedicalPipelineStatus } from "@/lib/medical/types";
 
 export type PipelineStepStatus =
   | "done"
@@ -32,9 +33,7 @@ const POST_APPLY_STEPS: Omit<CandidatePipelineStep, "status">[] = [
   { id: "visa", label: "Visa", shortLabel: "Visa" },
 ];
 
-function markCurrent(
-  steps: CandidatePipelineStep[],
-): CandidatePipelineStep[] {
+function markCurrent(steps: CandidatePipelineStep[]): CandidatePipelineStep[] {
   if (steps.some((step) => step.status === "failed")) return steps;
   const next = steps.findIndex((step) => step.status === "pending");
   if (next < 0) return steps;
@@ -48,6 +47,7 @@ export function buildCandidatePipeline(opts: {
   profileComplete?: boolean;
   completedStageIds?: Iterable<string>;
   applicationStatus?: ApplicationStatus | "interviewing" | null;
+  medicalStatus?: MedicalPipelineStatus | null;
 }): CandidatePipelineStep[] {
   const enabled = new Set<string>(["resume"]);
   for (const id of opts.stageIds ?? []) {
@@ -81,10 +81,22 @@ export function buildCandidatePipeline(opts: {
         ? "done"
         : "pending";
 
-  const post: CandidatePipelineStep[] = POST_APPLY_STEPS.map((step) => ({
-    ...step,
-    status: step.id === "selected" ? selectedStatus : "pending",
-  }));
+  const post: CandidatePipelineStep[] = POST_APPLY_STEPS.map((step) => {
+    if (step.id === "selected") {
+      return { ...step, status: selectedStatus };
+    }
+    if (step.id === "medical") {
+      if (selectedStatus !== "done") return { ...step, status: "pending" };
+      if (opts.medicalStatus === "completed") {
+        return { ...step, status: "done" };
+      }
+      if (opts.medicalStatus === "failed") {
+        return { ...step, status: "failed" };
+      }
+      return { ...step, status: "pending" };
+    }
+    return { ...step, status: "pending" };
+  });
 
   if (!submitted) return [...markCurrent(pre), ...post];
   return markCurrent([...pre, ...post]);

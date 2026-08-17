@@ -1,14 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Combobox,
   ComboboxContent,
@@ -17,6 +9,15 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   listCitiesForCountry,
   listCitiesForState,
@@ -144,43 +145,59 @@ export function CountryStateCityFields({
         <Label className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
           City
         </Label>
-        <Combobox
-          items={cityNames}
-          value={city || null}
-          onValueChange={(value) =>
-            onChange({
-              countryCode,
-              stateCode,
-              city: typeof value === "string" ? value : "",
-            })
-          }
-          disabled={disabled || !cityEnabled || cityNames.length === 0}
-        >
-          <ComboboxInput
-            className="w-full"
+        {!cityEnabled ? (
+          <Input
+            disabled
+            value=""
             placeholder={
-              !countryCode
-                ? "Select a country first"
-                : needsState && !stateCode
-                  ? "Select a state first"
-                  : cityNames.length === 0
-                    ? "No cities listed"
-                    : "Search and select city…"
+              !countryCode ? "Select a country first" : "Select a state first"
             }
-            disabled={disabled || !cityEnabled || cityNames.length === 0}
-            showClear={Boolean(city)}
           />
-          <ComboboxContent className="w-[var(--anchor-width)]">
-            <ComboboxEmpty>No city found.</ComboboxEmpty>
-            <ComboboxList>
-              {(item) => (
-                <ComboboxItem key={item} value={item}>
-                  {item}
-                </ComboboxItem>
-              )}
-            </ComboboxList>
-          </ComboboxContent>
-        </Combobox>
+        ) : cityNames.length === 0 ? (
+          <Input
+            disabled={disabled}
+            value={city}
+            placeholder="Enter city"
+            onChange={(event) =>
+              onChange({
+                countryCode,
+                stateCode,
+                city: event.target.value,
+              })
+            }
+          />
+        ) : (
+          <Combobox
+            items={cityNames}
+            value={city || null}
+            onValueChange={(value) =>
+              onChange({
+                countryCode,
+                stateCode,
+                city: typeof value === "string" ? value : "",
+              })
+            }
+            disabled={disabled}
+            autoHighlight
+          >
+            <ComboboxInput
+              className="w-full"
+              placeholder="Search and select city…"
+              disabled={disabled}
+              showClear={Boolean(city)}
+            />
+            <ComboboxContent className="w-[var(--anchor-width)]">
+              <ComboboxEmpty>No city found.</ComboboxEmpty>
+              <ComboboxList>
+                {(item) => (
+                  <ComboboxItem key={item} value={item}>
+                    {item}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
+        )}
       </div>
     </div>
   );

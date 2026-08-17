@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ApplicationStageStepper } from "@/components/work/application-stage-stepper";
@@ -74,6 +74,7 @@ export function CandidateApplicationsList({
               .filter((stage) => stage.status === "completed")
               .map((stage) => stage.stageId),
             applicationStatus: app.status,
+            medicalStatus: app.medicalStatus,
           });
 
           return (

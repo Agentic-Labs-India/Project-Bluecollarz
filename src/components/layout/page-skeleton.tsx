@@ -14,8 +14,8 @@ export function ProfilePageSkeleton() {
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="space-y-2">
+        {["f1", "f2", "f3", "f4", "f5", "f6"].map((id) => (
+          <div key={id} className="space-y-2">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-10 w-full" />
           </div>
@@ -36,8 +36,8 @@ export function KycPageSkeleton() {
         <div className="space-y-4 p-5">
           <Skeleton className="h-4 w-56" />
           <Skeleton className="h-16 w-full" />
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="flex items-center justify-between gap-3">
+          {["k1", "k2", "k3", "k4", "k5", "k6"].map((id) => (
+            <div key={id} className="flex items-center justify-between gap-3">
               <Skeleton className="h-4 w-2/3" />
               <Skeleton className="h-6 w-10 shrink-0" />
             </div>
@@ -47,6 +47,44 @@ export function KycPageSkeleton() {
             <Skeleton className="h-11 w-full sm:w-64" />
           </div>
         </div>
+      </div>
+    </AppPage>
+  );
+}
+
+/** Candidate medical booking flow skeleton. */
+export function MedicalPageSkeleton() {
+  return (
+    <AppPage>
+      <header className="mb-6 space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-8 w-64 max-w-full" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </header>
+      <div className="space-y-3">
+        {["c1", "c2", "c3"].map((id) => (
+          <div key={id} className="border-border space-y-2 border p-4">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-3 w-56" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <Skeleton className="h-72 w-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-48" />
+          <div className="flex flex-wrap gap-2">
+            {["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"].map((id) => (
+              <Skeleton key={id} className="h-8 w-20" />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+        <Skeleton className="h-11 w-full sm:w-48" />
+        <Skeleton className="h-11 w-full sm:w-24" />
       </div>
     </AppPage>
   );

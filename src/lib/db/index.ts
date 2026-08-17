@@ -1,6 +1,6 @@
 import "server-only";
-import { ObjectId, MongoClient, type MongoClientOptions } from "mongodb";
 import { attachDatabasePool } from "@vercel/functions";
+import { MongoClient, type MongoClientOptions, ObjectId } from "mongodb";
 
 const options: MongoClientOptions = {
   appName: "devrel.vercel.integration",
@@ -29,6 +29,8 @@ export const COLLECTIONS = {
   PLACEMENT_AUDIT_EVENTS: "PlacementAuditEvents",
   BREACH_INCIDENTS: "BreachIncidents",
   PLATFORM_SETTINGS: "PlatformSettings",
+  MEDICAL_CENTERS: "MedicalCenters",
+  MEDICAL_APPOINTMENTS: "MedicalAppointments",
 } as const;
 
 /** 24-char hex Mongo id. */

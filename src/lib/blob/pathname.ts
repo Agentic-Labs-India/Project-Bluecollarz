@@ -9,6 +9,9 @@ export const BLOB_MULTIPART_THRESHOLD = 4 * 1024 * 1024;
 /** Company onboarding docs — hard cap (client + token route). */
 export const COMPANY_DOC_MAX_BYTES = 4 * 1024 * 1024;
 export const COMPANY_DOC_MAX_MB = 4;
+/** Medical fitness reports uploaded by admin. */
+export const MEDICAL_REPORT_MAX_BYTES = 8 * 1024 * 1024;
+export const MEDICAL_REPORT_MAX_MB = 8;
 
 export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client-upload";
 
@@ -103,6 +106,36 @@ export function isCompanyDocumentRelativePath(
     parts[2] === "company" &&
     parts.length >= 4
   );
+}
+
+/** Admin medical reports: `{DB_NAME}/admin/medical/{appointmentId}/…` */
+export function isMedicalReportRelativePath(
+  relative: string,
+  appointmentId: string,
+): boolean {
+  if (!appointmentId) return false;
+  const parts = relative.split("/").filter(Boolean);
+  return (
+    parts[0] === "admin" &&
+    parts[1] === "medical" &&
+    parts[2] === appointmentId &&
+    parts.length >= 4
+  );
+}
+
+export function isMedicalReportUrl(
+  url: string,
+  appointmentId: string,
+): boolean {
+  if (!isVercelBlobUrl(url) || !appointmentId) return false;
+  try {
+    const root = getBlobRoot();
+    const { pathname } = new URL(url);
+    const decoded = decodeURIComponent(pathname);
+    return decoded.includes(`/${root}/admin/medical/${appointmentId}/`);
+  } catch {
+    return false;
+  }
 }
 
 /** Blog cover images: `{DB_NAME}/admin/blog/…` on Vercel Blob. */

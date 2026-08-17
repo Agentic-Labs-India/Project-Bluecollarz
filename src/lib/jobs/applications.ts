@@ -63,6 +63,8 @@ export interface CandidateApplicationListItem {
   interviews: CandidateApplicationInterviewStage[];
   /** Hirer-enabled stage ids (resume always; others optional). */
   stageIds: string[];
+  /** Post-select medical fitness step, when the application is selected. */
+  medicalStatus?: "pending" | "scheduled" | "completed" | "failed";
 }
 
 /** Compact interview scores for the applicants table. */

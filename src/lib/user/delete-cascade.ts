@@ -1,7 +1,7 @@
 import "server-only";
 
-import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
 import { deleteBlobUrls } from "@/lib/blob/delete";
+import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
 import { idHex } from "@/lib/utils";
 
 /**
@@ -16,10 +16,7 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
 
   const user = await db
     .collection<{ email?: string }>(COLLECTIONS.USERS_COLLECTION)
-    .findOne(
-      { _id: matchId(userId) as never },
-      { projection: { email: 1 } },
-    );
+    .findOne({ _id: matchId(userId) as never }, { projection: { email: 1 } });
 
   // Candidate-owned interviews + recordings.
   const ownInterviews = await db
@@ -40,13 +37,30 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
     .collection(COLLECTIONS.APPLICATIONS)
     .deleteMany({ applicantId: matchId(userId) });
 
+  const ownAppointments = await db
+    .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
+    .find({ applicantId: userId })
+    .project({ reports: 1 })
+    .toArray();
+  for (const doc of ownAppointments) {
+    const reports = Array.isArray(doc.reports) ? doc.reports : [];
+    for (const report of reports) {
+      if (typeof report?.url === "string") blobUrls.push(report.url);
+    }
+  }
+
+  await db
+    .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
+    .deleteMany({ applicantId: userId });
+
   // Support tickets opened by this user.
   await db
     .collection(COLLECTIONS.SUPPORT_TICKETS)
     .deleteMany({ userId: matchId(userId) } as never);
 
   // Pending invite for this email (if any).
-  const email = typeof user?.email === "string" ? user.email.trim().toLowerCase() : "";
+  const email =
+    typeof user?.email === "string" ? user.email.trim().toLowerCase() : "";
   if (email) {
     await db.collection(COLLECTIONS.USER_PROVISIONS).deleteMany({ email });
     await db.collection(COLLECTIONS.RECRUITER_INQUIRIES).deleteMany({ email });
@@ -85,6 +99,22 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
     await db
       .collection(COLLECTIONS.APPLICATIONS)
       .deleteMany({ jobId: { $in: matchIds(jobIdHexes) } });
+
+    const jobAppointments = await db
+      .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
+      .find({ jobId: { $in: jobIdHexes } })
+      .project({ reports: 1 })
+      .toArray();
+    for (const doc of jobAppointments) {
+      const reports = Array.isArray(doc.reports) ? doc.reports : [];
+      for (const report of reports) {
+        if (typeof report?.url === "string") blobUrls.push(report.url);
+      }
+    }
+
+    await db
+      .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
+      .deleteMany({ jobId: { $in: jobIdHexes } });
 
     await db
       .collection(COLLECTIONS.JOBS)
