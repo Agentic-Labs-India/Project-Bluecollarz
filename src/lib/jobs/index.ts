@@ -1,32 +1,48 @@
 import { z } from "zod";
+import { DEFAULT_CURRENCY, isCurrencyCode } from "@/lib/core/money/currencies";
+import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/core/rich-text";
 import {
-  OPPORTUNITY_TABS,
+  type CustomQuestion,
+  customQuestionsSchema,
+  normalizeCustomQuestions,
+} from "@/lib/jobs/custom-questions";
+import {
   type ApplicationStep,
+  OPPORTUNITY_TABS,
   type Opportunity,
   type OpportunityTab,
 } from "@/lib/jobs/opportunities";
-import { asNumber, idHex, formatZodError } from "@/lib/utils";
-import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/core/rich-text";
 import {
-  customQuestionsSchema,
-  normalizeCustomQuestions,
-  type CustomQuestion,
-} from "@/lib/jobs/custom-questions";
+  DEFAULT_PAY_TYPE,
+  formatJobPay,
+  JOB_PAY_TYPES,
+  type JobPayType,
+} from "@/lib/jobs/pay";
 import {
-  STAGE_BY_ID,
+  type ApplicationStepTemplate,
   isApplicationStageId,
   normalizeStepTemplates,
-  type ApplicationStepTemplate,
+  STAGE_BY_ID,
 } from "@/lib/jobs/stages";
+import { asNumber, formatZodError, idHex } from "@/lib/utils";
 
+export { DEFAULT_CURRENCY } from "@/lib/core/money/currencies";
 export type { CustomQuestion } from "@/lib/jobs/custom-questions";
 export { normalizeCustomQuestions } from "@/lib/jobs/custom-questions";
 export {
+  DEFAULT_PAY_TYPE,
+  formatJobPay,
+  JOB_PAY_TYPE_LABELS,
+  JOB_PAY_TYPES,
+  type JobPayType,
+  sanitizePayAmountInput,
+} from "@/lib/jobs/pay";
+export {
   APPLICATION_STAGE_OPTIONS,
-  isApplicationStageId,
-  normalizeStepTemplates,
   type ApplicationStageId,
   type ApplicationStepTemplate,
+  isApplicationStageId,
+  normalizeStepTemplates,
 } from "@/lib/jobs/stages";
 
 export const JOB_STATUSES = [
@@ -56,12 +72,6 @@ export const JOB_LOCATION_LABELS: Record<JobLocation, string> = {
   "on-site": "On Site",
 };
 
-export function normalizeJobLocation(value?: string | null): JobLocation {
-  const v = (value ?? "").trim().toLowerCase().replace(/\s+/g, "-");
-  if (v === "on-site" || v === "onsite") return "on-site";
-  return "remote";
-}
-
 /** Same tabs as candidate opportunities — single source of truth. */
 export const JOB_TABS = OPPORTUNITY_TABS;
 
@@ -70,7 +80,11 @@ export interface JobDocument {
   _id: unknown;
   ownerId: unknown;
   title: string;
+  /** Display string, e.g. `AED 5,000 / month`. */
   pay: string;
+  payAmount?: number;
+  payType?: JobPayType;
+  payCurrency?: string;
   tab: OpportunityTab;
   overview: string;
   location?: JobLocation;
@@ -132,9 +146,23 @@ const applicationStepsSchema = z.preprocess((val) => {
 }, z.array(stepTemplateSchema).max(12).optional());
 
 export const jobCreateSchema = z.object({
-  title: z.string().trim().min(3, "Title must be at least 3 characters").max(200),
-  pay: z.string().trim().min(1, "Pay is required").max(100),
-  tab: z.enum(JOB_TABS),
+  title: z
+    .string()
+    .trim()
+    .min(3, "Title must be at least 3 characters")
+    .max(200),
+  payAmount: z.coerce
+    .number({ error: "Pay is required" })
+    .positive("Pay must be greater than 0")
+    .max(1_000_000_000, "Pay is too large"),
+  payType: z.enum(JOB_PAY_TYPES).default(DEFAULT_PAY_TYPE),
+  payCurrency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine(isCurrencyCode, "Select a valid currency")
+    .default(DEFAULT_CURRENCY),
+  tab: z.enum(JOB_TABS).default("full-time"),
   overview: z
     .string()
     .max(50_000, "Overview is too long")
@@ -154,7 +182,7 @@ export const jobCreateSchema = z.object({
         });
       }
     }),
-  location: z.enum(JOB_LOCATIONS).default("remote"),
+  location: z.enum(JOB_LOCATIONS).default("on-site"),
   countryCode: z.preprocess((val) => {
     if (val === null || val === undefined) return null;
     const s = String(val).trim();
@@ -189,6 +217,7 @@ export function sanitizeJobCreateBody(body: unknown): unknown {
     ownerEmail: _e,
     oneClickApply: _a,
     hiredThisMonth: _h,
+    pay: _pay,
     ...rest
   } = body as Record<string, unknown>;
   return rest;
@@ -219,7 +248,10 @@ export function parsePagination(
   searchParams: URLSearchParams,
   defaults: { page?: number; limit?: number } = {},
 ) {
-  const page = Math.max(1, asNumber(searchParams.get("page"), defaults.page ?? 1));
+  const page = Math.max(
+    1,
+    asNumber(searchParams.get("page"), defaults.page ?? 1),
+  );
   const limit = Math.min(
     50,
     Math.max(1, asNumber(searchParams.get("limit"), defaults.limit ?? 10)),
@@ -239,7 +271,7 @@ export function toJobListItem(
     tab: doc.tab,
     status: doc.status,
     priority: doc.priority,
-    location: doc.location ? normalizeJobLocation(doc.location) : undefined,
+    location: doc.location,
     applicantCount: opts?.applicantCount ?? 0,
     publishedAt: doc.publishedAt?.toISOString() ?? null,
     createdAt: doc.createdAt.toISOString(),
@@ -314,7 +346,7 @@ export function toOpportunity(
     pay: doc.pay,
     tab: doc.tab,
     overview: doc.overview,
-    location: doc.location ? normalizeJobLocation(doc.location) : undefined,
+    location: doc.location,
     countryCode: doc.countryCode,
     stateCode: doc.stateCode,
     priority: doc.priority,
@@ -339,10 +371,13 @@ export function buildJobDocument(
   return {
     ownerId: owner.id,
     title: input.title.trim(),
-    pay: input.pay.trim(),
+    pay: formatJobPay(input.payAmount, input.payCurrency, input.payType),
+    payAmount: input.payAmount,
+    payType: input.payType,
+    payCurrency: input.payCurrency,
     tab: input.tab,
     overview: sanitizeRichTextHtml(input.overview),
-    location: normalizeJobLocation(input.location),
+    location: input.location,
     countryCode: input.countryCode?.trim() || undefined,
     stateCode: input.stateCode?.trim() || undefined,
     priority: input.priority,
@@ -355,4 +390,3 @@ export function buildJobDocument(
     updatedAt: now,
   };
 }
-

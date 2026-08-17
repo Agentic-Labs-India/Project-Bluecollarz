@@ -5,7 +5,11 @@ import {
   JobForm,
   type JobFormHandle,
   type JobFormValues,
+  jobFormPayload,
 } from "@/components/hire/job-form";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -14,12 +18,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { JobListItem } from "@/lib/jobs";
-import { JOB_STATUS_LABELS, normalizeJobLocation } from "@/lib/jobs";
+import { JOB_STATUS_LABELS } from "@/lib/jobs";
 
 function RoleFormSkeleton() {
   return (
@@ -96,29 +97,10 @@ export function RoleSheet({
 
   async function updateJob(values: JobFormValues, publish: boolean) {
     if (!jobId) return;
-    const steps = values.applicationStepTemplates
-      ?.map((step) => ({ id: step.id, label: step.label.trim() }))
-      .filter((step) => step.label.length > 0);
-
     const res = await fetch(`/api/jobs/${jobId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: values.title.trim(),
-        pay: values.pay.trim(),
-        tab: values.tab,
-        overview: values.overview.trim(),
-        location: values.location
-          ? normalizeJobLocation(values.location)
-          : "remote",
-        countryCode: values.countryCode || null,
-        stateCode: values.stateCode || null,
-        priority: values.priority,
-        applicationStepTemplates: steps?.length ? steps : undefined,
-        customQuestions: values.customQuestions ?? [],
-        raRcNumber: values.raRcNumber?.trim() || null,
-        publish,
-      }),
+      body: JSON.stringify(jobFormPayload(values, publish)),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || "Failed to update role");
@@ -158,15 +140,10 @@ export function RoleSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full! gap-0 p-0 sm:max-w-2xl!"
-      >
+      <SheetContent side="right" className="w-full! gap-0 p-0 sm:max-w-2xl!">
         <SheetHeader className="shrink-0 border-b">
           <div className="mb-1 flex items-center gap-2">
-            {item ? (
-              <Badge>{JOB_STATUS_LABELS[item.status]}</Badge>
-            ) : null}
+            {item ? <Badge>{JOB_STATUS_LABELS[item.status]}</Badge> : null}
             {item?.publishedAt ? (
               <span className="text-muted-foreground text-xs">
                 Live since {new Date(item.publishedAt).toLocaleDateString()}
@@ -175,7 +152,8 @@ export function RoleSheet({
           </div>
           <SheetTitle className="text-base">Manage role</SheetTitle>
           <SheetDescription>
-            {item?.title ?? "Edit details, submit for review, or close this role."}
+            {item?.title ??
+              "Edit details, submit for review, or close this role."}
           </SheetDescription>
         </SheetHeader>
 

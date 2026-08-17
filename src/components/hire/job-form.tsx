@@ -1,12 +1,22 @@
 "use client";
 
-import { useImperativeHandle, useMemo, useState } from "react";
+import { LockIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useImperativeHandle, useMemo, useState } from "react";
+import { CustomQuestionsBuilder } from "@/components/hire/custom-questions-builder";
+import { JobOverviewAiMaker } from "@/components/hire/job-overview-ai-maker";
 import { Button } from "@/components/ui/button";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -14,39 +24,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  countryName,
+  listCountries,
+  listStatesForCountry,
+  stateName,
+} from "@/lib/core/geo/places";
+import { currencyLabel, listCurrencies } from "@/lib/core/money/currencies";
 import {
   APPLICATION_STAGE_OPTIONS,
+  type ApplicationStageId,
   DEFAULT_APPLICATION_STEP_TEMPLATES,
-  JOB_LOCATIONS,
+  DEFAULT_CURRENCY,
+  DEFAULT_PAY_TYPE,
+  formatJobPay,
+  formatJobValidationError,
   JOB_LOCATION_LABELS,
+  JOB_LOCATIONS,
+  JOB_PAY_TYPE_LABELS,
+  JOB_PAY_TYPES,
   JOB_PRIORITIES,
   JOB_TABS,
-  formatJobValidationError,
-  normalizeCustomQuestions,
-  normalizeJobLocation,
-  normalizeStepTemplates,
-  type ApplicationStageId,
   type JobCreateInput,
+  type JobPayType,
+  normalizeCustomQuestions,
+  normalizeStepTemplates,
+  sanitizePayAmountInput,
 } from "@/lib/jobs";
 import { customQuestionsSchema } from "@/lib/jobs/custom-questions";
-import { listCountries, listStatesForCountry, countryName, stateName } from "@/lib/core/geo/places";
 import { OPPORTUNITY_TAB_LABELS } from "@/lib/jobs/opportunities";
-import { JobOverviewAiMaker } from "@/components/hire/job-overview-ai-maker";
-import { CustomQuestionsBuilder } from "@/components/hire/custom-questions-builder";
-import { LockIcon } from "lucide-react";
 
-export type JobFormValues = JobCreateInput;
+export type JobFormValues = Omit<JobCreateInput, "payAmount"> & {
+  payAmount: string;
+};
 
 export type JobFormHandle = {
   submit: (publish: boolean) => Promise<void>;
 };
 
+export function jobFormPayload(values: JobFormValues, publish: boolean) {
+  const applicationStepTemplates = values.applicationStepTemplates
+    ?.map((step) => ({ id: step.id, label: step.label.trim() }))
+    .filter((step) => step.label.length > 0);
+
+  return {
+    title: values.title.trim(),
+    payAmount: values.payAmount,
+    payType: values.payType,
+    payCurrency: values.payCurrency,
+    tab: values.tab,
+    overview: values.overview.trim(),
+    location: values.location,
+    countryCode: values.countryCode || null,
+    stateCode: values.stateCode || null,
+    priority: values.priority,
+    applicationStepTemplates: applicationStepTemplates?.length
+      ? applicationStepTemplates
+      : undefined,
+    customQuestions: values.customQuestions ?? [],
+    raRcNumber: values.raRcNumber?.trim() || null,
+    publish,
+  };
+}
+
 const defaultValues: JobFormValues = {
   title: "",
-  pay: "",
-  tab: "project",
+  payAmount: "",
+  payType: DEFAULT_PAY_TYPE,
+  payCurrency: DEFAULT_CURRENCY,
+  tab: "full-time",
   overview: "",
-  location: "remote",
+  location: "on-site",
   countryCode: undefined,
   stateCode: undefined,
   priority: "medium",
@@ -78,11 +127,10 @@ export function JobForm({
   const [values, setValues] = useState<JobFormValues>({
     ...defaultValues,
     ...initialValues,
-    location: normalizeJobLocation(
-      initialValues?.location ?? defaultValues.location,
-    ),
-    countryCode: initialValues?.countryCode || undefined,
-    stateCode: initialValues?.stateCode || undefined,
+    payAmount:
+      initialValues?.payAmount != null
+        ? String(initialValues.payAmount)
+        : defaultValues.payAmount,
     applicationStepTemplates: normalizeStepTemplates(
       initialValues?.applicationStepTemplates ??
         DEFAULT_APPLICATION_STEP_TEMPLATES,
@@ -100,14 +148,25 @@ export function JobForm({
   };
 
   const countries = useMemo(() => listCountries(), []);
+  const currencies = useMemo(() => listCurrencies(), []);
+  const currencyLabels = useMemo(
+    () => currencies.map((item) => item.label),
+    [currencies],
+  );
   const states = useMemo(
     () => listStatesForCountry(values.countryCode ?? ""),
     [values.countryCode],
   );
+  const payLabel = useMemo(() => {
+    const amount = Number(values.payAmount);
+    if (!Number.isFinite(amount) || amount <= 0) return "";
+    return formatJobPay(amount, values.payCurrency, values.payType);
+  }, [values.payAmount, values.payCurrency, values.payType]);
 
   const locationLabel = useMemo(() => {
-    const arrangement =
-      JOB_LOCATION_LABELS[normalizeJobLocation(values.location)];
+    const arrangement = values.location
+      ? JOB_LOCATION_LABELS[values.location]
+      : "";
     const place = [
       stateName(values.countryCode, values.stateCode),
       countryName(values.countryCode),
@@ -117,7 +176,10 @@ export function JobForm({
     return [arrangement, place].filter(Boolean).join(" · ");
   }, [values.location, values.countryCode, values.stateCode]);
 
-  const update = <K extends keyof JobFormValues>(key: K, value: JobFormValues[K]) => {
+  const update = <K extends keyof JobFormValues>(
+    key: K,
+    value: JobFormValues[K],
+  ) => {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -144,8 +206,8 @@ export function JobForm({
             {
               id: stageId,
               label:
-                APPLICATION_STAGE_OPTIONS.find((s) => s.id === stageId)?.label ??
-                stageId,
+                APPLICATION_STAGE_OPTIONS.find((s) => s.id === stageId)
+                  ?.label ?? stageId,
             },
           ]
         : without;
@@ -161,10 +223,9 @@ export function JobForm({
     setError("");
     try {
       const templates = normalizeStepTemplates(values.applicationStepTemplates);
-      let customQuestions =
-        templates.some((s) => s.id === "custom-questions")
-          ? (values.customQuestions ?? [])
-          : [];
+      let customQuestions = templates.some((s) => s.id === "custom-questions")
+        ? (values.customQuestions ?? [])
+        : [];
       if (templates.some((s) => s.id === "custom-questions")) {
         const parsed = customQuestionsSchema.safeParse(customQuestions);
         if (!parsed.success) {
@@ -224,14 +285,70 @@ export function JobForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="pay">Pay</Label>
+          <Label htmlFor="payAmount">Pay</Label>
           <Input
-            id="pay"
-            value={values.pay}
-            onChange={(e) => update("pay", e.target.value)}
-            placeholder="$100 – $130 / hour"
+            id="payAmount"
+            inputMode="decimal"
+            autoComplete="off"
+            value={values.payAmount}
+            onChange={(e) =>
+              update("payAmount", sanitizePayAmountInput(e.target.value))
+            }
+            placeholder="5000"
             required
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Pay type</Label>
+          <Select
+            value={values.payType}
+            onValueChange={(v) => update("payType", v as JobPayType)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {JOB_PAY_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {JOB_PAY_TYPE_LABELS[type]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Currency</Label>
+          <Combobox
+            items={currencyLabels}
+            value={currencyLabel(values.payCurrency)}
+            onValueChange={(value) => {
+              const selected =
+                typeof value === "string"
+                  ? currencies.find(
+                      (item) => item.label === value || item.code === value,
+                    )
+                  : undefined;
+              update("payCurrency", selected?.code ?? DEFAULT_CURRENCY);
+            }}
+          >
+            <ComboboxInput
+              className="w-full"
+              placeholder="Search currency…"
+              showClear={false}
+            />
+            <ComboboxContent className="w-[var(--anchor-width)]">
+              <ComboboxEmpty>No currency found.</ComboboxEmpty>
+              <ComboboxList>
+                {(item) => (
+                  <ComboboxItem key={item} value={item}>
+                    {item}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
 
         <div className="space-y-2">
@@ -240,7 +357,10 @@ export function JobForm({
             id="raRcNumber"
             value={values.raRcNumber ?? ""}
             onChange={(e) =>
-              update("raRcNumber", e.target.value.trim() ? e.target.value : null)
+              update(
+                "raRcNumber",
+                e.target.value.trim() ? e.target.value : null,
+              )
             }
             placeholder="MEA RA RC number (optional)"
             maxLength={64}
@@ -294,7 +414,7 @@ export function JobForm({
         <div className="space-y-2">
           <Label>Work arrangement</Label>
           <Select
-            value={normalizeJobLocation(values.location)}
+            value={values.location}
             onValueChange={(v) =>
               update("location", v as JobFormValues["location"])
             }
@@ -366,7 +486,7 @@ export function JobForm({
           <JobOverviewAiMaker
             context={{
               title: values.title,
-              pay: values.pay,
+              pay: payLabel,
               locationLabel,
               employmentType: OPPORTUNITY_TAB_LABELS[values.tab],
             }}
@@ -398,8 +518,7 @@ export function JobForm({
 
         <div className="space-y-2">
           {APPLICATION_STAGE_OPTIONS.map((stage) => {
-            const enabled =
-              stage.locked || selectedStageIds.has(stage.id);
+            const enabled = stage.locked || selectedStageIds.has(stage.id);
             return (
               <label
                 key={stage.id}
@@ -422,9 +541,7 @@ export function JobForm({
                 <Switch
                   checked={enabled}
                   disabled={stage.locked || loading}
-                  onCheckedChange={(checked) =>
-                    toggleStage(stage.id, checked)
-                  }
+                  onCheckedChange={(checked) => toggleStage(stage.id, checked)}
                 />
               </label>
             );

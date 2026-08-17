@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
 import {
+  formatJobPay,
+  formatJobValidationError,
+  type JobDocument,
   jobUpdateSchema,
   normalizeCustomQuestions,
   normalizeStepTemplates,
+  sanitizeJobCreateBody,
   toJobListItem,
   toOpportunity,
-  formatJobValidationError,
-  sanitizeJobCreateBody,
-  type JobDocument,
 } from "@/lib/jobs";
 import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -50,7 +51,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
       item: asOpportunity ? toOpportunity(doc) : toJobListItem(doc),
       form: {
         title: doc.title,
-        pay: doc.pay,
+        payAmount: doc.payAmount,
+        payType: doc.payType,
+        payCurrency: doc.payCurrency,
         tab: doc.tab,
         overview: doc.overview,
         location: doc.location,
@@ -128,6 +131,18 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       } else if (value !== undefined && value !== null) {
         $set[key] = value;
       }
+    }
+
+    if (
+      fields.payAmount !== undefined &&
+      fields.payType !== undefined &&
+      fields.payCurrency !== undefined
+    ) {
+      $set.pay = formatJobPay(
+        fields.payAmount,
+        fields.payCurrency,
+        fields.payType,
+      );
     }
 
     if (applicationStepTemplates !== undefined) {

@@ -1,23 +1,28 @@
-import client, { DB_NAME, COLLECTIONS, isId, matchId, matchIds } from "@/lib/db";
-import {
-  JOB_LOCATION_LABELS,
-  normalizeJobLocation,
-  normalizeCustomQuestions,
-  normalizeStepTemplates,
-  toJobListItem,
-  type JobDocument,
-  type JobListItem,
-} from "@/lib/jobs";
-import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
+import type { Resend } from "resend";
 import {
   formatSenderFrom,
   getResendClient,
   getResendFromEmail,
 } from "@/lib/admin/resend";
-import { countryName, stateName } from "@/lib/core/geo/places";
-import { idHex } from "@/lib/utils";
 import { appendPlacementAuditEvent } from "@/lib/compliance/placement-audit";
-import type { Resend } from "resend";
+import { countryName, stateName } from "@/lib/core/geo/places";
+import client, {
+  COLLECTIONS,
+  DB_NAME,
+  isId,
+  matchId,
+  matchIds,
+} from "@/lib/db";
+import {
+  JOB_LOCATION_LABELS,
+  type JobDocument,
+  type JobListItem,
+  normalizeCustomQuestions,
+  normalizeStepTemplates,
+  toJobListItem,
+} from "@/lib/jobs";
+import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
+import { idHex } from "@/lib/utils";
 
 /** Table row — keep the list payload light. */
 export type AdminJobVerificationListItem = JobListItem & {
@@ -76,14 +81,10 @@ function toDetailItem(
   doc: JobDocument,
   owner?: UserEmailDoc | null,
 ): AdminJobVerificationItem {
-  const location = doc.location
-    ? normalizeJobLocation(doc.location)
-    : undefined;
-
   return {
     ...toListItem(doc, owner),
     overviewHtml: doc.overview,
-    locationLabel: location ? JOB_LOCATION_LABELS[location] : null,
+    locationLabel: doc.location ? JOB_LOCATION_LABELS[doc.location] : null,
     countryLabel: countryName(doc.countryCode) || null,
     stateLabel: stateName(doc.countryCode, doc.stateCode) || null,
     stages: normalizeStepTemplates(doc.applicationStepTemplates).map(

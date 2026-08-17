@@ -1,38 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { JobForm, type JobFormValues } from "@/components/hire/job-form";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  JobForm,
+  type JobFormValues,
+  jobFormPayload,
+} from "@/components/hire/job-form";
 import { AppPage } from "@/components/layout/app-page";
-import { normalizeJobLocation } from "@/lib/jobs";
-
-function buildJobPayload(values: JobFormValues, publish: boolean) {
-  const steps = values.applicationStepTemplates
-    ?.map((step) => ({
-      id: step.id,
-      label: step.label.trim(),
-    }))
-    .filter((step) => step.label.length > 0);
-
-  return {
-    title: values.title.trim(),
-    pay: values.pay.trim(),
-    tab: values.tab,
-    overview: values.overview.trim(),
-    location: values.location
-      ? normalizeJobLocation(values.location)
-      : "remote",
-    countryCode: values.countryCode || undefined,
-    stateCode: values.stateCode || undefined,
-    priority: values.priority,
-    applicationStepTemplates: steps?.length ? steps : undefined,
-    customQuestions: values.customQuestions ?? [],
-    raRcNumber: values.raRcNumber?.trim() || null,
-    publish,
-  };
-}
+import { Button } from "@/components/ui/button";
 
 export function NewRoleClient() {
   const router = useRouter();
@@ -51,7 +28,7 @@ export function NewRoleClient() {
     const res = await fetch("/api/jobs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildJobPayload(values, publish)),
+      body: JSON.stringify(jobFormPayload(values, publish)),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -83,14 +60,11 @@ export function NewRoleClient() {
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">
           Define the role details and application steps. You can save as draft
-          or publish immediately. This role will be linked to your hirer account.
+          or publish immediately. This role will be linked to your hirer
+          account.
         </p>
       </div>
-      <JobForm
-        key={formKey}
-        submitLabel="Save draft"
-        onSubmit={createJob}
-      />
+      <JobForm key={formKey} submitLabel="Save draft" onSubmit={createJob} />
     </AppPage>
   );
 }
