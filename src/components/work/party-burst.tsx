@@ -15,6 +15,8 @@ type Particle = {
   vr: number;
   color: string;
   life: number;
+  g: number;
+  fade: number;
 };
 
 function spawnCannon(originX: number, originY: number, dir: 1 | -1): Particle[] {
@@ -33,6 +35,8 @@ function spawnCannon(originX: number, originY: number, dir: 1 | -1): Particle[] 
       vr: (Math.random() - 0.5) * 0.18,
       color: COLORS[i % COLORS.length]!,
       life: 1,
+      g: 0.1,
+      fade: 0.005,
     });
   }
   return out;
@@ -40,21 +44,23 @@ function spawnCannon(originX: number, originY: number, dir: 1 | -1): Particle[] 
 
 function spawnShower(width: number): Particle[] {
   const out: Particle[] = [];
-  const sources = 7;
+  const sources = 11;
   for (let s = 0; s < sources; s++) {
     const ox = (width / (sources + 1)) * (s + 1);
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 18; i++) {
       out.push({
-        x: ox + (Math.random() - 0.5) * 56,
-        y: -12 - Math.random() * 80,
+        x: ox + (Math.random() - 0.5) * 64,
+        y: -16 - Math.random() * 50,
         vx: (Math.random() - 0.5) * 1.1,
-        vy: 0.55 + Math.random() * 1.15,
+        vy: 0.45 + Math.random() * 0.9,
         w: 3 + Math.random() * 4,
         h: 6 + Math.random() * 8,
         rot: Math.random() * Math.PI,
         vr: (Math.random() - 0.5) * 0.12,
         color: COLORS[(s + i) % COLORS.length]!,
         life: 1,
+        g: 0.035,
+        fade: 0.0048,
       });
     }
   }
@@ -95,17 +101,23 @@ export function PartyBurst({ shower = false }: { shower?: boolean }) {
     ];
     let raf = 0;
     let running = true;
+    let frame = 0;
+    const showerFrames = shower ? 30 * 2 : 0;
 
     const tick = () => {
       if (!running) return;
+      frame += 1;
+      if (shower && frame <= showerFrames && frame % 22 === 0) {
+        particles = particles.concat(spawnShower(w));
+      }
       ctx.clearRect(0, 0, w, h);
       const next: Particle[] = [];
       for (const p of particles) {
-        p.vy += 0.1;
+        p.vy += p.g;
         p.x += p.vx;
         p.y += p.vy;
         p.rot += p.vr;
-        p.life -= 0.005;
+        p.life -= p.fade;
         if (p.life <= 0 || p.y > h + 20) continue;
         ctx.save();
         ctx.translate(p.x, p.y);
@@ -117,7 +129,7 @@ export function PartyBurst({ shower = false }: { shower?: boolean }) {
         next.push(p);
       }
       particles = next;
-      if (next.length) {
+      if (next.length || (shower && frame <= showerFrames)) {
         raf = window.requestAnimationFrame(tick);
       }
     };

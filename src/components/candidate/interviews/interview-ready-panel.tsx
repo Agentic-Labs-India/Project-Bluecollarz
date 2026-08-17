@@ -18,8 +18,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { PrimaryDither } from "@/components/landing/primary-dither";
 
 type CheckId = "internet" | "camera" | "voice" | "ai";
 type CheckStatus = "pending" | "running" | "pass" | "fail";
@@ -81,18 +80,64 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
-function StatusIcon({ status }: { status: CheckStatus }) {
-  if (status === "running") {
-    return <Skeleton className="size-3.5 shrink-0 rounded-full" />;
-  }
-  if (status === "pass") {
-    return <CheckCircle2Icon className="text-primary size-3.5" />;
-  }
-  if (status === "fail") {
-    return <XCircleIcon className="text-destructive size-3.5" />;
-  }
+function CheckCard({
+  id,
+  label,
+  icon: Icon,
+  state,
+  micLevel,
+}: {
+  id: CheckId;
+  label: string;
+  icon: typeof WifiIcon;
+  state: CheckState;
+  micLevel: number;
+}) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (state.status === "pass") {
+      setProgress(100);
+      return;
+    }
+    if (state.status === "pending" || state.status === "fail") {
+      setProgress(0);
+      return;
+    }
+    setProgress(8);
+    const timer = setInterval(() => {
+      setProgress((value) => Math.min(92, value + 4));
+    }, 160);
+    return () => clearInterval(timer);
+  }, [state.status]);
+
+  const value =
+    id === "voice" && state.status === "running"
+      ? Math.max(progress, Math.min(92, Math.round(micLevel * 500)))
+      : progress;
+
   return (
-    <span className="border-border size-3.5 shrink-0 rounded-full border" />
+    <li className="bg-primary relative flex min-h-0 flex-1 items-center gap-2.5 overflow-hidden border border-white/15 px-3 py-2">
+      <PrimaryDither seed={`check-${id}`} opacity={0.85} />
+      <span className="relative z-10 flex size-8 shrink-0 items-center justify-center bg-white/15 text-white">
+        <Icon className="size-4" strokeWidth={1.75} />
+      </span>
+      <div className="relative z-10 min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="truncate text-sm font-medium text-white">{label}</p>
+          {state.status === "pass" ? (
+            <CheckCircle2Icon className="size-3.5 shrink-0 text-white" />
+          ) : state.status === "fail" ? (
+            <XCircleIcon className="size-3.5 shrink-0 text-white" />
+          ) : (
+            <span className="text-[11px] font-medium tabular-nums text-white/80">
+              {value}%
+            </span>
+          )}
+        </div>
+        <p className="truncate text-xs text-white/75">{state.detail}</p>
+      </div>
+    </li>
   );
 }
 
@@ -326,44 +371,16 @@ export function InterviewReadyPanel({
           </div>
 
           <ul className="flex min-h-0 flex-1 flex-col gap-2">
-            {CHECK_META.map(({ id, label, icon: Icon }) => {
-              const state = checks[id];
-              return (
-                <li
-                  key={id}
-                  className={cn(
-                    "border-border flex min-h-0 flex-1 items-center gap-2.5 border px-3 py-2",
-                    state.status === "pass" && "bg-primary/5",
-                    state.status === "fail" && "bg-destructive/5",
-                  )}
-                >
-                  <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center">
-                    <Icon className="size-4" strokeWidth={1.75} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-foreground truncate text-sm font-medium">
-                        {label}
-                      </p>
-                      <StatusIcon status={state.status} />
-                    </div>
-                    <p className="text-muted-foreground truncate text-xs">
-                      {state.detail}
-                    </p>
-                    {id === "voice" && state.status === "running" ? (
-                      <div className="bg-muted mt-1.5 h-1 overflow-hidden rounded-full">
-                        <div
-                          className="bg-primary h-full transition-all duration-100"
-                          style={{
-                            width: `${Math.min(100, Math.round(micLevel * 500))}%`,
-                          }}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
+            {CHECK_META.map((meta) => (
+              <CheckCard
+                key={meta.id}
+                id={meta.id}
+                label={meta.label}
+                icon={meta.icon}
+                state={checks[meta.id]}
+                micLevel={micLevel}
+              />
+            ))}
           </ul>
 
           {anyFailed || (!running && !allPassed) ? (
