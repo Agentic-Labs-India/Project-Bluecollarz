@@ -36,7 +36,7 @@ const FAQS = [
     id: "selection",
     question: "When do I verify my identity?",
     answer:
-      "Right after voice onboarding you verify with DigiLocker. That fills name, date of birth (18+), phone, location, gender, PAN, and Aadhaar. APAAR, education certificates, and passport are separate later steps.",
+      "Right after voice onboarding you verify with DigiLocker. That fills name, date of birth (18+), phone, location, gender, PAN, and Aadhaar. We do not collect passport or police clearance here — a licensed Recruiting Agent handles emigration clearance outside this app.",
   },
   {
     id: "medical-visa",

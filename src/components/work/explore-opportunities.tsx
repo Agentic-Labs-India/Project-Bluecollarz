@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
 import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
@@ -582,9 +583,14 @@ export function ExploreOpportunities({
         interviewId?: string;
         alreadyComplete?: boolean;
         error?: string;
+        code?: string;
         customQuestions?: CustomQuestion[];
       };
       if (!res.ok || !data.interviewId) {
+        if (data.code === "EVALUATION_CONSENT_REQUIRED") {
+          toast.error("Turn interview evaluation back on in Settings.");
+          return;
+        }
         throw new Error(data.error || "Could not start interview");
       }
       if (data.alreadyComplete) {

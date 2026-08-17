@@ -43,7 +43,8 @@ export default function TermsPage() {
             </li>
             <li>
               Understand that interview scores, summaries, transcripts, and
-              recordings may be shared with the hirer for roles you pursue.
+              recordings may be shared with the hirer for roles you pursue if
+              you grant evaluation consent.
             </li>
           </ul>
         </LegalSection>

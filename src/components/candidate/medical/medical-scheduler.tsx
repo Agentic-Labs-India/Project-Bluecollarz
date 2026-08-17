@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { AppPage } from "@/components/layout/app-page";
 import { MedicalPageSkeleton } from "@/components/layout/page-skeleton";
@@ -171,13 +170,12 @@ export function CandidateMedicalScheduler() {
       <AppPage>
         <Header
           jobTitle={context.jobTitle}
-          title="Agree to the medical test first"
-          copy="A fitness test is part of this role. We can only book it and store the report if you agree here. You can withdraw this later in Settings."
+          title="Medical consent is off"
+          copy="Turn medical consent back on in Settings, then come back to book the test."
         />
-        <ConsentNoticePanel
-          only={["medical"]}
-          onGranted={() => void load()}
-        />
+        <Button asChild>
+          <Link href="/candidate/settings">Open Settings</Link>
+        </Button>
       </AppPage>
     );
   }

@@ -9,9 +9,6 @@ export { CONSENT_NOTICE_VERSION };
 export const CONSENT_PURPOSES = [
   "identity",
   "contact",
-  "qualification",
-  "background",
-  "passport",
   "evaluation",
   "medical",
 ] as const;
@@ -34,18 +31,10 @@ export interface ConsentEventDocument {
 }
 
 /**
- * DigiLocker identity verification. Medical is deliberately excluded: health
- * data is only needed once a candidate is selected, and DPDP s.6(1) consent
- * must be specific rather than bundled into an unrelated identity step.
+ * DigiLocker start requires every purpose we currently collect.
+ * Same list as CONSENT_PURPOSES — not a second set of types.
  */
-export const DIGILOCKER_REQUIRED_PURPOSES: ConsentPurpose[] = [
-  "identity",
-  "contact",
-  "qualification",
-  "background",
-  "passport",
-  "evaluation",
-];
+export const DIGILOCKER_REQUIRED_PURPOSES = CONSENT_PURPOSES;
 
 /** Transcripts and recordings are released to the hirer only with this purpose. */
 export const INTERVIEW_RELEASE_REQUIRED_PURPOSES: ConsentPurpose[] = [
@@ -151,7 +140,7 @@ export async function getActivePurposes(dataPrincipalId: string): Promise<{
 
 export async function hasGrantedPurposes(
   dataPrincipalId: string,
-  required: ConsentPurpose[],
+  required: readonly ConsentPurpose[],
 ): Promise<boolean> {
   const { purposes } = await getActivePurposes(dataPrincipalId);
   return required.every((p) => purposes.includes(p));
@@ -163,7 +152,7 @@ export async function hasGrantedPurposes(
  */
 export async function principalsWithGrantedPurposes(
   dataPrincipalIds: string[],
-  required: ConsentPurpose[],
+  required: readonly ConsentPurpose[],
 ): Promise<Set<string>> {
   const ids = [...new Set(dataPrincipalIds.filter(Boolean))];
   const granted = new Set<string>();

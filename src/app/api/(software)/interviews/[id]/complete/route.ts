@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -17,7 +17,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     await ensureIndexes();
-    const auth = await requireCandidateAppReady();
+    const auth = await requireInterviewEvaluationConsent();
     if (!auth.ok) {
       return NextResponse.json(
         { error: auth.error, code: auth.code },

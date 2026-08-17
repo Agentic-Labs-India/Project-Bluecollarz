@@ -10,8 +10,6 @@ import { Switch } from "@/components/ui/switch";
 import {
   type ConsentPlaybackScope,
   KYC_NOTICE,
-  MANAGE_NOTICE,
-  MEDICAL_NOTICE,
 } from "@/lib/compliance/consent-notices";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +18,6 @@ const OWRC_HELP_LINE = "1800 11 3090";
 const PURPOSE_LABELS: Record<string, string> = {
   identity: "PAN, Aadhaar, Name — to confirm your identity",
   contact: "Email & mobile — to contact you and secure your account",
-  qualification: "Educational certificates — to verify your qualifications",
-  background: "Police Clearance Certificate — for a background conclusion",
-  passport: "Passport — for identity and emigration processing",
   evaluation:
     "AI interviews, transcripts, and optional recording — to evaluate you for a role",
   medical:
@@ -42,7 +37,6 @@ type ConsentActive = {
 type ConsentApiResponse = {
   noticeVersion: string;
   availablePurposes: string[];
-  digilockerPurposes?: string[];
   active: ConsentActive;
   error?: string;
 };
@@ -55,27 +49,19 @@ export function ConsentNoticePanel({
   compact = false,
   variant = "manage",
   verifyHref,
-  only,
-  onGranted,
 }: {
   className?: string;
   compact?: boolean;
   /** KYC gate: all switches start off; Agree and Verify only when all are on. */
   variant?: "kyc" | "manage";
   verifyHref?: string;
-  /** Restrict to one purpose so a single step never bundles unrelated consent. */
-  only?: string[];
-  /** After a successful grant — used by a step that should then move on. */
-  onGranted?: () => void;
 }) {
   const isKyc = variant === "kyc";
-  // Stable dependency: the array prop would be a new reference every render.
-  const onlyKey = only?.join(",") ?? "";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState("");
-  const [noticeVersion, setNoticeVersion] = useState("1.2");
+  const [noticeVersion, setNoticeVersion] = useState("1.4");
   const [available, setAvailable] = useState<string[]>(
     Object.keys(PURPOSE_LABELS),
   );
@@ -91,17 +77,8 @@ export function ConsentNoticePanel({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackIdRef = useRef<string | null>(null);
   const autoPlayedRef = useRef(false);
-  const medicalOnly = onlyKey === "medical";
-  const playbackScope: ConsentPlaybackScope = medicalOnly
-    ? "medical"
-    : isKyc
-      ? "kyc"
-      : "manage";
-  const noticeText = medicalOnly
-    ? MEDICAL_NOTICE
-    : isKyc
-      ? KYC_NOTICE
-      : MANAGE_NOTICE;
+  const playbackScope: ConsentPlaybackScope = isKyc ? "kyc" : "manage";
+  const noticeText = KYC_NOTICE;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,13 +87,7 @@ export function ConsentNoticePanel({
       const res = await fetch("/api/candidate/consent");
       const json = (await res.json().catch(() => ({}))) as ConsentApiResponse;
       if (!res.ok) throw new Error(json.error || "Could not load consent");
-      // The identity gate asks only for identity purposes; a scoped step asks
-      // only for its own. Everything else manages the full set.
-      const scope = isKyc
-        ? (json.digilockerPurposes ?? json.availablePurposes)
-        : onlyKey
-          ? json.availablePurposes.filter((p) => onlyKey.split(",").includes(p))
-          : json.availablePurposes;
+      const scope = json.availablePurposes;
       setNoticeVersion(json.noticeVersion);
       setAvailable(scope);
       setActive(json.active);
@@ -134,7 +105,7 @@ export function ConsentNoticePanel({
     } finally {
       setLoading(false);
     }
-  }, [isKyc, onlyKey]);
+  }, [isKyc]);
 
   const stopNotice = useCallback(() => {
     const audio = audioRef.current;
@@ -273,11 +244,7 @@ export function ConsentNoticePanel({
 
   const grant = async () => {
     if (!selected.length) {
-      setError(
-        medicalOnly
-          ? "Turn on the medical test to continue."
-          : "Select at least one purpose",
-      );
+      setError("Select at least one purpose");
       return;
     }
     setSaving(true);
@@ -287,7 +254,6 @@ export function ConsentNoticePanel({
         await playNotice(true);
       }
       await grantPurposes(selected);
-      onGranted?.();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not save consent");
     } finally {
@@ -304,7 +270,6 @@ export function ConsentNoticePanel({
         await playNotice(true);
       }
       await grantPurposes(available);
-      onGranted?.();
       if (verifyHref) {
         window.location.assign(verifyHref);
         return;
@@ -485,16 +450,10 @@ export function ConsentNoticePanel({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              size={onGranted ? "lg" : "default"}
-              className={onGranted ? "w-full sm:w-auto" : undefined}
               disabled={saving || speaking || !selected.length}
               onClick={() => void grant()}
             >
-              {saving
-                ? "Saving…"
-                : onGranted
-                  ? "I agree — continue"
-                  : "I agree"}
+              {saving ? "Saving…" : "I agree"}
             </Button>
             <Button
               type="button"
@@ -514,11 +473,7 @@ export function ConsentNoticePanel({
 
         {!isKyc && !selected.length ? (
           <p className="text-muted-foreground text-xs">
-            {medicalOnly
-              ? "Turn on the medical test, then agree to continue."
-              : available.includes("identity") && available.includes("contact")
-                ? "Turn on identity and contact to continue DigiLocker verification."
-                : "Turn on the purposes you agree to."}
+            Turn on the purposes you agree to.
           </p>
         ) : null}
       </div>

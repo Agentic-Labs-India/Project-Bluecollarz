@@ -5,7 +5,6 @@ import {
   appendConsentEvent,
   CONSENT_NOTICE_VERSION,
   CONSENT_PURPOSES,
-  DIGILOCKER_REQUIRED_PURPOSES,
   getActivePurposes,
   isConsentPurpose,
 } from "@/lib/compliance/consent";
@@ -73,8 +72,6 @@ export async function GET() {
     return NextResponse.json({
       noticeVersion: CONSENT_NOTICE_VERSION,
       availablePurposes: CONSENT_PURPOSES,
-      // The identity gate must not demand unrelated purposes such as medical.
-      digilockerPurposes: DIGILOCKER_REQUIRED_PURPOSES,
       active,
     });
   } catch (error) {

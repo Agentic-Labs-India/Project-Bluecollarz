@@ -167,8 +167,7 @@ function ResumeAccordionBody({
     <div className="space-y-5">
       <p className="text-muted-foreground text-xs leading-relaxed">
         Contact details and government IDs are not released to employers
-        (Attribute Release Matrix). Placement contact runs through a licensed
-        Recruiting Agent.
+        (Attribute Release Matrix).
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Headline" value={profile.headline} />

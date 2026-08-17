@@ -3,8 +3,8 @@
 Manual checks before claiming packet-aligned:
 
 1. Hire list + applicant detail: **no email, phone, PAN, Aadhaar, DOB, address, or KYC badges** — only allowlisted resume fields. Nested education/work are field-allowlisted. Application status is Submitted / Selected / Rejected.
-2. DigiLocker **start and callback** require every purpose toggle granted (current notice version). Withdraw mid-OAuth blocks the write.
-3. KYC consent card: animated dither **band** (not full-card fill), **Before you continue (notice v1.1)** with speaker (replay) / mute icon, notice **auto-plays on load** (no Read aloud button). Purpose switches **start off**. **Agree and Verify** is disabled until every switch is on, then grants and starts DigiLocker. Compact/settings: **Read aloud**, **I agree**, **Withdraw**, **Ask me a question → OWRC 1800 11 3090**.
+2. DigiLocker **start and callback** require identity, contact, evaluation, and medical consent (current notice version). Withdraw mid-OAuth blocks the write.
+3. KYC consent card: animated dither **band** (not full-card fill), **Before you continue (notice v1.4)** with speaker (replay) / mute icon, notice **auto-plays on load** (no Read aloud button). Purpose switches **start off**. **Agree and Verify** is disabled until every switch is on, then grants and starts DigiLocker. Compact/settings: **Read aloud**, **I agree**, **Withdraw**, **Ask me a question → OWRC 1800 11 3090**. No second consent dialog on interview or medical.
 4. Granting consent appends `ConsentEvents`; withdraw appends new row (history intact). Grant method must be `voice_tap` (server rejects other methods). Settings → Withdraw consent also appends withdrawn.
 5. After withdraw, hire APIs still never return raw KYC. Interview scores, transcripts, recordings, and custom answers are withheld without **evaluation** consent (`interviewRelease`).
 6. `/privacy`, `/terms`, and `/grievance` public. Grievance desk email is published (`support@blucollarz.com`); named officer / phone / street come from Admin → Settings when appointed.

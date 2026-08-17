@@ -1,6 +1,6 @@
 import { createAgentUIStreamResponse } from "ai";
 import type { NextRequest } from "next/server";
-import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -18,7 +18,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, context: RouteContext) {
   await ensureIndexes();
-  const auth = await requireCandidateAppReady();
+  const auth = await requireInterviewEvaluationConsent();
   if (!auth.ok) {
     return new Response(auth.error, { status: auth.status });
   }

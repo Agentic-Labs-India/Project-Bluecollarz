@@ -59,7 +59,7 @@ There is **no AI document verification**. Identity is established through DigiLo
 |---|---|
 | **DigiLocker KYC** | Government-backed identity verification, required before the candidate app unlocks |
 | **Medical fitness** | Center directory, slot booking, admin queue, and private fitness reports |
-| **DPDP compliance** | Purpose-scoped consent, data principal rights, breach register, legal holds |
+| **DPDP-oriented controls** | Purpose-scoped consent, data principal rights, breach register, legal holds. Not a Board certificate. See `docs/compliance/dpdp-and-emigrate.md` |
 | **Private blob storage** | Interview recordings, medical reports and company documents are private and served through an authorizing proxy |
 | **Published-jobs caching** | Landing and explore read a cached list, invalidated when a recruiter publishes or edits |
 | **Rate limiting** | Per-user sliding window on every AI and voice endpoint |
@@ -271,11 +271,13 @@ Appointment statuses are `scheduled`, `completed`, `cancelled`, `no_show` and `u
 
 ## Compliance (DPDP)
 
+This is **engineering toward** the Digital Personal Data Protection Act, 2023 and the DPDP Rules, 2025. Substantive notice, consent, rights, security, and breach duties in the Rules are scheduled to apply **13 May 2027**. The product is not DPDP-certified and is not eMigrate. Posture, gaps, and sources: `docs/compliance/dpdp-and-emigrate.md`.
+
 Modules live in `src/lib/compliance/`.
 
 | Module | Purpose |
 |---|---|
-| `consent.ts` | Append-only consent events, purpose-scoped. Notice version `1.2` |
+| `consent.ts` | Append-only consent events, purpose-scoped. Notice version `1.4`. Grant requires a server `playbackId` |
 | `rights.ts` | Data principal requests: access, correction, erasure, withdrawal, nomination, grievance |
 | `breach.ts` | Personal data breach register |
 | `legal-hold.ts` | Blocks erasure while material must be preserved |
@@ -285,11 +287,11 @@ Modules live in `src/lib/compliance/`.
 | `arm.ts` | Strips PII before any employer-facing view |
 | `analytics.ts` | Client-side analytics consent |
 
-Consent purposes: `identity`, `contact`, `qualification`, `background`, `passport`, `evaluation`, `medical`. Medical is deliberately **not** bundled into the DigiLocker purpose set, so identity verification never implies consent to health processing.
+Consent purposes: `identity`, `contact`, `evaluation`, `medical`. All four are asked once before DigiLocker, each as its own switch. Passport, PCC, and educational certificates are not collected here.
 
 Erasure is refused while a legal hold is active, which surfaces as a `409` with code `LEGAL_HOLD_ACTIVE`.
 
-Supporting documents: `docs/compliance/ropa.md`, `rights-sop.md`, `qa-checklist.md`, `legal-safety-architecture-feedback-v0.2.md`.
+Supporting documents: `docs/compliance/dpdp-and-emigrate.md`, `candidate-journey.md` (cookie → onboarding → consent → KYC → interview → medical), `ropa.md`, `rights-sop.md`, `qa-checklist.md`, `legal-safety-architecture-feedback-v0.2.md`.
 
 ---
 

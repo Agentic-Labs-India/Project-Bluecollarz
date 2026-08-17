@@ -9,7 +9,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 pt-28 pb-8 md:px-8 md:pt-32">
-      <LegalDoc title="Privacy Notice" updated="August 15, 2026 · Version 1.2">
+      <LegalDoc title="Privacy Notice" updated="August 18, 2026 · Version 1.4">
         <p>
           This notice is issued by Blucollarz Technologies Private Limited under
           the Digital Personal Data Protection Act, 2023 and the Digital
@@ -52,8 +52,8 @@ export default function PrivacyPage() {
           <p>
             We process the following personal data for the specified purposes.
             The service enabled is access to Blucollarz accounts, identity
-            verification, job matching, interviews, and (where it applies)
-            regulated recruitment support.
+            verification, job matching, and interviews. Blucollarz is not a
+            Recruiting Agent and does not file emigration clearance.
           </p>
           <ul className="list-disc space-y-2 ps-5">
             <li>
@@ -70,14 +70,9 @@ export default function PrivacyPage() {
               confirm you are 18 or older, and generate verification
               conclusions. Collected only after you grant purpose consent.
             </li>
-            <li>Educational certificates — verify qualifications.</li>
-            <li>
-              Police Clearance Certificate (Passport Seva), passport —
-              background and emigration processing when provided.
-            </li>
             <li>
               Profile, skills, education, work history, languages — match you to
-              roles using allowlisted resume fields.
+              roles using allowlisted resume fields collected during onboarding.
             </li>
             <li>
               Applications, AI interview transcripts, scores, answers, and
@@ -103,16 +98,19 @@ export default function PrivacyPage() {
 
         <LegalSection title="3. Consent">
           <p>
-            Verification and interview data are processed on consent. DigiLocker
-            collection happens only after a purpose-specific Consent Notice
+            Verification and interview data are processed on consent. Before
+            DigiLocker you grant each purpose we use — identity, contact,
+            interview evaluation, and medical fitness — as separate switches in
+            one sitting. DigiLocker collection happens only after that notice
             (read aloud) and recorded agreement. Interview scores, transcripts,
-            and recordings are shared with a hirer only if you grant evaluation
-            consent. Consent must be free, specific, informed, unconditional,
-            and unambiguous. You can withdraw it as easily as you gave it:
+            and recordings are shared with a hirer only while evaluation
+            consent is live. Medical fitness data is processed only while
+            medical consent is live, and only after an employer selects you.
+            Consent must be free, specific, informed, unconditional, and
+            unambiguous. You can withdraw it as easily as you gave it:
             Settings → Data rights → Withdraw, or email the grievance desk.
             Withdrawal does not undo processing already completed lawfully.
-            Account operation also relies on using the service (contract). Some
-            steps may rely on legal obligation (for example emigration rules).
+            Account operation also relies on using the service (contract).
           </p>
         </LegalSection>
 
@@ -148,12 +146,13 @@ export default function PrivacyPage() {
               evaluation consent
             </li>
             <li>
-              Licensed Recruiting Agent — data needed for regulated recruitment
-              when that workflow applies
+              Licensed Recruiting Agent bound to a role (optional RC number) —
+              hire-safe profile and evaluation data they need for that
+              placement. We are not that agent and we do not file eMigrate.
             </li>
             <li>
-              Verification sources (DigiLocker / MeriPehchaan, Passport Seva) —
-              the request needed to verify an attribute
+              Verification sources (DigiLocker / MeriPehchaan) — the request
+              needed to verify identity
             </li>
             <li>
               Processors under contract: MongoDB (database), Vercel (hosting /
@@ -167,8 +166,7 @@ export default function PrivacyPage() {
         <LegalSection title="7. How long we keep it">
           <p>
             We keep data only as long as needed for the purposes above and for
-            periods required by emigration and other applicable law, then delete
-            or anonymise it. Security and processing logs are retained for one
+            periods required by applicable law, then delete or anonymise it. Security and processing logs are retained for one
             year. When you delete your account from Settings, we remove your
             profile, applications, interviews, recordings, consent events, and
             rights requests (subject to any legal retention we must honour,

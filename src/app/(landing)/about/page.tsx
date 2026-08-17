@@ -230,7 +230,7 @@ export default function AboutPage() {
             "Onboarding collects currently working as, years of experience, education, work experience, and languages",
             "DigiLocker is required before home and explore",
             "Under-18 dates of birth from DigiLocker are rejected",
-            "APAAR, education certificates, and passport are later modules",
+            "DigiLocker writes name, DOB, phone, location, gender, PAN, Aadhaar last 4 — not passport or PCC",
           ]}
         />
       </DocSection>

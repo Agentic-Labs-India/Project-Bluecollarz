@@ -13,7 +13,7 @@ const TYPES = [
   { value: "erasure", label: "Request erasure (use Delete account to erase)" },
   {
     value: "withdraw",
-    label: "Withdraw consent (stops DigiLocker, hire release, interviews)",
+    label: "Withdraw consent (stops interview release to employers and medical booking)",
   },
   { value: "nominate", label: "Nominate someone" },
   { value: "grievance", label: "Grievance" },
@@ -117,8 +117,9 @@ export function DataRightsSection() {
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Access or export your data, request correction, withdraw consent (stops
-        DigiLocker and interview release), nominate someone, or raise a
-        grievance. We identify you by the email on this signed-in account.
+        interview release to employers and medical booking), nominate someone,
+        or raise a grievance. We identify you by the email on this signed-in
+        account.
         Correction is completed by updating your{" "}
         <a href="/candidate/profile" className="text-foreground underline">
           profile

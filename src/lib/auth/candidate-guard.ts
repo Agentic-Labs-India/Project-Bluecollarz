@@ -2,6 +2,10 @@ import "server-only";
 
 import { type Guard, requireProfile } from "@/lib/auth/session";
 import { getCandidateGateStatus } from "@/lib/candidate/queries";
+import {
+  hasGrantedPurposes,
+  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+} from "@/lib/compliance/consent";
 
 /**
  * The candidate app shell redirects unverified users to onboarding then KYC.
@@ -28,6 +32,27 @@ export async function requireCandidateAppReady(): Promise<Guard> {
       error: "Verify your identity with DigiLocker before continuing.",
       status: 403,
       code: "KYC_REQUIRED",
+    };
+  }
+
+  return auth;
+}
+
+/** Interviews process evaluation data — require that purpose, not KYC bundling. */
+export async function requireInterviewEvaluationConsent(): Promise<Guard> {
+  const auth = await requireCandidateAppReady();
+  if (!auth.ok) return auth;
+
+  const granted = await hasGrantedPurposes(
+    auth.user.id,
+    INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+  );
+  if (!granted) {
+    return {
+      ok: false,
+      error: "Agree to interview evaluation before continuing.",
+      status: 403,
+      code: "EVALUATION_CONSENT_REQUIRED",
     };
   }
 

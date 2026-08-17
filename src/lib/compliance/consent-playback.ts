@@ -5,10 +5,7 @@ import {
   CONSENT_NOTICE_VERSION,
   type ConsentPlaybackScope,
 } from "@/lib/compliance/consent-notices";
-import {
-  DIGILOCKER_REQUIRED_PURPOSES,
-  type ConsentPurpose,
-} from "@/lib/compliance/consent";
+import { type ConsentPurpose } from "@/lib/compliance/consent";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
 export const CONSENT_PLAYBACK_TTL_MS = 15 * 60 * 1000;
@@ -29,20 +26,12 @@ function playbacks() {
     .collection<ConsentPlaybackDocument>(COLLECTIONS.CONSENT_PLAYBACKS);
 }
 
+/** KYC and Settings speak the same notice; any non-empty valid set may grant. */
 export function playbackMatchesGrant(
-  scope: ConsentPlaybackScope,
+  _scope: ConsentPlaybackScope,
   purposes: ConsentPurpose[],
 ): boolean {
-  if (!purposes.length) return false;
-  if (scope === "medical") {
-    return purposes.length === 1 && purposes[0] === "medical";
-  }
-  if (scope === "kyc") {
-    return purposes.every((purpose) =>
-      DIGILOCKER_REQUIRED_PURPOSES.includes(purpose),
-    );
-  }
-  return true;
+  return purposes.length > 0;
 }
 
 export async function issueConsentPlayback(input: {

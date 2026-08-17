@@ -16,7 +16,7 @@ Blucollarz is AI-native hiring infrastructure for skilled candidates and recruit
 
 ## Candidate (work) flow
 1. Onboarding — voice-guided AI coach (or PDF resume parse). Needed: currently working as, years of experience, education, work experience, languages. Skills come from a resume PDF only. Summary is generated at the end.
-2. DigiLocker KYC — required next. Identity only: name, date of birth (18+), phone, location, gender, PAN, Aadhaar last 4. Email stays from Google. APAAR, marksheets, and passport are later modules.
+2. DigiLocker KYC — required next. Identity only: name, date of birth (18+), phone, location, gender, PAN, Aadhaar last 4. Email stays from Google. We do not collect passport or PCC. Emigration clearance is the licensed RA's job on eMigrate, not this app.
 3. Home dashboard — application stats and next actions.
 4. Explore opportunities — browse published roles. Application status is Submitted, Selected, or Rejected.
 5. AI Communication interview — camera + mic + entire-screen share; scored on clarity, fluency, confidence, professionalism.
