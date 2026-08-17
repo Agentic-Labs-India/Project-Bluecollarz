@@ -1,8 +1,8 @@
 "use client";
 
+import { MoonIcon, SunIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { DitherLoginButton } from "@/components/landing/dither-login-button";

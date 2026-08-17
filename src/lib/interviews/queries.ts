@@ -1,7 +1,7 @@
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument, InterviewStageId } from "@/lib/interviews";
 import { idHex } from "@/lib/utils";
-import { ensureIndexes } from "@/lib/db/indexes";
 
 /** Completed interview stage ids for a candidate across the given jobs. */
 export async function getCompletedInterviewStagesByJob(opts: {

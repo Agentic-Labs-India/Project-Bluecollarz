@@ -19,12 +19,7 @@ export const SUPPORT_SERIOUSNESS = [
   "critical",
 ] as const;
 
-export const SUPPORT_PRIORITIES = [
-  "low",
-  "medium",
-  "high",
-  "urgent",
-] as const;
+export const SUPPORT_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 
 /** `in_progress` removed — use `assigned` after an admin replies by email. */
 export const SUPPORT_STATUSES = [

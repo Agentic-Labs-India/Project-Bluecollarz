@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { AppPage } from "@/components/layout/app-page";
 import { KycPageSkeleton } from "@/components/layout/page-skeleton";
-import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
 import type { DigilockerStatusResponse } from "@/lib/kyc/digilocker";
 

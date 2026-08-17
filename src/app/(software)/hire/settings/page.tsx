@@ -1,12 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { MoonIcon, SunIcon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
 import { AppPage } from "@/components/layout/app-page";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
-import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
-import { useTheme } from "next-themes";
-import { MoonIcon, SunIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export default function HireSettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -21,7 +21,9 @@ export default function HireSettingsPage() {
       <section className="border-border/80 bg-card divide-border/60 mb-6 divide-y rounded-none border shadow-sm">
         <div className="flex items-center justify-between gap-4 p-5">
           <div>
-            <Label className="text-foreground text-sm font-medium">Appearance</Label>
+            <Label className="text-foreground text-sm font-medium">
+              Appearance
+            </Label>
             <p className="text-muted-foreground mt-1 text-sm">
               Switch between light and dark mode.
             </p>
@@ -31,16 +33,22 @@ export default function HireSettingsPage() {
             className="w-40 shrink-0"
             onClick={() => setTheme(isDark ? "light" : "dark")}
           >
-            {isDark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+            {isDark ? (
+              <SunIcon className="size-4" />
+            ) : (
+              <MoonIcon className="size-4" />
+            )}
             {isDark ? "Light mode" : "Dark mode"}
           </Button>
         </div>
 
         <div className="p-5">
-          <Label className="text-foreground text-sm font-medium">Notifications</Label>
+          <Label className="text-foreground text-sm font-medium">
+            Notifications
+          </Label>
           <p className="text-muted-foreground mt-1 text-sm">
-            Application and candidate alerts will be configurable here in a later
-            release.
+            Application and candidate alerts will be configurable here in a
+            later release.
           </p>
         </div>
 

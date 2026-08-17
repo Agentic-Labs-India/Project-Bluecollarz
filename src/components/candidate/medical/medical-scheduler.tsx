@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { AppPage } from "@/components/layout/app-page";
 import { MedicalPageSkeleton } from "@/components/layout/page-skeleton";
@@ -161,6 +162,22 @@ export function CandidateMedicalScheduler() {
         <Button asChild className="mt-4">
           <Link href="/candidate/home">Back to home</Link>
         </Button>
+      </AppPage>
+    );
+  }
+
+  if (!context.medicalConsent) {
+    return (
+      <AppPage>
+        <Header
+          jobTitle={context.jobTitle}
+          title="Agree to the medical test first"
+          copy="A fitness test is part of this role. We can only book it and store the report if you agree here. You can withdraw this later in Settings."
+        />
+        <ConsentNoticePanel
+          only={["medical"]}
+          onGranted={() => void load()}
+        />
       </AppPage>
     );
   }

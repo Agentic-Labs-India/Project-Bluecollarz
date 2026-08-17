@@ -3,7 +3,7 @@
 
 import * as React2 from "react";
 
-import { useEffect, useRef as useRef2, forwardRef, useState } from "react";
+import { forwardRef, useEffect, useRef as useRef2, useState } from "react";
 
 var vertexShaderSource = `#version 300 es
 precision mediump float;
@@ -191,7 +191,17 @@ var ShaderMount = class {
   isSafari = isSafari();
   uniformCache = {};
   textureUnitMap = /* @__PURE__ */ new Map();
-  constructor(parentElement, fragmentShader, uniforms, webGlContextAttributes, speed = 0, frame = 0, minPixelRatio = 2, maxPixelCount = DEFAULT_MAX_PIXEL_COUNT, mipmaps = []) {
+  constructor(
+    parentElement,
+    fragmentShader,
+    uniforms,
+    webGlContextAttributes,
+    speed = 0,
+    frame = 0,
+    minPixelRatio = 2,
+    maxPixelCount = DEFAULT_MAX_PIXEL_COUNT,
+    mipmaps = [],
+  ) {
     if (parentElement instanceof HTMLElement) {
       this.parentElement = parentElement;
     } else {
@@ -226,33 +236,57 @@ var ShaderMount = class {
     this.setSpeed(speed);
     this.parentElement.setAttribute("data-paper-shader", "");
     this.parentElement.paperShaderMount = this;
-    document.addEventListener("visibilitychange", this.handleDocumentVisibilityChange);
+    document.addEventListener(
+      "visibilitychange",
+      this.handleDocumentVisibilityChange,
+    );
   }
   initProgram = () => {
-    const program = createProgram(this.gl, vertexShaderSource, this.fragmentShader);
+    const program = createProgram(
+      this.gl,
+      vertexShaderSource,
+      this.fragmentShader,
+    );
     if (!program) return;
     this.program = program;
   };
   setupPositionAttribute = () => {
-    const positionAttributeLocation = this.gl.getAttribLocation(this.program, "a_position");
+    const positionAttributeLocation = this.gl.getAttribLocation(
+      this.program,
+      "a_position",
+    );
     const positionBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     const positions = [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1];
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array(positions),
+      this.gl.STATIC_DRAW,
+    );
     this.gl.enableVertexAttribArray(positionAttributeLocation);
-    this.gl.vertexAttribPointer(positionAttributeLocation, 2, this.gl.FLOAT, false, 0, 0);
+    this.gl.vertexAttribPointer(
+      positionAttributeLocation,
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0,
+    );
   };
   setupUniforms = () => {
     const uniformLocations = {
       u_time: this.gl.getUniformLocation(this.program, "u_time"),
       u_pixelRatio: this.gl.getUniformLocation(this.program, "u_pixelRatio"),
-      u_resolution: this.gl.getUniformLocation(this.program, "u_resolution")
+      u_resolution: this.gl.getUniformLocation(this.program, "u_resolution"),
     };
     Object.entries(this.providedUniforms).forEach(([key, value]) => {
       uniformLocations[key] = this.gl.getUniformLocation(this.program, key);
       if (value instanceof HTMLImageElement) {
         const aspectRatioUniformName = `${key}AspectRatio`;
-        uniformLocations[aspectRatioUniformName] = this.gl.getUniformLocation(this.program, aspectRatioUniformName);
+        uniformLocations[aspectRatioUniformName] = this.gl.getUniformLocation(
+          this.program,
+          aspectRatioUniformName,
+        );
       }
     });
     this.uniformLocations = uniformLocations;
@@ -304,8 +338,10 @@ var ShaderMount = class {
     const pinchZoom = visualViewport?.scale ?? 1;
     if (this.devicePixelsSupported) {
       const scaleToMeetMinPixelRatio = Math.max(1, this.minPixelRatio / dpr);
-      targetPixelWidth = this.parentDevicePixelWidth * scaleToMeetMinPixelRatio * pinchZoom;
-      targetPixelHeight = this.parentDevicePixelHeight * scaleToMeetMinPixelRatio * pinchZoom;
+      targetPixelWidth =
+        this.parentDevicePixelWidth * scaleToMeetMinPixelRatio * pinchZoom;
+      targetPixelHeight =
+        this.parentDevicePixelHeight * scaleToMeetMinPixelRatio * pinchZoom;
     } else {
       let targetRenderScale = Math.max(dpr, this.minPixelRatio) * pinchZoom;
       if (this.isSafari) {
@@ -315,12 +351,18 @@ var ShaderMount = class {
       targetPixelWidth = Math.round(this.parentWidth) * targetRenderScale;
       targetPixelHeight = Math.round(this.parentHeight) * targetRenderScale;
     }
-    const maxPixelCountHeadroom = Math.sqrt(this.maxPixelCount) / Math.sqrt(targetPixelWidth * targetPixelHeight);
+    const maxPixelCountHeadroom =
+      Math.sqrt(this.maxPixelCount) /
+      Math.sqrt(targetPixelWidth * targetPixelHeight);
     const scaleToMeetMaxPixelCount = Math.min(1, maxPixelCountHeadroom);
     const newWidth = Math.round(targetPixelWidth * scaleToMeetMaxPixelCount);
     const newHeight = Math.round(targetPixelHeight * scaleToMeetMaxPixelCount);
     const newRenderScale = newWidth / Math.round(this.parentWidth);
-    if (this.canvasElement.width !== newWidth || this.canvasElement.height !== newHeight || this.renderScale !== newRenderScale) {
+    if (
+      this.canvasElement.width !== newWidth ||
+      this.canvasElement.height !== newHeight ||
+      this.renderScale !== newRenderScale
+    ) {
       this.renderScale = newRenderScale;
       this.canvasElement.width = newWidth;
       this.canvasElement.height = newHeight;
@@ -344,7 +386,11 @@ var ShaderMount = class {
     this.gl.useProgram(this.program);
     this.gl.uniform1f(this.uniformLocations.u_time, this.currentFrame * 1e-3);
     if (this.resolutionChanged) {
-      this.gl.uniform2f(this.uniformLocations.u_resolution, this.gl.canvas.width, this.gl.canvas.height);
+      this.gl.uniform2f(
+        this.uniformLocations.u_resolution,
+        this.gl.canvas.width,
+        this.gl.canvas.height,
+      );
       this.gl.uniform1f(this.uniformLocations.u_pixelRatio, this.renderScale);
       this.resolutionChanged = false;
     }
@@ -364,7 +410,9 @@ var ShaderMount = class {
   /** Creates a texture from an image and sets it into a uniform value */
   setTextureUniform = (uniformName, image) => {
     if (!image.complete || image.naturalWidth === 0) {
-      throw new Error(`Paper Shaders: image for uniform ${uniformName} must be fully loaded`);
+      throw new Error(
+        `Paper Shaders: image for uniform ${uniformName} must be fully loaded`,
+      );
     }
     const existingTexture = this.textures.get(uniformName);
     if (existingTexture) {
@@ -377,18 +425,48 @@ var ShaderMount = class {
     this.gl.activeTexture(this.gl.TEXTURE0 + textureUnit);
     const texture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_WRAP_S,
+      this.gl.CLAMP_TO_EDGE,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_WRAP_T,
+      this.gl.CLAMP_TO_EDGE,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MIN_FILTER,
+      this.gl.LINEAR,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MAG_FILTER,
+      this.gl.LINEAR,
+    );
+    this.gl.texImage2D(
+      this.gl.TEXTURE_2D,
+      0,
+      this.gl.RGBA,
+      this.gl.RGBA,
+      this.gl.UNSIGNED_BYTE,
+      image,
+    );
     if (this.mipmaps.includes(uniformName)) {
       this.gl.generateMipmap(this.gl.TEXTURE_2D);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+      this.gl.texParameteri(
+        this.gl.TEXTURE_2D,
+        this.gl.TEXTURE_MIN_FILTER,
+        this.gl.LINEAR_MIPMAP_LINEAR,
+      );
     }
     const error = this.gl.getError();
     if (error !== this.gl.NO_ERROR || texture === null) {
-      console.error("Paper Shaders: WebGL error when uploading texture:", error);
+      console.error(
+        "Paper Shaders: WebGL error when uploading texture:",
+        error,
+      );
       return;
     }
     this.textures.set(uniformName, texture);
@@ -419,7 +497,8 @@ var ShaderMount = class {
       if (value instanceof HTMLImageElement) {
         cacheValue = `${value.src.slice(0, 200)}|${value.naturalWidth}x${value.naturalHeight}`;
       }
-      if (this.areUniformValuesEqual(this.uniformCache[key], cacheValue)) return;
+      if (this.areUniformValuesEqual(this.uniformCache[key], cacheValue))
+        return;
       this.uniformCache[key] = cacheValue;
       const location = this.uniformLocations[key];
       if (!location) {
@@ -541,8 +620,14 @@ var ShaderMount = class {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
-    visualViewport?.removeEventListener("resize", this.handleVisualViewportChange);
-    document.removeEventListener("visibilitychange", this.handleDocumentVisibilityChange);
+    visualViewport?.removeEventListener(
+      "resize",
+      this.handleVisualViewportChange,
+    );
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleDocumentVisibilityChange,
+    );
     this.uniformLocations = {};
     this.canvasElement.remove();
     delete this.parentElement.paperShaderMount;
@@ -554,21 +639,38 @@ function createShader(gl, type, source) {
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
+    console.error(
+      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`,
+    );
     gl.deleteShader(shader);
     return null;
   }
   return shader;
 }
 function createProgram(gl, vertexShaderSource2, fragmentShaderSource) {
-  const format = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT);
+  const format = gl.getShaderPrecisionFormat(
+    gl.FRAGMENT_SHADER,
+    gl.MEDIUM_FLOAT,
+  );
   const precision = format ? format.precision : null;
   if (precision && precision < 23) {
-    vertexShaderSource2 = vertexShaderSource2.replace(/precision\s+(lowp|mediump)\s+float;/g, "precision highp float;");
-    fragmentShaderSource = fragmentShaderSource.replace(/precision\s+(lowp|mediump)\s+float/g, "precision highp float").replace(/\b(uniform|varying|attribute)\s+(lowp|mediump)\s+(\w+)/g, "$1 highp $3");
+    vertexShaderSource2 = vertexShaderSource2.replace(
+      /precision\s+(lowp|mediump)\s+float;/g,
+      "precision highp float;",
+    );
+    fragmentShaderSource = fragmentShaderSource
+      .replace(/precision\s+(lowp|mediump)\s+float/g, "precision highp float")
+      .replace(
+        /\b(uniform|varying|attribute)\s+(lowp|mediump)\s+(\w+)/g,
+        "$1 highp $3",
+      );
   }
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource2);
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+  const fragmentShader = createShader(
+    gl,
+    gl.FRAGMENT_SHADER,
+    fragmentShaderSource,
+  );
   if (!vertexShader || !fragmentShader) return null;
   const program = gl.createProgram();
   if (!program) return null;
@@ -576,7 +678,10 @@ function createProgram(gl, vertexShaderSource2, fragmentShaderSource) {
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error("Unable to initialize the shader program: " + gl.getProgramInfoLog(program));
+    console.error(
+      "Unable to initialize the shader program: " +
+        gl.getProgramInfoLog(program),
+    );
     gl.deleteProgram(program);
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
@@ -608,12 +713,15 @@ var defaultStyle = `@layer paper-shaders {
 }`;
 function isSafari() {
   const ua = navigator.userAgent.toLowerCase();
-  return ua.includes("safari") && !ua.includes("chrome") && !ua.includes("android");
+  return (
+    ua.includes("safari") && !ua.includes("chrome") && !ua.includes("android")
+  );
 }
 function bestGuessBrowserZoom() {
   const viewportScale = visualViewport?.scale ?? 1;
   const viewportWidth = visualViewport?.width ?? window.innerWidth;
-  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  const scrollbarWidth =
+    window.innerWidth - document.documentElement.clientWidth;
   const innerWidth = viewportScale * viewportWidth + scrollbarWidth;
   const ratio = outerWidth / innerWidth;
   const zoomPercentageRounded = Math.round(100 * ratio);
@@ -641,7 +749,7 @@ var defaultObjectSizing = {
   originX: 0.5,
   originY: 0.5,
   worldWidth: 0,
-  worldHeight: 0
+  worldHeight: 0,
 };
 var defaultPatternSizing = {
   fit: "none",
@@ -652,12 +760,12 @@ var defaultPatternSizing = {
   originX: 0.5,
   originY: 0.5,
   worldWidth: 0,
-  worldHeight: 0
+  worldHeight: 0,
 };
 var ShaderFitOptions = {
   none: 0,
   contain: 1,
-  cover: 2
+  cover: 2,
 };
 
 var declarePI = `
@@ -957,13 +1065,13 @@ var DitheringShapes = {
   wave: 4,
   ripple: 5,
   swirl: 6,
-  sphere: 7
+  sphere: 7,
 };
 var DitheringTypes = {
-  "random": 1,
+  random: 1,
   "2x2": 2,
   "4x4": 3,
-  "8x8": 4
+  "8x8": 4,
 };
 
 var imageDitheringFragmentShader = `#version 300 es
@@ -1159,7 +1267,10 @@ function getShaderColorFromString(colorString) {
   if (typeof colorString !== "string") {
     return fallbackColor;
   }
-  let r, g, b, a = 1;
+  let r: number;
+  let g: number;
+  let b: number;
+  let a = 1;
   if (colorString.startsWith("#")) {
     [r, g, b, a] = hexToRgba(colorString);
   } else if (colorString.startsWith("rgb")) {
@@ -1175,10 +1286,13 @@ function getShaderColorFromString(colorString) {
 function hexToRgba(hex) {
   hex = hex.replace(/^#/, "");
   if (hex.length === 3) {
-    hex = hex.split("").map((char) => char + char).join("");
+    hex = hex
+      .split("")
+      .map((char) => char + char)
+      .join("");
   }
   if (hex.length === 6) {
-    hex = hex + "ff";
+    hex = `${hex}ff`;
   }
   const r = parseInt(hex.slice(0, 2), 16) / 255;
   const g = parseInt(hex.slice(2, 4), 16) / 255;
@@ -1187,23 +1301,27 @@ function hexToRgba(hex) {
   return [r, g, b, a];
 }
 function parseRgba(rgba) {
-  const match = rgba.match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([0-9.]+))?\s*\)$/i);
+  const match = rgba.match(
+    /^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([0-9.]+))?\s*\)$/i,
+  );
   if (!match) return [0, 0, 0, 1];
   return [
-    parseInt(match[1] ?? "0") / 255,
-    parseInt(match[2] ?? "0") / 255,
-    parseInt(match[3] ?? "0") / 255,
-    match[4] === void 0 ? 1 : parseFloat(match[4])
+    parseInt(match[1] ?? "0", 10) / 255,
+    parseInt(match[2] ?? "0", 10) / 255,
+    parseInt(match[3] ?? "0", 10) / 255,
+    match[4] === void 0 ? 1 : parseFloat(match[4]),
   ];
 }
 function parseHsla(hsla) {
-  const match = hsla.match(/^hsla?\s*\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(?:,\s*([0-9.]+))?\s*\)$/i);
+  const match = hsla.match(
+    /^hsla?\s*\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(?:,\s*([0-9.]+))?\s*\)$/i,
+  );
   if (!match) return [0, 0, 0, 1];
   return [
-    parseInt(match[1] ?? "0"),
-    parseInt(match[2] ?? "0"),
-    parseInt(match[3] ?? "0"),
-    match[4] === void 0 ? 1 : parseFloat(match[4])
+    parseInt(match[1] ?? "0", 10),
+    parseInt(match[2] ?? "0", 10),
+    parseInt(match[3] ?? "0", 10),
+    match[4] === void 0 ? 1 : parseFloat(match[4]),
   ];
 }
 function hslaToRgba(hsla) {
@@ -1211,7 +1329,9 @@ function hslaToRgba(hsla) {
   const hDecimal = h / 360;
   const sDecimal = s / 100;
   const lDecimal = l / 100;
-  let r, g, b;
+  let r: number;
+  let g: number;
+  let b: number;
   if (s === 0) {
     r = g = b = lDecimal;
   } else {
@@ -1223,7 +1343,10 @@ function hslaToRgba(hsla) {
       if (t < 2 / 3) return p2 + (q2 - p2) * (2 / 3 - t) * 6;
       return p2;
     };
-    const q = lDecimal < 0.5 ? lDecimal * (1 + sDecimal) : lDecimal + sDecimal - lDecimal * sDecimal;
+    const q =
+      lDecimal < 0.5
+        ? lDecimal * (1 + sDecimal)
+        : lDecimal + sDecimal - lDecimal * sDecimal;
     const p = 2 * lDecimal - q;
     r = hue2rgb(p, q, hDecimal + 1 / 3);
     g = hue2rgb(p, q, hDecimal);
@@ -1243,22 +1366,26 @@ function getEmptyPixel() {
   img.src = emptyPixel;
   return img;
 }
-var emptyPixel = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+var emptyPixel =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
 import * as React from "react";
+
 function useMergeRefs(refs) {
   const cleanupRef = React.useRef(void 0);
   const refEffect = React.useCallback((instance) => {
     const cleanups = refs.map((ref) => {
       if (ref == null) {
-        return;
+        return undefined;
       }
       if (typeof ref === "function") {
         const refCallback = ref;
         const refCleanup = refCallback(instance);
-        return typeof refCleanup === "function" ? refCleanup : () => {
-          refCallback(null);
-        };
+        return typeof refCleanup === "function"
+          ? refCleanup
+          : () => {
+              refCallback(null);
+            };
       }
       ref.current = instance;
       return () => {
@@ -1266,7 +1393,7 @@ function useMergeRefs(refs) {
       };
     });
     return () => {
-      cleanups.forEach((refCleanup) => refCleanup?.());
+      for (const refCleanup of cleanups) refCleanup?.();
     };
   }, refs);
   return React.useMemo(() => {
@@ -1297,6 +1424,7 @@ function setMinImageSize(img) {
 }
 
 import { jsx } from "react/jsx-runtime";
+
 async function processUniforms(uniformsProp) {
   const processedUniforms = {};
   const imageLoadPromises = [];
@@ -1325,7 +1453,9 @@ async function processUniforms(uniformsProp) {
         return;
       }
       if (!isValidUrl(value)) {
-        console.warn(`Uniform "${key}" has invalid URL "${value}". Skipping image loading.`);
+        console.warn(
+          `Uniform "${key}" has invalid URL "${value}". Skipping image loading.`,
+        );
         return;
       }
       const imagePromise = new Promise((resolve, reject) => {
@@ -1339,7 +1469,9 @@ async function processUniforms(uniformsProp) {
           resolve();
         };
         img.onerror = () => {
-          console.error(`Could not set uniforms. Failed to load image at ${value}`);
+          console.error(
+            `Could not set uniforms. Failed to load image at ${value}`,
+          );
           reject();
         };
         img.src = value;
@@ -1355,8 +1487,8 @@ async function processUniforms(uniformsProp) {
   await Promise.all(imageLoadPromises);
   return processedUniforms;
 }
-var ShaderMount2 = forwardRef(
-  function ShaderMountImpl({
+var ShaderMount2 = forwardRef(function ShaderMountImpl(
+  {
     fragmentShader,
     uniforms: uniformsProp,
     webGlContextAttributes,
@@ -1369,75 +1501,82 @@ var ShaderMount2 = forwardRef(
     mipmaps,
     style,
     ...divProps
-  }, forwardedRef) {
-    const [isInitialized, setIsInitialized] = useState(false);
-    const divRef = useRef2(null);
-    const shaderMountRef = useRef2(null);
-    const webGlContextAttributesRef = useRef2(webGlContextAttributes);
-    useEffect(() => {
-      const initShader = async () => {
-        const uniforms = await processUniforms(uniformsProp);
-        if (divRef.current && !shaderMountRef.current) {
-          shaderMountRef.current = new ShaderMount(
-            divRef.current,
-            fragmentShader,
-            uniforms,
-            webGlContextAttributesRef.current,
-            speed,
-            frame,
-            minPixelRatio,
-            maxPixelCount,
-            mipmaps
-          );
-          setIsInitialized(true);
-        }
-      };
-      initShader();
-      return () => {
-        shaderMountRef.current?.dispose();
-        shaderMountRef.current = null;
-      };
-    }, [fragmentShader]);
-    useEffect(() => {
-      let isStale = false;
-      const updateUniforms = async () => {
-        const uniforms = await processUniforms(uniformsProp);
-        if (!isStale) {
-          shaderMountRef.current?.setUniforms(uniforms);
-        }
-      };
-      updateUniforms();
-      return () => {
-        isStale = true;
-      };
-    }, [uniformsProp, isInitialized]);
-    useEffect(() => {
-      shaderMountRef.current?.setSpeed(speed);
-    }, [speed, isInitialized]);
-    useEffect(() => {
-      shaderMountRef.current?.setMaxPixelCount(maxPixelCount);
-    }, [maxPixelCount, isInitialized]);
-    useEffect(() => {
-      shaderMountRef.current?.setMinPixelRatio(minPixelRatio);
-    }, [minPixelRatio, isInitialized]);
-    useEffect(() => {
-      shaderMountRef.current?.setFrame(frame);
-    }, [frame, isInitialized]);
-    const mergedRef = useMergeRefs([divRef, forwardedRef]);
-    return /* @__PURE__ */ jsx(
-      "div",
-      {
-        ref: mergedRef,
-        style: width !== void 0 || height !== void 0 ? {
-          width: typeof width === "string" && isNaN(+width) === false ? +width : width,
-          height: typeof height === "string" && isNaN(+height) === false ? +height : height,
-          ...style
-        } : style,
-        ...divProps
+  },
+  forwardedRef,
+) {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const divRef = useRef2(null);
+  const shaderMountRef = useRef2(null);
+  const webGlContextAttributesRef = useRef2(webGlContextAttributes);
+  useEffect(() => {
+    const initShader = async () => {
+      const uniforms = await processUniforms(uniformsProp);
+      if (divRef.current && !shaderMountRef.current) {
+        shaderMountRef.current = new ShaderMount(
+          divRef.current,
+          fragmentShader,
+          uniforms,
+          webGlContextAttributesRef.current,
+          speed,
+          frame,
+          minPixelRatio,
+          maxPixelCount,
+          mipmaps,
+        );
+        setIsInitialized(true);
       }
-    );
-  }
-);
+    };
+    initShader();
+    return () => {
+      shaderMountRef.current?.dispose();
+      shaderMountRef.current = null;
+    };
+  }, [fragmentShader]);
+  useEffect(() => {
+    let isStale = false;
+    const updateUniforms = async () => {
+      const uniforms = await processUniforms(uniformsProp);
+      if (!isStale) {
+        shaderMountRef.current?.setUniforms(uniforms);
+      }
+    };
+    updateUniforms();
+    return () => {
+      isStale = true;
+    };
+  }, [uniformsProp, isInitialized]);
+  useEffect(() => {
+    shaderMountRef.current?.setSpeed(speed);
+  }, [speed, isInitialized]);
+  useEffect(() => {
+    shaderMountRef.current?.setMaxPixelCount(maxPixelCount);
+  }, [maxPixelCount, isInitialized]);
+  useEffect(() => {
+    shaderMountRef.current?.setMinPixelRatio(minPixelRatio);
+  }, [minPixelRatio, isInitialized]);
+  useEffect(() => {
+    shaderMountRef.current?.setFrame(frame);
+  }, [frame, isInitialized]);
+  const mergedRef = useMergeRefs([divRef, forwardedRef]);
+  return /* @__PURE__ */ jsx("div", {
+    ref: mergedRef,
+    style:
+      width !== void 0 || height !== void 0
+        ? {
+            width:
+              typeof width === "string" && Number.isNaN(+width) === false
+                ? +width
+                : width,
+            height:
+              typeof height === "string" && Number.isNaN(+height) === false
+                ? +height
+                : height,
+            ...style,
+          }
+        : style,
+    ...divProps,
+  });
+});
 ShaderMount2.displayName = "ShaderMount";
 
 function colorPropsAreEqual(prevProps, nextProps) {
@@ -1454,7 +1593,11 @@ function colorPropsAreEqual(prevProps, nextProps) {
       if (prevProps.colors?.length !== nextProps.colors?.length) {
         return false;
       }
-      if (!prevProps.colors?.every((color, index) => color === nextProps.colors?.[index])) {
+      if (
+        !prevProps.colors?.every(
+          (color, index) => color === nextProps.colors?.[index],
+        )
+      ) {
         return false;
       }
       continue;
@@ -1468,6 +1611,7 @@ function colorPropsAreEqual(prevProps, nextProps) {
 
 import { memo } from "react";
 import { jsx as jsx2 } from "react/jsx-runtime";
+
 var defaultPreset = {
   name: "Default",
   params: {
@@ -1479,8 +1623,8 @@ var defaultPreset = {
     colorFront: "#00b2ff",
     shape: "sphere",
     type: "4x4",
-    size: 2
-  }
+    size: 2,
+  },
 };
 var Dithering = memo(function DitheringImpl({
   // Own props
@@ -1520,13 +1664,20 @@ var Dithering = memo(function DitheringImpl({
     u_originX: originX,
     u_originY: originY,
     u_worldWidth: worldWidth,
-    u_worldHeight: worldHeight
+    u_worldHeight: worldHeight,
   };
-  return /* @__PURE__ */ jsx2(ShaderMount2, { ...props, speed, frame, fragmentShader: ditheringFragmentShader, uniforms });
+  return /* @__PURE__ */ jsx2(ShaderMount2, {
+    ...props,
+    speed,
+    frame,
+    fragmentShader: ditheringFragmentShader,
+    uniforms,
+  });
 });
 
 import { memo as memo2 } from "react";
 import { jsx as jsx3 } from "react/jsx-runtime";
+
 var defaultPreset2 = {
   name: "Default",
   params: {
@@ -1542,8 +1693,8 @@ var defaultPreset2 = {
     size: 2,
     colorSteps: 2,
     originalColors: false,
-    inverted: false
-  }
+    inverted: false,
+  },
 };
 var ImageDithering = memo2(function ImageDitheringImpl({
   // Own props
@@ -1591,27 +1742,25 @@ var ImageDithering = memo2(function ImageDitheringImpl({
     u_originX: originX,
     u_originY: originY,
     u_worldWidth: worldWidth,
-    u_worldHeight: worldHeight
+    u_worldHeight: worldHeight,
   };
-  return /* @__PURE__ */ jsx3(
-    ShaderMount2,
-    {
-      ...props,
-      speed,
-      frame,
-      fragmentShader: imageDitheringFragmentShader,
-      uniforms
-    }
-  );
+  return /* @__PURE__ */ jsx3(ShaderMount2, {
+    ...props,
+    speed,
+    frame,
+    fragmentShader: imageDitheringFragmentShader,
+    uniforms,
+  });
 }, colorPropsAreEqual);
 
 import { jsx as jsx4, jsxs } from "react/jsx-runtime";
+
 var REF = 741;
 var TICKET_GEOMETRY = {
   aspect: 741 / 425,
   cornerRadius: 25 / REF,
   notchRadius: 21 / REF,
-  perforation: 562 / REF
+  perforation: 562 / REF,
 };
 var TICKET_LAYOUT = {
   padding: 57 / REF,
@@ -1632,7 +1781,7 @@ var TICKET_LAYOUT = {
   watermarkSize: 144 / REF,
   watermarkOpacity: 0.6,
   watermarkColor: "#ffdcbe",
-  inkColor: "#5a3520"
+  inkColor: "#5a3520",
 };
 var TICKET_TEXTURE = {
   engine: "generative",
@@ -1648,7 +1797,7 @@ var TICKET_TEXTURE = {
   rotation: 0,
   offsetX: 0,
   offsetY: 0,
-  speed: 0.4
+  speed: 0.4,
 };
 var TICKET_GRADIENT = {
   centreX: 0.62,
@@ -1657,7 +1806,7 @@ var TICKET_GRADIENT = {
   midStop: 0.45,
   colorLight: "#ffc691",
   colorMid: "#fe9046",
-  colorDark: "#ef671c"
+  colorDark: "#ef671c",
 };
 function ticketClipPath(width, height, geometry = TICKET_GEOMETRY) {
   const r = geometry.cornerRadius * width;
@@ -1677,7 +1826,7 @@ function ticketClipPath(width, height, geometry = TICKET_GEOMETRY) {
     `A ${r} ${r} 0 0 0 0 ${height - r}`,
     `L 0 ${r}`,
     `A ${r} ${r} 0 0 0 ${r} 0`,
-    "Z"
+    "Z",
   ].join(" ");
 }
 function splitName(name, max = 3) {
@@ -1692,7 +1841,8 @@ function splitName(name, max = 3) {
 }
 function fitScale(lines, opts) {
   if (lines.length === 0) return 1;
-  const { availableWidth, availableHeight, fontSize, lineHeight, tracking } = opts;
+  const { availableWidth, availableHeight, fontSize, lineHeight, tracking } =
+    opts;
   if (fontSize <= 0 || availableWidth <= 0) return 1;
   const longest = Math.max(...lines.map((l) => l.length));
   const charWidth = (0.6 + tracking) * fontSize;
@@ -1702,8 +1852,8 @@ function fitScale(lines, opts) {
     Math.min(
       1,
       charWidth > 0 ? availableWidth / (longest * charWidth) : 1,
-      block > 0 && availableHeight > 0 ? availableHeight / block : 1
-    )
+      block > 0 && availableHeight > 0 ? availableHeight / block : 1,
+    ),
   );
 }
 var MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -1715,7 +1865,7 @@ function usePrefersReducedMotion() {
       return () => mq.removeEventListener("change", onChange);
     },
     () => window.matchMedia(MOTION_QUERY).matches,
-    () => false
+    () => false,
   );
 }
 function useDrift(speed) {
@@ -1728,8 +1878,11 @@ function useDrift(speed) {
     let start = 0;
     const tick = (now) => {
       if (!start) start = now;
-      const t = (now - start) / 1e3 * speed;
-      setOffset({ x: 0.06 * Math.sin(0.37 * t), y: 0.045 * Math.cos(0.23 * t) });
+      const t = ((now - start) / 1e3) * speed;
+      setOffset({
+        x: 0.06 * Math.sin(0.37 * t),
+        y: 0.045 * Math.cos(0.23 * t),
+      });
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -1754,7 +1907,7 @@ function gradientDataUrl(g, aspect) {
     0,
     w * g.centreX,
     h * g.centreY,
-    Math.max(1, w * g.radius)
+    Math.max(1, w * g.radius),
   );
   radial.addColorStop(0, g.colorLight);
   radial.addColorStop(Math.min(0.99, Math.max(0.01, g.midStop)), g.colorMid);
@@ -1776,7 +1929,7 @@ function TicketCard({
   layout = TICKET_LAYOUT,
   texture = TICKET_TEXTURE,
   gradient = TICKET_GRADIENT,
-  className
+  className,
 }) {
   const height = width / geometry.aspect;
   const perfX = geometry.perforation * width;
@@ -1785,31 +1938,39 @@ function TicketCard({
   const lines = splitName(name);
   const scale = fitScale(lines, {
     availableWidth: perfX - layout.padding * width - 0.03 * width,
-    availableHeight: layout.footerTop * width - layout.nameTop * width - 0.02 * width,
+    availableHeight:
+      layout.footerTop * width - layout.nameTop * width - 0.02 * width,
     fontSize: layout.nameSize * width,
     lineHeight: layout.nameLead * width,
-    tracking: layout.nameTracking
+    tracking: layout.nameTracking,
   });
   const sourceImage = React2.useMemo(
-    () => texture.engine === "image" ? gradientDataUrl(gradient, geometry.aspect) : "",
-    [texture.engine, gradient, geometry.aspect]
+    () =>
+      texture.engine === "image"
+        ? gradientDataUrl(gradient, geometry.aspect)
+        : "",
+    [texture.engine, gradient, geometry.aspect],
   );
   const shaderStyle = {
     position: "absolute",
     inset: 0,
     width,
-    height
+    height,
   };
-  return /* @__PURE__ */ jsxs(
-    "div",
-    {
-      className: `relative select-none ${className ?? ""}`,
-      style: { width, height, clipPath: `path('${ticketClipPath(width, height, geometry)}')` },
-      children: [
-        /* @__PURE__ */ jsx4("div", { className: "absolute inset-0", style: { background: texture.colorBack } }),
-        texture.engine === "image" && sourceImage ? /* @__PURE__ */ jsx4(
-          ImageDithering,
-          {
+  return /* @__PURE__ */ jsxs("div", {
+    className: `relative select-none ${className ?? ""}`,
+    style: {
+      width,
+      height,
+      clipPath: `path('${ticketClipPath(width, height, geometry)}')`,
+    },
+    children: [
+      /* @__PURE__ */ jsx4("div", {
+        className: "absolute inset-0",
+        style: { background: texture.colorBack },
+      }),
+      texture.engine === "image" && sourceImage
+        ? /* @__PURE__ */ jsx4(ImageDithering, {
             image: sourceImage,
             colorBack: texture.colorBack,
             colorFront: texture.colorFront,
@@ -1823,11 +1984,9 @@ function TicketCard({
             offsetX: texture.offsetX + drift.x,
             offsetY: texture.offsetY + drift.y,
             fit: "cover",
-            style: shaderStyle
-          }
-        ) : /* @__PURE__ */ jsx4(
-          Dithering,
-          {
+            style: shaderStyle,
+          })
+        : /* @__PURE__ */ jsx4(Dithering, {
             colorBack: texture.colorBack,
             colorFront: texture.colorFront,
             shape: texture.shape,
@@ -1838,116 +1997,96 @@ function TicketCard({
             offsetX: texture.offsetX,
             offsetY: texture.offsetY,
             speed: reduced ? 0 : texture.speed,
-            style: shaderStyle
-          }
-        ),
-        /* @__PURE__ */ jsx4(
-          "div",
-          {
-            className: "absolute top-0 bottom-0",
+            style: shaderStyle,
+          }),
+      /* @__PURE__ */ jsx4("div", {
+        className: "absolute top-0 bottom-0",
+        style: {
+          left: perfX,
+          width: Math.max(1, 22e-4 * width),
+          backgroundImage: `repeating-linear-gradient(to bottom, ${layout.inkColor}55 0 ${0.012 * width}px, transparent ${0.012 * width}px ${0.024 * width}px)`,
+        },
+      }),
+      /* @__PURE__ */ jsx4("div", {
+        className:
+          "pointer-events-none absolute grid place-items-center font-bold tabular-nums",
+        style: {
+          left: perfX,
+          top: 0,
+          width: width - perfX,
+          height,
+          color: layout.watermarkColor,
+          opacity: layout.watermarkOpacity,
+        },
+        children: /* @__PURE__ */ jsx4("span", {
+          style: {
+            writingMode: "vertical-rl",
+            fontSize: layout.watermarkSize * width,
+            lineHeight: 1,
+            letterSpacing: "-0.04em",
+          },
+          children: watermark,
+        }),
+      }),
+      /* @__PURE__ */ jsxs("div", {
+        className: "absolute inset-0",
+        style: { color: layout.inkColor },
+        children: [
+          /* @__PURE__ */ jsxs("div", {
+            className: "absolute whitespace-pre uppercase",
             style: {
-              left: perfX,
-              width: Math.max(1, 22e-4 * width),
-              backgroundImage: `repeating-linear-gradient(to bottom, ${layout.inkColor}55 0 ${0.012 * width}px, transparent ${0.012 * width}px ${0.024 * width}px)`
-            }
-          }
-        ),
-        /* @__PURE__ */ jsx4(
-          "div",
-          {
-            className: "pointer-events-none absolute grid place-items-center font-bold tabular-nums",
+              left: layout.padding * width,
+              top: layout.labelTop * width,
+              fontSize: layout.labelSize * width,
+              lineHeight: `${layout.labelLead * width}px`,
+              letterSpacing: `${layout.labelTracking}em`,
+            },
+            children: [presenter, "\n", event],
+          }),
+          /* @__PURE__ */ jsx4("div", {
+            className: "absolute font-medium",
+            style: {
+              left: layout.padding * width,
+              top: layout.nameTop * width,
+              fontSize: layout.nameSize * width * scale,
+              lineHeight: `${layout.nameLead * width * scale}px`,
+              letterSpacing: `${layout.nameTracking}em`,
+            },
+            children: lines.map((line, i) =>
+              /* @__PURE__ */ jsx4("div", { children: line }, i),
+            ),
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "absolute whitespace-nowrap uppercase",
+            style: {
+              left: layout.padding * width,
+              top: layout.footerTop * width,
+              fontSize: layout.footerSize * width,
+              letterSpacing: `${layout.footerTracking}em`,
+            },
+            children: [venue, " \xB7 ", dates],
+          }),
+          /* @__PURE__ */ jsx4("div", {
+            className:
+              "absolute grid place-items-center font-medium whitespace-nowrap uppercase",
             style: {
               left: perfX,
               top: 0,
               width: width - perfX,
               height,
-              color: layout.watermarkColor,
-              opacity: layout.watermarkOpacity
+              fontSize: layout.stubSize * width,
+              letterSpacing: `${layout.stubTracking}em`,
+              opacity: layout.stubOpacity,
             },
-            children: /* @__PURE__ */ jsx4(
-              "span",
-              {
-                style: {
-                  writingMode: "vertical-rl",
-                  fontSize: layout.watermarkSize * width,
-                  lineHeight: 1,
-                  letterSpacing: "-0.04em"
-                },
-                children: watermark
-              }
-            )
-          }
-        ),
-        /* @__PURE__ */ jsxs("div", { className: "absolute inset-0", style: { color: layout.inkColor }, children: [
-          /* @__PURE__ */ jsxs(
-            "div",
-            {
-              className: "absolute whitespace-pre uppercase",
-              style: {
-                left: layout.padding * width,
-                top: layout.labelTop * width,
-                fontSize: layout.labelSize * width,
-                lineHeight: `${layout.labelLead * width}px`,
-                letterSpacing: `${layout.labelTracking}em`
-              },
-              children: [
-                presenter,
-                "\n",
-                event
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsx4(
-            "div",
-            {
-              className: "absolute font-medium",
-              style: {
-                left: layout.padding * width,
-                top: layout.nameTop * width,
-                fontSize: layout.nameSize * width * scale,
-                lineHeight: `${layout.nameLead * width * scale}px`,
-                letterSpacing: `${layout.nameTracking}em`
-              },
-              children: lines.map((line, i) => /* @__PURE__ */ jsx4("div", { children: line }, i))
-            }
-          ),
-          /* @__PURE__ */ jsxs(
-            "div",
-            {
-              className: "absolute whitespace-nowrap uppercase",
-              style: {
-                left: layout.padding * width,
-                top: layout.footerTop * width,
-                fontSize: layout.footerSize * width,
-                letterSpacing: `${layout.footerTracking}em`
-              },
-              children: [
-                venue,
-                " \xB7 ",
-                dates
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsx4(
-            "div",
-            {
-              className: "absolute grid place-items-center font-medium whitespace-nowrap uppercase",
-              style: {
-                left: perfX,
-                top: 0,
-                width: width - perfX,
-                height,
-                fontSize: layout.stubSize * width,
-                letterSpacing: `${layout.stubTracking}em`,
-                opacity: layout.stubOpacity
-              },
-              children: /* @__PURE__ */ jsx4("span", { style: { writingMode: "vertical-rl" }, children: stubText })
-            }
-          )
-        ] })
-      ]
-    }
-  );
+            children: /* @__PURE__ */ jsx4("span", {
+              style: { writingMode: "vertical-rl" },
+              children: stubText,
+            }),
+          }),
+        ],
+      }),
+    ],
+  });
 }
 function TiltCard({
   children,
@@ -1955,7 +2094,7 @@ function TiltCard({
   maxTilt = 9,
   scale = 1.02,
   glare = 0.16,
-  className
+  className,
 }) {
   const cardRef = React2.useRef(null);
   const glareRef = React2.useRef(null);
@@ -1972,63 +2111,53 @@ function TiltCard({
         glareRef.current.style.background = `radial-gradient(38% 55% at ${(dx + 0.5) * 100}% ${(dy + 0.5) * 100}%, rgba(255,255,255,${glare}) 0%, rgba(255,255,255,0) 70%)`;
       }
     },
-    [maxTilt, scale, glare]
+    [maxTilt, scale, glare],
   );
   const onLeave = React2.useCallback(() => {
     setHovering(false);
     if (cardRef.current) {
-      cardRef.current.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)";
+      cardRef.current.style.transform =
+        "perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)";
     }
     if (glareRef.current) glareRef.current.style.background = "transparent";
   }, []);
-  return /* @__PURE__ */ jsxs(
-    "div",
-    {
-      ref: cardRef,
-      onPointerEnter: () => setHovering(true),
-      onPointerMove: onMove,
-      onPointerLeave: onLeave,
-      className: `relative w-fit will-change-transform ${className ?? ""}`,
-      style: {
-        transition: hovering ? "none" : "transform 420ms cubic-bezier(0.22, 1, 0.36, 1)",
-        transform: "perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)",
-        transformStyle: "preserve-3d"
-      },
-      children: [
-        children,
-        glare > 0 && /* @__PURE__ */ jsx4(
-          "div",
-          {
-            ref: glareRef,
-            "aria-hidden": true,
-            className: "pointer-events-none absolute inset-0",
-            style: {
-              clipPath,
-              transition: hovering ? "none" : "background 420ms ease-out"
-            }
-          }
-        )
-      ]
-    }
-  );
+  return /* @__PURE__ */ jsxs("div", {
+    ref: cardRef,
+    onPointerEnter: () => setHovering(true),
+    onPointerMove: onMove,
+    onPointerLeave: onLeave,
+    className: `relative w-fit will-change-transform ${className ?? ""}`,
+    style: {
+      transition: hovering
+        ? "none"
+        : "transform 420ms cubic-bezier(0.22, 1, 0.36, 1)",
+      transform: "perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)",
+      transformStyle: "preserve-3d",
+    },
+    children: [
+      children,
+      glare > 0 &&
+        /* @__PURE__ */ jsx4("div", {
+          ref: glareRef,
+          "aria-hidden": true,
+          className: "pointer-events-none absolute inset-0",
+          style: {
+            clipPath,
+            transition: hovering ? "none" : "background 420ms ease-out",
+          },
+        }),
+    ],
+  });
 }
 function AdmitOneTicket({ tilt, ...props }) {
   const width = props.width ?? REF;
   const geometry = props.geometry ?? TICKET_GEOMETRY;
   if (tilt === false) return /* @__PURE__ */ jsx4(TicketCard, { ...props });
-  return /* @__PURE__ */ jsx4(
-    TiltCard,
-    {
-      clipPath: `path('${ticketClipPath(width, width / geometry.aspect, geometry)}')`,
-      ...tilt,
-      children: /* @__PURE__ */ jsx4(TicketCard, { ...props })
-    }
-  );
+  return /* @__PURE__ */ jsx4(TiltCard, {
+    clipPath: `path('${ticketClipPath(width, width / geometry.aspect, geometry)}')`,
+    ...tilt,
+    children: /* @__PURE__ */ jsx4(TicketCard, { ...props }),
+  });
 }
-export {
-  AdmitOneTicket,
-  Dithering,
-  TICKET_GEOMETRY,
-  TICKET_LAYOUT
-};
+export { AdmitOneTicket, Dithering, TICKET_GEOMETRY, TICKET_LAYOUT };
 export default AdmitOneTicket;

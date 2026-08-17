@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { stateName } from "@/lib/core/geo/places";
@@ -76,7 +76,10 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
   const scrollCarousel = (direction: "left" | "right") => {
     const el = carouselRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction === "left" ? -340 : 340, behavior: "smooth" });
+    el.scrollBy({
+      left: direction === "left" ? -340 : 340,
+      behavior: "smooth",
+    });
     setTimeout(updateScrollButtons, 300);
   };
 
@@ -159,7 +162,10 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
                   href={`/jobs/${role.id}`}
                   className="group border-border bg-card hover:border-primary/40 focus-visible:ring-primary relative flex h-[128px] w-full flex-col overflow-hidden border outline-none transition-[border-color] duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
                 >
-                  <PrimaryDitherBand seed={role.id} label={place || undefined} />
+                  <PrimaryDitherBand
+                    seed={role.id}
+                    label={place || undefined}
+                  />
 
                   <div className="flex min-h-0 flex-1 flex-col justify-between px-3 py-2.5">
                     <div>

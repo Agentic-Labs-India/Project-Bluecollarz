@@ -100,7 +100,9 @@ function StoryCard({
         className,
       )}
     >
-      {dither ? <PrimaryDither seed={`story-${story.id}`} opacity={0.72} /> : null}
+      {dither ? (
+        <PrimaryDither seed={`story-${story.id}`} opacity={0.72} />
+      ) : null}
       {grid ? <GridOverlay onDither={dither} /> : null}
 
       <div className="relative z-10 mt-auto">

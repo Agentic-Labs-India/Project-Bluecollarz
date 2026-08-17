@@ -1,35 +1,39 @@
 # Blucollarz
 
-**AI-native hiring infrastructure for candidates and recruiters.**
+**AI-native hiring infrastructure for blue-collar workers and the teams that hire them.**
 
-Blucollarz connects skilled people with hiring teams through AI onboarding, resume building, communication & domain interviews, and KYC document checks — so recruiters get clearer signal, faster.
+Blucollarz onboards workers through a voice-first AI agent, verifies identity through DigiLocker, runs AI interviews, and moves selected candidates through medical fitness checks — so recruiters get clearer signal without ever touching a worker's identity documents.
 
 | | |
 |---|---|
-| **Candidates (`work`)** | Onboard, build a profile, explore roles, complete AI interviews, verify identity |
-| **Recruiters (`hire`)** | Post roles, review scored applicants, select/reject, view verified KYC docs |
-| **Admins (`admin`)** | Provision recruiters/admins, Resend email desk, support ticket queue |
+| **Candidates (`work`)** | Onboard by voice, verify via DigiLocker, explore roles, complete AI interviews, apply, book medical |
+| **Recruiters (`hire`)** | Post roles, review scored applicants on a PII-scrubbed profile, select or reject |
+| **Admins (`admin`)** | Provision recruiters, run the medical queue, handle DPDP rights and breaches, email desk, support, blog |
 | **Auth** | [Better Auth](https://www.better-auth.com/) + Google OAuth |
-| **AI** | Vercel AI Gateway (default `openai/gpt-4o`) + Sarvam voice (TTS/STT) |
+| **AI** | Vercel AI Gateway (code default `openai/gpt-4o`) + Sarvam voice (TTS/STT) |
 
 ---
 
 ## Table of contents
 
 - [Capabilities](#capabilities)
-- [Models used per feature](#models-used-per-feature)
-- [Profiles & points of view](#profiles--points-of-view)
+- [Profiles and access](#profiles-and-access)
 - [System overview](#system-overview)
-- [Candidate flows](#candidate-flows)
-- [Recruiter flows](#recruiter-flows)
-- [Admin flows](#admin-flows)
-- [In-app Help & support tickets](#in-app-help--support-tickets)
-- [KYC verification](#kyc-verification)
-- [Caching & performance](#caching--performance)
+- [Candidate flow](#candidate-flow)
+- [Recruiter flow](#recruiter-flow)
+- [Admin console](#admin-console)
+- [Identity verification (DigiLocker)](#identity-verification-digilocker)
+- [Medical fitness](#medical-fitness)
+- [Compliance (DPDP)](#compliance-dpdp)
+- [Legal safety](#legal-safety)
+- [AI models and features](#ai-models-and-features)
 - [Storage](#storage)
+- [Rate limits](#rate-limits)
+- [API reference](#api-reference)
 - [Tech stack](#tech-stack)
 - [Getting started](#getting-started)
 - [Environment variables](#environment-variables)
+- [Testing](#testing)
 
 ---
 
@@ -38,138 +42,55 @@ Blucollarz connects skilled people with hiring teams through AI onboarding, resu
 ### AI
 
 | Capability | What it does |
-|------------|--------------|
-| **AI for onboarding** | Voice-guided agent that walks candidates through profile setup |
-| **AI for creating the resume** | Extracts structured resume data from a PDF, then fills gaps via conversation |
-| **AI for communication interview** | Scored interview on clarity, fluency, confidence, professionalism |
-| **AI for domain profile interview** | Role-aware domain interview using the job overview, with scores & summary |
-| **AI for KYC document verification** | Vision checks on Aadhaar (front/back), PAN, and passport for authenticity, deepfakes, and AI-generated / tampered documents — **Blob upload only after AI passes** |
-| **In-app Help agent** | Signed-in product assistant (text/voice) that can open structured support tickets |
+|---|---|
+| **Onboarding agent** | Voice-guided `ToolLoopAgent` that fills the candidate profile through conversation |
+| **Resume parsing** | Reads an uploaded PDF in memory and extracts structured profile fields. The PDF is never stored |
+| **Communication interview** | Scored interview on clarity, fluency, confidence and professionalism |
+| **Domain interview** | Role-aware interview that uses the job overview as context |
+| **Job overview writer** | Drafts a role description for recruiters from a few structured inputs |
+| **In-app help agent** | Signed-in assistant (text and voice) that can open structured support tickets |
+| **Prohibited-output guard** | Blocks the model from making legal determinations, at runtime rather than by prompt |
+
+There is **no AI document verification**. Identity is established through DigiLocker, not by a model looking at photographs of documents.
 
 ### Platform
 
 | Capability | What it does |
-|------------|--------------|
-| **Caching for load management** | Published roles cached daily on landing + explore; invalidated when hirers publish/update/delete |
-| **Optimised API calls** | Lean REST handlers, shared query helpers, slim projections — efficient client ↔ server traffic |
-| **Secure auth (Better Auth)** | Google sign-in with profile-scoped access (`work` / `hire` / `admin`) |
-| **Admin console** | Recruiters & admins provisioning, Resend email desk, support ticket queue |
-| **User provisions** | Invite hire/admin by email before first Google login (applied on signup) |
+|---|---|
+| **DigiLocker KYC** | Government-backed identity verification, required before the candidate app unlocks |
+| **Medical fitness** | Center directory, slot booking, admin queue, and private fitness reports |
+| **DPDP compliance** | Purpose-scoped consent, data principal rights, breach register, legal holds |
+| **Private blob storage** | Interview recordings, medical reports and company documents are private and served through an authorizing proxy |
+| **Published-jobs caching** | Landing and explore read a cached list, invalidated when a recruiter publishes or edits |
+| **Rate limiting** | Per-user sliding window on every AI and voice endpoint |
+| **Admin console** | Recruiters, medical, compliance, email, support, blog and settings |
 
 ---
 
-## Models used per feature
+## Profiles and access
 
-All LLM features go through the **Vercel AI Gateway**. The model id is set in **Admin → Settings** (cached). Code default if nothing is saved yet: `openai/gpt-4o`. `AI_GATEWAY_API_KEY` is still required; the model id is not read from env.
-
-| Feature | Model / provider | How it’s used |
-|---------|------------------|---------------|
-| Candidate onboarding agent | Admin Settings LLM (default `openai/gpt-4o`) | `ToolLoopAgent` — chat + tools to update profile |
-| Resume / PDF → profile | same | `generateText` on PDF bytes → structured JSON → MongoDB |
-| Communication interview (live chat) | same | `ToolLoopAgent` id `ai-communication-interview` |
-| Communication interview (scoring) | same | `generateText` + structured `Output.object` scores |
-| Domain interview (live chat) | same | `ToolLoopAgent` id `ai-domain-interview` (job overview context) |
-| Domain interview (scoring) | same | same analysis pipeline, domain-tuned prompt |
-| KYC document verification | same (vision / file) | `generateText` + `Output.object` on 4 documents |
-| In-app Help / support tickets | same | `streamText` + `createSupportTicket` tool |
-| **Text-to-speech (TTS)** | **Sarvam** `bulbul:v3` (speaker `priya`, `en-IN`) | Streams spoken agent replies |
-| **Speech-to-text (STT)** | **Sarvam** `saaras:v3` | Transcribes candidate mic segments (VAD) |
-
-```mermaid
-flowchart LR
-  subgraph Client
-    UI[Candidate UI]
-    Mic[Mic + VAD]
-  end
-
-  subgraph Voice["Sarvam"]
-    STT["STT saaras:v3"]
-    TTS["TTS bulbul:v3"]
-  end
-
-  subgraph Gateway["Vercel AI Gateway"]
-    LLM["Admin Settings LLM"]
-  end
-
-  Mic --> STT
-  STT --> UI
-  UI --> LLM
-  LLM --> UI
-  UI --> TTS
-  TTS --> UI
-```
-
----
-
-## Profiles & points of view
-
-Blucollarz has **three account types**. Google sign-in always creates a **`work`** (candidate) account. **`hire`** and **`admin`** are provisioned by an existing admin (or invite queue) — there is no public hire/admin signup CTA.
+Three account types. Google sign-in always creates a **`work`** (candidate) account. **`hire`** and **`admin`** are provisioned by an existing admin, or pre-seeded by email in `UserProvisions` and applied at first login. There is no public recruiter or admin signup.
 
 | Profile | Who | How you get it | Lands on |
-|---------|-----|----------------|----------|
-| **`work`** | Candidate | Any Google sign-in (landing / nav) | `/candidate/onboarding` → `/candidate/home` when complete |
-| **`hire`** | Recruiter | Admin sets profile (or email invite in `UserProvisions`) | `/hire/roles` after Google login |
-| **`admin`** | Platform admin | Same as hire — admin provisioning only | `/admin/recruiters` |
+|---|---|---|---|
+| **`work`** | Candidate | Any Google sign-in | `/candidate/onboarding` → `/candidate/kyc` → `/candidate/home` |
+| **`hire`** | Recruiter | Admin sets the profile, or an email invite is applied at signup | `/hire/roles` |
+| **`admin`** | Platform admin | Admin provisioning only | `/admin/recruiters` |
+
+Session routing and the pre-app allowlist live in `src/proxy.ts`. Unauthenticated API calls get a JSON `401`; page requests get a redirect.
 
 ```mermaid
 flowchart TD
-  Landing[Landing Log in / Get Job]
-  Google[Google OAuth via Better Auth]
-  DB[(MongoDB profileType)]
+  Landing[Landing] --> Google[Google OAuth via Better Auth]
+  Google -->|new user, always work| Onboard["/candidate/onboarding"]
+  Onboard -->|profile complete| Kyc["/candidate/kyc"]
+  Kyc -->|DigiLocker verified| Home["/candidate/home"]
 
-  Landing --> Google
-  Google -->|new user always work| Onboard["/candidate/onboarding"]
-  Onboard -->|profile complete| Home["/candidate/home"]
-
-  Google -->|existing user| DB
+  Google -->|existing user| DB[(MongoDB profileType)]
   DB -->|work| Home
   DB -->|hire| Roles["/hire/roles"]
   DB -->|admin| Admin["/admin/recruiters"]
-
-  Home --> Explore["/candidate/explore"]
-  Explore --> Interviews[AI interviews]
-  Explore --> Apply[Apply]
-  Apply --> KYC["/candidate/kyc when selected"]
-
-  Roles --> NewRole["/hire/roles/new"]
-  Roles --> Applicants["/hire/roles/id"]
-  Applicants --> Sheet[Applicant sheet:<br/>resume · scores · KYC]
-
-  Admin --> Recruiters[Recruiters / Admins]
-  Admin --> Email[Email desk]
-  Admin --> Support[Support tickets]
 ```
-
-### Candidate POV
-
-You are a worker looking for roles. You:
-
-1. Sign in with Google (always candidate)
-2. Finish AI onboarding (resume PDF optional + voice agent)
-3. Explore published jobs
-4. Complete **communication** then **domain** AI interviews for a role
-5. Apply
-6. If **selected**, complete **AI KYC** so recruiters can see verified docs
-
-### Recruiter POV
-
-You are a hiring team with provisioned access. You:
-
-1. Sign in with Google after Blucollarz sets your account to **hire** in the database
-2. Complete company profile
-3. Create and publish roles
-4. Review applicants: resume, interview scores, recordings, transcripts
-5. **Select** or **Reject**
-6. When a selected candidate finishes KYC — see **AI KYC Done** badge + documents
-
-### Admin POV
-
-You operate the platform. You:
-
-1. Sign in with Google after your account is set to **admin**
-2. Provision recruiters and admins by email (live users or pending invites)
-3. Use the email desk (Resend) for outbound / inbound mail
-4. Triage support tickets created by the in-app Help agent
 
 ---
 
@@ -184,9 +105,9 @@ flowchart TB
   end
 
   subgraph App["Next.js App Router"]
-    Pages[Pages + UI]
-    API[REST API routes]
-    Proxy[Proxy / session guards]
+    Pages[Pages and UI]
+    API[REST route handlers]
+    Proxy[proxy.ts session guards]
   end
 
   subgraph Data
@@ -199,308 +120,332 @@ flowchart TB
     Sarvam[Sarvam TTS/STT]
   end
 
-  subgraph Ops["Ops"]
+  subgraph External
+    DL[DigiLocker MeriPehchaan]
     Resend[Resend email]
   end
 
   C --> Pages
   H --> Pages
   A --> Pages
+  Proxy --> Pages
   Pages --> API
-  Proxy --> API
   API --> Mongo
   API --> Blob
   API --> GW
   API --> Sarvam
+  API --> DL
   API --> Resend
 ```
 
 ---
 
-## Candidate flows
+## Candidate flow
 
-### 1. Onboarding + resume
+### 1. Onboarding
 
-```mermaid
-sequenceDiagram
-  participant U as Candidate
-  participant UI as Onboarding UI
-  participant API as POST /api/onboarding
-  participant LLM as AI Gateway gpt-4o
-  participant DB as MongoDB Users
-
-  U->>UI: Sign in (work)
-  U->>UI: Optional resume PDF
-  UI->>API: PDF + chat turns
-  API->>LLM: Extract resume / agent tools
-  LLM-->>API: Structured profile fields
-  API->>DB: updateCandidateProfile
-  API-->>UI: Streamed agent replies
-  Note over UI: TTS bulbul:v3 / STT saaras:v3
-  UI->>U: Profile complete → /candidate/home
-```
-
-| Step | Detail |
-|------|--------|
+| | |
+|---|---|
 | Route | `/candidate/onboarding` |
 | API | `POST /api/onboarding` |
 | Status gate | `GET /api/candidate/onboarding-status` |
-| Resume PDF | Parsed in memory — **not** stored in Blob |
-| Voice | Sarvam STT + TTS around the agent |
+| Resume PDF | Parsed in memory, **not** stored |
+| Voice | Sarvam STT and TTS wrapped around the agent |
 
-### 2. Explore → interviews → apply
+On completion the agent redirects to `/candidate/kyc`.
+
+### 2. Identity verification
+
+The candidate app layout (`/candidate/home`, `/candidate/explore`, `/candidate/medical`, `/candidate/profile`) is gated on DigiLocker verification. See [Identity verification](#identity-verification-digilocker).
+
+### 3. Explore, interview, apply
 
 ```mermaid
 stateDiagram-v2
   [*] --> Explore: /candidate/explore
-  Explore --> NeedProfile: Profile incomplete
-  NeedProfile --> Explore: Complete profile
-
-  Explore --> CommInterview: Start AI Communication
-  CommInterview --> DomainInterview: Communication done
-  DomainInterview --> CanApply: Domain done
+  Explore --> CommInterview: Start communication interview
+  CommInterview --> DomainInterview: Communication complete
+  DomainInterview --> CanApply: Domain complete
   CanApply --> Applied: POST apply
-
   Applied --> Selected: Recruiter selects
   Applied --> Rejected: Recruiter rejects
-  Selected --> KYC: Complete AI KYC
-  KYC --> [*]
+  Selected --> Medical: Book fitness test
+  Medical --> [*]
   Rejected --> [*]
 ```
 
-| Stage | Route / API | Model |
-|-------|-------------|--------|
-| Explore published jobs | `/candidate/explore`, `GET /api/jobs` | — (cached list) |
-| Start interview | `POST /api/interviews/start` | — |
-| Live interview chat | `POST /api/interviews/[id]/chat` | `openai/gpt-4o` |
-| Complete + score | `POST /api/interviews/[id]/complete` | `openai/gpt-4o` analysis |
-| Apply | `POST /api/jobs/[id]/apply` | — |
-| Screen recording | Blob `interviews/{id}/{ts}.webm` | — |
+| Stage | Route or API |
+|---|---|
+| Explore published jobs | `/candidate/explore`, `GET /api/jobs` |
+| Start interview | `POST /api/interviews/start` |
+| Live interview chat | `POST /api/interviews/[id]/chat` |
+| Complete and score | `POST /api/interviews/[id]/complete` |
+| Custom written answers | `POST /api/interviews/[id]/custom-answers` |
+| Apply | `POST /api/jobs/[id]/apply` |
+| Screen recording | Private blob under `interviews/{interviewId}/` |
 
-**Interview agents**
+**Interview stages**
 
 | Stage id | Agent id | Focus |
-|----------|----------|--------|
-| `ai-communication` | `ai-communication-interview` | Soft skills / communication |
-| `ai-domain` | `ai-domain-interview` | Domain fit vs job overview |
+|---|---|---|
+| `ai-communication` | `ai-communication-interview` | Communication and soft skills |
+| `ai-domain` | `ai-domain-interview` | Domain fit against the job overview |
 
-Scores stored: overall, clarity, fluency, confidence, professionalism (+ summary, strengths, improvements).
+Scores stored per interview: overall, clarity, fluency, confidence, professionalism, plus summary, strengths and improvements.
 
-### 3. Home dashboard
-
-| Route | `/candidate/home` |
-|-------|-------------------|
-| Shows | All applications with status (`applied` / `selected` / `rejected`), interview progress, pay, applied date |
-| Deep link | Opens explore with `?jobId=` for that role |
+Every candidate API that creates a real-world commitment — applying, interviewing, booking a medical — goes through `requireCandidateAppReady()`, which requires both a complete profile and DigiLocker verification, and returns a `KYC_REQUIRED` code when it fails.
 
 ---
 
-## Recruiter flows
+## Recruiter flow
+
+1. Sign in with Google after an admin sets the account to `hire`
+2. Complete the company onboarding pack (`/hire/onboarding`)
+3. Create and publish roles (`/hire/roles/new`), optionally drafting the overview with AI
+4. Review applicants: resume, interview scores, recordings and transcripts
+5. Select or reject
+
+**Recruiters never see identity documents.** The applicant detail endpoint runs every profile through `toHireSafeProfile()` (`src/lib/compliance/arm.ts`), which strips email, phone, PAN, Aadhaar, date of birth and address. Interview recordings, transcripts and custom answers are released only when the candidate has granted evaluation consent.
+
+---
+
+## Admin console
+
+Access requires `profileType === "admin"`. Nav is defined in `src/lib/core/routes.ts`.
+
+| Section | Route | Contents |
+|---|---|---|
+| Recruiters | `/admin/recruiters` | Accounts, jobs, inquiries, company onboarding |
+| Medical Test | `/admin/medical` | Candidate queue, centers |
+| Compliance | `/admin/compliance` | Rights requests, breach register |
+| Email | `/admin/email` | Resend outbound and inbound desk |
+| Support | `/admin/support` | Ticket queue from the help agent |
+| Blog | `/admin/blog` | Post authoring |
+| Settings | `/admin/settings` | Admin, voice, language model, grievance officer, system prompts, flow |
+
+Legal-safety cases and legal holds are **API only** at present (`/api/admin/legal-safety/*`); there is no console page yet.
+
+---
+
+## Identity verification (DigiLocker)
+
+Verification is an OAuth handshake with DigiLocker MeriPehchaan. No document images are uploaded, scored or stored.
 
 ```mermaid
 sequenceDiagram
-  participant R as Recruiter
-  participant UI as Hire UI
-  participant API as Jobs / Applications API
-  participant DB as MongoDB
-  participant Cache as Published-jobs cache
+  participant U as Candidate
+  participant App as Blucollarz
+  participant DL as DigiLocker
 
-  R->>UI: Sign in (hire) → /hire/roles
-  R->>UI: Complete company profile
-  R->>API: POST /api/jobs (publish)
-  API->>DB: Insert Job
-  API->>Cache: updateTag published-jobs
-  R->>API: GET /api/jobs/id/applications
-  API-->>UI: Table + AI KYC Done badges
-  R->>API: GET .../applications/applicantId
-  API-->>UI: Resume, interviews, KYC docs if verified
-  R->>API: PATCH status selected/rejected
-  API->>DB: Update Application
+  U->>App: Grant consent purposes
+  App->>DL: GET /api/auth/digilocker/start
+  DL->>U: Government login and approval
+  DL->>App: GET /api/auth/digilocker/callback
+  App->>DL: Exchange code, fetch e-Aadhaar and issued docs
+  App->>App: Compare against existing profile, check 18+
+  App->>U: isKycVerified, candidate app unlocked
 ```
-
-| Flow | Route | APIs |
-|------|-------|------|
-| Company profile | `/hire/profile` | `GET/PATCH /api/hire/profile` |
-| Roles list | `/hire/roles` | `GET /api/jobs?scope=mine` |
-| Create role | `/hire/roles/new` | `POST /api/jobs` |
-| Edit role | Role sheet | `GET/PATCH/DELETE /api/jobs/[id]` |
-| Applicants table | `/hire/roles/[id]` | `GET /api/jobs/[id]/applications` |
-| Applicant detail | Applicant sheet | `GET .../applications/[applicantId]` |
-| Select / Reject | Sheet footer | `PATCH` status `selected` \| `rejected` |
-
-When KYC is verified, recruiters see:
-
-- **AI KYC Done** badge (table + sheet)
-- Document previews / links (Aadhaar front/back, PAN, passport)
-- AI verification summary
-
-Documents are **not** exposed until `kycStatus === "verified"`.
-
----
-
-## Admin flows
-
-Admins use `/admin` (profile-type gated). Access is **`profileType === "admin"`** only — no email allowlist bypass.
-
-| Area | Route | What it does |
-|------|-------|--------------|
-| Recruiters | `/admin/recruiters` | Tabs: Accounts (hire users + invites), Jobs (verification), Inquiries (access requests) |
-| Settings | `/admin/settings` | Tabs: Admin, Voice (Sarvam), Language Model, Grievance Officer, System Prompts, Flow |
-| Compliance | `/admin/compliance` | Tabs: Rights (Data Principal queue), Breaches (incident register) |
-| Email | `/admin/email` | Resend sending/receiving inbox, compose (rich text), reply — paginated (10/page) |
-| Support | `/admin/support` | Tickets from Help: filters (profile type, priority, seriousness, status), transcript, status updates |
-
-**Provisioning**
-
-1. Admin enters an email on Recruiters or Settings → Admin.
-2. If the user already exists → `profileType` is updated.
-3. If not → a row is stored in `UserProvisions` and applied on first Google signup (`consumeUserProvision`).
-4. Admins cannot change their own role.
-
-```mermaid
-sequenceDiagram
-  participant A as Admin
-  participant UI as /admin
-  participant API as Admin APIs
-  participant DB as MongoDB
-  participant R as Resend
-
-  A->>UI: Add recruiter/admin by email
-  UI->>API: POST /api/admin/users
-  API->>DB: Users update or UserProvisions insert
-  A->>UI: Email desk
-  UI->>API: GET/POST /api/admin/emails
-  API->>R: List / send
-  A->>UI: Support queue
-  UI->>API: GET /api/admin/support/tickets
-  API->>DB: SupportTickets
-```
-
----
-
-## In-app Help & support tickets
-
-Signed-in users (work / hire / admin) open **Help** from the left rail (above Cookies). The agent:
-
-1. Knows `profileType` from the session
-2. Clarifies the problem and offers a ticket
-3. Asks “anything else?” then calls `createSupportTicket`
-4. Stores a `SupportTickets` document (`_id` = ticket id) with user id, email, profile type, transcript, summary, problem type, seriousness, priority, status
 
 | | |
 |---|---|
-| UI | Help dialog in app chrome |
-| API | `POST /api/help/chat` (`streamText` + tool) |
-| Admin | `/admin/support` |
-| Collection | `SupportTickets` |
-| Public how-to | `/contact` (screenshots: `/images/support/1.png`, `2.png`) |
-
-```mermaid
-flowchart LR
-  User[Signed-in user] --> Help[Help dialog]
-  Help --> Chat[POST /api/help/chat]
-  Chat --> Tool[createSupportTicket]
-  Tool --> ST[(SupportTickets)]
-  ST --> AdminUI["/admin/support"]
-```
+| Provider | DigiLocker MeriPehchaan, `req_doctype: "ADHAR PANCR"` |
+| Stored | `isKycVerified`, date of birth, name, phone, location, and `kyc: { provider, verifiedAt, aadhaarLast4, pan, gender }` |
+| Not stored | Raw DigiLocker XML and JSON payloads |
+| Checks | Date of birth, phone, PAN, Aadhaar last four and gender are compared against the existing profile; the candidate must be 18 or older |
+| Consent | Requires the DigiLocker purpose bundle before the handshake starts |
+| Routes | `/api/auth/digilocker/start`, `/callback`, `/status` |
 
 ---
 
-## KYC verification
+## Medical fitness
 
-**Order of operations (important):** AI first → Blob only on pass.
+Selected candidates book a fitness test; admins run the queue and upload the report.
 
-```mermaid
-flowchart TD
-  A[Candidate uploads 4 docs] --> B[POST /api/candidate/kyc/verify]
-  B --> C[AI Gateway vision check<br/>openai/gpt-4o]
-  C --> D{overallAuthentic?}
-  D -->|No| E[Status failed<br/>Reasons returned<br/>No Blob write]
-  D -->|Yes| F[put to Vercel Blob]
-  F --> G[Status verified<br/>URLs on Users]
-  G --> H[Recruiter sees AI KYC Done<br/>+ documents]
-```
+**Candidate.** Must be selected on an application and must have granted the `medical` consent purpose. Books through `/candidate/medical` using `GET /api/candidate/medical-schedule`, `GET /api/candidate/medical-slots` and `POST /api/candidate/medical-appointments`, then reads results from `GET /api/candidate/medical-reports`.
 
-| Slot | Document |
-|------|----------|
-| `aadhaarFront` | Aadhaar — front |
-| `aadhaarBack` | Aadhaar — back |
-| `pan` | PAN card |
-| `passport` | Passport |
+**Admin.** Works the queue at `/admin/medical`: schedule and reschedule, mark no-show or unfit, and complete an appointment with fitness reports. Centers carry a licence, address and operating hours.
 
-Checks include: document present, looks authentic, likely AI-generated / tampered / deepfake signals, name consistency across docs.
-
-| | |
-|---|---|
-| Candidate UI | `/candidate/kyc` |
-| Status | `GET /api/candidate/kyc` |
-| Verify | `POST /api/candidate/kyc/verify` |
-| Blob path | `{DB_NAME}/kyc/{userId}/{slot}.{ext}` |
+Appointment statuses are `scheduled`, `completed`, `cancelled`, `no_show` and `unfit`. Reports are private blobs; candidates and admins read them through the authorizing proxy. Withdrawing medical consent cancels any scheduled appointment.
 
 ---
 
-## Caching & performance
+## Compliance (DPDP)
 
-Published job listings are cached for **one day** to reduce DB load on high-traffic surfaces.
+Modules live in `src/lib/compliance/`.
 
-| | |
+| Module | Purpose |
 |---|---|
-| Directive | `"use cache"` + `cacheLife("days")` |
-| Tag | `published-jobs` |
-| Landing | `getLatestPublishedRoles` |
-| Explore | Cached job page; **per-user** apply / interview / KYC state layered outside the cache |
-| Invalidate | `updateTag("published-jobs")` when a hire creates (published), updates, or deletes a role |
+| `consent.ts` | Append-only consent events, purpose-scoped. Notice version `1.2` |
+| `rights.ts` | Data principal requests: access, correction, erasure, withdrawal, nomination, grievance |
+| `breach.ts` | Personal data breach register |
+| `legal-hold.ts` | Blocks erasure while material must be preserved |
+| `grievance.ts` | Grievance officer contact, from settings with env fallback |
+| `timelines.ts` | Acknowledgement and resolution deadlines |
+| `placement-audit.ts` | Immutable placement journey events |
+| `arm.ts` | Strips PII before any employer-facing view |
+| `analytics.ts` | Client-side analytics consent |
+
+Consent purposes: `identity`, `contact`, `qualification`, `background`, `passport`, `evaluation`, `medical`. Medical is deliberately **not** bundled into the DigiLocker purpose set, so identity verification never implies consent to health processing.
+
+Erasure is refused while a legal hold is active, which surfaces as a `409` with code `LEGAL_HOLD_ACTIVE`.
+
+Supporting documents: `docs/compliance/ropa.md`, `rights-sop.md`, `qa-checklist.md`, `legal-safety-architecture-feedback-v0.2.md`.
+
+---
+
+## Legal safety
+
+`src/lib/legal-safety/` implements the Legal Safety Architecture. Its organising rule: **the machine reports observations, humans make determinations.**
+
+| Module | Purpose |
+|---|---|
+| `registry.ts` | Typed claims registry. Every claim carries a legal status and a policy status, and code may only act on a claim marked `encodable` |
+| `lexicon.ts` | Prohibited output patterns for PAD-0001 to PAD-0008, in English and Hindi |
+| `guard-stream.ts` | Runtime guard over model output, applied to every streaming and generated worker-facing surface |
+| `detect.ts` | Neutral BNS s.143 indicator detection over worker-authored text |
+| `serious-offence.ts` | The case gate, its transitions and evidence preservation |
+| `notices.ts` | Versioned POL-0007 and POL-0005 wording and delivery records |
+
+**The guard is not a prompt.** Prompts are admin-editable at runtime and a model can be argued out of them, so enforcement runs after generation, releasing text one clause at a time so a violation is caught before the worker sees any of it.
+
+**The gate.** Indicator detection is the only machine-initiated step; it opens a case at `indicators_detected` and immediately places a legal hold so material survives an erasure request made before a human has looked at it. Both onward transitions require a named reviewer, and the actor is always taken from the session rather than the request body.
 
 ```mermaid
-flowchart LR
-  Req[Hire mutates Job] --> Tag[updateTag published-jobs]
-  Tag --> Landing[Landing roles refresh]
-  Tag --> Explore[Explore list refresh]
-  Req2[Candidate views explore] --> Cache[(Daily job cache)]
-  Cache --> Merge[Merge user applications + KYC]
-  Merge --> UI[Explore UI]
+stateDiagram-v2
+  [*] --> indicators_detected: machine observes indicators
+  indicators_detected --> human_review: named reviewer
+  human_review --> disclosed: named reviewer
+  human_review --> closed_no_action: named reviewer
+  disclosed --> [*]
+  closed_no_action --> [*]
 ```
+
+**Notice wording is drafted, not approved.** Every delivery record carries `DRAFT-NOT-COUNSEL-APPROVED` and a version. Wording exists in English and Hindi only; a request in any other language fails closed and asks for human delivery rather than showing a serious-safety warning in a language the worker may not read. A delivery record is never a consent record.
+
+---
+
+## AI models and features
+
+Every LLM call goes through the **Vercel AI Gateway**. The model id is set in **Admin → Settings** and cached; the code default when nothing is saved is `openai/gpt-4o`. The model id is not read from the environment.
+
+| Feature | SDK call | Location |
+|---|---|---|
+| Candidate onboarding agent | `ToolLoopAgent` + `createAgentUIStreamResponse` | `api/onboarding` |
+| Resume PDF to profile | `generateText` with a PDF part | `api/onboarding` |
+| Profile summary | `generateText` | `api/onboarding` |
+| Interview chat (both stages) | `ToolLoopAgent` + `createAgentUIStreamResponse` | `api/interviews/[id]/chat` |
+| Interview scoring | `generateText` + `Output.object` | `lib/interviews/analysis.ts` |
+| Job overview | `generateText` + `Output.object` | `api/hire/job-overview` |
+| Help and support tickets | `streamText` + tool | `api/help/chat` |
+
+**Voice** is Sarvam: TTS `bulbul:v3` (speaker `priya`, `en-IN`, mp3 128k) and STT `saaras:v3`. Eleven Indian locales are supported for the spoken agent. Defaults are overridable in Admin → Settings.
 
 ---
 
 ## Storage
 
-### MongoDB
+Vercel Blob, with every path rooted under `DB_NAME`. Access is derived from the path family, never from the caller.
 
-| Collection | Purpose |
-|------------|---------|
-| `Users` | Auth user, `profileType`, candidate profile, hire company fields, KYC |
-| `UserProvisions` | Pending hire/admin invites by email (consumed on Google signup) |
-| `SupportTickets` | Help-agent tickets (transcript, summary, priority, status, …) |
-| `Jobs` | Roles (draft / published / closed) |
-| `Applications` | Candidate ↔ job + status |
-| `Interviews` | Stage, transcript, analysis scores, `videoUrl` |
+| Kind | Path | Access |
+|---|---|---|
+| `interview` | `{DB_NAME}/interviews/{interviewId}/…` | private |
+| `medical` | `{DB_NAME}/admin/medical/{appointmentId}/…` | private |
+| `company` | `{DB_NAME}/users/{userId}/company/…` | private |
+| `blog` | `{DB_NAME}/admin/blog/…` | public |
+| `email` | `{DB_NAME}/admin/email/…` | public |
 
-### Vercel Blob
+Uploads go straight from the browser using a token minted by `POST /api/blob/client-upload`, which enforces the allowed prefixes. Private files are read through `GET /api/blob/file?path=…`, which authorizes the viewer before streaming: an interview is readable by its owner or by a hirer holding evaluation consent, a medical report by the candidate or an admin, a company document by its owner or an admin.
 
-| Asset | When stored |
-|-------|-------------|
-| KYC documents | **Only after** AI KYC passes |
-| Interview recordings | After interview complete (client upload) |
-| Onboarding resume PDF | **Never** — parsed in memory only |
+---
 
-Paths are rooted under `DB_NAME` for environment isolation.
+## Rate limits
+
+Per-user sliding window, in `src/lib/core/rate-limit.ts`. Exceeding a limit returns `429` with `Retry-After`.
+
+| Route | Requests per minute |
+|---|---|
+| `voice/stt`, `voice/tts` | 90 |
+| `interviews/[id]/chat` | 40 |
+| `onboarding` | 40 |
+| `help/chat` | 20 |
+| `hire/job-overview` | 10 |
+
+The store is in-process, so limits are per instance rather than global.
+
+---
+
+## API reference
+
+### Auth
+`/api/auth/[...all]` · `/api/auth/digilocker/start` · `/api/auth/digilocker/callback` · `/api/auth/digilocker/status`
+
+### Candidate
+| Route | Methods |
+|---|---|
+| `/api/candidate/profile` | GET, PUT |
+| `/api/candidate/onboarding-status` | GET |
+| `/api/candidate/voice-language` | POST |
+| `/api/candidate/consent` | GET, POST |
+| `/api/candidate/rights` | GET, POST |
+| `/api/candidate/safety/notice` | GET, POST |
+| `/api/candidate/medical-schedule` | GET |
+| `/api/candidate/medical-slots` | GET |
+| `/api/candidate/medical-appointments` | GET, POST |
+| `/api/candidate/medical-reports` | GET |
+
+### Jobs and interviews
+| Route | Methods |
+|---|---|
+| `/api/jobs` | GET, POST |
+| `/api/jobs/[id]` | GET, PATCH |
+| `/api/jobs/[id]/apply` | POST |
+| `/api/jobs/[id]/applications` | GET |
+| `/api/jobs/[id]/applications/[applicantId]` | GET, PATCH |
+| `/api/interviews/start` | POST |
+| `/api/interviews/[id]/chat` | POST |
+| `/api/interviews/[id]/complete` | POST |
+| `/api/interviews/[id]/custom-answers` | POST |
+
+Jobs are closed with `PATCH { action: "close" }`; there is no delete.
+
+### Hire
+`/api/hire/onboarding` (GET, PATCH) · `/api/hire/onboarding/submit` (POST) · `/api/hire/onboarding-status` (GET) · `/api/hire/job-overview` (POST)
+
+### Admin
+| Route | Methods |
+|---|---|
+| `/api/admin/users` | GET, POST, PATCH |
+| `/api/admin/jobs`, `/api/admin/jobs/[id]` | GET / GET, PATCH |
+| `/api/admin/recruiter-inquiries`, `/[id]` | GET / PATCH |
+| `/api/admin/hire-onboardings`, `/[id]` | GET / PATCH |
+| `/api/admin/medical/queue`, `/centers`, `/slots`, `/appointments`, `/complete` | see route files |
+| `/api/admin/rights` | GET, PATCH |
+| `/api/admin/breaches` | GET, POST, PATCH |
+| `/api/admin/legal-safety/cases`, `/cases/[caseId]` | GET / PATCH |
+| `/api/admin/support/tickets`, `/[id]`, `/[id]/reply` | GET, PATCH / GET / POST |
+| `/api/admin/emails`, `/[id]` | GET, POST / GET |
+| `/api/admin/blog`, `/[id]` | GET, POST, PATCH, DELETE / GET |
+| `/api/admin/settings` | GET, PATCH |
+
+### Shared
+`/api/onboarding` (POST) · `/api/help/chat` (POST) · `/api/voice/stt` (POST) · `/api/voice/tts` (POST) · `/api/blob/client-upload` (POST) · `/api/blob/file` (GET) · `/api/user/preferences` (GET, PATCH) · `/api/recruiter-inquiries` (POST)
 
 ---
 
 ## Tech stack
 
 | Layer | Choice |
-|-------|--------|
-| Framework | Next.js 16 (App Router, Cache Components) + React 19 |
-| Auth | Better Auth + Google OAuth |
-| Database | MongoDB |
-| AI | Vercel AI SDK + AI Gateway (`openai/gpt-4o` default) |
-| Voice | Sarvam (`bulbul:v3` TTS, `saaras:v3` STT) |
-| Files | Vercel Blob |
-| UI | Tailwind CSS 4, Radix / shadcn, Motion, TipTap |
-| Validation | Zod |
-| Tooling | Bun, Biome, TypeScript, React Compiler |
+|---|---|
+| Framework | Next.js 16 (App Router, Cache Components) with React 19 |
+| Language | TypeScript 5 |
+| Database | MongoDB 7 |
+| Auth | Better Auth 1.6 with Google OAuth |
+| AI | Vercel AI SDK 7 through the AI Gateway; Sarvam for voice |
+| Storage | Vercel Blob 2 |
+| Email | Resend 6 |
+| Validation | Zod 4 |
+| UI | Tailwind CSS 4, Base UI, Radix, shadcn, Lucide, TipTap, TanStack Table |
+| Tooling | Biome 2 for lint and format, Bun for install and test |
 
 ---
 
@@ -508,78 +453,60 @@ Paths are rooted under `DB_NAME` for environment isolation.
 
 ```bash
 bun install
+cp .env.example .env.local   # then fill in the values below
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-```bash
-bun run build   # production build
-bun start       # start production server
-bun run lint    # Biome
-```
+| Script | What it does |
+|---|---|
+| `bun dev` | Development server |
+| `bun run build` | Production build |
+| `bun start` | Serve the production build |
+| `bun run lint` | Biome check |
+| `bun run format` | Biome format and write |
+| `bun run typecheck` | `tsc --noEmit` |
+| `bun test` | Test suite |
 
 ---
 
 ## Environment variables
 
-| Variable | Purpose |
-|----------|---------|
-| `BETTER_AUTH_URL` | Auth base URL |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `MONGODB_URI` / `DB_NAME` | Database |
-| `AI_GATEWAY_API_KEY` | Vercel AI Gateway credential (not the model id) |
-| `SARVAM_API_KEY` | TTS + STT |
-| `RESEND_API_KEY` (or `RESEND_API`) | Admin email desk |
-| `RESEND_FROM_EMAIL` | From address for admin compose |
-| Blob / AI Gateway secrets | As configured on Vercel |
-| `NEXT_PUBLIC_SITE_URL` | Canonical site URL |
+| Variable | Required | Used for |
+|---|---|---|
+| `MONGODB_URI` | yes | Database connection |
+| `DB_NAME` | yes | Database name, and the blob path root |
+| `BETTER_AUTH_URL` | yes | Auth and DigiLocker callback base URL |
+| `BETTER_AUTH_SECRET` | yes | Session signing, and DigiLocker OAuth cookie sealing |
+| `GOOGLE_CLIENT_ID` | yes | Google sign-in |
+| `GOOGLE_CLIENT_SECRET` | yes | Google sign-in |
+| `DIGILOCKER_CLIENT_ID` | yes | DigiLocker KYC |
+| `DIGILOCKER_CLIENT_SECRET` | yes | DigiLocker KYC |
+| `AI_GATEWAY_API_KEY` | yes | Vercel AI Gateway credentials |
+| `BLOB_READ_WRITE_TOKEN` | yes | Private Vercel Blob store (interviews, medical, company docs, blog, email) |
+| `SARVAM_API_KEY` | yes | Voice TTS and STT |
+| `RESEND_API_KEY` | for email | Outbound mail. `RESEND_API` is accepted as an alias |
+| `RESEND_FROM_EMAIL` | for email | Sender address |
+| `NEXT_PUBLIC_SITE_URL` | for SEO | Sitemap and robots |
+| `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID` | optional | Analytics, consent-gated |
+| `DPDP_GRIEVANCE_OFFICER_NAME` | optional | Fallback when settings are unset |
+| `DPDP_GRIEVANCE_OFFICER_EMAIL` | optional | Fallback when settings are unset |
+| `DPDP_GRIEVANCE_OFFICER_PHONE` | optional | Fallback when settings are unset |
+| `DPDP_GRIEVANCE_OFFICER_ADDRESS` | optional | Fallback when settings are unset |
+| `DPDP_GRIEVANCE_OFFICER_LANGUAGES` | optional | Fallback when settings are unset |
+| `DPDP_RIGHTS_ACK_HOURS` | optional | Rights acknowledgement deadline |
+| `DPDP_RIGHTS_RESOLVE_DAYS` | optional | Rights resolution deadline |
+
+`AI_GATEWAY_API_KEY` is read by the Vercel AI SDK. `BLOB_READ_WRITE_TOKEN` is read in `src/lib/blob/token.ts` and passed into the Blob SDK.
 
 ---
 
-## Key routes (quick map)
+## Testing
 
-### Candidate
+```bash
+bun test                    # everything under test/
+bun test test/legal-safety  # claims, PAD blocks, case gate, notices
+```
 
-| Path | Purpose |
-|------|---------|
-| `/candidate/onboarding` | AI onboarding + resume |
-| `/candidate/home` | Applications dashboard |
-| `/candidate/explore` | Jobs + interviews + apply |
-| `/candidate/kyc` | AI KYC |
-| `/candidate/profile` | Edit profile |
-| `/candidate/settings` | Settings / delete account |
+Tests run on Bun's built-in runner. `bunfig.toml` preloads `test/setup.ts`, which stubs the `server-only` marker so server modules can be imported under test.
 
-### Recruiter
-
-| Path | Purpose |
-|------|---------|
-| `/hire/roles` | Role list |
-| `/hire/roles/new` | Create role |
-| `/hire/roles/[id]` | Applicants |
-| `/hire/profile` | Company profile |
-| `/hire/settings` | Settings |
-
-### Admin
-
-| Path | Purpose |
-|------|---------|
-| `/admin/recruiters` | Hire users, job verification, recruiter inquiries |
-| `/admin/settings` | Admin users, voice, LLM, grievance officer, prompts, flow |
-| `/admin/compliance` | Data Principal rights + breach register |
-| `/admin/email` | Resend inbox / compose |
-| `/admin/support` | Support ticket queue |
-
-### Marketing
-
-| Path | Purpose |
-|------|---------|
-| `/` | Landing + latest roles |
-| `/for-recruiters` | Recruiter program info + request access |
-| `/contact` | How to use Help + contact channels |
-
----
-
-## License
-
-Private — All rights reserved.
+The legal-safety suite is the load-bearing one. It enforces that the claims registry stays internally consistent, that PAD-0001 through PAD-0008 are blocked in both English and Hindi, that permitted phrasing still gets through, that the case gate cannot be advanced without a named human, and that indicator detection never produces a conclusion.

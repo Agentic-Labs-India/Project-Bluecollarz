@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth/session";
 import { reviewRecruiterInquiry } from "@/lib/hire/inquiries";
@@ -44,7 +44,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         },
       });
       if (!item) {
-        return NextResponse.json({ error: "Inquiry not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Inquiry not found" },
+          { status: 404 },
+        );
       }
       return NextResponse.json({ item });
     } catch (error) {
@@ -57,6 +60,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
   } catch (error) {
     console.error("PATCH /api/admin/recruiter-inquiries/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

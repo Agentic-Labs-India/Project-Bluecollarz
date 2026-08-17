@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { EyeIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RoleSheet } from "@/components/hire/role-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -14,10 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoleSheet } from "@/components/hire/role-sheet";
 import type { JobListItem, PaginatedJobsResponse } from "@/lib/jobs";
-import { JOB_STATUSES, JOB_STATUS_LABELS } from "@/lib/jobs";
-import { EyeIcon, PlusIcon } from "lucide-react";
+import { JOB_STATUS_LABELS, JOB_STATUSES } from "@/lib/jobs";
 
 const STATUS_VARIANT: Record<
   JobListItem["status"],
@@ -68,9 +68,12 @@ export function HireJobsTable() {
   }, [pagination.pageIndex, pagination.pageSize, search, statusFilter]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchJobs();
-    }, search ? 300 : 0);
+    const timer = setTimeout(
+      () => {
+        void fetchJobs();
+      },
+      search ? 300 : 0,
+    );
     return () => clearTimeout(timer);
   }, [fetchJobs, search]);
 

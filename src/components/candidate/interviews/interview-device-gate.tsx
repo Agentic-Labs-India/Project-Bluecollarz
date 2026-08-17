@@ -45,8 +45,8 @@ export function InterviewDeviceGate({ onClose }: { onClose: () => void }) {
         <CardContent className="space-y-4 pt-4">
           <p className="text-muted-foreground text-sm leading-relaxed">
             This interview needs camera, microphone, and full screen share.
-            Phone browsers don&apos;t support that reliably, so sessions must
-            be completed on a larger screen.
+            Phone browsers don&apos;t support that reliably, so sessions must be
+            completed on a larger screen.
           </p>
 
           <ul className="space-y-2.5">

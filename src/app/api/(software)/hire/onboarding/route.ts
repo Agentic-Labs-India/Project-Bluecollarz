@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import {
   getOrCreateHireOnboarding,
   saveHireOnboarding,
@@ -21,7 +18,10 @@ export async function GET() {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/hire/onboarding:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -62,6 +62,9 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/hire/onboarding:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

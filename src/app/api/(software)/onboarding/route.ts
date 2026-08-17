@@ -31,8 +31,15 @@ import {
 } from "@/lib/candidate/profile";
 import { parseDateOnly } from "@/lib/core/dates";
 import { lookupPlaceOptions } from "@/lib/core/geo/places";
+import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { isIdentityVerified } from "@/lib/kyc";
+import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
+import { hasProhibitedOutput } from "@/lib/legal-safety/lexicon";
+import {
+  lastUserText,
+  screenWorkerTurnSafe,
+} from "@/lib/legal-safety/detect";
 
 export const maxDuration = 90;
 
@@ -185,8 +192,9 @@ ${work || "—"}`;
   });
 
   const cleaned = text.trim();
-  if (cleaned.length >= 40) return cleaned;
-  // Fallback if the model returns something too short.
+  if (cleaned.length >= 40 && !hasProhibitedOutput(cleaned)) return cleaned;
+  // Fallback if the model returns something too short, or a summary that makes
+  // a determination it is not allowed to make.
   const bits = [
     profile.headline,
     profile.yearsExperience != null
@@ -573,6 +581,8 @@ export async function POST(request: Request) {
   if (!authResult.ok) {
     return new Response(authResult.error, { status: authResult.status });
   }
+  const limit = rateLimitPerMinute("onboardingChat", authResult.user.id);
+  if (!limit.ok) return tooManyRequests(limit);
   const user = {
     id: authResult.user.id,
     name: authResult.user.name ?? undefined,
@@ -634,8 +644,16 @@ export async function POST(request: Request) {
     missingLabels: resumeApplied?.missing ?? missingLabels,
     alreadyComplete,
   });
+  await screenWorkerTurnSafe({
+    userId: user.id,
+    profileType: "work",
+    text: lastUserText(uiMessages),
+    sourceKind: "chat",
+    sourceId: `onboarding:${user.id}`,
+  });
   return createAgentUIStreamResponse({
     agent,
     uiMessages,
+    experimental_transform: prohibitedOutputGuard({ surface: "onboarding" }),
   });
 }

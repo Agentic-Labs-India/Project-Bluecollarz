@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth/session";
 import { getSupportTicket } from "@/lib/support/tickets";
@@ -35,6 +35,9 @@ export async function GET(
     return NextResponse.json({ ticket });
   } catch (error) {
     console.error("GET /api/admin/support/tickets/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

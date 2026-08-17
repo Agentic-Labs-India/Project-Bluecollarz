@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import type { AppNavItem } from "@/lib/core/routes";
+import { cn } from "@/lib/utils";
 
 /** Fixed bottom navigation shown only on mobile. */
 export function AppBottomNav({ items }: { items: AppNavItem[] }) {

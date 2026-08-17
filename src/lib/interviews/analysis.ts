@@ -1,16 +1,17 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import type {
-  CommunicationAnalysis,
-  InterviewStageId,
-  InterviewTranscriptTurn,
-} from "@/lib/interviews";
 import {
   getAiRuntime,
   llmModel,
   llmTemp,
   renderAnalysisPrompt,
 } from "@/lib/ai/runtime";
+import type {
+  CommunicationAnalysis,
+  InterviewStageId,
+  InterviewTranscriptTurn,
+} from "@/lib/interviews";
+import { findProhibitedOutput } from "@/lib/legal-safety/lexicon";
 
 const analysisSchema = z.object({
   clarity: z.number().min(0).max(10),
@@ -31,7 +32,10 @@ export async function analyzeInterviewTranscript(opts: {
   transcript: InterviewTranscriptTurn[];
 }): Promise<CommunicationAnalysis> {
   const dialogue = opts.transcript
-    .map((t) => `${t.role === "assistant" ? "Interviewer" : "Candidate"}: ${t.text}`)
+    .map(
+      (t) =>
+        `${t.role === "assistant" ? "Interviewer" : "Candidate"}: ${t.text}`,
+    )
     .join("\n");
 
   try {
@@ -49,6 +53,18 @@ export async function analyzeInterviewTranscript(opts: {
     });
 
     if (!output) {
+      return fallbackAnalysis(opts.stageId);
+    }
+
+    // A transcript describing abuse invites the model to name the offence. That
+    // determination belongs to the serious-offence gate and a human reviewer,
+    // never to a score attached to the candidate's record.
+    const prose = [output.summary, ...output.strengths, ...output.improvements];
+    const violations = prose.flatMap(findProhibitedOutput);
+    if (violations.length > 0) {
+      console.error("[legal-safety] blocked interview analysis", {
+        claims: violations.map((violation) => violation.claim),
+      });
       return fallbackAnalysis(opts.stageId);
     }
     return output;

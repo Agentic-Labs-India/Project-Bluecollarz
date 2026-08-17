@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowRightIcon,
   BriefcaseIcon,
@@ -10,12 +9,13 @@ import {
   PhoneIcon,
   UsersIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { HireOnboardingPackView } from "@/components/hire/onboarding/pack-view";
+import { AppPage } from "@/components/layout/app-page";
+import { StatCard } from "@/components/shared/stat-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AppPage } from "@/components/layout/app-page";
-import { StatCard } from "@/components/shared/stat-card";
-import { HireOnboardingPackView } from "@/components/hire/onboarding/pack-view";
 import type { HireOverview } from "@/lib/hire";
 import type { HireOnboardingData } from "@/lib/hire/onboarding/types";
 
@@ -60,8 +60,7 @@ export function HireProfileView({
     profile.contactName.trim() ||
     account.name?.trim() ||
     "Hiring contact";
-  const email =
-    onboarding?.contacts.owner.email.trim() || account.email || "—";
+  const email = onboarding?.contacts.owner.email.trim() || account.email || "—";
   const phone = formatPhone(
     onboarding?.contacts.owner.phoneCountryCode ?? account.phoneCountryCode,
     onboarding?.contacts.owner.phoneNumber ?? account.phoneNumber,
@@ -71,13 +70,21 @@ export function HireProfileView({
   const initial = company.charAt(0).toUpperCase() || "H";
 
   const stats = [
-    { label: "Open roles", value: overview.roles.published, icon: BriefcaseIcon },
+    {
+      label: "Open roles",
+      value: overview.roles.published,
+      icon: BriefcaseIcon,
+    },
     {
       label: "In pipeline",
       value: overview.applicants.total,
       icon: UsersIcon,
     },
-    { label: "Selected", value: overview.applicants.selected, icon: CheckCircle2Icon },
+    {
+      label: "Selected",
+      value: overview.applicants.selected,
+      icon: CheckCircle2Icon,
+    },
   ];
 
   const roleBreakdown = [
@@ -250,14 +257,18 @@ export function HireProfileView({
                         {role.applicants === 1 ? "applicant" : "applicants"}
                       </p>
                     </div>
-                    <Badge variant="default">{STATUS_LABELS[role.status]}</Badge>
+                    <Badge variant="default">
+                      {STATUS_LABELS[role.status]}
+                    </Badge>
                   </div>
                 </Link>
               ))}
             </div>
           ) : (
             <div className="border-border/60 border border-dashed px-4 py-10 text-center">
-              <p className="text-muted-foreground text-sm">No open roles yet.</p>
+              <p className="text-muted-foreground text-sm">
+                No open roles yet.
+              </p>
               <Button asChild size="sm" className="mt-3">
                 <Link href="/hire/roles/new">Post a role</Link>
               </Button>

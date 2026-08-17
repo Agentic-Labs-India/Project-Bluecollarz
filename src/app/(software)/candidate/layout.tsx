@@ -1,6 +1,6 @@
-import { Suspense } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { CandidateShell } from "@/app/(software)/candidate/candidate-shell";
 import { auth } from "@/lib/auth/auth";
 import {

@@ -52,9 +52,7 @@ export const LEGACY_USER_FIELDS = [
   "resumeSource",
 ] as const;
 
-export function unsetFields(
-  keys: readonly string[],
-): Record<string, ""> {
+export function unsetFields(keys: readonly string[]): Record<string, ""> {
   const $unset: Record<string, ""> = {};
   for (const key of keys) $unset[key] = "";
   return $unset;

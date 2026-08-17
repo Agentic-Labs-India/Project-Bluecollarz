@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { listRecruiterInquiries } from "@/lib/hire/inquiries";
 import { RECRUITER_INQUIRY_STATUSES } from "@/lib/hire/inquiries/types";
 
@@ -26,6 +23,9 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/recruiter-inquiries:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

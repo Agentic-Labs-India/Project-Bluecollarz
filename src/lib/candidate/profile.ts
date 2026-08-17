@@ -604,7 +604,7 @@ export function mergeCandidateProfilePatch(
   patch: Partial<CandidateProfileUpdateInput>,
 ): CandidateProfileUpdateInput {
   const pickStr = (next: string | undefined, prev: string) =>
-    next !== undefined && next.trim() ? next : prev;
+    next?.trim() ? next : prev;
 
   const pickNum = (
     next: number | null | undefined,

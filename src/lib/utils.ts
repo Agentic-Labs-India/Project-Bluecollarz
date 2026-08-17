@@ -38,6 +38,17 @@ export function asPositiveInt(value: unknown, fallback: number): number {
   return n;
 }
 
+/**
+ * Keys for fixed-length placeholder lists such as loading skeletons.
+ *
+ * Position is the identity for these: the list never reorders, filters or
+ * grows, so there is nothing else to key on. Mapping over the keys rather than
+ * over a blank array keeps that intent explicit at each call site.
+ */
+export function placeholderKeys(count: number, prefix = "sk"): string[] {
+  return Array.from({ length: count }, (_, index) => `${prefix}-${index}`);
+}
+
 /** Flatten a Zod error into a single message. */
 export function formatZodError(error: ZodError): string {
   const messages = error.issues.map((issue) => {

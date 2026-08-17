@@ -1,6 +1,7 @@
 import "server-only";
 
 import { deleteBlobUrls } from "@/lib/blob/delete";
+import { assertNoLegalHold } from "@/lib/compliance/legal-hold";
 import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
 import { idHex } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ import { idHex } from "@/lib/utils";
  */
 export async function cascadeDeleteUserData(userId: string): Promise<void> {
   if (!userId) return;
+  await assertNoLegalHold(userId);
   const db = client.db(DB_NAME);
   const blobUrls: string[] = [];
 
@@ -70,6 +72,9 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
   await db
     .collection(COLLECTIONS.CONSENT_EVENTS)
     .deleteMany({ dataPrincipalId: userId });
+  await db
+    .collection(COLLECTIONS.CONSENT_PLAYBACKS)
+    .deleteMany({ userId });
   await db
     .collection(COLLECTIONS.RIGHTS_REQUESTS)
     .deleteMany({ dataPrincipalId: userId });

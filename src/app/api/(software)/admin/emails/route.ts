@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/auth/session";
 import { sanitizeEmailComposeHtml } from "@/lib/admin/email-html";
 import {
   formatSenderFrom,
@@ -9,6 +8,7 @@ import {
   mapReceivedListItem,
   mapSentListItem,
 } from "@/lib/admin/resend";
+import { requireProfile } from "@/lib/auth/session";
 import { htmlToPlainText } from "@/lib/core/rich-text";
 import { formatZodError } from "@/lib/utils";
 
@@ -128,7 +128,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("GET /api/admin/emails:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -173,12 +176,11 @@ export async function POST(req: NextRequest) {
     }
 
     const from = formatSenderFrom(authResult.user.name, fromEmail);
-    const replyTo =
-      parsed.data.replyTo?.length
-        ? parsed.data.replyTo
-        : authResult.user.email
-          ? [authResult.user.email]
-          : undefined;
+    const replyTo = parsed.data.replyTo?.length
+      ? parsed.data.replyTo
+      : authResult.user.email
+        ? [authResult.user.email]
+        : undefined;
 
     const { data, error } = await resend.emails.send({
       from,
@@ -198,6 +200,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: data?.id ?? null }, { status: 201 });
   } catch (error) {
     console.error("POST /api/admin/emails:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

@@ -127,18 +127,27 @@ export async function PUT(req: NextRequest) {
       preferredCountries: data.preferredCountries,
     });
     const complete = isCandidateProfileComplete(merged);
-    const { $set, $unset } = candidateUpdateToMongo(data, complete);
-
-    await db
-      .collection(COLLECTIONS.USERS_COLLECTION)
-      .updateOne(
-        filter,
-        Object.keys($unset).length ? { $set, $unset } : { $set },
+    // Only the voice onboarding agent may flip this from false → true.
+    if (!existing?.candidateOnboardingComplete && complete) {
+      return NextResponse.json(
+        {
+          error: "Finish onboarding with the voice assistant first.",
+          code: "ONBOARDING_REQUIRED",
+        },
+        { status: 403 },
       );
-
+    }
+    const { $set, $unset } = candidateUpdateToMongo(
+      data,
+      Boolean(existing?.candidateOnboardingComplete) && complete,
+    );
     const user = await db
       .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION)
-      .findOne(filter);
+      .findOneAndUpdate(
+        filter,
+        Object.keys($unset).length ? { $set, $unset } : { $set },
+        { returnDocument: "after" },
+      );
     const profile = toCandidateProfileData(user);
     return NextResponse.json({
       profile,

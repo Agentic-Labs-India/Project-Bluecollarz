@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import {
+  type InterviewDocument,
+  isCustomQuestionsStage,
+} from "@/lib/interviews";
+import {
+  type CustomQuestionAnswer,
   normalizeCustomQuestions,
   validateCustomAnswer,
-  type CustomQuestionAnswer,
 } from "@/lib/jobs/custom-questions";
-import {
-  isCustomQuestionsStage,
-  type InterviewDocument,
-} from "@/lib/interviews";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -18,9 +18,12 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     await ensureIndexes();
-    const auth = await requireProfile("work");
+    const auth = await requireCandidateAppReady();
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        { error: auth.error, code: auth.code },
+        { status: auth.status },
+      );
     }
     if (!auth.user.id) {
       return NextResponse.json({ error: "Invalid user" }, { status: 400 });

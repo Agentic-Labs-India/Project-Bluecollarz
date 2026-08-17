@@ -15,6 +15,12 @@ export const MEDICAL_REPORT_MAX_MB = 8;
 
 export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client-upload";
 
+/** Strip codec / charset parameters so Blob `allowedContentTypes` can match. */
+export function normalizeBlobContentType(value: string | undefined): string {
+  const base = (value ?? "").split(";")[0].trim().toLowerCase();
+  return base || "application/octet-stream";
+}
+
 export function getBlobRoot(): string {
   const name = process.env.DB_NAME?.trim();
   if (!name) {
@@ -73,6 +79,71 @@ export function isVercelBlobUrl(url: string): boolean {
   }
 }
 
+export type BlobAccess = "public" | "private";
+
+/** Path families under the root. Store access is always private. */
+export type BlobKind = "interview" | "medical" | "company" | "blog" | "email";
+
+/** Only marketing and outbound-email assets are world-readable. */
+const PUBLIC_KINDS = new Set<BlobKind>(["blog", "email"]);
+
+export function blobKindFromRelative(relative: string): BlobKind | null {
+  const parts = relative.split("/").filter(Boolean);
+  if (parts[0] === "interviews" && parts.length >= 3) return "interview";
+  if (parts[0] === "admin" && parts[1] === "medical" && parts.length >= 4) {
+    return "medical";
+  }
+  if (parts[0] === "admin" && parts[1] === "blog" && parts.length >= 3) {
+    return "blog";
+  }
+  if (parts[0] === "admin" && parts[1] === "email" && parts.length >= 3) {
+    return "email";
+  }
+  if (parts[0] === "users" && parts[2] === "company" && parts.length >= 4) {
+    return "company";
+  }
+  return null;
+}
+
+/** Blog covers and outbound-email images are streamed without a session. */
+export function isPubliclyServedBlobKind(kind: BlobKind | null): boolean {
+  return kind !== null && PUBLIC_KINDS.has(kind);
+}
+
+/**
+ * Vercel serves blobs from `{storeId}.{access}.blob.vercel-storage.com`.
+ * Persist paths check the host so a public URL cannot be stored as private.
+ */
+export function blobAccessFromUrl(url: string): BlobAccess | null {
+  try {
+    const host = new URL(url).hostname;
+    if (host.endsWith(".public.blob.vercel-storage.com")) return "public";
+    if (host.endsWith(".private.blob.vercel-storage.com")) return "private";
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Same-origin route that authorizes the viewer, then streams a private blob. */
+export function blobFileUrl(pathnameOrUrl: string): string {
+  const raw = pathnameOrUrl.startsWith("http")
+    ? decodeURIComponent(new URL(pathnameOrUrl).pathname)
+    : pathnameOrUrl;
+  return `/api/blob/file?path=${encodeURIComponent(raw.replace(/^\/+/, ""))}`;
+}
+
+/** Absolute file-proxy URL for Open Graph, email HTML, and other off-site fetches. */
+export function blobAbsoluteFileUrl(pathnameOrUrl: string): string {
+  const path = blobFileUrl(pathnameOrUrl);
+  const origin = (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.BETTER_AUTH_URL ||
+    ""
+  ).replace(/\/$/, "");
+  return origin ? `${origin}${path}` : path;
+}
+
 /**
  * Interview recordings must live under `{DB_NAME}/interviews/{interviewId}/…`
  * on Vercel Blob.
@@ -81,7 +152,7 @@ export function isInterviewRecordingUrl(
   url: string,
   interviewId: string,
 ): boolean {
-  if (!isVercelBlobUrl(url) || !interviewId) return false;
+  if (blobAccessFromUrl(url) !== "private" || !interviewId) return false;
   try {
     const root = getBlobRoot();
     const { pathname } = new URL(url);
@@ -127,7 +198,7 @@ export function isMedicalReportUrl(
   url: string,
   appointmentId: string,
 ): boolean {
-  if (!isVercelBlobUrl(url) || !appointmentId) return false;
+  if (blobAccessFromUrl(url) !== "private" || !appointmentId) return false;
   try {
     const root = getBlobRoot();
     const { pathname } = new URL(url);

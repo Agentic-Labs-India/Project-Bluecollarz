@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
 import { usePathname } from "next/navigation";
-import { AppRailSidebar } from "@/components/layout/app-rail-sidebar";
+import type React from "react";
 import { AppBottomNav } from "@/components/layout/app-bottom-nav";
+import { AppRailSidebar } from "@/components/layout/app-rail-sidebar";
 import { AppTopBar } from "@/components/layout/app-top-bar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import type { AppNavItem } from "@/lib/core/routes";
+import { cn } from "@/lib/utils";
 
 /**
  * Shared application shell: desktop icon-rail sidebar, mobile top logo bar,

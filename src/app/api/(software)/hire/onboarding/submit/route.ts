@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { submitHireOnboarding } from "@/lib/hire/onboarding";
 
 export async function POST() {
@@ -26,6 +23,9 @@ export async function POST() {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("POST /api/hire/onboarding/submit:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

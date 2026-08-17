@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { consumeUserProvision } from "@/lib/admin/provisions";
+import { LegalHoldError } from "@/lib/compliance/legal-hold";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 import { cascadeDeleteUserData } from "@/lib/user/delete-cascade";
 
@@ -71,7 +73,14 @@ export const auth = betterAuth({
       enabled: true,
       beforeDelete: async (user) => {
         if (!user.id) return;
-        await cascadeDeleteUserData(user.id);
+        try {
+          await cascadeDeleteUserData(user.id);
+        } catch (error) {
+          if (error instanceof LegalHoldError) {
+            throw new APIError("CONFLICT", { message: error.message });
+          }
+          throw error;
+        }
       },
     },
   },

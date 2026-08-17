@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -23,6 +21,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import type {
   RecruiterInquiryListItem,
@@ -58,7 +58,9 @@ function StatusPill({ status }: { status: RecruiterInquiryStatus }) {
 }
 
 export function AdminRecruiterInquiries() {
-  const [status, setStatus] = useState<"all" | RecruiterInquiryStatus>("pending");
+  const [status, setStatus] = useState<"all" | RecruiterInquiryStatus>(
+    "pending",
+  );
   const [items, setItems] = useState<RecruiterInquiryListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -117,7 +119,9 @@ export function AdminRecruiterInquiries() {
         toast.error(json.error || "Update failed");
         return;
       }
-      toast.success(next === "approved" ? "Recruiter approved" : "Request rejected");
+      toast.success(
+        next === "approved" ? "Recruiter approved" : "Request rejected",
+      );
       setSelectedId(null);
       setAdminNote("");
       await load();
@@ -151,7 +155,9 @@ export function AdminRecruiterInquiries() {
         accessorKey: "email",
         header: "Email",
         cell: ({ row }) => (
-          <p className="text-foreground truncate text-sm">{row.original.email}</p>
+          <p className="text-foreground truncate text-sm">
+            {row.original.email}
+          </p>
         ),
       },
       {

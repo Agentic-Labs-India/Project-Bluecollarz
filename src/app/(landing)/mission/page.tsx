@@ -147,7 +147,11 @@ export default function MissionPage() {
         </DocCallout>
       </DocSection>
 
-      <DocSection id="how-we-operate" number="06" title="How we operate day to day">
+      <DocSection
+        id="how-we-operate"
+        number="06"
+        title="How we operate day to day"
+      >
         <p>
           Mission shows up in product defaults. Interviews require full screen
           share and a larger device so the session is harder to fake. KYC

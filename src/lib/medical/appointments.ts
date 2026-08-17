@@ -2,6 +2,10 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 import { isMedicalReportUrl } from "@/lib/blob/pathname";
+import {
+  hasGrantedPurposes,
+  MEDICAL_REQUIRED_PURPOSES,
+} from "@/lib/compliance/consent";
 import client, {
   COLLECTIONS,
   DB_NAME,
@@ -77,6 +81,25 @@ type UserLite = {
   name?: string | null;
   email?: string | null;
 };
+
+/**
+ * Health data may only be processed while the candidate's `medical` consent is
+ * live. Checked at booking and again at report upload, because consent can be
+ * withdrawn in between.
+ */
+async function assertMedicalConsent(applicantId: string): Promise<void> {
+  const granted = await hasGrantedPurposes(
+    applicantId,
+    MEDICAL_REQUIRED_PURPOSES,
+  );
+  if (!granted) {
+    throw new MedicalError(
+      "This candidate has not consented to medical fitness processing.",
+      403,
+      "MEDICAL_CONSENT_REQUIRED",
+    );
+  }
+}
 
 function isDuplicateKey(error: unknown): boolean {
   return (
@@ -525,6 +548,8 @@ export async function scheduleMedicalAppointment(
     throw new MedicalError("Only selected candidates can be scheduled");
   }
 
+  await assertMedicalConsent(idHex(app.applicantId));
+
   const center = await getMedicalCenter(input.centerId);
   if (!center) throw new MedicalError("Medical center not found", 404);
   if (!center.active) {
@@ -746,7 +771,7 @@ export async function getCandidateScheduleContext(
     appointment?.status === "no_show" ||
     appointment?.status === "unfit";
 
-  const [centers, job] = await Promise.all([
+  const [centers, job, medicalConsent] = await Promise.all([
     closed
       ? Promise.resolve([])
       : listMedicalCenters({ active: true }).then((items) =>
@@ -757,6 +782,7 @@ export async function getCandidateScheduleContext(
       .project({ title: 1 })
       .limit(1)
       .next(),
+    hasGrantedPurposes(userId, MEDICAL_REQUIRED_PURPOSES),
   ]);
 
   return {
@@ -765,6 +791,7 @@ export async function getCandidateScheduleContext(
     applicationId: idHex(app._id),
     appointment,
     centers,
+    medicalConsent,
   };
 }
 
@@ -819,6 +846,8 @@ export async function completeMedicalAppointment(
     throw new MedicalError("Only scheduled appointments can be completed");
   }
 
+  await assertMedicalConsent(existing.applicantId);
+
   const now = new Date();
   const reports: MedicalReportRecord[] = input.reports.map((file) => {
     if (!isMedicalReportUrl(file.url, input.appointmentId)) {
@@ -849,6 +878,28 @@ export async function completeMedicalAppointment(
   if (!updated) throw new MedicalError("Appointment not found", 404);
   const [item] = await hydrateAppointments([updated]);
   return item;
+}
+
+/**
+ * Withdrawing the `medical` purpose must stop processing that is already in
+ * flight, not merely block the next booking. Completed tests keep their
+ * records: those are the result of processing that was lawful when it happened.
+ */
+export async function cancelScheduledMedicalOnWithdrawal(
+  userId: string,
+): Promise<number> {
+  if (!userId) return 0;
+  const result = await appointments().updateMany(
+    { applicantId: matchId(userId) as never, status: "scheduled" },
+    {
+      $set: {
+        status: "cancelled",
+        notes: "Cancelled automatically: medical consent withdrawn.",
+        updatedAt: new Date(),
+      },
+    },
+  );
+  return result.modifiedCount;
 }
 
 export async function listCandidateMedicalReports(

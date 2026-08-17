@@ -1,18 +1,18 @@
 import "server-only";
 import { ObjectId } from "mongodb";
+import { upsertUserProfileTypeByEmail } from "@/lib/admin/queries";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
-import { upsertUserProfileTypeByEmail } from "@/lib/admin/queries";
 import {
   applyHireProfileToUserByEmail,
   inquiryToHireProfile,
 } from "@/lib/hire/apply-inquiry-profile";
-import { idHex } from "@/lib/utils";
 import type {
   RecruiterInquiryCreateInput,
   RecruiterInquiryListItem,
   RecruiterInquiryStatus,
 } from "@/lib/hire/inquiries/types";
+import { idHex } from "@/lib/utils";
 
 type RecruiterInquiryDoc = {
   _id: ObjectId;

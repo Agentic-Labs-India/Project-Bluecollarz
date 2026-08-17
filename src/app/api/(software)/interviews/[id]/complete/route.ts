@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument } from "@/lib/interviews";
 import { isCustomQuestionsStage } from "@/lib/interviews";
 import { analyzeInterviewTranscript } from "@/lib/interviews/analysis";
-import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
+import { screenWorkerText } from "@/lib/legal-safety/detect";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
@@ -16,9 +17,12 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     await ensureIndexes();
-    const auth = await requireProfile("work");
+    const auth = await requireCandidateAppReady();
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        { error: auth.error, code: auth.code },
+        { status: auth.status },
+      );
     }
     if (!auth.user.id) {
       return NextResponse.json({ error: "Invalid user" }, { status: 400 });
@@ -26,7 +30,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
     if (!isId(id)) {
-      return NextResponse.json({ error: "Invalid interview id" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid interview id" },
+        { status: 400 },
+      );
     }
 
     const body = (await req.json().catch(() => ({}))) as {
@@ -43,7 +50,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
       } as never);
 
     if (!interview) {
-      return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Interview not found" },
+        { status: 404 },
+      );
     }
     if (isCustomQuestionsStage(interview.stageId)) {
       return NextResponse.json(
@@ -122,6 +132,25 @@ export async function POST(req: NextRequest, context: RouteContext) {
       },
     );
 
+    // Screen the candidate's own answers once the transcript is final. A
+    // screening failure must not cost the candidate a completed interview.
+    try {
+      await screenWorkerText({
+        userId: auth.user.id,
+        text: transcript
+          .filter((turn) => turn.role === "user")
+          .map((turn) => turn.text)
+          .join("\n"),
+        sourceKind: "interview",
+        sourceId: id,
+      });
+    } catch (screeningError) {
+      console.error(
+        "[legal-safety] screening failed for interview",
+        screeningError,
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       interviewId: idHex(interview._id) || id,
@@ -132,6 +161,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error("POST /api/interviews/[id]/complete:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

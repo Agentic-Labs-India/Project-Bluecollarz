@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
+import { type NextRequest, NextResponse } from "next/server";
 import {
   getPlatformSettings,
   platformSettingsPatchSchema,
   savePlatformSettings,
 } from "@/lib/admin/platform-settings";
 import { defaultPlatformSettings } from "@/lib/admin/platform-settings-defaults";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
 
@@ -28,7 +25,10 @@ export async function GET() {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/settings:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -56,6 +56,9 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/admin/settings:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

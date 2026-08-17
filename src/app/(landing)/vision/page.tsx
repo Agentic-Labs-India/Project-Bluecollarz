@@ -98,7 +98,10 @@ export default function VisionPage() {
               "Clarity, fluency, confidence, professionalism",
             ],
             ["Domain interview", "Fit against the actual job overview"],
-            ["Recording + transcript", "How answers were given, not just a score"],
+            [
+              "Recording + transcript",
+              "How answers were given, not just a score",
+            ],
             ["KYC (when verified)", "Identity documents that passed AI checks"],
           ]}
         />

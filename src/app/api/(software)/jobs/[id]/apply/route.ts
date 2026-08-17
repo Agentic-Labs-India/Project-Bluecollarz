@@ -1,22 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import { INTERVIEW_STAGE_IDS, type InterviewStageId } from "@/lib/interviews";
+import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
 import type { JobDocument } from "@/lib/jobs";
 import { normalizeStepTemplates } from "@/lib/jobs";
 import type { ApplicationDocument } from "@/lib/jobs/applications";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
-import { idHex } from "@/lib/utils";
-import {
-  isCandidateProfileComplete,
-  toCandidateProfileData,
-  type CandidateProfileFields,
-} from "@/lib/candidate/profile";
-import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
-import {
-  INTERVIEW_STAGE_IDS,
-  type InterviewStageId,
-} from "@/lib/interviews";
 import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
+import { idHex } from "@/lib/utils";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -25,9 +17,12 @@ export async function POST(_req: NextRequest, context: RouteContext) {
   try {
     await ensureIndexes();
 
-    const auth = await requireProfile("work");
+    const auth = await requireCandidateAppReady();
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        { error: auth.error, code: auth.code },
+        { status: auth.status },
+      );
     }
 
     const { id } = await context.params;
@@ -36,20 +31,6 @@ export async function POST(_req: NextRequest, context: RouteContext) {
     }
 
     const db = client.db(DB_NAME);
-
-    const userDoc = await db
-      .collection<CandidateProfileFields>(COLLECTIONS.USERS_COLLECTION)
-      .findOne({ _id: matchId(auth.user.id) as never });
-    if (!isCandidateProfileComplete(toCandidateProfileData(userDoc))) {
-      return NextResponse.json(
-        {
-          error:
-            "Complete your profile (resume) before applying to this role.",
-          code: "PROFILE_INCOMPLETE",
-        },
-        { status: 403 },
-      );
-    }
 
     const job = await db
       .collection<JobDocument>(COLLECTIONS.JOBS)
@@ -116,6 +97,9 @@ export async function POST(_req: NextRequest, context: RouteContext) {
     return NextResponse.json({ applied: true });
   } catch (error) {
     console.error("POST /api/jobs/[id]/apply:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

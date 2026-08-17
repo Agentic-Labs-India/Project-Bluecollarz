@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ExternalLinkIcon,
@@ -8,6 +7,7 @@ import {
   PenSquareIcon,
   Trash2Icon,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -30,13 +29,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import { blobFileUrl } from "@/lib/blob/pathname";
+import { uploadBlob } from "@/lib/blob/upload";
 import type { BlogDetail, BlogListItem, BlogStatus } from "@/lib/blog/types";
 import {
   BLOG_STATUSES,
   scoreSeoTitle,
   slugifyBlogTitle,
 } from "@/lib/blog/types";
-import { uploadBlob } from "@/lib/blob/upload";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import { htmlToPlainText } from "@/lib/core/rich-text";
 import { cn } from "@/lib/utils";
@@ -254,7 +255,7 @@ export function AdminBlogManager() {
     }
     setUploadingCover(true);
     try {
-      const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80);
+      const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(0, 80);
       const { url } = await uploadBlob({
         file,
         pathname: `admin/blog/${Date.now()}-${safeName}`,
@@ -363,6 +364,8 @@ export function AdminBlogManager() {
     ],
     [],
   );
+
+  const editingId = editor.id;
 
   return (
     <>
@@ -499,7 +502,7 @@ export function AdminBlogManager() {
                       <div className="border-border space-y-3 border p-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={editor.coverImageUrl}
+                          src={blobFileUrl(editor.coverImageUrl)}
                           alt="Cover preview"
                           className="max-h-48 w-full object-cover"
                         />
@@ -610,13 +613,13 @@ export function AdminBlogManager() {
 
           <SheetFooter className="border-border shrink-0 border-t">
             <div className="flex w-full gap-2">
-              {editor.id ? (
+              {editingId ? (
                 <Button
                   type="button"
                   variant="outline"
                   className="w-full flex-1"
                   disabled={saving}
-                  onClick={() => void remove(editor.id!)}
+                  onClick={() => void remove(editingId)}
                 >
                   Delete
                 </Button>

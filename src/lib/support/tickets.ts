@@ -1,8 +1,7 @@
 import { ObjectId } from "mongodb";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
-import type { ProfileType } from "@/lib/user/profile-types";
-import { idHex } from "@/lib/utils";
+import { screenWorkerText } from "@/lib/legal-safety/detect";
 import type {
   SupportAssignee,
   SupportPriority,
@@ -14,6 +13,8 @@ import type {
   SupportTranscriptTurn,
 } from "@/lib/support/types";
 import { normalizeSupportStatus } from "@/lib/support/types";
+import type { ProfileType } from "@/lib/user/profile-types";
+import { idHex } from "@/lib/utils";
 
 type SupportTicketDoc = {
   _id: ObjectId;
@@ -104,6 +105,29 @@ export async function createSupportTicket(input: {
     .db(DB_NAME)
     .collection<SupportTicketDoc>(COLLECTIONS.SUPPORT_TICKETS)
     .insertOne(doc);
+
+  // Screen what the worker wrote, not the assistant's replies or the model's
+  // summary, so a case rests on the worker's own words. Failure here must not
+  // lose the ticket the worker just raised.
+  if (input.profileType === "work") {
+    const said = input.transcript
+      .filter((turn) => turn.role === "user")
+      .map((turn) => turn.content)
+      .join("\n");
+    try {
+      await screenWorkerText({
+        userId: input.userId,
+        text: said,
+        sourceKind: "chat",
+        sourceId: idHex(_id),
+      });
+    } catch (error) {
+      console.error(
+        "[legal-safety] screening failed for support ticket",
+        error,
+      );
+    }
+  }
 
   return toListItem(doc);
 }

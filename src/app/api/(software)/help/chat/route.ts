@@ -7,13 +7,19 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/session";
 import {
   getAiRuntime,
   llmModel,
   llmTemp,
   renderHelpPrompt,
 } from "@/lib/ai/runtime";
+import { requireUser } from "@/lib/auth/session";
+import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
+import {
+  lastUserText,
+  screenWorkerTurnSafe,
+} from "@/lib/legal-safety/detect";
 import { createSupportTicket } from "@/lib/support/tickets";
 import {
   SUPPORT_PRIORITIES,
@@ -29,7 +35,9 @@ const HELP_MODEL_MESSAGE_LIMIT = 16;
 /** Turns stored on a support ticket (can be longer than model context). */
 const SUPPORT_TRANSCRIPT_TURN_LIMIT = 40;
 
-function transcriptFromMessages(messages: UIMessage[]): SupportTranscriptTurn[] {
+function transcriptFromMessages(
+  messages: UIMessage[],
+): SupportTranscriptTurn[] {
   const turns: SupportTranscriptTurn[] = [];
   for (const message of messages) {
     if (message.role !== "user" && message.role !== "assistant") continue;
@@ -49,6 +57,8 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return new Response(auth.error, { status: auth.status });
   }
+  const limit = rateLimitPerMinute("helpChat", auth.user.id);
+  if (!limit.ok) return tooManyRequests(limit);
 
   let body: unknown;
   try {
@@ -69,8 +79,15 @@ export async function POST(request: Request) {
       : null;
 
   const recent = messages.slice(-HELP_MODEL_MESSAGE_LIMIT);
-  // Ticket transcript uses the fuller recent history, not just the model window.
   const transcript = transcriptFromMessages(messages);
+
+  await screenWorkerTurnSafe({
+    userId: auth.user.id,
+    profileType: auth.user.profileType,
+    text: lastUserText(messages),
+    sourceKind: "chat",
+    sourceId: `help:${auth.user.id}`,
+  });
 
   const settings = await getAiRuntime();
   const result = streamText({
@@ -82,6 +99,7 @@ export async function POST(request: Request) {
     ),
     messages: await convertToModelMessages(recent),
     temperature: llmTemp(settings, "help"),
+    experimental_transform: prohibitedOutputGuard({ surface: "help/chat" }),
     stopWhen: isStepCount(6),
     tools: {
       createSupportTicket: tool({

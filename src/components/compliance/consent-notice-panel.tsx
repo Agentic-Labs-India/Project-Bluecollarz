@@ -4,9 +4,15 @@ import { RotateCwIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import {
+  type ConsentPlaybackScope,
+  KYC_NOTICE,
+  MANAGE_NOTICE,
+  MEDICAL_NOTICE,
+} from "@/lib/compliance/consent-notices";
 import { cn } from "@/lib/utils";
 
 const OWRC_HELP_LINE = "1800 11 3090";
@@ -19,11 +25,9 @@ const PURPOSE_LABELS: Record<string, string> = {
   passport: "Passport — for identity and emigration processing",
   evaluation:
     "AI interviews, transcripts, and optional recording — to evaluate you for a role",
+  medical:
+    "Medical fitness test and its report — booked only after an employer selects you",
 };
-
-/** Spoken + on-screen notice v1.1 — keep short for TTS. */
-const PLAIN_LANGUAGE =
-  "We verify you through DigiLocker. Employers see results, not your documents. Interview scores may be shared for that job. A licensed recruiter places you. You pay nothing. You can view, fix, delete, or withdraw anytime. We never sell your data. Please give access to all the documents required to move ahead.";
 
 function offToggles(purposes: string[]): Record<string, boolean> {
   return Object.fromEntries(purposes.map((p) => [p, false]));
@@ -38,6 +42,7 @@ type ConsentActive = {
 type ConsentApiResponse = {
   noticeVersion: string;
   availablePurposes: string[];
+  digilockerPurposes?: string[];
   active: ConsentActive;
   error?: string;
 };
@@ -50,19 +55,27 @@ export function ConsentNoticePanel({
   compact = false,
   variant = "manage",
   verifyHref,
+  only,
+  onGranted,
 }: {
   className?: string;
   compact?: boolean;
   /** KYC gate: all switches start off; Agree and Verify only when all are on. */
   variant?: "kyc" | "manage";
   verifyHref?: string;
+  /** Restrict to one purpose so a single step never bundles unrelated consent. */
+  only?: string[];
+  /** After a successful grant — used by a step that should then move on. */
+  onGranted?: () => void;
 }) {
   const isKyc = variant === "kyc";
+  // Stable dependency: the array prop would be a new reference every render.
+  const onlyKey = only?.join(",") ?? "";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState("");
-  const [noticeVersion, setNoticeVersion] = useState("1.1");
+  const [noticeVersion, setNoticeVersion] = useState("1.2");
   const [available, setAvailable] = useState<string[]>(
     Object.keys(PURPOSE_LABELS),
   );
@@ -76,7 +89,19 @@ export function ConsentNoticePanel({
   );
   const [usedVoice, setUsedVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackIdRef = useRef<string | null>(null);
   const autoPlayedRef = useRef(false);
+  const medicalOnly = onlyKey === "medical";
+  const playbackScope: ConsentPlaybackScope = medicalOnly
+    ? "medical"
+    : isKyc
+      ? "kyc"
+      : "manage";
+  const noticeText = medicalOnly
+    ? MEDICAL_NOTICE
+    : isKyc
+      ? KYC_NOTICE
+      : MANAGE_NOTICE;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,13 +110,20 @@ export function ConsentNoticePanel({
       const res = await fetch("/api/candidate/consent");
       const json = (await res.json().catch(() => ({}))) as ConsentApiResponse;
       if (!res.ok) throw new Error(json.error || "Could not load consent");
+      // The identity gate asks only for identity purposes; a scoped step asks
+      // only for its own. Everything else manages the full set.
+      const scope = isKyc
+        ? (json.digilockerPurposes ?? json.availablePurposes)
+        : onlyKey
+          ? json.availablePurposes.filter((p) => onlyKey.split(",").includes(p))
+          : json.availablePurposes;
       setNoticeVersion(json.noticeVersion);
-      setAvailable(json.availablePurposes);
+      setAvailable(scope);
       setActive(json.active);
       setToggles(() => {
-        const next = offToggles(json.availablePurposes);
+        const next = offToggles(scope);
         if (!isKyc && json.active.purposes.length) {
-          for (const p of json.availablePurposes) {
+          for (const p of scope) {
             next[p] = json.active.purposes.includes(p);
           }
         }
@@ -102,7 +134,7 @@ export function ConsentNoticePanel({
     } finally {
       setLoading(false);
     }
-  }, [isKyc]);
+  }, [isKyc, onlyKey]);
 
   const stopNotice = useCallback(() => {
     const audio = audioRef.current;
@@ -124,38 +156,51 @@ export function ConsentNoticePanel({
       stopNotice();
       setSpeaking(true);
       setError("");
+      playbackIdRef.current = null;
       try {
-        const res = await fetch("/api/voice/tts", {
+        const res = await fetch("/api/candidate/consent/playback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: PLAIN_LANGUAGE }),
+          body: JSON.stringify({ scope: playbackScope }),
         });
+        const playbackId = res.headers.get("x-consent-playback-id");
+        if (playbackId) playbackIdRef.current = playbackId;
         if (!res.ok) {
-          if ("speechSynthesis" in window) {
-            const utter = new SpeechSynthesisUtterance(PLAIN_LANGUAGE);
-            utter.lang = "en-IN";
-            window.speechSynthesis.cancel();
-            setUsedVoice(true);
-            if (waitUntilEnded) {
-              await new Promise<void>((resolve, reject) => {
-                utter.onend = () => {
-                  setSpeaking(false);
-                  resolve();
-                };
-                utter.onerror = () => {
-                  setSpeaking(false);
-                  reject(new Error("Could not play audio"));
-                };
-                window.speechSynthesis.speak(utter);
-              });
-            } else {
-              utter.onend = () => setSpeaking(false);
-              utter.onerror = () => setSpeaking(false);
-              window.speechSynthesis.speak(utter);
-            }
-            return;
-          }
           throw new Error("Could not play audio");
+        }
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const json = (await res.json().catch(() => ({}))) as {
+            playbackId?: string;
+            text?: string;
+          };
+          if (json.playbackId) playbackIdRef.current = json.playbackId;
+          const spoken = json.text || noticeText;
+          if (!("speechSynthesis" in window)) {
+            throw new Error("Could not play audio");
+          }
+          const utter = new SpeechSynthesisUtterance(spoken);
+          utter.lang = "en-IN";
+          window.speechSynthesis.cancel();
+          setUsedVoice(true);
+          if (waitUntilEnded) {
+            await new Promise<void>((resolve, reject) => {
+              utter.onend = () => {
+                setSpeaking(false);
+                resolve();
+              };
+              utter.onerror = () => {
+                setSpeaking(false);
+                reject(new Error("Could not play audio"));
+              };
+              window.speechSynthesis.speak(utter);
+            });
+          } else {
+            utter.onend = () => setSpeaking(false);
+            utter.onerror = () => setSpeaking(false);
+            window.speechSynthesis.speak(utter);
+          }
+          return;
         }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -180,7 +225,7 @@ export function ConsentNoticePanel({
         throw e;
       }
     },
-    [stopNotice],
+    [noticeText, playbackScope, stopNotice],
   );
 
   useEffect(() => {
@@ -197,40 +242,52 @@ export function ConsentNoticePanel({
   }, [isKyc, loading, playNotice]);
 
   const selected = available.filter((p) => toggles[p]);
+  const scopedActive = active.purposes.filter((p) => available.includes(p));
   const allOn =
     available.length > 0 && available.every((p) => Boolean(toggles[p]));
   const canAgreeAndVerify = isKyc && allOn && !saving;
 
   const grantPurposes = async (purposes: string[]) => {
+    const playbackId = playbackIdRef.current;
+    if (!playbackId) {
+      throw new Error("Play the notice first.");
+    }
     const res = await fetch("/api/candidate/consent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "grant",
         purposes,
-        method: "voice_tap",
+        playbackId,
       }),
     });
     const json = (await res.json().catch(() => ({}))) as ConsentApiResponse & {
       error?: string;
     };
     if (!res.ok) throw new Error(json.error || "Could not save consent");
+    playbackIdRef.current = null;
+    setUsedVoice(false);
     setActive(json.active);
     return json;
   };
 
   const grant = async () => {
     if (!selected.length) {
-      setError("Select at least one purpose");
+      setError(
+        medicalOnly
+          ? "Turn on the medical test to continue."
+          : "Select at least one purpose",
+      );
       return;
     }
     setSaving(true);
     setError("");
     try {
-      if (!usedVoice) {
-        await playNotice(false);
+      if (!playbackIdRef.current) {
+        await playNotice(true);
       }
       await grantPurposes(selected);
+      onGranted?.();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not save consent");
     } finally {
@@ -243,10 +300,11 @@ export function ConsentNoticePanel({
     setSaving(true);
     setError("");
     try {
-      if (!usedVoice) {
+      if (!playbackIdRef.current) {
         await playNotice(true);
       }
       await grantPurposes(available);
+      onGranted?.();
       if (verifyHref) {
         window.location.assign(verifyHref);
         return;
@@ -259,7 +317,7 @@ export function ConsentNoticePanel({
   };
 
   const withdrawAll = async () => {
-    if (!active.purposes.length) return;
+    if (!scopedActive.length) return;
     setSaving(true);
     setError("");
     try {
@@ -268,18 +326,20 @@ export function ConsentNoticePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "withdraw",
-          purposes: active.purposes,
+          purposes: scopedActive,
           method: "settings",
         }),
       });
-      const json = (await res.json().catch(() => ({}))) as ConsentApiResponse & {
+      const json = (await res
+        .json()
+        .catch(() => ({}))) as ConsentApiResponse & {
         error?: string;
       };
       if (!res.ok) throw new Error(json.error || "Could not withdraw consent");
       setActive(json.active);
       setToggles((prev) => {
         const next = { ...prev };
-        for (const p of active.purposes) next[p] = false;
+        for (const p of scopedActive) next[p] = false;
         return next;
       });
     } catch (e: unknown) {
@@ -338,7 +398,7 @@ export function ConsentNoticePanel({
               ) : null}
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {PLAIN_LANGUAGE}
+              {noticeText}
             </p>
           </div>
         ) : (
@@ -354,7 +414,11 @@ export function ConsentNoticePanel({
             disabled={speaking || saving}
             onClick={() => void playNotice(false).catch(() => undefined)}
           >
-            {speaking ? "Reading…" : usedVoice ? "Read aloud again" : "Read aloud"}
+            {speaking
+              ? "Reading…"
+              : usedVoice
+                ? "Read aloud again"
+                : "Read aloud"}
           </Button>
         ) : null}
 
@@ -381,13 +445,14 @@ export function ConsentNoticePanel({
           ))}
         </div>
 
-        {active.grantedAt && !isKyc ? (
+        {scopedActive.length && !isKyc ? (
           <p className="text-muted-foreground text-xs">
-            Active consent recorded {new Date(active.grantedAt).toLocaleString()}
+            Active consent recorded{" "}
+            {active.grantedAt
+              ? new Date(active.grantedAt).toLocaleString()
+              : ""}
             {active.noticeVersion ? ` · notice v${active.noticeVersion}` : null}
-            {active.purposes.length
-              ? ` · ${active.purposes.join(", ")}`
-              : " · none active"}
+            {` · ${scopedActive.join(", ")}`}
           </p>
         ) : null}
 
@@ -420,15 +485,21 @@ export function ConsentNoticePanel({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              disabled={saving || speaking || !selected.length || !usedVoice}
+              size={onGranted ? "lg" : "default"}
+              className={onGranted ? "w-full sm:w-auto" : undefined}
+              disabled={saving || speaking || !selected.length}
               onClick={() => void grant()}
             >
-              I agree
+              {saving
+                ? "Saving…"
+                : onGranted
+                  ? "I agree — continue"
+                  : "I agree"}
             </Button>
             <Button
               type="button"
               variant="outline"
-              disabled={saving || !active.purposes.length}
+              disabled={saving || !scopedActive.length}
               onClick={() => void withdrawAll()}
             >
               Withdraw
@@ -443,12 +514,11 @@ export function ConsentNoticePanel({
 
         {!isKyc && !selected.length ? (
           <p className="text-muted-foreground text-xs">
-            Turn on identity and contact to continue DigiLocker verification.
-          </p>
-        ) : null}
-        {!isKyc && selected.length > 0 && !usedVoice ? (
-          <p className="text-muted-foreground text-xs">
-            Tap Read aloud first. Agreement is recorded as a voice confirmation.
+            {medicalOnly
+              ? "Turn on the medical test, then agree to continue."
+              : available.includes("identity") && available.includes("contact")
+                ? "Turn on identity and contact to continue DigiLocker verification."
+                : "Turn on the purposes you agree to."}
           </p>
         ) : null}
       </div>

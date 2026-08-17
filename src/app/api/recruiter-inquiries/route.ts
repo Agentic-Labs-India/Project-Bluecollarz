@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { resolveCountryName } from "@/lib/core/geo/places";
+import { ensureIndexes } from "@/lib/db/indexes";
 import { createRecruiterInquiry } from "@/lib/hire/inquiries";
 import { recruiterInquiryCreateSchema } from "@/lib/hire/inquiries/types";
-import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
-import { resolveCountryName } from "@/lib/core/geo/places";
 
 /** Public recruiter access request — no auth. */
 export async function POST(req: NextRequest) {
@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, item }, { status: 201 });
   } catch (error) {
     console.error("POST /api/recruiter-inquiries:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

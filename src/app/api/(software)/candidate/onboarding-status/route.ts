@@ -16,6 +16,9 @@ export async function GET() {
     return NextResponse.json({ complete, kycVerified });
   } catch (error) {
     console.error("GET /api/candidate/onboarding-status:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

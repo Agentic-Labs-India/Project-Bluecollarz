@@ -87,7 +87,9 @@ export const SARVAM_STT_MODES = [
 ] as const;
 
 export function speakersForTtsModel(model: string): readonly string[] {
-  return model === "bulbul:v2" ? SARVAM_TTS_SPEAKERS_V2 : SARVAM_TTS_SPEAKERS_V3;
+  return model === "bulbul:v2"
+    ? SARVAM_TTS_SPEAKERS_V2
+    : SARVAM_TTS_SPEAKERS_V3;
 }
 
 export function defaultSpeakerForTtsModel(model: string): string {

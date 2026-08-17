@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
+import { PrimaryDither } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -12,8 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
-import { PrimaryDither } from "@/components/landing/primary-dither";
+import { Textarea } from "@/components/ui/textarea";
 import { listCountries } from "@/lib/core/geo/places";
 import {
   COMPANY_SIZES,
@@ -82,8 +82,8 @@ export function RecruiterAccessForm() {
         <div className="relative z-10">
           <p className="text-base font-semibold text-white">Request received</p>
           <p className="mt-1 text-sm leading-relaxed text-white/75">
-            Thanks — we have your company details. Our team will review and reply
-            with recruiter onboarding steps if approved.
+            Thanks — we have your company details. Our team will review and
+            reply with recruiter onboarding steps if approved.
           </p>
         </div>
       </div>

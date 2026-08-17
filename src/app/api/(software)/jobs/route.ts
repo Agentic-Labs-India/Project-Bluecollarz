@@ -1,25 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile, requireUser } from "@/lib/auth/session";
+import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import { isHireCompanyVerified } from "@/lib/hire/onboarding";
 import {
   buildJobDocument,
-  jobCreateSchema,
-  parsePagination,
-  toJobListItem,
   formatJobValidationError,
-  sanitizeJobCreateBody,
+  JOB_PRIORITIES,
   JOB_STATUSES,
   JOB_TABS,
-  JOB_PRIORITIES,
   type JobDocument,
+  jobCreateSchema,
+  parsePagination,
+  sanitizeJobCreateBody,
+  toJobListItem,
 } from "@/lib/jobs";
 import type { ApplicationDocument } from "@/lib/jobs/applications";
 import {
   getPublishedOpportunities,
   revalidatePublishedJobsCache,
 } from "@/lib/jobs/queries";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireUser, requireProfile } from "@/lib/auth/session";
-import { isHireCompanyVerified } from "@/lib/hire/onboarding";
 import { idHex } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
@@ -38,7 +38,10 @@ export async function GET(req: NextRequest) {
     if (scope !== "mine") {
       const authResult = await requireUser();
       if (!authResult.ok) {
-        return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+        return NextResponse.json(
+          { error: authResult.error },
+          { status: authResult.status },
+        );
       }
       const result = await getPublishedOpportunities({
         viewerId: authResult.user.id,
@@ -56,7 +59,10 @@ export async function GET(req: NextRequest) {
     // "mine" scope: a hirer's own postings (any status), as list items.
     const hireAuth = await requireProfile("hire");
     if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+      return NextResponse.json(
+        { error: hireAuth.error },
+        { status: hireAuth.status },
+      );
     }
 
     if (!hireAuth.user.id) {
@@ -64,7 +70,9 @@ export async function GET(req: NextRequest) {
     }
 
     const status = sp.get("status")?.trim() || "";
-    const query: Record<string, unknown> = { ownerId: matchId(hireAuth.user.id) };
+    const query: Record<string, unknown> = {
+      ownerId: matchId(hireAuth.user.id),
+    };
     if (status && (JOB_STATUSES as readonly string[]).includes(status)) {
       query.status = status;
     }
@@ -87,7 +95,12 @@ export async function GET(req: NextRequest) {
     const collection = db.collection<JobDocument>(COLLECTIONS.JOBS);
 
     const [docs, total] = await Promise.all([
-      collection.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      collection
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
       collection.countDocuments(query),
     ]);
 
@@ -119,7 +132,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("GET /api/jobs:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -129,7 +145,10 @@ export async function POST(req: NextRequest) {
 
     const hireAuth = await requireProfile("hire");
     if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+      return NextResponse.json(
+        { error: hireAuth.error },
+        { status: hireAuth.status },
+      );
     }
 
     if (!(await isHireCompanyVerified(hireAuth.user.id))) {
@@ -173,6 +192,9 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("POST /api/jobs:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

@@ -2,6 +2,7 @@ import "server-only";
 
 import { del } from "@vercel/blob";
 import { isVercelBlobUrl } from "@/lib/blob/pathname";
+import { blobReadWriteToken } from "@/lib/blob/token";
 
 /** Best-effort delete of Vercel Blob URLs (never throws). */
 export async function deleteBlobUrls(
@@ -16,7 +17,7 @@ export async function deleteBlobUrls(
   ];
   if (!unique.length) return;
   try {
-    await del(unique);
+    await del(unique, { token: blobReadWriteToken() });
   } catch (error) {
     console.warn("deleteBlobUrls:", error);
   }

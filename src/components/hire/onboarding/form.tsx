@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { CheckIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { CountryStateCityFields } from "@/components/geo/place-fields";
+import {
+  ContactFields,
+  DocumentSlot,
+  FieldInput,
+  SectionCard,
+} from "@/components/hire/onboarding/fields";
 import { AppPage } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,34 +19,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { COMPANY_DOC_MAX_BYTES, COMPANY_DOC_MAX_MB } from "@/lib/blob/pathname";
 import { uploadBlob } from "@/lib/blob/upload";
-import {
-  COMPANY_DOC_MAX_BYTES,
-  COMPANY_DOC_MAX_MB,
-} from "@/lib/blob/pathname";
 import {
   GCC_RULE_KEYS,
   GCC_RULE_LABELS,
+  type GccRuleKey,
   getMissingOnboardingFields,
   HIRE_ONBOARDING_CONTACT_KEYS,
   HIRE_ONBOARDING_CONTACT_LABELS,
-  isHireOnboardingComplete,
-  isHireOnboardingEditable,
-  LEGAL_LICENCE_TYPES,
-  toHireOnboardingSave,
-  type GccRuleKey,
   type HireOnboardingData,
   type HireOnboardingDocument,
   type HireOnboardingLicence,
+  isHireOnboardingComplete,
+  isHireOnboardingEditable,
+  LEGAL_LICENCE_TYPES,
   type LegalLicenceType,
+  toHireOnboardingSave,
 } from "@/lib/hire/onboarding/types";
 import { cn } from "@/lib/utils";
-import {
-  ContactFields,
-  DocumentSlot,
-  FieldInput,
-  SectionCard,
-} from "@/components/hire/onboarding/fields";
 
 const AUTOSAVE_DEBOUNCE_MS = 700;
 
@@ -60,7 +57,11 @@ function safeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 80) || "document";
 }
 
-export function HireOnboardingForm({ initial }: { initial: HireOnboardingData }) {
+export function HireOnboardingForm({
+  initial,
+}: {
+  initial: HireOnboardingData;
+}) {
   const [data, setData] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -69,7 +70,9 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   const dataRef = useRef(data);
-  const lastSavedJsonRef = useRef(JSON.stringify(toHireOnboardingSave(initial)));
+  const lastSavedJsonRef = useRef(
+    JSON.stringify(toHireOnboardingSave(initial)),
+  );
   const saveRequestIdRef = useRef(0);
 
   dataRef.current = data;
@@ -146,7 +149,9 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
 
   async function uploadCompanyFile(kind: string, file: File) {
     if (file.size > COMPANY_DOC_MAX_BYTES) {
-      throw new Error(`Each document must be ${COMPANY_DOC_MAX_MB} MB or smaller`);
+      throw new Error(
+        `Each document must be ${COMPANY_DOC_MAX_MB} MB or smaller`,
+      );
     }
     const result = await uploadBlob({
       file,
@@ -221,7 +226,9 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
         throw new Error(savedJson.error || "Save failed");
       }
 
-      const res = await fetch("/api/hire/onboarding/submit", { method: "POST" });
+      const res = await fetch("/api/hire/onboarding/submit", {
+        method: "POST",
+      });
       const json = (await res.json().catch(() => ({}))) as {
         item?: HireOnboardingData;
         error?: string;
@@ -230,7 +237,9 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
         throw new Error(json.error || "Submit failed");
       }
       setData(json.item);
-      lastSavedJsonRef.current = JSON.stringify(toHireOnboardingSave(json.item));
+      lastSavedJsonRef.current = JSON.stringify(
+        toHireOnboardingSave(json.item),
+      );
       setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submit failed");
@@ -261,15 +270,24 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
           </p>
         </div>
         <p className="text-muted-foreground text-xs tabular-nums">
-          {saving ? "Saving…" : saved ? "Saved" : editable ? "Editing" : "Locked"}
+          {saving
+            ? "Saving…"
+            : saved
+              ? "Saved"
+              : editable
+                ? "Editing"
+                : "Locked"}
         </p>
       </div>
 
       {data.status === "submitted" ? (
         <div className="border-border bg-muted/40 mb-6 border px-4 py-3 text-sm">
-          <p className="text-foreground font-medium">Submitted for final verification.</p>
+          <p className="text-foreground font-medium">
+            Submitted for final verification.
+          </p>
           <p className="text-muted-foreground mt-1">
-            An admin will review this pack. You cannot edit until a decision is made.
+            An admin will review this pack. You cannot edit until a decision is
+            made.
           </p>
         </div>
       ) : null}
@@ -288,9 +306,7 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
         </div>
       ) : null}
 
-      {error ? (
-        <p className="text-destructive mb-4 text-sm">{error}</p>
-      ) : null}
+      {error ? <p className="text-destructive mb-4 text-sm">{error}</p> : null}
 
       <div className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-2">
@@ -299,13 +315,20 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
             description="Legal registration details. Company name, website, country, industry, and primary contact from your access request cannot be changed."
           >
             <div className="grid gap-3 sm:grid-cols-2">
-              <FieldInput label="Legal name" value={identity.legalName} disabled />
+              <FieldInput
+                label="Legal name"
+                value={identity.legalName}
+                disabled
+              />
               <FieldInput
                 label="Trade name"
                 value={identity.tradeName}
                 disabled={!editable}
                 onChange={(tradeName) =>
-                  patch((p) => ({ ...p, identity: { ...p.identity, tradeName } }))
+                  patch((p) => ({
+                    ...p,
+                    identity: { ...p.identity, tradeName },
+                  }))
                 }
               />
               <FieldInput
@@ -324,7 +347,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 value={identity.taxVatId}
                 disabled={!editable}
                 onChange={(taxVatId) =>
-                  patch((p) => ({ ...p, identity: { ...p.identity, taxVatId } }))
+                  patch((p) => ({
+                    ...p,
+                    identity: { ...p.identity, taxVatId },
+                  }))
                 }
               />
               <FieldInput
@@ -332,7 +358,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 value={identity.chamberId}
                 disabled={!editable}
                 onChange={(chamberId) =>
-                  patch((p) => ({ ...p, identity: { ...p.identity, chamberId } }))
+                  patch((p) => ({
+                    ...p,
+                    identity: { ...p.identity, chamberId },
+                  }))
                 }
               />
               <FieldInput
@@ -340,7 +369,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 value={identity.sponsorId}
                 disabled={!editable}
                 onChange={(sponsorId) =>
-                  patch((p) => ({ ...p, identity: { ...p.identity, sponsorId } }))
+                  patch((p) => ({
+                    ...p,
+                    identity: { ...p.identity, sponsorId },
+                  }))
                 }
               />
               <FieldInput
@@ -351,7 +383,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 onChange={(raw) =>
                   patch((p) => ({
                     ...p,
-                    identity: { ...p.identity, yearEstablished: parseYear(raw) },
+                    identity: {
+                      ...p.identity,
+                      yearEstablished: parseYear(raw),
+                    },
                   }))
                 }
               />
@@ -363,19 +398,26 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 document={data.documents.establishmentCard}
                 disabled={!editable}
                 uploading={uploadingKey === "establishmentCard"}
-                onPick={(file) => void handleIdentityDoc("establishmentCard", file)}
+                onPick={(file) =>
+                  void handleIdentityDoc("establishmentCard", file)
+                }
               />
               <DocumentSlot
                 label="Immigration file"
                 document={data.documents.immigrationFile}
                 disabled={!editable}
                 uploading={uploadingKey === "immigrationFile"}
-                onPick={(file) => void handleIdentityDoc("immigrationFile", file)}
+                onPick={(file) =>
+                  void handleIdentityDoc("immigrationFile", file)
+                }
               />
             </div>
           </SectionCard>
 
-          <SectionCard title="Location & size" description="HQ footprint and workforce mix.">
+          <SectionCard
+            title="Location & size"
+            description="HQ footprint and workforce mix."
+          >
             <div className="grid gap-3 sm:grid-cols-2">
               <CountryStateCityFields
                 countryCode={location.countryCode}
@@ -401,7 +443,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                   value={location.address}
                   disabled={!editable}
                   onChange={(address) =>
-                    patch((p) => ({ ...p, location: { ...p.location, address } }))
+                    patch((p) => ({
+                      ...p,
+                      location: { ...p.location, address },
+                    }))
                   }
                 />
               </div>
@@ -418,7 +463,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 onChange={(raw) =>
                   patch((p) => ({
                     ...p,
-                    location: { ...p.location, totalEmployees: parseCount(raw) },
+                    location: {
+                      ...p.location,
+                      totalEmployees: parseCount(raw),
+                    },
                   }))
                 }
               />
@@ -430,7 +478,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 onChange={(raw) =>
                   patch((p) => ({
                     ...p,
-                    location: { ...p.location, foreignWorkers: parseCount(raw) },
+                    location: {
+                      ...p.location,
+                      foreignWorkers: parseCount(raw),
+                    },
                   }))
                 }
               />
@@ -457,7 +508,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 onChange={(raw) =>
                   patch((p) => ({
                     ...p,
-                    location: { ...p.location, blueCollarCount: parseCount(raw) },
+                    location: {
+                      ...p.location,
+                      blueCollarCount: parseCount(raw),
+                    },
                   }))
                 }
               />
@@ -465,7 +519,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
           </SectionCard>
         </div>
 
-        <SectionCard title="Key contacts" description="People we can reach for operations and compliance.">
+        <SectionCard
+          title="Key contacts"
+          description="People we can reach for operations and compliance."
+        >
           <div className="grid gap-6 lg:grid-cols-2">
             {HIRE_ONBOARDING_CONTACT_KEYS.map((key) => (
               <div key={key} className="border-border border p-3">
@@ -587,7 +644,10 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
                 </span>
               </div>
               <div className="bg-muted h-2 w-full overflow-hidden">
-                <div className="bg-primary h-full" style={{ width: `${usedPct}%` }} />
+                <div
+                  className="bg-primary h-full"
+                  style={{ width: `${usedPct}%` }}
+                />
               </div>
             </div>
           ) : null}
@@ -622,7 +682,9 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
             </Button>
           </div>
           {data.legalLicences.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No licences added yet.</p>
+            <p className="text-muted-foreground text-sm">
+              No licences added yet.
+            </p>
           ) : (
             <div className="space-y-3">
               {data.legalLicences.map((row) => (
@@ -780,8 +842,8 @@ export function HireOnboardingForm({ initial }: { initial: HireOnboardingData })
               Submit for final verification
             </h2>
             <p className="text-muted-foreground mt-1 mb-4 text-sm">
-              Required fields must be complete. After submit, this pack is locked
-              until an admin verifies or sends it back.
+              Required fields must be complete. After submit, this pack is
+              locked until an admin verifies or sends it back.
             </p>
             {!complete ? (
               <p className="text-muted-foreground mb-4 text-sm">

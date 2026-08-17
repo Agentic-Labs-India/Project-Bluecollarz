@@ -1,9 +1,9 @@
 import { CheckIcon, MinusIcon, XIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type {
   CandidatePipelineStep,
   PipelineStepStatus,
 } from "@/lib/jobs/pipeline";
+import { cn } from "@/lib/utils";
 
 function circleClass(dither: boolean, status: PipelineStepStatus) {
   if (dither) {

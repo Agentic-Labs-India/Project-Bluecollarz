@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { DocTocNav, type DocTocItem } from "@/components/landing/doc-toc";
+import type { ReactNode } from "react";
+import { type DocTocItem, DocTocNav } from "@/components/landing/doc-toc";
 import { PrimaryDither } from "@/components/landing/primary-dither";
 import { cn } from "@/lib/utils";
 
@@ -180,7 +180,9 @@ export function DocSteps({
             {String(index + 1).padStart(2, "0")}
           </span>
           <div className="min-w-0 space-y-1">
-            <p className="text-foreground text-sm font-semibold">{step.title}</p>
+            <p className="text-foreground text-sm font-semibold">
+              {step.title}
+            </p>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {step.body}
             </p>
@@ -278,7 +280,9 @@ export function DocCta({
 
 export function DocCtaRow({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">{children}</div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      {children}
+    </div>
   );
 }
 

@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRightIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   SearchIcon,
 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AiInterview } from "@/components/candidate/interviews/ai-interview";
+import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
+import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
+import { APP_PAGE_GUTTER, AppPage } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,23 +24,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
-import { AiInterview } from "@/components/candidate/interviews/ai-interview";
-import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
-import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
-import { AppPage, APP_PAGE_GUTTER } from "@/components/layout/app-page";
-import { isAiInterviewStage, type InterviewStageId } from "@/lib/interviews";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { stateName } from "@/lib/core/geo/places";
+import { type InterviewStageId, isAiInterviewStage } from "@/lib/interviews";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CustomQuestion } from "@/lib/jobs/custom-questions";
 import {
-  OPPORTUNITY_TABS,
   OPPORTUNITY_TAB_LABELS,
+  OPPORTUNITY_TABS,
   type Opportunity,
   type OpportunityTab,
 } from "@/lib/jobs/opportunities";
-import { stateName } from "@/lib/core/geo/places";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 function isJobId(id: string): boolean {
@@ -240,7 +240,9 @@ function ExploreFilters({
             onPriorityChange(value as "all" | "high" | "medium" | "low")
           }
         >
-          <SelectTrigger className={cn(compact ? "min-w-0 flex-1" : "w-[160px]")}>
+          <SelectTrigger
+            className={cn(compact ? "min-w-0 flex-1" : "w-[160px]")}
+          >
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -255,7 +257,9 @@ function ExploreFilters({
           value={workType}
           onValueChange={(value) => onWorkTypeChange(value as WorkTypeFilter)}
         >
-          <SelectTrigger className={cn(compact ? "min-w-0 flex-1" : "w-[180px]")}>
+          <SelectTrigger
+            className={cn(compact ? "min-w-0 flex-1" : "w-[180px]")}
+          >
             <SelectValue placeholder="Work type" />
           </SelectTrigger>
           <SelectContent>
@@ -330,10 +334,9 @@ export function ExploreOpportunities({
   const [workType, setWorkType] = useState<WorkTypeFilter>("all");
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(Math.max(1, initialPageCount));
-  const [opportunities, setOpportunities] =
-    useState<Opportunity[]>(() =>
-      initialOpportunities.slice(0, EXPLORE_PAGE_SIZE),
-    );
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(() =>
+    initialOpportunities.slice(0, EXPLORE_PAGE_SIZE),
+  );
   const [applicationStatuses, setApplicationStatuses] = useState<
     Record<string, ApplicationStatus>
   >(initialApplicationStatuses);
@@ -341,9 +344,7 @@ export function ExploreOpportunities({
     initialProfileComplete,
   );
   const [applying, setApplying] = useState(false);
-  const [justAppliedJobId, setJustAppliedJobId] = useState<string | null>(
-    null,
-  );
+  const [justAppliedJobId, setJustAppliedJobId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [startingInterview, setStartingInterview] = useState(false);
@@ -534,7 +535,15 @@ export function ExploreOpportunities({
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pin keyed by selectedId + current page list
-  }, [selectedId, opportunities, loading, page, workType, searchDebounced, priority]);
+  }, [
+    selectedId,
+    opportunities,
+    loading,
+    page,
+    workType,
+    searchDebounced,
+    priority,
+  ]);
 
   const applyToJob = async (jobId: string) => {
     setApplying(true);
@@ -611,10 +620,7 @@ export function ExploreOpportunities({
     }
   };
 
-  const markInterviewComplete = (
-    jobId: string,
-    stageId: InterviewStageId,
-  ) => {
+  const markInterviewComplete = (jobId: string, stageId: InterviewStageId) => {
     setOpportunities((prev) =>
       prev.map((o) => {
         if (o.id !== jobId) return o;
@@ -775,7 +781,9 @@ export function ExploreOpportunities({
               {loading || opportunities.length === 0 ? (
                 <div className="min-h-0 flex-1 overflow-hidden">{listBody}</div>
               ) : (
-                <ScrollArea className={EXPLORE_LIST_SCROLL}>{listBody}</ScrollArea>
+                <ScrollArea className={EXPLORE_LIST_SCROLL}>
+                  {listBody}
+                </ScrollArea>
               )}
             </div>
           ) : (

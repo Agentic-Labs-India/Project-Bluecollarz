@@ -1,6 +1,6 @@
-import { Suspense } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { HireShell } from "@/app/(software)/hire/hire-shell";
 import { auth } from "@/lib/auth/auth";
 import {

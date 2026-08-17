@@ -13,10 +13,7 @@ import {
   ComboboxValue,
   useComboboxAnchor,
 } from "@/components/ui/combobox";
-import {
-  listCountryNames,
-  normalizeCountryNames,
-} from "@/lib/core/geo/places";
+import { listCountryNames, normalizeCountryNames } from "@/lib/core/geo/places";
 
 const COUNTRY_NAMES = listCountryNames();
 
@@ -31,10 +28,7 @@ export function CountryMultiSelect({
   placeholder?: string;
 }) {
   const anchor = useComboboxAnchor();
-  const selected = React.useMemo(
-    () => normalizeCountryNames(value),
-    [value],
-  );
+  const selected = React.useMemo(() => normalizeCountryNames(value), [value]);
 
   return (
     <Combobox

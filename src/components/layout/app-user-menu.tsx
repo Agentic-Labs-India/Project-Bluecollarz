@@ -1,6 +1,24 @@
 "use client";
 
+import {
+  BadgeCheckIcon,
+  BellIcon,
+  CookieIcon,
+  IdCardIcon,
+  LogOutIcon,
+  MoonIcon,
+  SunIcon,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import * as React from "react";
+import { HelpDialog, HelpMenuButton } from "@/components/help";
+import {
+  fetchUserPreferences,
+  PreferenceDialog,
+  type PreferenceKind,
+  patchUserPreferences,
+} from "@/components/layout/preference-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,33 +29,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  BadgeCheckIcon,
-  BellIcon,
-  CookieIcon,
-  IdCardIcon,
-  LogOutIcon,
-  MoonIcon,
-  SunIcon,
-} from "lucide-react";
 import { authClient } from "@/lib/auth/auth-client";
-import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
-import { HelpDialog, HelpMenuButton } from "@/components/help";
 import {
+  applyGtagConsent,
   syncAnalyticsConsentWithAccount,
   writeAnalyticsConsent,
-  applyGtagConsent,
 } from "@/lib/compliance/analytics";
-import {
-  PreferenceDialog,
-  fetchUserPreferences,
-  patchUserPreferences,
-  type PreferenceKind,
-} from "@/components/layout/preference-dialog";
 import type { UserPreferences } from "@/lib/user/preferences";
 import { getProfileIdLabel } from "@/lib/user/profile-types";
+import { cn } from "@/lib/utils";
 
 type AppUser = { name: string; email: string; avatar: string };
 
@@ -102,7 +102,7 @@ function UserMenuDropdown({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-        <DropdownMenuItem onClick={() => router.push(profileHref)}>
+          <DropdownMenuItem onClick={() => router.push(profileHref)}>
             <IdCardIcon />
             Profile : {profileTypeLabel} 😄
           </DropdownMenuItem>
@@ -168,8 +168,7 @@ export function AppUserMenu({
   }, [openKind, loaded]);
 
   const handleToggle = async (kind: PreferenceKind, enabled: boolean) => {
-    const key =
-      kind === "cookies" ? "cookiesEnabled" : "notificationsEnabled";
+    const key = kind === "cookies" ? "cookiesEnabled" : "notificationsEnabled";
     const previous = prefs;
     setPrefs((current) => ({ ...current, [key]: enabled }));
     setSaving(true);

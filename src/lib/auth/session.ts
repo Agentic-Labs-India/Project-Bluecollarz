@@ -1,28 +1,33 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
-import { normalizeProfileType, type ProfileType } from "@/lib/user/profile-types";
+import {
+  normalizeProfileType,
+  type ProfileType,
+} from "@/lib/user/profile-types";
 
-interface AuthContext {
+export interface AuthContext {
   id: string;
   email: string;
   name: string | null;
   profileType: ProfileType;
 }
 
-type Guard =
+export type Guard =
   | { ok: true; user: AuthContext }
-  | { ok: false; error: string; status: number };
+  | { ok: false; error: string; status: number; code?: string };
 
 /**
  * Next aborts Cache Components prerender by rejecting hanging dynamic APIs.
  * Route `try/catch` blocks must rethrow these so the route stays dynamic.
  */
 export function rethrowIfPrerenderAbort(error: unknown): void {
+  if (typeof error !== "object" || error === null || !("digest" in error)) {
+    return;
+  }
+  const digest = (error as { digest?: unknown }).digest;
   if (
-    typeof error === "object" &&
-    error !== null &&
-    "digest" in error &&
-    (error as { digest?: unknown }).digest === "HANGING_PROMISE_REJECTION"
+    digest === "HANGING_PROMISE_REJECTION" ||
+    digest === "NEXT_PRERENDER_INTERRUPTED"
   ) {
     throw error;
   }
@@ -34,7 +39,12 @@ async function getAuthContext(): Promise<AuthContext | null> {
   // API route try/catch would otherwise log HANGING_PROMISE_REJECTION during build.
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user as
-    | { id?: string; email?: string; name?: string | null; profileType?: string }
+    | {
+        id?: string;
+        email?: string;
+        name?: string | null;
+        profileType?: string;
+      }
     | undefined;
   if (!user?.id) return null;
   return {

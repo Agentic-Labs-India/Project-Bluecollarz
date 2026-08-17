@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth/session";
-import { PROFILE_TYPES } from "@/lib/user/profile-types";
 import {
   listSupportTickets,
   updateSupportTicketStatus,
@@ -11,6 +10,7 @@ import {
   SUPPORT_SERIOUSNESS,
   SUPPORT_STATUSES,
 } from "@/lib/support/types";
+import { PROFILE_TYPES } from "@/lib/user/profile-types";
 import { formatZodError } from "@/lib/utils";
 
 const listQuerySchema = z.object({
@@ -49,7 +49,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("GET /api/admin/support/tickets:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -86,6 +89,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ item });
   } catch (error) {
     console.error("PATCH /api/admin/support/tickets:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

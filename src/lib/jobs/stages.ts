@@ -8,7 +8,8 @@ export const APPLICATION_STAGE_OPTIONS = [
   {
     id: "resume",
     label: "Resume",
-    description: "Always included. Candidates must complete their profile first.",
+    description:
+      "Always included. Candidates must complete their profile first.",
     locked: true,
   },
   {
@@ -53,7 +54,7 @@ export function normalizeStepTemplates(
     if (isApplicationStageId(id) && id !== "resume") selected.add(id);
   }
 
-  return APPLICATION_STAGE_OPTIONS.filter((stage) => selected.has(stage.id)).map(
-    (stage) => ({ id: stage.id, label: stage.label }),
-  );
+  return APPLICATION_STAGE_OPTIONS.filter((stage) =>
+    selected.has(stage.id),
+  ).map((stage) => ({ id: stage.id, label: stage.label }));
 }

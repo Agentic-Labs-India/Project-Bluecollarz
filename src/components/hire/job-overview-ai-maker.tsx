@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { SparklesIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 
 type JobOverviewAiMakerProps = {
   /** Prefill from the job form when available. */
@@ -163,9 +163,7 @@ export function JobOverviewAiMaker({
               />
             </div>
 
-            {error ? (
-              <p className="text-destructive text-sm">{error}</p>
-            ) : null}
+            {error ? <p className="text-destructive text-sm">{error}</p> : null}
           </div>
 
           <div className="border-border flex min-h-56 flex-col border md:min-h-0">

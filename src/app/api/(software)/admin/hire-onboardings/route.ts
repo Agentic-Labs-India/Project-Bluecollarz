@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { listHireOnboardings } from "@/lib/hire/onboarding";
 import { HIRE_ONBOARDING_STATUSES } from "@/lib/hire/onboarding/types";
 
@@ -13,7 +10,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const statusParam = req.nextUrl.searchParams.get("status")?.trim() || "submitted";
+    const statusParam =
+      req.nextUrl.searchParams.get("status")?.trim() || "submitted";
     const status =
       statusParam === "all" ||
       (HIRE_ONBOARDING_STATUSES as readonly string[]).includes(statusParam)
@@ -25,6 +23,9 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/hire-onboardings:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile, requireUser } from "@/lib/auth/session";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import {
   formatJobPay,
   formatJobValidationError,
@@ -12,8 +14,6 @@ import {
   toOpportunity,
 } from "@/lib/jobs";
 import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireUser, requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -42,11 +42,15 @@ export async function GET(req: NextRequest, context: RouteContext) {
     } else {
       const authResult = await requireUser();
       if (!authResult.ok) {
-        return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+        return NextResponse.json(
+          { error: authResult.error },
+          { status: authResult.status },
+        );
       }
     }
 
-    const asOpportunity = req.nextUrl.searchParams.get("format") === "opportunity";
+    const asOpportunity =
+      req.nextUrl.searchParams.get("format") === "opportunity";
     return NextResponse.json({
       item: asOpportunity ? toOpportunity(doc) : toJobListItem(doc),
       form: {
@@ -67,7 +71,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error("GET /api/jobs/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -76,7 +83,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     await ensureIndexes();
     const hireAuth = await requireProfile("hire");
     if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+      return NextResponse.json(
+        { error: hireAuth.error },
+        { status: hireAuth.status },
+      );
     }
 
     const { id } = await context.params;
@@ -179,13 +189,19 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         $set.publishedAt = null;
       } else {
         $set.status = fields.status;
-        if (fields.status === "draft" || fields.status === "underVerification") {
+        if (
+          fields.status === "draft" ||
+          fields.status === "underVerification"
+        ) {
           $set.publishedAt = null;
         }
       }
     }
 
-    const updateDoc: { $set: Record<string, unknown>; $unset?: Record<string, ""> } = {
+    const updateDoc: {
+      $set: Record<string, unknown>;
+      $unset?: Record<string, "">;
+    } = {
       $set,
     };
     if (Object.keys($unset).length) updateDoc.$unset = $unset;
@@ -210,6 +226,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ item: toJobListItem(updated) });
   } catch (error) {
     console.error("PATCH /api/jobs/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

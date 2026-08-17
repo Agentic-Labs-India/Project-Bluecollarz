@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
+import { recordBaselineNoticeForWorker } from "@/lib/legal-safety/notices";
 import {
   PLATFORM_TERMS_VERSION,
   toUserPreferences,
@@ -12,7 +13,10 @@ import {
 } from "@/lib/user/preferences";
 import { formatZodError } from "@/lib/utils";
 
-type UserDoc = UserPreferencesFields & { _id: unknown };
+type UserDoc = UserPreferencesFields & {
+  _id: unknown;
+  voiceLanguage?: string;
+};
 
 function userFilter(userId: string) {
   return { _id: matchId(userId) as never };
@@ -106,8 +110,26 @@ export async function PATCH(req: NextRequest) {
 
     const user = await collection.findOneAndUpdate(filter, update as never, {
       returnDocument: "after",
-      projection: USER_PREFERENCE_PROJECTION,
+      projection: { ...USER_PREFERENCE_PROJECTION, voiceLanguage: 1 },
     });
+
+    if (
+      parsed.data.platformTermsAccepted === true &&
+      auth.user.profileType === "work"
+    ) {
+      try {
+        const voiceLanguage =
+          user && typeof user.voiceLanguage === "string"
+            ? user.voiceLanguage
+            : null;
+        await recordBaselineNoticeForWorker({
+          userId: auth.user.id,
+          languageCode: voiceLanguage,
+        });
+      } catch (error) {
+        console.error("POL-0007 delivery on terms accept:", error);
+      }
+    }
 
     return NextResponse.json({ preferences: toUserPreferences(user) });
   } catch (error) {

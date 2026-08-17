@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { formatZodError } from "@/lib/utils";
 import type {
   CustomQuestion,
   CustomQuestionAnswer,
 } from "@/lib/jobs/custom-questions";
+import { formatZodError } from "@/lib/utils";
 
 export const INTERVIEW_STAGE_IDS = [
   "ai-communication",

@@ -189,8 +189,8 @@ export default function ContactPage() {
       <DocSection id="sales" number="05" title="Sales & recruiter access">
         <p>
           Hire accounts are provisioned by Blucollarz. There is no public
-          “become a recruiter” signup. To hire on Blucollarz, contact sales —
-          we enable hire access for your team from the admin console.
+          “become a recruiter” signup. To hire on Blucollarz, contact sales — we
+          enable hire access for your team from the admin console.
         </p>
         <DocSteps
           steps={[
@@ -252,10 +252,7 @@ export default function ContactPage() {
               "Recruiter access",
               "Company name, website, locations, role types, monthly volume, contact person",
             ],
-            [
-              "Press",
-              "Outlet, journalist name, deadline, questions or angle",
-            ],
+            ["Press", "Outlet, journalist name, deadline, questions or angle"],
           ]}
         />
       </DocSection>

@@ -1,24 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
-import type { JobDocument } from "@/lib/jobs";
-import { normalizeCustomQuestions, normalizeStepTemplates } from "@/lib/jobs";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import {
   formatInterviewError,
-  interviewStartSchema,
-  isCustomQuestionsStage,
   type InterviewDocument,
   type InterviewStageId,
+  interviewStartSchema,
+  isCustomQuestionsStage,
 } from "@/lib/interviews";
+import type { JobDocument } from "@/lib/jobs";
+import { normalizeCustomQuestions, normalizeStepTemplates } from "@/lib/jobs";
 import type { CustomQuestion } from "@/lib/jobs/custom-questions";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
-import {
-  isCandidateProfileComplete,
-  toCandidateProfileData,
-  type CandidateProfileFields,
-} from "@/lib/candidate/profile";
 
 function isDuplicateKeyError(error: unknown): boolean {
   return (
@@ -33,16 +28,19 @@ function questionsPayload(
   stageId: InterviewStageId,
   questions: CustomQuestion[] | undefined,
 ) {
-  return isCustomQuestionsStage(stageId) ? questions ?? [] : undefined;
+  return isCustomQuestionsStage(stageId) ? (questions ?? []) : undefined;
 }
 
 /** Start (or resume) an interview stage for a published role. */
 export async function POST(req: NextRequest) {
   try {
     await ensureIndexes();
-    const auth = await requireProfile("work");
+    const auth = await requireCandidateAppReady();
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        { error: auth.error, code: auth.code },
+        { status: auth.status },
+      );
     }
     if (!auth.user.id) {
       return NextResponse.json({ error: "Invalid user" }, { status: 400 });
@@ -63,19 +61,6 @@ export async function POST(req: NextRequest) {
     }
 
     const db = client.db(DB_NAME);
-
-    const userDoc = await db
-      .collection<CandidateProfileFields>(COLLECTIONS.USERS_COLLECTION)
-      .findOne({ _id: matchId(auth.user.id) as never });
-    if (!isCandidateProfileComplete(toCandidateProfileData(userDoc))) {
-      return NextResponse.json(
-        {
-          error: "Complete your profile before starting the interview.",
-          code: "PROFILE_INCOMPLETE",
-        },
-        { status: 403 },
-      );
-    }
 
     const job = await db
       .collection<JobDocument>(COLLECTIONS.JOBS)
@@ -129,10 +114,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (existing?.status === "in_progress") {
-      const snapshot =
-        existing.customQuestions?.length
-          ? existing.customQuestions
-          : jobQuestions;
+      const snapshot = existing.customQuestions?.length
+        ? existing.customQuestions
+        : jobQuestions;
       // Backfill snapshot on older in-progress docs that lacked it.
       if (
         isCustomQuestionsStage(stageId) &&
@@ -141,7 +125,9 @@ export async function POST(req: NextRequest) {
       ) {
         await interviews.updateOne(
           { _id: existing._id } as never,
-          { $set: { customQuestions: snapshot, updatedAt: new Date() } } as never,
+          {
+            $set: { customQuestions: snapshot, updatedAt: new Date() },
+          } as never,
         );
       }
       return NextResponse.json({
@@ -199,14 +185,15 @@ export async function POST(req: NextRequest) {
         stageId: raced.stageId,
         customQuestions: questionsPayload(
           stageId,
-          raced.customQuestions?.length
-            ? raced.customQuestions
-            : jobQuestions,
+          raced.customQuestions?.length ? raced.customQuestions : jobQuestions,
         ),
       });
     }
   } catch (error) {
     console.error("POST /api/interviews/start:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

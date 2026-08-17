@@ -1,10 +1,10 @@
-import { Suspense } from "react";
 import { headers } from "next/headers";
+import { Suspense } from "react";
 import { ExploreOpportunities } from "@/components/work/explore-opportunities";
 import { auth } from "@/lib/auth/auth";
 import { isId } from "@/lib/db";
-import { normalizeProfileType } from "@/lib/user/profile-types";
 import { getPublishedOpportunities } from "@/lib/jobs/queries";
+import { normalizeProfileType } from "@/lib/user/profile-types";
 
 export default async function ExplorePage({
   searchParams,

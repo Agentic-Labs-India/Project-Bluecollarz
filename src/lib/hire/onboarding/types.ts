@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { COMPANY_DOC_MAX_BYTES } from "@/lib/blob/pathname";
-import { RECRUITER_INDUSTRIES } from "@/lib/hire/inquiries/types";
 import { listStatesForCountry } from "@/lib/core/geo/places";
+import { RECRUITER_INDUSTRIES } from "@/lib/hire/inquiries/types";
 
 export const HIRE_ONBOARDING_STATUSES = [
   "draft",
@@ -38,7 +38,12 @@ export const GCC_RULE_LABELS: Record<GccRuleKey, string> = {
 };
 
 const optionalText = (max: number) =>
-  z.string().trim().max(max).optional().transform((v) => v ?? "");
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => v ?? "");
 
 const nullableInt = z
   .number()
@@ -132,7 +137,7 @@ export const hireOnboardingLocationSchema = z.object({
   industry: z
     .union([z.enum(RECRUITER_INDUSTRIES), z.literal(""), z.null()])
     .optional()
-    .transform((v) => (v && v.length ? v : null)),
+    .transform((v) => (v?.length ? v : null)),
   totalEmployees: nullableInt,
   foreignWorkers: nullableInt,
   nationalEmployees: nullableInt,

@@ -63,7 +63,7 @@ export async function startVadLoop(opts: {
   // Record speech clips from audio tracks only (never pull video into VAD).
   const audioOnly = new MediaStream(stream.getAudioTracks());
   if (audioOnly.getAudioTracks().length === 0) {
-    if (ownsStream) stream.getTracks().forEach((t) => t.stop());
+    if (ownsStream) for (const track of stream.getTracks()) track.stop();
     throw new Error("No microphone track available for voice detection.");
   }
 
@@ -170,8 +170,8 @@ export async function startVadLoop(opts: {
 
     analyser.getByteTimeDomainData(data);
     let sum = 0;
-    for (let i = 0; i < data.length; i++) {
-      const v = (data[i]! - 128) / 128;
+    for (const sample of data) {
+      const v = (sample - 128) / 128;
       sum += v * v;
     }
     const rms = Math.sqrt(sum / data.length);
@@ -248,7 +248,7 @@ export async function startVadLoop(opts: {
         // ignore
       }
       if (ownsStream) {
-        stream.getTracks().forEach((t) => t.stop());
+        for (const track of stream.getTracks()) track.stop();
       }
       void audioCtx.close();
     },

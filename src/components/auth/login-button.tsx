@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import { getProfileHomePath } from "@/lib/user/profile-types";

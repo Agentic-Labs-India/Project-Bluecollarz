@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { AdminBreachRegister } from "@/components/admin/admin-breach-register";
+import { AdminLegalSafetyQueue } from "@/components/admin/admin-legal-safety-queue";
 import {
   AdminHubHeader,
   AdminPageTabs,
@@ -12,6 +13,7 @@ import { AdminRightsQueue } from "@/components/admin/admin-rights-queue";
 const TABS = [
   { value: "rights", label: "Rights" },
   { value: "breaches", label: "Breaches" },
+  { value: "legal", label: "Legal safety" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["value"];
@@ -21,6 +23,8 @@ const COPY: Record<Tab, string> = {
     "Acknowledge and resolve access, correction, erasure, withdrawal, nomination, and grievance.",
   breaches:
     "Log personal data breaches, prepare Board / Data Principal notices, and track acknowledgment.",
+  legal:
+    "Serious-offence cases. The machine may only open legal review. Filing is a named human act. The accused is not notified.",
 };
 
 function AdminComplianceHubInner() {
@@ -30,7 +34,13 @@ function AdminComplianceHubInner() {
     <>
       <AdminHubHeader title="Compliance" description={COPY[tab]} />
       <AdminPageTabs tabs={TABS} value={tab} onValueChange={setTab} />
-      {tab === "rights" ? <AdminRightsQueue /> : <AdminBreachRegister />}
+      {tab === "rights" ? (
+        <AdminRightsQueue />
+      ) : tab === "breaches" ? (
+        <AdminBreachRegister />
+      ) : (
+        <AdminLegalSafetyQueue />
+      )}
     </>
   );
 }

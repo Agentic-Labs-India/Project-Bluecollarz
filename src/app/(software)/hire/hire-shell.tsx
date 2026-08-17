@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import React, { Suspense, useEffect } from "react";
+import type React from "react";
+import { Suspense, useEffect } from "react";
 import { PlatformTermsGate } from "@/components/compliance/platform-terms-gate";
 import { AppShell } from "@/components/layout/app-shell";
 import { HIRE_NAV } from "@/lib/core/routes";

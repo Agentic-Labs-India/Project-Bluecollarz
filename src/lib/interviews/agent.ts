@@ -1,12 +1,12 @@
 import { isStepCount, ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
-import type { AiInterviewStageId } from "@/lib/interviews";
 import {
   getAiRuntime,
   llmModel,
   llmTemp,
   renderInterviewPrompt,
 } from "@/lib/ai/runtime";
+import type { AiInterviewStageId } from "@/lib/interviews";
 
 /** Same ToolLoopAgent shape for every AI interview stage — only instructions change. */
 export async function buildInterviewAgent(opts: {

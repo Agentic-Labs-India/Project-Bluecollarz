@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/auth/session";
+import { deleteUserProvision } from "@/lib/admin/provisions";
 import {
   listUsersByProfileType,
   setUserProfileType,
   upsertUserProfileTypeByEmail,
 } from "@/lib/admin/queries";
-import { deleteUserProvision } from "@/lib/admin/provisions";
+import { requireProfile } from "@/lib/auth/session";
 import { formatZodError } from "@/lib/utils";
 
 const provisionSchema = z.object({
@@ -47,7 +47,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items });
   } catch (error) {
     console.error("GET /api/admin/users:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -83,7 +86,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: result.created ? 201 : 200 });
   } catch (error) {
     console.error("POST /api/admin/users:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -107,7 +113,10 @@ export async function PATCH(req: NextRequest) {
     if (parsed.data.kind === "pending") {
       const removed = await deleteUserProvision(parsed.data.email);
       if (!removed) {
-        return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Invite not found" },
+          { status: 404 },
+        );
       }
       return NextResponse.json({ ok: true });
     }
@@ -130,6 +139,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ item });
   } catch (error) {
     console.error("PATCH /api/admin/users:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

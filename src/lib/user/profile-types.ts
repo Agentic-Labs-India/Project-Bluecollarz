@@ -1,6 +1,10 @@
 export type ProfileType = "work" | "hire" | "admin";
 
-export const PROFILE_TYPES = ["work", "hire", "admin"] as const satisfies readonly ProfileType[];
+export const PROFILE_TYPES = [
+  "work",
+  "hire",
+  "admin",
+] as const satisfies readonly ProfileType[];
 
 export const DEFAULT_PROFILE_TYPE: ProfileType = "work";
 
@@ -32,7 +36,11 @@ export function normalizeProfileType(
   value: string | null | undefined,
 ): ProfileType {
   const normalized = value?.toLowerCase().trim();
-  if (normalized === "hire" || normalized === "work" || normalized === "admin") {
+  if (
+    normalized === "hire" ||
+    normalized === "work" ||
+    normalized === "admin"
+  ) {
     return normalized;
   }
   return DEFAULT_PROFILE_TYPE;

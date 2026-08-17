@@ -64,8 +64,7 @@ const customQuestionSchema = z
 function toCustomQuestion(
   q: z.infer<typeof customQuestionSchema>,
 ): CustomQuestion {
-  const needsOptions =
-    q.type === "single_select" || q.type === "multi_select";
+  const needsOptions = q.type === "single_select" || q.type === "multi_select";
   return {
     id: q.id,
     prompt: q.prompt.trim(),
@@ -176,7 +175,8 @@ export function validateCustomAnswer(
     case "yes_no": {
       if (typeof value === "boolean") return { ok: true, value };
       if (value === "yes" || value === "true") return { ok: true, value: true };
-      if (value === "no" || value === "false") return { ok: true, value: false };
+      if (value === "no" || value === "false")
+        return { ok: true, value: false };
       return { ok: false, error: "Expected yes or no" };
     }
     case "single_select": {

@@ -5,9 +5,9 @@ import { Suspense } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { formatJobPlaceLabel } from "@/lib/core/geo/places";
+import { htmlToPlainText } from "@/lib/core/rich-text";
 import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
 import { getPublishedJobPublic } from "@/lib/jobs/queries";
-import { htmlToPlainText } from "@/lib/core/rich-text";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -88,9 +88,7 @@ async function PublicJobBody({ params }: PageProps) {
       </h1>
       <p className="text-muted-foreground mt-3 text-base sm:text-lg">
         {job.pay}
-        {placeLabel ? (
-          <span className="text-mute"> · {placeLabel}</span>
-        ) : null}
+        {placeLabel ? <span className="text-mute"> · {placeLabel}</span> : null}
       </p>
 
       <div className="border-border mt-8 flex flex-col gap-3 border-y py-6 sm:flex-row sm:items-center sm:justify-between">

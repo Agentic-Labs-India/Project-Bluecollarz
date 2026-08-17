@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -28,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -37,8 +36,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { getProfileIdLabel, PROFILE_TYPES } from "@/lib/user/profile-types";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import type {
   SupportAssignee,
@@ -53,7 +52,8 @@ import {
   SUPPORT_SERIOUSNESS,
   SUPPORT_STATUSES,
 } from "@/lib/support/types";
-import { cn } from "@/lib/utils";
+import { getProfileIdLabel, PROFILE_TYPES } from "@/lib/user/profile-types";
+import { cn, placeholderKeys } from "@/lib/utils";
 
 const POLL_MS = 5_000;
 
@@ -526,8 +526,8 @@ export function AdminSupportTickets() {
                   </span>
                   {detail.assignee ? (
                     <span className="block">
-                      Assigned to {detail.assignee.name} ({detail.assignee.email}
-                      )
+                      Assigned to {detail.assignee.name} (
+                      {detail.assignee.email})
                     </span>
                   ) : (
                     <span className="block">Unassigned</span>
@@ -543,8 +543,8 @@ export function AdminSupportTickets() {
             {detailLoading ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                  {placeholderKeys(4).map((key) => (
+                    <Skeleton key={key} className="h-16 w-full" />
                   ))}
                 </div>
                 <Skeleton className="h-10 w-full" />

@@ -1,12 +1,12 @@
 import "server-only";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
+import type { RecruiterInquiryListItem } from "@/lib/hire/inquiries/types";
 import {
-  hireProfileFromInquiry,
   type HireProfileFields,
   type HireProfileFromInquiry,
+  hireProfileFromInquiry,
 } from "@/lib/hire/profile";
-import type { RecruiterInquiryListItem } from "@/lib/hire/inquiries/types";
 
 type HireUserDoc = HireProfileFields & {
   _id: unknown;

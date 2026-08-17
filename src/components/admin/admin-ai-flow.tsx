@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 
 type FlowId =
@@ -79,13 +79,7 @@ function acrossPath(from: HTMLElement, to: HTMLElement, root: HTMLElement) {
   return `M ${a.x} ${a.y} L ${gx} ${a.y} L ${gx} ${b.y} L ${b.x} ${b.y}`;
 }
 
-function ArrowDown({
-  label,
-  dashed,
-}: {
-  label?: string;
-  dashed?: boolean;
-}) {
+function ArrowDown({ label, dashed }: { label?: string; dashed?: boolean }) {
   return (
     <div className="flex flex-col items-center py-0.5" aria-hidden>
       <span
@@ -379,11 +373,7 @@ export function AdminAiFlow({
                 detail="Name, DOB 18+, phone, location, PAN, Aadhaar."
               />
               <ArrowDown />
-              <Box
-                id="c-explore"
-                title="Explore"
-                detail="Published roles."
-              />
+              <Box id="c-explore" title="Explore" detail="Published roles." />
               <ArrowDown />
               <Box
                 id="c-resume"
@@ -496,11 +486,7 @@ export function AdminAiFlow({
               />
               <Fork
                 left={
-                  <Box
-                    id="r-select"
-                    title="Select"
-                    detail="Applicant sheet."
-                  />
+                  <Box id="r-select" title="Select" detail="Applicant sheet." />
                 }
                 right={
                   <Box id="r-reject" title="Reject" detail="Applicant sheet." />

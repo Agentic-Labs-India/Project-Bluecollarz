@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
-import { toast } from "sonner";
+import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import {
   BoldIcon,
+  Heading2Icon,
+  ImageIcon,
   ItalicIcon,
-  UnderlineIcon,
+  LinkIcon,
   ListIcon,
   ListOrderedIcon,
-  Heading2Icon,
   QuoteIcon,
-  LinkIcon,
-  ImageIcon,
+  UnderlineIcon,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { sanitizeEmailComposeHtml } from "@/lib/admin/email-html";
+import { blobFileUrl } from "@/lib/blob/pathname";
 import { uploadBlob } from "@/lib/blob/upload";
 import { cn } from "@/lib/utils";
 
@@ -168,13 +169,20 @@ export function EmailRichTextEditor({
     if (!isEditorAlive(editor) || uploadingRef.current) return;
     uploadingRef.current = true;
     try {
-      const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80);
+      const safeName = file.name.replace(/[^\w.-]+/g, "_").slice(0, 80);
       const { url } = await uploadBlob({
         file,
         pathname: `admin/email/${Date.now()}-${safeName}`,
         contentType: file.type || "image/png",
       });
-      editor.chain().focus().setImage({ src: url, alt: file.name }).run();
+      editor
+        .chain()
+        .focus()
+        .setImage({
+          src: `${window.location.origin}${blobFileUrl(url)}`,
+          alt: file.name,
+        })
+        .run();
     } catch (error) {
       console.error("email image upload:", error);
       toast.error("Could not upload image");

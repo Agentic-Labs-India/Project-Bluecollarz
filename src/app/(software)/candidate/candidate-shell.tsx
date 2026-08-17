@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { Suspense, useEffect } from "react";
 import { PlatformTermsGate } from "@/components/compliance/platform-terms-gate";
+import { SafetyNoticeGate } from "@/components/compliance/safety-notice-gate";
 import { AppShell } from "@/components/layout/app-shell";
 import { CANDIDATE_NAV } from "@/lib/core/routes";
 
@@ -71,6 +72,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       >
         <CandidateProgressGate>{children}</CandidateProgressGate>
         <PlatformTermsGate />
+        <SafetyNoticeGate />
       </AppShell>
     </Suspense>
   );

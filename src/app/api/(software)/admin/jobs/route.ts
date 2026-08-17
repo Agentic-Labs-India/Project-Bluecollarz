@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
 import { listJobsUnderVerification } from "@/lib/admin/job-verification";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { ensureIndexes } from "@/lib/db/indexes";
 
 /** List jobs waiting for admin verification. */
@@ -20,6 +17,9 @@ export async function GET() {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/jobs:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

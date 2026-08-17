@@ -25,12 +25,16 @@ export const COLLECTIONS = {
   APPLICATIONS: "Applications",
   INTERVIEWS: "Interviews",
   CONSENT_EVENTS: "ConsentEvents",
+  CONSENT_PLAYBACKS: "ConsentPlaybacks",
   RIGHTS_REQUESTS: "RightsRequests",
   PLACEMENT_AUDIT_EVENTS: "PlacementAuditEvents",
   BREACH_INCIDENTS: "BreachIncidents",
   PLATFORM_SETTINGS: "PlatformSettings",
   MEDICAL_CENTERS: "MedicalCenters",
   MEDICAL_APPOINTMENTS: "MedicalAppointments",
+  LEGAL_HOLDS: "LegalHolds",
+  LEGAL_SAFETY_CASES: "LegalSafetyCases",
+  LEGAL_SAFETY_NOTICES: "LegalSafetyNotices",
 } as const;
 
 /** 24-char hex Mongo id. */

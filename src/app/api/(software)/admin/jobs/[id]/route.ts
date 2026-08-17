@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
 import {
   approveJobVerification,
   denyJobVerification,
   getJobUnderVerification,
 } from "@/lib/admin/job-verification";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
 
@@ -54,7 +51,10 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/jobs/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -109,6 +109,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/admin/jobs/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

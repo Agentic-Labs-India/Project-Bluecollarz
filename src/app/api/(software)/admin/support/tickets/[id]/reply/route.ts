@@ -1,17 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/auth/session";
 import { sanitizeEmailComposeHtml } from "@/lib/admin/email-html";
 import {
   formatSenderFrom,
   getResendClient,
   getResendFromEmail,
 } from "@/lib/admin/resend";
+import { requireProfile } from "@/lib/auth/session";
 import { htmlToPlainText } from "@/lib/core/rich-text";
-import {
-  assignSupportTicket,
-  getSupportTicket,
-} from "@/lib/support/tickets";
+import { assignSupportTicket, getSupportTicket } from "@/lib/support/tickets";
 import { formatZodError } from "@/lib/utils";
 
 const paramsSchema = z.object({
@@ -40,10 +37,7 @@ function buildReplyHtml(input: {
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean)
-    .map(
-      (block) =>
-        `<p>${escapeHtml(block).replace(/\n/g, "<br />")}</p>`,
-    )
+    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, "<br />")}</p>`)
     .join("");
 
   return `

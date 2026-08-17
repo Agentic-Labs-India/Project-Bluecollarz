@@ -9,13 +9,7 @@ import {
   SendIcon,
   Volume2Icon,
 } from "lucide-react";
-import {
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
   AssistantAvatar,
   UserChatAvatar,
@@ -55,19 +49,16 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-import { authClient } from "@/lib/auth/auth-client";
-import {
-  HELP_SUGGESTIONS,
-  type HelpInputMode,
-} from "@/lib/support/prompt";
-import { speakText } from "@/lib/ai/voice/speak";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
   type TtsLanguageCode,
 } from "@/lib/ai/voice/languages";
+import { speakText } from "@/lib/ai/voice/speak";
 import { TTS_VOICE } from "@/lib/ai/voice/style";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
+import { authClient } from "@/lib/auth/auth-client";
+import { HELP_SUGGESTIONS, type HelpInputMode } from "@/lib/support/prompt";
 import { cn } from "@/lib/utils";
 
 function messageText(message: UIMessage): string {
@@ -190,10 +181,7 @@ export function HelpDialog({
             pausedRef.current = true;
             setVoiceStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(
-                blob,
-                voiceLanguageRef.current,
-              );
+              const data = await transcribeBlob(blob, voiceLanguageRef.current);
               if (!data.ok || !data.transcript) {
                 setVoiceStatus(data.error || "Didn't catch that — try again.");
                 pausedRef.current = false;

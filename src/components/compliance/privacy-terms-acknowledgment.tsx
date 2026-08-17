@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -68,9 +68,11 @@ export function PrivacyTermsAcknowledgment({
             {showConsentPanel && loading ? (
               <Skeleton className="h-4 w-44" />
             ) : showConsentPanel ? (
-              purposes.length
-                ? "Verification consent on file"
-                : "No verification consent recorded yet"
+              purposes.length ? (
+                "Verification consent on file"
+              ) : (
+                "No verification consent recorded yet"
+              )
             ) : (
               "Platform privacy & terms"
             )}

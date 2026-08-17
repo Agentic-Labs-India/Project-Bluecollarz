@@ -582,7 +582,7 @@ export function CandidateProfileView() {
         <div className="space-y-4">
           {profile.education.map((entry, index) => (
             <div
-              key={`edu-${index}`}
+              key={`edu-${entry.school}-${entry.degree}-${entry.startYear}-${index}`}
               className="border-border space-y-3 border p-4"
             >
               <div className="flex items-start justify-between gap-3">
@@ -723,7 +723,7 @@ export function CandidateProfileView() {
         <div className="space-y-4">
           {profile.workExperience.map((entry, index) => (
             <div
-              key={`work-${index}`}
+              key={`work-${entry.company}-${entry.role}-${entry.startYear}-${index}`}
               className="border-border space-y-3 border p-4"
             >
               <div className="flex items-start justify-between gap-3">

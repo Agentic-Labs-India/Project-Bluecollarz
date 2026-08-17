@@ -1,12 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth/session";
-import {
-  createBlog,
-  deleteBlog,
-  listBlogs,
-  updateBlog,
-} from "@/lib/blog";
+import { createBlog, deleteBlog, listBlogs, updateBlog } from "@/lib/blog";
 import { BLOG_STATUSES } from "@/lib/blog/types";
 import { formatZodError } from "@/lib/utils";
 
@@ -50,7 +45,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("GET /api/admin/blog:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -87,7 +85,10 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("POST /api/admin/blog:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -127,7 +128,10 @@ export async function PATCH(req: NextRequest) {
     }
   } catch (error) {
     console.error("PATCH /api/admin/blog:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -159,6 +163,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("DELETE /api/admin/blog:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

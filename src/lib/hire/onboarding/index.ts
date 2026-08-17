@@ -1,31 +1,37 @@
 import "server-only";
-import { cache } from "react";
 import { ObjectId } from "mongodb";
-import client, { COLLECTIONS, DB_NAME, isId, matchId, matchIds } from "@/lib/db";
-import { ensureIndexes } from "@/lib/db/indexes";
+import { cache } from "react";
 import { deleteBlobUrls } from "@/lib/blob/delete";
 import {
+  blobAccessFromUrl,
   blobPathRelativeToRoot,
   isCompanyDocumentRelativePath,
-  isVercelBlobUrl,
 } from "@/lib/blob/pathname";
+import client, {
+  COLLECTIONS,
+  DB_NAME,
+  isId,
+  matchId,
+  matchIds,
+} from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import {
+  type HireOnboardingUser,
+  lockAccessRequestFields,
+  seedHireOnboardingFromUser,
+} from "@/lib/hire/onboarding/access-request";
 import {
   emptyHireOnboardingSave,
-  hireOnboardingSaveSchema,
-  isHireOnboardingComplete,
-  isHireOnboardingEditable,
-  isHireOnboardingVerified,
   type HireOnboardingData,
   type HireOnboardingDocument,
   type HireOnboardingListItem,
   type HireOnboardingSaveInput,
   type HireOnboardingStatus,
+  hireOnboardingSaveSchema,
+  isHireOnboardingComplete,
+  isHireOnboardingEditable,
+  isHireOnboardingVerified,
 } from "@/lib/hire/onboarding/types";
-import {
-  lockAccessRequestFields,
-  seedHireOnboardingFromUser,
-  type HireOnboardingUser,
-} from "@/lib/hire/onboarding/access-request";
 import type { HireProfileFields } from "@/lib/hire/profile";
 import { idHex } from "@/lib/utils";
 
@@ -77,8 +83,8 @@ function assertOwnCompanyDocument(
   userId: string,
 ): void {
   if (!doc) return;
-  if (!isVercelBlobUrl(doc.url)) {
-    throw new Error("Document must be stored on Vercel Blob");
+  if (blobAccessFromUrl(doc.url) !== "private") {
+    throw new Error("Document must be stored as a private Vercel Blob");
   }
   const relative = blobPathRelativeToRoot(doc.pathname);
   if (!relative || !isCompanyDocumentRelativePath(relative, userId)) {

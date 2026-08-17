@@ -3,6 +3,7 @@
 import { DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { blobFileUrl } from "@/lib/blob/pathname";
 import { formatMedicalDateTime } from "@/lib/medical/time";
 import type { CandidateMedicalReport } from "@/lib/medical/types";
 
@@ -58,7 +59,7 @@ export function CandidateMedicalReports() {
               </p>
             </div>
             <a
-              href={report.url}
+              href={`${blobFileUrl(report.url)}&download=1`}
               download={report.name}
               target="_blank"
               rel="noopener noreferrer"

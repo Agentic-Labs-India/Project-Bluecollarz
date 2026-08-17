@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
+import { cn } from "@/lib/utils";
 
 /** Render sanitized rich-text HTML (job overview, etc.). */
 export function RichTextContent({
@@ -11,9 +11,7 @@ export function RichTextContent({
 }) {
   const clean = sanitizeRichTextHtml(html);
   if (!clean) {
-    return (
-      <p className={cn("text-muted-foreground text-sm", className)}>—</p>
-    );
+    return <p className={cn("text-muted-foreground text-sm", className)}>—</p>;
   }
 
   return (

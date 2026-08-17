@@ -22,7 +22,10 @@ export function getResendClient(): Resend | null {
 }
 
 /** Friendly From header: `Ada Lovelace <hello@domain.com>`. */
-export function formatSenderFrom(name: string | null | undefined, email: string) {
+export function formatSenderFrom(
+  name: string | null | undefined,
+  email: string,
+) {
   const cleanName = (name ?? "").replace(/[<>\n\r]/g, "").trim();
   if (!cleanName) return email;
   return `${cleanName} <${email}>`;

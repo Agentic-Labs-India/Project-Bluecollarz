@@ -269,7 +269,9 @@ export function lookupPlaceOptions(opts: {
   return {
     country,
     states: [state],
-    cities: filter(listCitiesForState(countryCode, stateCode).map((c) => c.name)),
+    cities: filter(
+      listCitiesForState(countryCode, stateCode).map((c) => c.name),
+    ),
   };
 }
 

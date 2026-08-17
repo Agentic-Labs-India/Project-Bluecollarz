@@ -23,7 +23,7 @@ const createRouteMatcher = (patterns: string[]) => {
 
 const isPublicRoute = createRouteMatcher([
   "/api/auth(.*)",
-  "/api/blob(.*)",
+  "/api/blob/file",
   "/api/recruiter-inquiries",
   "/",
   "/about",
@@ -42,20 +42,18 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 const isProtectedRoute = createRouteMatcher(
-  PROFILE_BASE_ROUTES.map((route) => route + "(.*)"),
+  PROFILE_BASE_ROUTES.map((route) => `${route}(.*)`),
 );
 
 const isCandidatePreAppAllowed = createRouteMatcher([
   "/candidate/onboarding",
   "/candidate/kyc",
   "/candidate/settings",
-  "/api/(.*)",
 ]);
 
 const isHirePreAppAllowed = createRouteMatcher([
   "/hire/onboarding",
   "/hire/settings",
-  "/api/(.*)",
 ]);
 
 type SessionUser = {
@@ -138,10 +136,11 @@ export async function proxy(req: NextRequest) {
   const sessionCookie = getSessionCookie(req);
   const pathname = req.nextUrl.pathname;
 
-  if (!isPublicRoute(req)) {
-    if (!sessionCookie) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (!isPublicRoute(req) && !sessionCookie) {
+    // API clients get a status they can branch on; pages get sent to sign-in.
+    return pathname.startsWith("/api/")
+      ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      : NextResponse.redirect(new URL("/", req.url));
   }
 
   if (pathname === "/" && sessionCookie) {

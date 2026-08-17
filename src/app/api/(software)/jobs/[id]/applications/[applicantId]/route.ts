@@ -1,23 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile } from "@/lib/auth/session";
+import {
+  type CandidateProfileFields,
+  toCandidateProfileData,
+} from "@/lib/candidate/profile";
+import { toHireSafeProfile } from "@/lib/compliance/arm";
+import {
+  hasGrantedPurposes,
+  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+} from "@/lib/compliance/consent";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import type { InterviewDocument } from "@/lib/interviews";
 import type { JobDocument } from "@/lib/jobs";
 import {
   APPLICATION_STATUSES,
   type ApplicationDocument,
   type ApplicationStatus,
 } from "@/lib/jobs/applications";
-import type { InterviewDocument } from "@/lib/interviews";
-import {
-  toCandidateProfileData,
-  type CandidateProfileFields,
-} from "@/lib/candidate/profile";
-import { toHireSafeProfile } from "@/lib/compliance/arm";
-import {
-  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
-  hasGrantedPurposes,
-} from "@/lib/compliance/consent";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
 import { idHex } from "@/lib/utils";
 
 type RouteContext = {
@@ -33,7 +33,10 @@ export async function GET(_req: Request, context: RouteContext) {
 
     const hireAuth = await requireProfile("hire");
     if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+      return NextResponse.json(
+        { error: hireAuth.error },
+        { status: hireAuth.status },
+      );
     }
     if (!hireAuth.user.id) {
       return NextResponse.json({ error: "Invalid user" }, { status: 400 });
@@ -103,7 +106,7 @@ export async function GET(_req: Request, context: RouteContext) {
       jobTitle: doc.jobTitle,
       analysis: interviewReleaseOk ? (doc.analysis ?? null) : null,
       videoUrl: interviewReleaseOk ? (doc.videoUrl ?? null) : null,
-      customQuestions: doc.customQuestions ?? [],
+      customQuestions: interviewReleaseOk ? (doc.customQuestions ?? []) : [],
       customAnswers: interviewReleaseOk ? (doc.customAnswers ?? []) : [],
       transcript: interviewReleaseOk
         ? (doc.transcript ?? []).map((t) => ({
@@ -139,7 +142,10 @@ export async function GET(_req: Request, context: RouteContext) {
     });
   } catch (error) {
     console.error("GET /api/jobs/[id]/applications/[applicantId]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -153,7 +159,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
     const hireAuth = await requireProfile("hire");
     if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+      return NextResponse.json(
+        { error: hireAuth.error },
+        { status: hireAuth.status },
+      );
     }
     if (!hireAuth.user.id) {
       return NextResponse.json({ error: "Invalid user" }, { status: 400 });
@@ -214,6 +223,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error("PATCH /api/jobs/[id]/applications/[applicantId]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

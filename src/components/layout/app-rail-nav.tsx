@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import type { AppNavItem } from "@/lib/core/routes";
+import { cn } from "@/lib/utils";
 
 /** Vertical icon rail navigation used inside the desktop sidebar. */
 export function AppRailNav({ items }: { items: AppNavItem[] }) {

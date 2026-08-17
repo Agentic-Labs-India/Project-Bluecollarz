@@ -10,6 +10,7 @@ import {
   isMedicalReportRelativePath,
   MEDICAL_REPORT_MAX_BYTES,
 } from "@/lib/blob/pathname";
+import { blobReadWriteToken } from "@/lib/blob/token";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 
 /**
@@ -30,10 +31,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const root = getBlobRoot();
-
     const jsonResponse = await handleUpload({
       body,
       request,
+      token: blobReadWriteToken(),
       onBeforeGenerateToken: async (pathname) => {
         const relative = blobPathRelativeToRoot(pathname);
         if (relative === null) {
@@ -56,6 +57,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           "audio/mpeg",
           "audio/wav",
         ];
+        let validUntil: number | undefined;
 
         if (kind === "interviews") {
           if (auth.user.profileType !== "work") {
@@ -78,6 +80,8 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (!owned) {
             throw new Error("Interview not found");
           }
+          allowedContentTypes = ["video/*", "audio/*"];
+          validUntil = Date.now() + 2 * 60 * 60 * 1000;
         } else if (kind === "admin" && segments[1] === "email") {
           if (auth.user.profileType !== "admin") {
             throw new Error("Admin email uploads require an admin profile");
@@ -139,14 +143,12 @@ export async function POST(request: Request): Promise<NextResponse> {
           allowedContentTypes,
           maximumSizeInBytes,
           addRandomSuffix: true,
+          ...(validUntil ? { validUntil } : {}),
           tokenPayload: JSON.stringify({
             userId: auth.user.id,
             profileType: auth.user.profileType,
           }),
         };
-      },
-      onUploadCompleted: async () => {
-        // May not fire on localhost; callers persist URLs themselves.
       },
     });
 

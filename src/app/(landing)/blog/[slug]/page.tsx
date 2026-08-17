@@ -1,12 +1,16 @@
+import { ArrowLeftIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeftIcon } from "lucide-react";
 import { BlogPostCta } from "@/components/landing/blog-post-cta";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { getBlogBySlug } from "@/lib/blog";
+import {
+  blobAbsoluteFileUrl,
+  blobFileUrl,
+} from "@/lib/blob/pathname";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -32,6 +36,9 @@ export async function generateMetadata({
   }
   const title = `${post.seoTitle || post.title} · Blucollarz`;
   const description = post.seoDescription || post.excerpt;
+  const cover = post.coverImageUrl
+    ? blobAbsoluteFileUrl(post.coverImageUrl)
+    : null;
   return {
     title,
     description,
@@ -39,15 +46,13 @@ export async function generateMetadata({
       title,
       description,
       type: "article",
-      ...(post.coverImageUrl
-        ? { images: [{ url: post.coverImageUrl }] }
-        : {}),
+      ...(cover ? { images: [{ url: cover }] } : {}),
     },
     twitter: {
-      card: post.coverImageUrl ? "summary_large_image" : "summary",
+      card: cover ? "summary_large_image" : "summary",
       title,
       description,
-      ...(post.coverImageUrl ? { images: [post.coverImageUrl] } : {}),
+      ...(cover ? { images: [cover] } : {}),
     },
   };
 }
@@ -91,7 +96,10 @@ async function BlogPostBody({ params }: PageProps) {
             href="/blog"
             className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
           >
-            <ArrowLeftIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+            <ArrowLeftIcon
+              className="size-3.5 shrink-0 opacity-70"
+              aria-hidden
+            />
             Blog
           </Link>
           <span className="opacity-50" aria-hidden>
@@ -114,7 +122,7 @@ async function BlogPostBody({ params }: PageProps) {
         {post.coverImageUrl ? (
           <div className="relative mt-10 aspect-video w-full overflow-hidden bg-muted/30">
             <Image
-              src={post.coverImageUrl}
+              src={blobFileUrl(post.coverImageUrl)}
               alt=""
               fill
               priority

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { MailIcon, PenSquareIcon, ReplyIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AdminEmailCompose,
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -30,14 +29,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   extractEmailAddress,
   sanitizeEmailViewHtml,
 } from "@/lib/admin/email-html";
-import type {
-  AdminEmailDetail,
-  AdminEmailListItem,
-} from "@/lib/admin/resend";
+import type { AdminEmailDetail, AdminEmailListItem } from "@/lib/admin/resend";
 import { authClient } from "@/lib/auth/auth-client";
 import { formatDateTimeShort } from "@/lib/core/dates";
 
@@ -76,7 +73,10 @@ function buildReplyHtml(detail: AdminEmailDetail) {
       ? `<p>${detail.text
           .split("\n")
           .map((line) =>
-            line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+            line
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;"),
           )
           .join("<br/>")}</p>`
       : "<p></p>");
@@ -118,9 +118,7 @@ export function AdminEmailInbox() {
   );
   const [reloadToken, setReloadToken] = useState(0);
 
-  const senderLabel = fromEmail
-    ? `${senderName} <${fromEmail}>`
-    : senderName;
+  const senderLabel = fromEmail ? `${senderName} <${fromEmail}>` : senderName;
 
   useEffect(() => {
     const t = window.setTimeout(() => setSearchDebounced(search.trim()), 300);
@@ -207,10 +205,7 @@ export function AdminEmailInbox() {
     };
   }, [filtersKey, box, days, searchDebounced, pagination.pageIndex]);
 
-  const pageCount = Math.max(
-    1,
-    pagination.pageIndex + 1 + (hasMore ? 1 : 0),
-  );
+  const pageCount = Math.max(1, pagination.pageIndex + 1 + (hasMore ? 1 : 0));
 
   const detailReqRef = useRef(0);
 
@@ -293,9 +288,7 @@ export function AdminEmailInbox() {
             </p>
             <p className="text-muted-foreground mt-0.5 text-[11px] tabular-nums">
               {formatWhen(row.original.createdAt)}
-              {row.original.lastEvent
-                ? ` · ${row.original.lastEvent}`
-                : ""}
+              {row.original.lastEvent ? ` · ${row.original.lastEvent}` : ""}
             </p>
           </div>
         ),
@@ -458,10 +451,7 @@ export function AdminEmailInbox() {
 
           {box === "receiving" && detail ? (
             <SheetFooter className="border-border border-t pt-4">
-              <Button
-                type="button"
-                onClick={() => startReply(detail)}
-              >
+              <Button type="button" onClick={() => startReply(detail)}>
                 <ReplyIcon className="size-4" />
                 Reply
               </Button>

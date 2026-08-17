@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DitherLoginButton } from "@/components/landing/dither-login-button";
 import { CandidateJourney } from "@/components/landing/candidate-journey";
+import { DitherLoginButton } from "@/components/landing/dither-login-button";
 import { HOME_IMAGES } from "@/components/landing/home-images";
 import { ImageStreamHero } from "@/components/landing/image-stream-hero";
 import { LandingFaqs } from "@/components/landing/landing-faqs";

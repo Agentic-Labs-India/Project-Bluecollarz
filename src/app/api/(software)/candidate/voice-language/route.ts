@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import client, { DB_NAME, COLLECTIONS, matchId } from "@/lib/db";
-import { requireProfile } from "@/lib/auth/session";
-import { ensureIndexes } from "@/lib/db/indexes";
+import { type NextRequest, NextResponse } from "next/server";
 import {
   isTtsLanguageCode,
   resolveTtsLanguage,
   type TtsLanguageCode,
 } from "@/lib/ai/voice/languages";
+import { requireProfile } from "@/lib/auth/session";
+import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 
 /**
  * Set the candidate's Sarvam voice locale (onboarding picker / profile).
@@ -35,14 +35,18 @@ export async function POST(req: NextRequest) {
     const languageCode: TtsLanguageCode = resolveTtsLanguage(raw);
 
     const db = client.db(DB_NAME);
-    await db.collection(COLLECTIONS.USERS_COLLECTION).updateOne(
-      { _id: matchId(auth.user.id) as never },
-      { $set: { voiceLanguage: languageCode } } as never,
-    );
+    await db
+      .collection(COLLECTIONS.USERS_COLLECTION)
+      .updateOne({ _id: matchId(auth.user.id) as never }, {
+        $set: { voiceLanguage: languageCode },
+      } as never);
 
     return NextResponse.json({ ok: true, voiceLanguage: languageCode });
   } catch (error) {
     console.error("POST /api/candidate/voice-language:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

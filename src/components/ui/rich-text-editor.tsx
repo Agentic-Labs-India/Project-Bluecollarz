@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
+import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import {
   BoldIcon,
+  Heading2Icon,
   ItalicIcon,
-  UnderlineIcon,
+  LinkIcon,
   ListIcon,
   ListOrderedIcon,
-  Heading2Icon,
   QuoteIcon,
-  LinkIcon,
+  UnderlineIcon,
 } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
+import { cn } from "@/lib/utils";
 
 function isEditorAlive(editor: Editor | null): editor is Editor {
   if (!editor || editor.isDestroyed) return false;

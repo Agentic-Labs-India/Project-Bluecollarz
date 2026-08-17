@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -10,11 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchProfileVoiceLanguage,
   saveProfileVoiceLanguage,
-  VOICE_LANGUAGE_OPTIONS,
   type TtsLanguageCode,
+  VOICE_LANGUAGE_OPTIONS,
 } from "@/lib/ai/voice/languages";
 import { TTS_VOICE } from "@/lib/ai/voice/style";
 

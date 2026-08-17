@@ -1,6 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
 import type { Db } from "mongodb";
-import client, { DB_NAME, COLLECTIONS, isId, matchId, matchIds } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireProfile } from "@/lib/auth/session";
+import {
+  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
+  principalsWithGrantedPurposes,
+} from "@/lib/compliance/consent";
+import client, {
+  COLLECTIONS,
+  DB_NAME,
+  isId,
+  matchId,
+  matchIds,
+} from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import type {
+  CommunicationAnalysis,
+  InterviewDocument,
+  InterviewStageId,
+} from "@/lib/interviews";
 import type { JobDocument } from "@/lib/jobs";
 import { parsePagination } from "@/lib/jobs";
 import {
@@ -10,17 +27,6 @@ import {
   type ApplicationDocument,
   type ApplicationStatus,
 } from "@/lib/jobs/applications";
-import type {
-  CommunicationAnalysis,
-  InterviewDocument,
-  InterviewStageId,
-} from "@/lib/interviews";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
-import {
-  INTERVIEW_RELEASE_REQUIRED_PURPOSES,
-  principalsWithGrantedPurposes,
-} from "@/lib/compliance/consent";
 import { idHex } from "@/lib/utils";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -32,7 +38,10 @@ interface UserDoc {
 }
 
 function scoreFromAnalysis(
-  analysis?: Pick<CommunicationAnalysis, "overall"> | CommunicationAnalysis | null,
+  analysis?:
+    | Pick<CommunicationAnalysis, "overall">
+    | CommunicationAnalysis
+    | null,
 ): Pick<
   ApplicantInterviewScore,
   "overall" | "clarity" | "fluency" | "confidence" | "professionalism"
@@ -167,7 +176,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
     const hireAuth = await requireProfile("hire");
     if (!hireAuth.ok) {
-      return NextResponse.json({ error: hireAuth.error }, { status: hireAuth.status });
+      return NextResponse.json(
+        { error: hireAuth.error },
+        { status: hireAuth.status },
+      );
     }
 
     const { id } = await context.params;
@@ -271,6 +283,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     console.error("GET /api/jobs/[id]/applications:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

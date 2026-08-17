@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Wise design system — @see DESIGN.md */
+  /* Design tokens. This block is the source of truth for the palette. */
   --color-ink: var(--ink);
   --color-ink-deep: var(--ink-deep);
   --color-body: var(--body);
@@ -103,6 +103,7 @@
   @media (prefers-reduced-motion: reduce) {
     [data-slot="accordion-content"][data-state="open"],
     [data-slot="accordion-content"][data-state="closed"] {
+      /* biome-ignore lint/complexity/noImportantStyles: a reduced-motion override must beat the animation it is cancelling. */
       animation-duration: 0.01ms !important;
     }
   }
@@ -220,7 +221,8 @@
       scroll-behavior: smooth;
     }
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
 }

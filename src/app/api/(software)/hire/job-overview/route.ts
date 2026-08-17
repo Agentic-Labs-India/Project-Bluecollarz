@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { generateText, Output } from "ai";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   getAiRuntime,
@@ -8,7 +8,9 @@ import {
   renderJobOverviewPrompt,
 } from "@/lib/ai/runtime";
 import { requireProfile } from "@/lib/auth/session";
+import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
+import { findProhibitedOutput } from "@/lib/legal-safety/lexicon";
 
 export const maxDuration = 60;
 
@@ -75,13 +77,18 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
+  const limit = rateLimitPerMinute("jobOverview", auth.user.id);
+  if (!limit.ok) return tooManyRequests(limit);
 
   try {
     const body = await req.json().catch(() => null);
     const parsed = requestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Tell us the role type and experience level to generate an overview." },
+        {
+          error:
+            "Tell us the role type and experience level to generate an overview.",
+        },
         { status: 400 },
       );
     }
@@ -116,9 +123,29 @@ export async function POST(req: NextRequest) {
     }
 
     const html = overviewToHtml(output);
-    if (html.replace(/<[^>]+>/g, " ").trim().length < 40) {
+    const plain = html.replace(/<[^>]+>/g, " ").trim();
+    if (plain.length < 40) {
       return NextResponse.json(
-        { error: "Generated overview was too short. Try again with more detail." },
+        {
+          error:
+            "Generated overview was too short. Try again with more detail.",
+        },
+        { status: 502 },
+      );
+    }
+
+    // Overviews are published to candidates, so PAD-0003 and PAD-0008 apply
+    // here even though a recruiter triggered the generation.
+    const violations = findProhibitedOutput(plain);
+    if (violations.length > 0) {
+      console.error("[legal-safety] blocked job overview", {
+        claims: violations.map((violation) => violation.claim),
+      });
+      return NextResponse.json(
+        {
+          error:
+            "The generated overview made a claim we can't publish, such as a guarantee. Try again, or write it yourself.",
+        },
         { status: 502 },
       );
     }

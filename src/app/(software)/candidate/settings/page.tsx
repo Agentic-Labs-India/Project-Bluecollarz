@@ -1,20 +1,20 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { MoonIcon, SunIcon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
+import { DataRightsSection } from "@/components/compliance/data-rights-section";
+import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
+import { AppPage } from "@/components/layout/app-page";
+import { DeleteAccountSection } from "@/components/shared/delete-account-section";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AppPage } from "@/components/layout/app-page";
-import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
-import { DeleteAccountSection } from "@/components/shared/delete-account-section";
-import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
-import { DataRightsSection } from "@/components/compliance/data-rights-section";
-import { useTheme } from "next-themes";
-import { MoonIcon, SunIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export default function CandidateSettingsPage() {
   const { theme, setTheme } = useTheme();

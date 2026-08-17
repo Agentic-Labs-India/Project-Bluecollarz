@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Trash2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,9 +55,12 @@ export function DeleteAccountSection({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-foreground text-sm font-medium">Delete {label} profile</p>
+        <p className="text-foreground text-sm font-medium">
+          Delete {label} profile
+        </p>
         <p className="text-muted-foreground mt-1 text-sm">
-          Permanently removes this account and related data. You can sign up again after 90 Days.
+          Permanently removes this account and related data. You can sign up
+          again after 90 Days.
         </p>
         {error ? (
           <p className="text-destructive mt-2 text-sm">{error}</p>

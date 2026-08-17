@@ -153,6 +153,20 @@ export async function buildAccessExport(userId: string) {
     })
     .toArray();
 
+  const medicalAppointments = await client
+    .db(DB_NAME)
+    .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
+    .find({ applicantId: matchId(userId) } as never)
+    .project({
+      jobId: 1,
+      centerId: 1,
+      scheduledAt: 1,
+      status: 1,
+      reports: 1,
+      createdAt: 1,
+    })
+    .toArray();
+
   return {
     exportedAt: new Date().toISOString(),
     dataPrincipalId: userId,
@@ -195,6 +209,26 @@ export async function buildAccessExport(userId: string) {
           ? i.completedAt.toISOString()
           : String(i.completedAt)
         : null,
+    })),
+    medicalAppointments: medicalAppointments.map((m) => ({
+      jobId: m.jobId,
+      centerId: m.centerId,
+      status: m.status,
+      scheduledAt:
+        m.scheduledAt instanceof Date
+          ? m.scheduledAt.toISOString()
+          : String(m.scheduledAt),
+      // Names and dates only; the report files themselves are fetched through
+      // the authorized download route, never embedded in an export payload.
+      reports: (Array.isArray(m.reports) ? m.reports : []).map(
+        (r: { name?: string; uploadedAt?: unknown }) => ({
+          name: typeof r?.name === "string" ? r.name : "Report",
+          uploadedAt:
+            r?.uploadedAt instanceof Date
+              ? r.uploadedAt.toISOString()
+              : String(r?.uploadedAt ?? ""),
+        }),
+      ),
     })),
   };
 }

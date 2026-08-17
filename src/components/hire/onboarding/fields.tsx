@@ -1,19 +1,20 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
 import { FileUpIcon } from "lucide-react";
-import { CountryCodeSelect } from "@/components/geo/place-fields";
+import { type ReactNode, useRef } from "react";
 import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
+import { CountryCodeSelect } from "@/components/geo/place-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { COMPANY_DOC_MAX_MB } from "@/lib/blob/pathname";
+import { blobFileUrl, COMPANY_DOC_MAX_MB } from "@/lib/blob/pathname";
 import type {
   HireOnboardingContact,
   HireOnboardingDocument,
 } from "@/lib/hire/onboarding/types";
 
-export const COMPANY_DOC_ACCEPT = "application/pdf,image/jpeg,image/png,image/webp";
+export const COMPANY_DOC_ACCEPT =
+  "application/pdf,image/jpeg,image/png,image/webp";
 
 export function FieldInput({
   label,
@@ -174,7 +175,7 @@ export function DocumentSlot({
         </Button>
         {document ? (
           <a
-            href={document.url}
+            href={blobFileUrl(document.url)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary truncate text-xs font-medium underline-offset-4 hover:underline"

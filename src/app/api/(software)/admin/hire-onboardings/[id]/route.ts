@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth/session";
 import { reviewHireOnboarding } from "@/lib/hire/onboarding";
@@ -53,19 +53,28 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         },
       });
       if (!item) {
-        return NextResponse.json({ error: "Onboarding not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Onboarding not found" },
+          { status: 404 },
+        );
       }
       return NextResponse.json({ item });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Could not update onboarding";
-      if (message.startsWith("Onboarding is already") || message.includes("changes required")) {
+      if (
+        message.startsWith("Onboarding is already") ||
+        message.includes("changes required")
+      ) {
         return NextResponse.json({ error: message }, { status: 409 });
       }
       throw error;
     }
   } catch (error) {
     console.error("PATCH /api/admin/hire-onboardings/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

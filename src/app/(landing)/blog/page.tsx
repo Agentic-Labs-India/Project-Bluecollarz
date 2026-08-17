@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { listPublishedBlogsPublic } from "@/lib/blog";
+import { blobFileUrl } from "@/lib/blob/pathname";
 import { formatDateTimeShort } from "@/lib/core/dates";
+import { placeholderKeys } from "@/lib/utils";
 
 export const metadata = {
   title: "Blog · Blucollarz",
@@ -19,8 +21,8 @@ type PageProps = {
 function BlogIndexBodyFallback() {
   return (
     <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="animate-pulse space-y-4">
+      {placeholderKeys(4).map((key) => (
+        <div key={key} className="animate-pulse space-y-4">
           <div className="bg-muted aspect-video w-full" />
           <div className="bg-muted h-3 w-24 rounded" />
           <div className="bg-muted h-7 w-4/5 rounded" />
@@ -56,7 +58,7 @@ async function BlogIndexBody({ searchParams }: PageProps) {
                 {post.coverImageUrl ? (
                   <div className="border-border relative aspect-video w-full overflow-hidden border">
                     <Image
-                      src={post.coverImageUrl}
+                      src={blobFileUrl(post.coverImageUrl)}
                       alt=""
                       fill
                       sizes="(max-width: 1024px) 100vw, 50vw"

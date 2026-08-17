@@ -11,9 +11,10 @@ import {
   type AdminSettingsSection,
 } from "@/components/admin/admin-settings-form";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import type { AdminUserListItem } from "@/lib/admin/queries";
-import { Skeleton } from "@/components/ui/skeleton";
+import { placeholderKeys } from "@/lib/utils";
 
 const TABS = [
   { value: "admins", label: "Admin" },
@@ -47,11 +48,11 @@ function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
   if (section === "flow") {
     return (
       <div className="grid grid-cols-3 gap-2">
-        {Array.from({ length: 3 }).map((_, col) => (
-          <div key={col} className="space-y-2">
+        {placeholderKeys(3, "col").map((colKey) => (
+          <div key={colKey} className="space-y-2">
             <Skeleton className="h-3 w-16" />
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
+            {placeholderKeys(8, colKey).map((key) => (
+              <Skeleton key={key} className="h-10 w-full" />
             ))}
           </div>
         ))}
@@ -61,16 +62,16 @@ function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
   if (section === "prompts") {
     return (
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 w-full" />
+        {placeholderKeys(6).map((key) => (
+          <Skeleton key={key} className="h-28 w-full" />
         ))}
       </div>
     );
   }
   return (
     <div className="max-w-xl space-y-4">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="space-y-1.5">
+      {placeholderKeys(6).map((key) => (
+        <div key={key} className="space-y-1.5">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="h-9 w-full" />
         </div>

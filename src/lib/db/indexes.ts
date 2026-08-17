@@ -70,6 +70,12 @@ const CONSENT_EVENT_INDEX_SPECS = [
   { key: { consentId: 1 }, options: { unique: true } },
 ] as const;
 
+const CONSENT_PLAYBACK_INDEX_SPECS = [
+  { key: { playbackId: 1 }, options: { unique: true } },
+  { key: { userId: 1, createdAt: -1 }, options: {} },
+  { key: { expiresAt: 1 }, options: { expireAfterSeconds: 0 } },
+] as const;
+
 const RIGHTS_REQUEST_INDEX_SPECS = [
   { key: { dataPrincipalId: 1, createdAt: -1 }, options: {} },
   { key: { status: 1, createdAt: -1 }, options: {} },
@@ -90,6 +96,25 @@ const BREACH_INCIDENT_INDEX_SPECS = [
 const MEDICAL_CENTER_INDEX_SPECS = [
   { key: { active: 1, name: 1 }, options: {} },
   { key: { licenseNumber: 1 }, options: {} },
+] as const;
+
+const LEGAL_HOLD_INDEX_SPECS = [
+  { key: { dataPrincipalId: 1, releasedAt: 1 }, options: {} },
+  { key: { holdId: 1 }, options: { unique: true } },
+] as const;
+
+const LEGAL_SAFETY_CASE_INDEX_SPECS = [
+  { key: { caseId: 1 }, options: { unique: true } },
+  { key: { subjectUserId: 1, state: 1 }, options: {} },
+  { key: { state: 1, createdAt: -1 }, options: {} },
+] as const;
+
+const LEGAL_SAFETY_NOTICE_INDEX_SPECS = [
+  {
+    key: { userId: 1, noticeId: 1, noticeVersion: 1, deliveredAt: -1 },
+    options: {},
+  },
+  { key: { deliveryId: 1 }, options: { unique: true } },
 ] as const;
 
 const MEDICAL_APPOINTMENT_INDEX_SPECS = [
@@ -208,6 +233,13 @@ export async function ensureIndexes() {
         spec.options,
       ),
     ),
+    ...CONSENT_PLAYBACK_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.CONSENT_PLAYBACKS),
+        spec.key,
+        spec.options,
+      ),
+    ),
     ...RIGHTS_REQUEST_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.RIGHTS_REQUESTS),
@@ -239,6 +271,27 @@ export async function ensureIndexes() {
     ...MEDICAL_APPOINTMENT_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.MEDICAL_APPOINTMENTS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...LEGAL_HOLD_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.LEGAL_HOLDS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...LEGAL_SAFETY_CASE_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.LEGAL_SAFETY_CASES),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...LEGAL_SAFETY_NOTICE_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.LEGAL_SAFETY_NOTICES),
         spec.key,
         spec.options,
       ),

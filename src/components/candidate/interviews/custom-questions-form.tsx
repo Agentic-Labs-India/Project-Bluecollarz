@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { CheckIcon, ClipboardListIcon, XIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { interviewStageTitle } from "@/lib/interviews/labels";
 import {
-  validateCustomAnswer,
   type CustomAnswerValue,
   type CustomQuestion,
   type CustomQuestionAnswer,
+  validateCustomAnswer,
 } from "@/lib/jobs/custom-questions";
-import { interviewStageTitle } from "@/lib/interviews/labels";
 import { cn } from "@/lib/utils";
 
 function OptionButton({

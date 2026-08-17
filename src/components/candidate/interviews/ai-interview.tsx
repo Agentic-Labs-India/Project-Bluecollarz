@@ -1,60 +1,50 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import {
-  DefaultChatTransport,
-  isTextUIPart,
-  isToolUIPart,
-} from "ai";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { DefaultChatTransport, isTextUIPart, isToolUIPart } from "ai";
 import {
   MicIcon,
   MonitorIcon,
-  VideoIcon,
   SquareIcon,
+  VideoIcon,
   Volume2Icon,
   XIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useScreenRecorder } from "@/components/candidate/interviews/use-screen-recorder";
-import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
-import {
-  InterviewReadyPanel,
-  type InterviewReadyPanelHandle,
-} from "@/components/candidate/interviews/interview-ready-panel";
-import {
-  startVadLoop,
-  type VadController,
-} from "@/components/candidate/interviews/vad";
-import { uploadBlob } from "@/lib/blob/upload";
-import {
-  interviewKickoffText,
-  interviewStageLabel,
-  interviewStageTitle,
-} from "@/lib/interviews/labels";
-import type { AiInterviewStageId } from "@/lib/interviews";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AssistantAvatar,
   UserChatAvatar,
   useChatUserAvatar,
 } from "@/components/candidate/chat-avatars";
-import { speakText } from "@/lib/ai/voice/speak";
+import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
+import {
+  InterviewReadyPanel,
+  type InterviewReadyPanelHandle,
+} from "@/components/candidate/interviews/interview-ready-panel";
+import { useScreenRecorder } from "@/components/candidate/interviews/use-screen-recorder";
+import {
+  startVadLoop,
+  type VadController,
+} from "@/components/candidate/interviews/vad";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
   type TtsLanguageCode,
 } from "@/lib/ai/voice/languages";
+import { speakText } from "@/lib/ai/voice/speak";
 import { TTS_VOICE } from "@/lib/ai/voice/style";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { uploadBlob } from "@/lib/blob/upload";
+import type { AiInterviewStageId } from "@/lib/interviews";
+import {
+  interviewKickoffText,
+  interviewStageLabel,
+  interviewStageTitle,
+} from "@/lib/interviews/labels";
 import { cn } from "@/lib/utils";
 
 type LocalTurn = { role: "assistant" | "user"; text: string };
@@ -157,12 +147,15 @@ export function AiInterview({
     [interviewId],
   );
 
-  const { messages, sendMessage, status: chatStatus } = useChat({
+  const {
+    messages,
+    sendMessage,
+    status: chatStatus,
+  } = useChat({
     transport,
   });
 
-  const isStreaming =
-    chatStatus === "submitted" || chatStatus === "streaming";
+  const isStreaming = chatStatus === "submitted" || chatStatus === "streaming";
   streamingRef.current = isStreaming;
 
   useEffect(() => {
@@ -211,10 +204,7 @@ export function AiInterview({
             busyUtteranceRef.current = true;
             setStatus("Transcribing…");
             try {
-              const data = await transcribeBlob(
-                blob,
-                voiceLanguageRef.current,
-              );
+              const data = await transcribeBlob(blob, voiceLanguageRef.current);
               if (!data.ok || !data.transcript) {
                 setStatus(data.error || "Didn't catch that — try again.");
                 return;
@@ -245,8 +235,7 @@ export function AiInterview({
       setError(
         e instanceof Error
           ? e.message
-          : screenError ||
-              "Camera, microphone, and screen share are required.",
+          : screenError || "Camera, microphone, and screen share are required.",
       );
     }
   }, [startScreen, sendMessage, jobTitle, stageId, screenError]);

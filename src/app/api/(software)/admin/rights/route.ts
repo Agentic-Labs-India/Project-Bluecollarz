@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
-import { ensureIndexes } from "@/lib/db/indexes";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import {
   listRightsRequestsAdmin,
   RIGHTS_REQUEST_STATUSES,
   serializeRightsRequest,
   updateRightsRequest,
 } from "@/lib/compliance/rights";
+import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
 
 const patchSchema = z.object({
@@ -44,7 +41,10 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/rights:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -75,6 +75,9 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/admin/rights:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

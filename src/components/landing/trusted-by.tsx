@@ -1,6 +1,6 @@
+import { ArrowUpRightIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRightIcon } from "lucide-react";
 import { PrimaryDither } from "@/components/landing/primary-dither";
 import { cn } from "@/lib/utils";
 

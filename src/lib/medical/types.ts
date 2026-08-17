@@ -43,10 +43,12 @@ export function medicalPipelineFromAppointment(
 
 export class MedicalError extends Error {
   status: number;
-  constructor(message: string, status = 400) {
+  code?: string;
+  constructor(message: string, status = 400, code?: string) {
     super(message);
     this.name = "MedicalError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -333,6 +335,8 @@ export type CandidateMedicalScheduleContext = {
   applicationId: string;
   appointment: CandidateMedicalAppointment | null;
   centers: CandidateMedicalCenter[];
+  /** False until the candidate grants the `medical` purpose. */
+  medicalConsent: boolean;
 };
 
 export function toPublicMedicalCenter(

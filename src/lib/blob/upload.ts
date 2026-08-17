@@ -6,6 +6,7 @@ import {
   BLOB_MAX_BYTES,
   BLOB_MULTIPART_THRESHOLD,
   blobPathname,
+  normalizeBlobContentType,
 } from "@/lib/blob/pathname";
 
 export type BlobUploadResult = {
@@ -37,16 +38,17 @@ export async function uploadBlob(
   opts: BlobUploadOptions,
 ): Promise<BlobUploadResult> {
   const pathname = blobPathname(opts.pathname);
+  const contentType = normalizeBlobContentType(
+    opts.contentType || opts.file.type,
+  );
 
-  const file =
+  const file = new File(
+    [opts.file],
     opts.file instanceof File
-      ? opts.file
-      : new File([opts.file], pathname.split("/").pop() || "upload.bin", {
-          type:
-            opts.contentType ||
-            opts.file.type ||
-            "application/octet-stream",
-        });
+      ? opts.file.name
+      : pathname.split("/").pop() || "upload.bin",
+    { type: contentType },
+  );
 
   if (file.size <= 0) {
     throw new Error("Cannot upload an empty file");
@@ -58,11 +60,8 @@ export async function uploadBlob(
     );
   }
 
-  const contentType =
-    opts.contentType || file.type || "application/octet-stream";
-
   const result = await upload(pathname, file, {
-    access: "public",
+    access: "private",
     handleUploadUrl: BLOB_HANDLE_UPLOAD_URL,
     contentType,
     multipart: file.size > BLOB_MULTIPART_THRESHOLD,

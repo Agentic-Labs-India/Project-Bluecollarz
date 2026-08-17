@@ -1,10 +1,10 @@
 import "server-only";
 
 import { ObjectId } from "mongodb";
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
+import { CONSENT_NOTICE_VERSION } from "@/lib/compliance/consent-notices";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
-/** Consent notice version — bump when Artifact 2 text changes. */
-export const CONSENT_NOTICE_VERSION = "1.1";
+export { CONSENT_NOTICE_VERSION };
 
 export const CONSENT_PURPOSES = [
   "identity",
@@ -13,6 +13,7 @@ export const CONSENT_PURPOSES = [
   "background",
   "passport",
   "evaluation",
+  "medical",
 ] as const;
 
 export type ConsentPurpose = (typeof CONSENT_PURPOSES)[number];
@@ -32,15 +33,27 @@ export interface ConsentEventDocument {
   status: ConsentStatus;
 }
 
-/** DigiLocker identity verification requires every purpose currently granted. */
+/**
+ * DigiLocker identity verification. Medical is deliberately excluded: health
+ * data is only needed once a candidate is selected, and DPDP s.6(1) consent
+ * must be specific rather than bundled into an unrelated identity step.
+ */
 export const DIGILOCKER_REQUIRED_PURPOSES: ConsentPurpose[] = [
-  ...CONSENT_PURPOSES,
+  "identity",
+  "contact",
+  "qualification",
+  "background",
+  "passport",
+  "evaluation",
 ];
 
 /** Transcripts and recordings are released to the hirer only with this purpose. */
 export const INTERVIEW_RELEASE_REQUIRED_PURPOSES: ConsentPurpose[] = [
   "evaluation",
 ];
+
+/** Fitness-test scheduling and storage of the resulting medical reports. */
+export const MEDICAL_REQUIRED_PURPOSES: ConsentPurpose[] = ["medical"];
 
 export function isConsentPurpose(value: string): value is ConsentPurpose {
   return (CONSENT_PURPOSES as readonly string[]).includes(value);
@@ -124,9 +137,7 @@ function activeFromEvents(events: ConsentEventDocument[]): {
  * Latest status per purpose for a principal.
  * Grants on an older notice version are not active (forces re-consent on bump).
  */
-export async function getActivePurposes(
-  dataPrincipalId: string,
-): Promise<{
+export async function getActivePurposes(dataPrincipalId: string): Promise<{
   purposes: ConsentPurpose[];
   noticeVersion: string | null;
   grantedAt: string | null;

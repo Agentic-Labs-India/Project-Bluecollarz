@@ -31,7 +31,7 @@ export function useScreenRecorder() {
 
   const stopTracks = useCallback(() => {
     for (const stream of stateRef.current.ownedStreams) {
-      stream.getTracks().forEach((t) => t.stop());
+      for (const track of stream.getTracks()) track.stop();
     }
     stateRef.current.ownedStreams = [];
     stateRef.current.recorder = null;
@@ -74,8 +74,8 @@ export function useScreenRecorder() {
       const screenTrack = display.getVideoTracks()[0];
       const surface = screenTrack?.getSettings()?.displaySurface;
       if (surface && surface !== "monitor") {
-        display.getTracks().forEach((t) => t.stop());
-        camera.getTracks().forEach((t) => t.stop());
+        for (const track of display.getTracks()) track.stop();
+        for (const track of camera.getTracks()) track.stop();
         throw new Error(
           "Please share your entire screen (not a window or browser tab).",
         );
@@ -96,9 +96,11 @@ export function useScreenRecorder() {
 
       const recorder = new MediaRecorder(
         mixed,
-        mime ? { mimeType: mime, videoBitsPerSecond: 1_500_000 } : {
-          videoBitsPerSecond: 1_500_000,
-        },
+        mime
+          ? { mimeType: mime, videoBitsPerSecond: 1_500_000 }
+          : {
+              videoBitsPerSecond: 1_500_000,
+            },
       );
 
       stateRef.current = {

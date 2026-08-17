@@ -1,14 +1,11 @@
-import client, { DB_NAME, COLLECTIONS, matchId, matchIds } from "@/lib/db";
-import type { JobDocument } from "@/lib/jobs";
-import type { ApplicationDocument } from "@/lib/jobs/applications";
+import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import type { HireActiveRole, HireOverview } from "@/lib/hire";
 import { hydrateHireProfileFromApprovedInquiry } from "@/lib/hire/apply-inquiry-profile";
-import {
-  toHireProfileData,
-  type HireProfileFields,
-} from "@/lib/hire/profile";
+import { type HireProfileFields, toHireProfileData } from "@/lib/hire/profile";
+import type { JobDocument } from "@/lib/jobs";
+import type { ApplicationDocument } from "@/lib/jobs/applications";
 import { idHex } from "@/lib/utils";
-import { ensureIndexes } from "@/lib/db/indexes";
 
 type HireUserDoc = HireProfileFields & {
   _id: unknown;

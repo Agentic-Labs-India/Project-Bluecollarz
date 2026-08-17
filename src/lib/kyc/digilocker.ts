@@ -3,7 +3,7 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
-} from "crypto";
+} from "node:crypto";
 
 /* ── types ── */
 

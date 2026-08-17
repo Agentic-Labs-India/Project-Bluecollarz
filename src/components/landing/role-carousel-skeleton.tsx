@@ -1,3 +1,5 @@
+import { placeholderKeys } from "@/lib/utils";
+
 export function RoleCarouselSkeleton() {
   return (
     <section className="mt-16 sm:block">
@@ -13,9 +15,9 @@ export function RoleCarouselSkeleton() {
         </div>
       </div>
       <div className="mt-6 grid auto-cols-[300px] grid-flow-col grid-rows-2 gap-3 overflow-hidden sm:mt-8 sm:auto-cols-[320px]">
-        {Array.from({ length: 6 }).map((_, index) => (
+        {placeholderKeys(6).map((key) => (
           <div
-            key={index}
+            key={key}
             className="border-border bg-card h-[128px] w-[300px] overflow-hidden border sm:w-[320px]"
           >
             <div className="bg-primary/80 h-6 animate-pulse" />

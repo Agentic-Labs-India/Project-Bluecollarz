@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth/auth";
+import { type NextRequest, NextResponse } from "next/server";
 import { getAiRuntime } from "@/lib/ai/runtime";
+import { requireUser } from "@/lib/auth/session";
+import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 
 export const maxDuration = 30;
 
@@ -12,10 +12,15 @@ export const maxDuration = 30;
  */
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authed = await requireUser();
+    if (!authed.ok) {
+      return NextResponse.json(
+        { error: authed.error },
+        { status: authed.status },
+      );
     }
+    const limit = rateLimitPerMinute("stt", authed.user.id);
+    if (!limit.ok) return tooManyRequests(limit);
 
     const apiKey = process.env.SARVAM_API_KEY?.trim();
     if (!apiKey) {
@@ -34,7 +39,7 @@ export async function POST(req: NextRequest) {
     const baseType =
       (audio.type || "audio/webm").split(";")[0].trim() || "audio/webm";
     const filename =
-      audio.name && audio.name.includes(".")
+      audio.name?.includes(".")
         ? audio.name
         : baseType.includes("wav")
           ? "speech.wav"

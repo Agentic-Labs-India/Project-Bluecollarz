@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -13,9 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
   Sheet,
   SheetContent,
@@ -25,12 +25,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import type {
   AdminJobVerificationItem,
   AdminJobVerificationListItem,
 } from "@/lib/admin/job-verification";
 import { JOB_STATUS_LABELS } from "@/lib/jobs";
-import { RichTextContent } from "@/components/ui/rich-text-content";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -321,7 +321,9 @@ export function AdminJobVerification() {
                   items={detail.customQuestions}
                 />
                 <div className="space-y-2">
-                  <Label htmlFor="ra-rc-number">Recruiting Agent RC number</Label>
+                  <Label htmlFor="ra-rc-number">
+                    Recruiting Agent RC number
+                  </Label>
                   <Input
                     id="ra-rc-number"
                     value={raRcNumber}
@@ -364,8 +366,8 @@ export function AdminJobVerification() {
           <DialogHeader>
             <DialogTitle>Decline job posting</DialogTitle>
             <DialogDescription>
-              The role returns to draft. The recruiter is emailed this reason via
-              Resend.
+              The role returns to draft. The recruiter is emailed this reason
+              via Resend.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

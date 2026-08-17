@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowLeftIcon, PencilIcon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ApplicantSheet } from "@/components/hire/applicant-sheet";
+import { RoleSheet } from "@/components/hire/role-sheet";
+import { AppPage } from "@/components/layout/app-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,18 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApplicantSheet } from "@/components/hire/applicant-sheet";
-import { RoleSheet } from "@/components/hire/role-sheet";
-import { AppPage } from "@/components/layout/app-page";
+import type { InterviewStageId } from "@/lib/interviews";
+import { JOB_STATUS_LABELS } from "@/lib/jobs";
 import {
   APPLICATION_STATUS_LABELS,
   type ApplicantInterviewScore,
   type ApplicantListItem,
   type PaginatedApplicantsResponse,
 } from "@/lib/jobs/applications";
-import type { InterviewStageId } from "@/lib/interviews";
-import { JOB_STATUS_LABELS } from "@/lib/jobs";
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
 
 const SCORE_FILTERS = [
   { value: "all", label: "All scores" },
@@ -68,7 +68,9 @@ export default function RoleCandidatesPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [data, setData] = useState<ApplicantListItem[]>([]);
-  const [job, setJob] = useState<PaginatedApplicantsResponse["job"] | null>(null);
+  const [job, setJob] = useState<PaginatedApplicantsResponse["job"] | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -138,8 +140,7 @@ export default function RoleCandidatesPage() {
     return () => clearTimeout(timer);
   }, [fetchApplicants, search]);
 
-  const resetPage = () =>
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  const resetPage = () => setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 
   const columns = useMemo<ColumnDef<ApplicantListItem>[]>(
     () => [

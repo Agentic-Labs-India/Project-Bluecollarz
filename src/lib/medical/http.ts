@@ -6,7 +6,7 @@ import { MedicalError } from "@/lib/medical/types";
 export function handleMedicalRouteError(error: unknown, context: string) {
   if (error instanceof MedicalError) {
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message, code: error.code },
       { status: error.status },
     );
   }

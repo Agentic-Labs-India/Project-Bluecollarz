@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { JobListItem } from "@/lib/jobs";
 import { JOB_STATUS_LABELS } from "@/lib/jobs";
+import { placeholderKeys } from "@/lib/utils";
 
 function RoleFormSkeleton() {
   return (
@@ -30,8 +31,8 @@ function RoleFormSkeleton() {
           <Skeleton className="h-4 w-24 rounded" />
           <Skeleton className="h-10 w-full rounded-lg" />
         </div>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="space-y-2">
+        {placeholderKeys(4).map((key) => (
+          <div key={key} className="space-y-2">
             <Skeleton className="h-4 w-20 rounded" />
             <Skeleton className="h-10 w-full rounded-lg" />
           </div>

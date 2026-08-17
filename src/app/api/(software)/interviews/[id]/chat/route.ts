@@ -1,12 +1,15 @@
 import { createAgentUIStreamResponse } from "ai";
-import { NextRequest } from "next/server";
-import client, { DB_NAME, COLLECTIONS, isId, matchId } from "@/lib/db";
+import type { NextRequest } from "next/server";
+import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument } from "@/lib/interviews";
 import { isAiInterviewStage, isCustomQuestionsStage } from "@/lib/interviews";
 import { buildInterviewAgent } from "@/lib/interviews/agent";
 import { isInterviewKickoffText } from "@/lib/interviews/labels";
-import { ensureIndexes } from "@/lib/db/indexes";
-import { requireProfile } from "@/lib/auth/session";
+import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
+import { screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
@@ -15,10 +18,12 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, context: RouteContext) {
   await ensureIndexes();
-  const auth = await requireProfile("work");
+  const auth = await requireCandidateAppReady();
   if (!auth.ok) {
     return new Response(auth.error, { status: auth.status });
   }
+  const limit = rateLimitPerMinute("interviewChat", auth.user.id);
+  if (!limit.ok) return tooManyRequests(limit);
   if (!auth.user.id) {
     return new Response("Invalid user", { status: 400 });
   }
@@ -74,31 +79,31 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (!languageCode) {
     const userDoc = await db
       .collection<{ voiceLanguage?: string }>(COLLECTIONS.USERS_COLLECTION)
-      .findOne(
-        { _id: matchId(auth.user.id) as never },
-        { projection: { voiceLanguage: 1 } } as never,
-      );
+      .findOne({ _id: matchId(auth.user.id) as never }, {
+        projection: { voiceLanguage: 1 },
+      } as never);
     languageCode = userDoc?.voiceLanguage?.trim() || "en-IN";
   }
 
-  const lastUser = [...messages].reverse().find(
-    (m) =>
-      m &&
-      typeof m === "object" &&
-      (m as { role?: string }).role === "user",
-  ) as { parts?: Array<{ type?: string; text?: string }> } | undefined;
+  const lastUser = [...messages]
+    .reverse()
+    .find(
+      (m) =>
+        m && typeof m === "object" && (m as { role?: string }).role === "user",
+    ) as { parts?: Array<{ type?: string; text?: string }> } | undefined;
   const userText =
     lastUser?.parts
-      ?.filter((p) => p?.type === "text" && typeof p.text === "string")
-      .map((p) => p.text!.trim())
+      ?.flatMap((p) =>
+        p?.type === "text" && typeof p.text === "string" ? [p.text.trim()] : [],
+      )
       .filter(Boolean)
       .join(" ")
       .trim() || "";
 
   if (userText && !isInterviewKickoffText(userText)) {
-    await db.collection(COLLECTIONS.INTERVIEWS).updateOne(
-      { _id: matchId(id) as never },
-      {
+    await db
+      .collection(COLLECTIONS.INTERVIEWS)
+      .updateOne({ _id: matchId(id) as never }, {
         $push: {
           transcript: {
             role: "user" as const,
@@ -107,8 +112,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
           },
         },
         $set: { updatedAt: new Date() },
-      } as never,
-    );
+      } as never);
+    await screenWorkerTurnSafe({
+      userId: auth.user.id,
+      profileType: "work",
+      text: userText,
+      sourceKind: "interview",
+      sourceId: id,
+    });
   }
 
   const agent = await buildInterviewAgent({
@@ -122,5 +133,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   return createAgentUIStreamResponse({
     agent,
     uiMessages: messages,
+    experimental_transform: prohibitedOutputGuard({
+      surface: "interviews/chat",
+    }),
   });
 }

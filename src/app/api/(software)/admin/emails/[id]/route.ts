@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile } from "@/lib/auth/session";
 import {
+  type AdminEmailDetail,
   asStringArray,
   getResendClient,
   mapReceivedListItem,
   mapSentListItem,
-  type AdminEmailDetail,
 } from "@/lib/admin/resend";
+import { requireProfile } from "@/lib/auth/session";
 import { formatZodError } from "@/lib/utils";
 
 const paramsSchema = z.object({
@@ -34,13 +34,15 @@ export async function GET(
     const parsedQuery = querySchema.safeParse({
       box: req.nextUrl.searchParams.get("box"),
     });
-    if (!parsedParams.success || !parsedQuery.success) {
+    if (!parsedParams.success) {
       return NextResponse.json(
-        {
-          error: formatZodError(
-            parsedParams.success ? parsedQuery.error! : parsedParams.error,
-          ),
-        },
+        { error: formatZodError(parsedParams.error) },
+        { status: 400 },
+      );
+    }
+    if (!parsedQuery.success) {
+      return NextResponse.json(
+        { error: formatZodError(parsedQuery.error) },
         { status: 400 },
       );
     }
@@ -97,6 +99,9 @@ export async function GET(
     return NextResponse.json({ email: detail });
   } catch (error) {
     console.error("GET /api/admin/emails/[id]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

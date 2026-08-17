@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { HireProfileView } from "@/components/hire/hire-profile-view";
 import { auth } from "@/lib/auth/auth";
-import { getHireOverview } from "@/lib/hire/queries";
 import { getHireOnboarding } from "@/lib/hire/onboarding";
+import { getHireOverview } from "@/lib/hire/queries";
 
 export default async function HireProfilePage() {
   const session = await auth.api.getSession({ headers: await headers() });

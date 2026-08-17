@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -20,18 +19,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import { blobFileUrl } from "@/lib/blob/pathname";
 import type { CandidateProfileData } from "@/lib/candidate/profile";
+import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
+import { interviewStageTitle } from "@/lib/interviews/labels";
 import {
   APPLICATION_STATUS_LABELS,
   type ApplicationStatus,
 } from "@/lib/jobs/applications";
-import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
-import { interviewStageTitle } from "@/lib/interviews/labels";
 import {
-  formatCustomAnswerDisplay,
   type CustomQuestion,
   type CustomQuestionAnswer,
+  formatCustomAnswerDisplay,
 } from "@/lib/jobs/custom-questions";
+
 type InterviewDetail = {
   id: string;
   stageId: InterviewStageId;
@@ -73,7 +75,12 @@ type ApplicantDetailResponse = {
 function initialsFor(name: string, fallback = "?"): string {
   const source = name.trim() || fallback;
   const parts = source.split(/[\s@.]+/).filter(Boolean);
-  return (parts.slice(0, 2).map((p) => p[0] ?? "").join("") || "?").toUpperCase();
+  return (
+    parts
+      .slice(0, 2)
+      .map((p) => p[0] ?? "")
+      .join("") || "?"
+  ).toUpperCase();
 }
 
 function ScoreGrid({ analysis }: { analysis: CommunicationAnalysis }) {
@@ -123,7 +130,9 @@ function Field({
       <p className="text-muted-foreground text-[11px] uppercase tracking-wide">
         {label}
       </p>
-      <p className="text-foreground mt-0.5 text-sm whitespace-pre-wrap">{text}</p>
+      <p className="text-foreground mt-0.5 text-sm whitespace-pre-wrap">
+        {text}
+      </p>
     </div>
   );
 }
@@ -186,8 +195,11 @@ function ResumeAccordionBody({
         </p>
         {profile.education.length ? (
           <ul className="space-y-3">
-            {profile.education.map((ed, i) => (
-              <li key={i} className="border-border border-l-2 pl-3">
+            {profile.education.map((ed) => (
+              <li
+                key={`${ed.school}-${ed.degree}-${ed.startYear}`}
+                className="border-border border-l-2 pl-3"
+              >
                 <p className="text-foreground text-sm font-medium">
                   {[ed.degree, ed.major].filter(Boolean).join(" · ") ||
                     "Education"}
@@ -217,8 +229,11 @@ function ResumeAccordionBody({
         </p>
         {profile.workExperience.length ? (
           <ul className="space-y-3">
-            {profile.workExperience.map((wx, i) => (
-              <li key={i} className="border-border border-l-2 pl-3">
+            {profile.workExperience.map((wx) => (
+              <li
+                key={`${wx.company}-${wx.role}-${wx.startYear}`}
+                className="border-border border-l-2 pl-3"
+              >
                 <p className="text-foreground text-sm font-medium">
                   {[wx.role, wx.company].filter(Boolean).join(" · ") ||
                     "Experience"}
@@ -322,7 +337,7 @@ function InterviewAccordionBody({ interview }: { interview: InterviewDetail }) {
             Recording
           </p>
           <video
-            src={interview.videoUrl}
+            src={blobFileUrl(interview.videoUrl)}
             controls
             className="border-border bg-muted aspect-video w-full border"
           />
@@ -416,10 +431,7 @@ export function ApplicantSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Called after select/reject with the new status (table can update locally). */
-  onStatusChanged?: (
-    applicantId: string,
-    status: ApplicationStatus,
-  ) => void;
+  onStatusChanged?: (applicantId: string, status: ApplicationStatus) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -435,9 +447,7 @@ export function ApplicantSheet({
     setError("");
     setActionError("");
     try {
-      const res = await fetch(
-        `/api/jobs/${jobId}/applications/${applicantId}`,
-      );
+      const res = await fetch(`/api/jobs/${jobId}/applications/${applicantId}`);
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || "Failed to load candidate");
       setData(json as ApplicantDetailResponse);
@@ -509,10 +519,7 @@ export function ApplicantSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full! gap-0 p-0 sm:max-w-2xl!"
-      >
+      <SheetContent side="right" className="w-full! gap-0 p-0 sm:max-w-2xl!">
         <SheetHeader className="shrink-0 border-b">
           <div className="flex items-start gap-3">
             {profile ? (
@@ -520,9 +527,7 @@ export function ApplicantSheet({
                 {profile.image ? (
                   <AvatarImage src={profile.image} alt="" />
                 ) : null}
-                <AvatarFallback>
-                  {initialsFor(profile.name)}
-                </AvatarFallback>
+                <AvatarFallback>{initialsFor(profile.name)}</AvatarFallback>
               </Avatar>
             ) : (
               <Skeleton className="size-12 rounded-full" />
@@ -581,11 +586,7 @@ export function ApplicantSheet({
             ) : data && profile ? (
               <Accordion
                 type="multiple"
-                defaultValue={[
-                  "resume",
-                  "ai-communication",
-                  "ai-domain",
-                ]}
+                defaultValue={["resume", "ai-communication", "ai-domain"]}
               >
                 <AccordionItem value="resume">
                   <AccordionTrigger>
@@ -624,9 +625,7 @@ export function ApplicantSheet({
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="font-normal">
-                          {communication
-                            ? communication.status
-                            : "Not started"}
+                          {communication ? communication.status : "Not started"}
                         </Badge>
                       )}
                     </span>
@@ -726,9 +725,7 @@ export function ApplicantSheet({
               className="w-full flex-1"
               variant="destructive"
               disabled={
-                !data ||
-                actionLoading !== null ||
-                currentStatus === "rejected"
+                !data || actionLoading !== null || currentStatus === "rejected"
               }
               onClick={() => void updateStatus("rejected")}
             >
@@ -737,9 +734,7 @@ export function ApplicantSheet({
             <Button
               className="w-full flex-1"
               disabled={
-                !data ||
-                actionLoading !== null ||
-                currentStatus === "selected"
+                !data || actionLoading !== null || currentStatus === "selected"
               }
               onClick={() => void updateStatus("selected")}
             >

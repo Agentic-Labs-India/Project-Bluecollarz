@@ -1,19 +1,19 @@
 "use client";
 
-import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type * as React from "react";
 import { AppRailNav } from "@/components/layout/app-rail-nav";
 import { AppUserMenu } from "@/components/layout/app-user-menu";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { authClient } from "@/lib/auth/auth-client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { authClient } from "@/lib/auth/auth-client";
 import type { AppNavItem } from "@/lib/core/routes";
 
 export function AppRailSidebar({

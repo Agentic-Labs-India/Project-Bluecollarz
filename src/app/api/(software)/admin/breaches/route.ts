@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  requireProfile,
-  rethrowIfPrerenderAbort,
-} from "@/lib/auth/session";
+import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import {
   BREACH_STATUSES,
   createBreachIncident,
@@ -44,7 +41,10 @@ export async function GET() {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("GET /api/admin/breaches:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -71,7 +71,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("POST /api/admin/breaches:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -92,12 +95,18 @@ export async function PATCH(req: NextRequest) {
     }
     const item = await updateBreachIncident(parsed.data);
     if (!item) {
-      return NextResponse.json({ error: "Incident not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Incident not found" },
+        { status: 404 },
+      );
     }
     return NextResponse.json({ item: await serializeBreach(item) });
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("PATCH /api/admin/breaches:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

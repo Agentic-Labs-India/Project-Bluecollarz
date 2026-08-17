@@ -1,11 +1,11 @@
 import { Instrument_Serif, Inter } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
 import { AnalyticsScripts } from "@/components/compliance/analytics-scripts";
 import { CookieBanner } from "@/components/compliance/cookie-banner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],

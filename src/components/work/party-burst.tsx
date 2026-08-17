@@ -38,7 +38,11 @@ function particle(
   };
 }
 
-function spawnCannon(originX: number, originY: number, dir: 1 | -1): Particle[] {
+function spawnCannon(
+  originX: number,
+  originY: number,
+  dir: 1 | -1,
+): Particle[] {
   const out: Particle[] = [];
   for (let i = 0; i < 42; i++) {
     const speed = 1.8 + Math.random() * 2.8;
@@ -49,7 +53,7 @@ function spawnCannon(originX: number, originY: number, dir: 1 | -1): Particle[] 
         originY,
         dir * Math.cos(spread) * speed,
         -Math.sin(0.7 + Math.random() * 0.7) * speed,
-        COLORS[i % COLORS.length]!,
+        COLORS[i % COLORS.length],
       ),
     );
   }
@@ -67,7 +71,7 @@ function spawnBottom(originX: number, originY: number): Particle[] {
         originY,
         Math.cos(angle) * speed,
         Math.sin(angle) * speed,
-        COLORS[i % COLORS.length]!,
+        COLORS[i % COLORS.length],
       ),
     );
   }
@@ -97,7 +101,7 @@ export function PartyBurst({ shower = false }: { shower?: boolean }) {
       return { w, h };
     };
 
-    let { w, h } = size();
+    const { w, h } = size();
     let particles = [
       ...spawnCannon(24, h - 8, 1),
       ...spawnCannon(w - 24, h - 8, -1),

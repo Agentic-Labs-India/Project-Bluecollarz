@@ -3,12 +3,6 @@ import { z } from "zod";
 /** Current Privacy Notice + Terms acknowledgment. Integer so Mongo stores a number. */
 export const PLATFORM_TERMS_VERSION = 1;
 
-export function platformTermsStorageKey(
-  version: number = PLATFORM_TERMS_VERSION,
-): string {
-  return `blucollarz_platform_terms_${version}`;
-}
-
 /** Account-level product prefs stored on the Users document. */
 export interface UserPreferencesFields {
   cookiesEnabled?: boolean;

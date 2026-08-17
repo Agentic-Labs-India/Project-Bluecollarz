@@ -1,19 +1,18 @@
 "use client";
 
-import * as React from "react";
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  OnChangeFn,
-  PaginationState,
-  SortingState,
-  VisibilityState,
+  type ColumnDef,
+  type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type OnChangeFn,
+  type PaginationState,
+  type SortingState,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
 import {
   ChevronDown,
@@ -23,6 +22,7 @@ import {
   ChevronsRight,
   Search,
 } from "lucide-react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -47,7 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { cn, placeholderKeys } from "@/lib/utils";
 
 /** Optional per-column layout classes (e.g. narrow ID + wide title columns). */
 export type DataTableColumnMeta = {
@@ -105,8 +105,11 @@ export function DataTable<TData, TValue>({
   totalItems,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>(initialColumnVisibility);
   const [rowSelection, setRowSelection] = React.useState({});
   /** Stable empty filters — a fresh `[]` each render makes TanStack treat filters as changed and breaks pagination. */
   const noColumnFilters = React.useMemo<ColumnFiltersState>(() => [], []);
@@ -118,15 +121,20 @@ export function DataTable<TData, TValue>({
   const isManualPagination = !!manualPagination;
 
   React.useEffect(() => {
-    setClientPagination((p) => (p.pageSize === defaultPageSize ? p : { ...p, pageSize: defaultPageSize }));
+    setClientPagination((p) =>
+      p.pageSize === defaultPageSize ? p : { ...p, pageSize: defaultPageSize },
+    );
   }, [defaultPageSize]);
 
   React.useEffect(() => {
     setClientPagination((p) => ({ ...p, pageIndex: 0 }));
   }, [data]);
 
-  const resolvedPagination = isManualPagination && pagination ? pagination : clientPagination;
-  const paginationChangeHandler = isManualPagination ? onPaginationChange : setClientPagination;
+  const resolvedPagination =
+    isManualPagination && pagination ? pagination : clientPagination;
+  const paginationChangeHandler = isManualPagination
+    ? onPaginationChange
+    : setClientPagination;
 
   const table = useReactTable({
     data,
@@ -136,7 +144,9 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: isManualPagination ? undefined : getPaginationRowModel(),
+    getPaginationRowModel: isManualPagination
+      ? undefined
+      : getPaginationRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     manualPagination: isManualPagination,
@@ -148,7 +158,8 @@ export function DataTable<TData, TValue>({
     },
     state: {
       sorting,
-      columnFilters: customSearch || hideSearch ? noColumnFilters : columnFilters,
+      columnFilters:
+        customSearch || hideSearch ? noColumnFilters : columnFilters,
       columnVisibility,
       rowSelection,
       pagination: resolvedPagination,
@@ -171,7 +182,8 @@ export function DataTable<TData, TValue>({
               value={
                 manualFiltering
                   ? (searchValue ?? "")
-                  : ((table.getColumn(searchKey)?.getFilterValue() as string) ?? "")
+                  : ((table.getColumn(searchKey)?.getFilterValue() as string) ??
+                    "")
               }
               onChange={(e) => {
                 if (manualFiltering && onSearchChange) {
@@ -222,19 +234,28 @@ export function DataTable<TData, TValue>({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-primary overflow-hidden hover:bg-primary/90">
+              <TableRow
+                key={headerGroup.id}
+                className="bg-primary overflow-hidden hover:bg-primary/90"
+              >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     className={cn(
                       "text-white [&_button]:text-white [&_svg]:text-white dark:text-black dark:[&_button]:text-black dark:[&_svg]:text-black",
-                      (header.column.columnDef.meta as DataTableColumnMeta | undefined)
-                        ?.headerClassName,
+                      (
+                        header.column.columnDef.meta as
+                          | DataTableColumnMeta
+                          | undefined
+                      )?.headerClassName,
                     )}
                   >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -243,16 +264,20 @@ export function DataTable<TData, TValue>({
 
           <TableBody>
             {loading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <TableRow key={`sk-${i}`} className="border-b border-border/40">
-                  {columns.map((_, ci) => {
-                    const w = ["w-full", "w-3/4", "w-1/2", "w-2/3", "w-4/5"][ci % 5];
-                    return (
-                      <TableCell key={ci}>
-                        <Skeleton className={`h-5 ${w} rounded-none`} />
-                      </TableCell>
-                    );
-                  })}
+              placeholderKeys(8, "row").map((rowKey) => (
+                <TableRow key={rowKey} className="border-b border-border/40">
+                  {placeholderKeys(columns.length, rowKey).map(
+                    (cellKey, ci) => {
+                      const w = ["w-full", "w-3/4", "w-1/2", "w-2/3", "w-4/5"][
+                        ci % 5
+                      ];
+                      return (
+                        <TableCell key={cellKey}>
+                          <Skeleton className={`h-5 ${w} rounded-none`} />
+                        </TableCell>
+                      );
+                    },
+                  )}
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
@@ -267,18 +292,27 @@ export function DataTable<TData, TValue>({
                     <TableCell
                       key={cell.id}
                       className={cn(
-                        (cell.column.columnDef.meta as DataTableColumnMeta | undefined)
-                          ?.cellClassName,
+                        (
+                          cell.column.columnDef.meta as
+                            | DataTableColumnMeta
+                            | undefined
+                        )?.cellClassName,
                       )}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center text-sm text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-32 text-center text-sm text-muted-foreground"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -291,13 +325,17 @@ export function DataTable<TData, TValue>({
       {table.getPageCount() > 0 && (
         <div className="flex flex-col gap-3 px-1 pt-1 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">Rows per page</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              Rows per page
+            </span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(v) => table.setPageSize(Number(v))}
             >
               <SelectTrigger className="h-8 w-16 text-xs">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 {[5, 7, 10, 20, 30, 40, 50].map((n) => (
@@ -317,7 +355,8 @@ export function DataTable<TData, TValue>({
 
           <div className="flex items-center gap-1">
             <span className="mr-2 text-xs text-muted-foreground whitespace-nowrap">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
             </span>
             <Button
               variant="outline"

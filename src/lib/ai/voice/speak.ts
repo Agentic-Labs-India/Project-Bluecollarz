@@ -7,10 +7,7 @@ import { sanitizeForTts, TTS_VOICE } from "@/lib/ai/voice/style";
  * Speak text via Sarvam HTTP stream (/api/voice/tts).
  * Pass `languageCode` from Sarvam STT detection so TTS matches the user.
  */
-export async function speakText(
-  text: string,
-  languageCode?: string | null,
-) {
+export async function speakText(text: string, languageCode?: string | null) {
   const clean = sanitizeForTts(text).slice(0, 3500);
   if (!clean) return;
 
@@ -19,10 +16,7 @@ export async function speakText(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text: clean,
-      language_code: resolveTtsLanguage(
-        languageCode,
-        TTS_VOICE.languageCode,
-      ),
+      language_code: resolveTtsLanguage(languageCode, TTS_VOICE.languageCode),
     }),
   });
   if (!res.ok || !res.body) return;
@@ -31,10 +25,7 @@ export async function speakText(
   await playAudioStream(res.body, mime);
 }
 
-async function playAudioStream(
-  body: ReadableStream<Uint8Array>,
-  mime: string,
-) {
+async function playAudioStream(body: ReadableStream<Uint8Array>, mime: string) {
   const canMse =
     typeof MediaSource !== "undefined" &&
     MediaSource.isTypeSupported("audio/mpeg");

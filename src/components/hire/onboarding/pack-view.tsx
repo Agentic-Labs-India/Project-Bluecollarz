@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { blobFileUrl } from "@/lib/blob/pathname";
 import { countryName, stateName } from "@/lib/core/geo/places";
 import {
   GCC_RULE_KEYS,
@@ -43,7 +44,7 @@ function DocLink({
         {label}
       </p>
       <a
-        href={document.url}
+        href={blobFileUrl(document.url)}
         target="_blank"
         rel="noopener noreferrer"
         className="text-primary mt-1.5 block truncate text-sm underline-offset-4 hover:underline"
@@ -54,22 +55,13 @@ function DocLink({
   );
 }
 
-function formatPhone(
-  countryCode: number | null,
-  phone: number | null,
-): string {
+function formatPhone(countryCode: number | null, phone: number | null): string {
   if (phone == null) return "";
   if (countryCode != null) return `+${countryCode} ${phone}`;
   return String(phone);
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
       <p className="text-foreground mb-2 text-sm font-medium">{title}</p>
@@ -96,7 +88,10 @@ export function HireOnboardingPackView({
       <Section title="Company identity">
         <Field label="Legal name" value={identity.legalName} />
         <Field label="Trade name" value={identity.tradeName} />
-        <Field label="Registration number" value={identity.registrationNumber} />
+        <Field
+          label="Registration number"
+          value={identity.registrationNumber}
+        />
         <Field label="Tax / VAT ID" value={identity.taxVatId} />
         <Field label="Chamber ID" value={identity.chamberId} />
         <Field label="Sponsor ID" value={identity.sponsorId} />

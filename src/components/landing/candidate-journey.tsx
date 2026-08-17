@@ -111,8 +111,7 @@ function VisaTicket() {
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const update = () =>
-      setWidth(Math.min(520, Math.max(240, el.clientWidth)));
+    const update = () => setWidth(Math.min(520, Math.max(240, el.clientWidth)));
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
@@ -120,7 +119,10 @@ function VisaTicket() {
   }, []);
 
   return (
-    <div ref={wrapRef} className="mt-auto flex w-full flex-1 items-center justify-center pt-4">
+    <div
+      ref={wrapRef}
+      className="mt-auto flex w-full flex-1 items-center justify-center pt-4"
+    >
       <LoginButton className="group w-full cursor-pointer rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:outline-none disabled:opacity-70">
         <span className="sr-only">Visa approved — start now and sign in</span>
         <span
@@ -177,9 +179,7 @@ export function CandidateJourney() {
                 key={step.code}
                 className={cn(
                   "border-border bg-card flex h-full gap-3 border px-3 py-3 sm:gap-4 sm:px-4",
-                  isFinale
-                    ? "flex-col md:min-h-0"
-                    : "items-center",
+                  isFinale ? "flex-col md:min-h-0" : "items-center",
                   PLACEMENT[index],
                 )}
               >

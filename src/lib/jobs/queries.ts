@@ -1,13 +1,26 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import client, { DB_NAME, COLLECTIONS, isId, matchId, matchIds } from "@/lib/db";
 import {
+  type CandidateProfileFields,
+  isCandidateProfileComplete,
+  toCandidateProfileData,
+} from "@/lib/candidate/profile";
+import client, {
+  COLLECTIONS,
+  DB_NAME,
+  isId,
+  matchId,
+  matchIds,
+} from "@/lib/db";
+import { ensureIndexes } from "@/lib/db/indexes";
+import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
+import {
+  type ApplicationStepTemplate,
   JOB_PRIORITIES,
   JOB_TABS,
-  toOpportunity,
-  type ApplicationStepTemplate,
   type JobDocument,
   type JobLocation,
   type JobPriority,
+  toOpportunity,
 } from "@/lib/jobs";
 import type {
   ApplicationDocument,
@@ -15,13 +28,6 @@ import type {
 } from "@/lib/jobs/applications";
 import type { Opportunity, OpportunityTab } from "@/lib/jobs/opportunities";
 import { idHex } from "@/lib/utils";
-import { ensureIndexes } from "@/lib/db/indexes";
-import {
-  isCandidateProfileComplete,
-  toCandidateProfileData,
-  type CandidateProfileFields,
-} from "@/lib/candidate/profile";
-import { getCompletedInterviewStagesByJob } from "@/lib/interviews/queries";
 
 /** Shared tag so landing + explore job lists invalidate together. */
 export const PUBLISHED_JOBS_CACHE_TAG = "published-jobs";
@@ -428,10 +434,7 @@ export async function listPublishedJobsForSitemap(): Promise<
     const docs = await client
       .db(DB_NAME)
       .collection<JobDocument>(COLLECTIONS.JOBS)
-      .find(
-        { status: "published" },
-        { projection: { updatedAt: 1 } },
-      )
+      .find({ status: "published" }, { projection: { updatedAt: 1 } })
       .sort({ publishedAt: -1 })
       .limit(1000)
       .toArray();

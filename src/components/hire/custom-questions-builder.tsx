@@ -1,11 +1,16 @@
 "use client";
 
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,20 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  CUSTOM_QUESTION_TYPES,
   CUSTOM_QUESTION_TYPE_LABELS,
-  emptyCustomQuestion,
+  CUSTOM_QUESTION_TYPES,
   type CustomQuestion,
   type CustomQuestionType,
+  emptyCustomQuestion,
 } from "@/lib/jobs/custom-questions";
-import { PlusIcon, Trash2Icon } from "lucide-react";
 
 export function CustomQuestionsBuilder({
   questions,
@@ -167,9 +167,7 @@ export function CustomQuestionsBuilder({
                       disabled={disabled}
                       rows={2}
                       placeholder="e.g. How many years have you worked with HVAC systems?"
-                      onChange={(e) =>
-                        update(q.id, { prompt: e.target.value })
-                      }
+                      onChange={(e) => update(q.id, { prompt: e.target.value })}
                     />
                   </div>
 

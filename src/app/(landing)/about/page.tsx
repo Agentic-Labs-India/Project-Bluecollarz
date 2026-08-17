@@ -48,9 +48,10 @@ export default function AboutPage() {
           The product is built around two account types.{" "}
           <strong className="text-foreground">Candidates (work)</strong>{" "}
           onboard, explore roles, interview, apply, and verify identity when
-          selected. <strong className="text-foreground">Recruiters (hire)</strong>{" "}
-          publish roles, review scored applicants, select or reject, and see
-          verified KYC documents only after AI verification passes.
+          selected.{" "}
+          <strong className="text-foreground">Recruiters (hire)</strong> publish
+          roles, review scored applicants, select or reject, and see verified
+          KYC documents only after AI verification passes.
         </p>
         <DocCallout title="Plain definition">
           <p>

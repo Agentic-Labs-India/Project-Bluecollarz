@@ -6,7 +6,8 @@ export const RECRUITER_INQUIRY_STATUSES = [
   "approved",
   "rejected",
 ] as const;
-export type RecruiterInquiryStatus = (typeof RECRUITER_INQUIRY_STATUSES)[number];
+export type RecruiterInquiryStatus =
+  (typeof RECRUITER_INQUIRY_STATUSES)[number];
 
 /** Industry options for the public request form. */
 export const RECRUITER_INDUSTRIES = [
@@ -43,7 +44,11 @@ export const recruiterInquiryCreateSchema = z.object({
     .max(200)
     .optional()
     .transform((v) => v || ""),
-  about: z.string().trim().min(20, "Tell us a bit about your company").max(2000),
+  about: z
+    .string()
+    .trim()
+    .min(20, "Tell us a bit about your company")
+    .max(2000),
 });
 
 export type RecruiterInquiryCreateInput = z.infer<

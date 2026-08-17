@@ -1,5 +1,5 @@
-import type { JobStatus } from "@/lib/jobs";
 import type { HireProfileData } from "@/lib/hire/profile";
+import type { JobStatus } from "@/lib/jobs";
 
 /** A single active role summary shown on the hire profile. */
 export interface HireActiveRole {

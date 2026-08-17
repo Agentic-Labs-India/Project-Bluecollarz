@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth/auth";
+import { type NextRequest, NextResponse } from "next/server";
+import { getAiRuntime } from "@/lib/ai/runtime";
 import { resolveTtsLanguage } from "@/lib/ai/voice/languages";
 import { sanitizeForTts } from "@/lib/ai/voice/style";
-import { getAiRuntime } from "@/lib/ai/runtime";
+import { requireUser } from "@/lib/auth/session";
+import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 
 export const maxDuration = 30;
 
@@ -13,10 +13,15 @@ export const maxDuration = 30;
  */
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authed = await requireUser();
+    if (!authed.ok) {
+      return NextResponse.json(
+        { error: authed.error },
+        { status: authed.status },
+      );
     }
+    const limit = rateLimitPerMinute("tts", authed.user.id);
+    if (!limit.ok) return tooManyRequests(limit);
 
     const apiKey = process.env.SARVAM_API_KEY?.trim();
     if (!apiKey) {
@@ -42,23 +47,26 @@ export async function POST(req: NextRequest) {
       resolveTtsLanguage(voice.ttsLanguageCode),
     );
 
-    const upstream = await fetch("https://api.sarvam.ai/text-to-speech/stream", {
-      method: "POST",
-      headers: {
-        "api-subscription-key": apiKey,
-        "Content-Type": "application/json",
+    const upstream = await fetch(
+      "https://api.sarvam.ai/text-to-speech/stream",
+      {
+        method: "POST",
+        headers: {
+          "api-subscription-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text,
+          target_language_code: languageCode,
+          model: voice.ttsModel,
+          speaker: voice.ttsSpeaker,
+          pace: voice.ttsPace,
+          temperature: voice.ttsTemperature,
+          output_audio_codec: voice.ttsCodec,
+          output_audio_bitrate: voice.ttsBitrate,
+        }),
       },
-      body: JSON.stringify({
-        text,
-        target_language_code: languageCode,
-        model: voice.ttsModel,
-        speaker: voice.ttsSpeaker,
-        pace: voice.ttsPace,
-        temperature: voice.ttsTemperature,
-        output_audio_codec: voice.ttsCodec,
-        output_audio_bitrate: voice.ttsBitrate,
-      }),
-    });
+    );
 
     if (!upstream.ok || !upstream.body) {
       const detail = await upstream.text().catch(() => "");
@@ -72,8 +80,7 @@ export async function POST(req: NextRequest) {
     return new Response(upstream.body, {
       status: 200,
       headers: {
-        "Content-Type":
-          upstream.headers.get("Content-Type") || "audio/mpeg",
+        "Content-Type": upstream.headers.get("Content-Type") || "audio/mpeg",
         "Cache-Control": "no-store",
       },
     });

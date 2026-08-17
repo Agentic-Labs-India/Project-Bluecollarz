@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
+import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
+import { rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { getCandidateScheduleContext } from "@/lib/medical/appointments";
 import { handleMedicalRouteError } from "@/lib/medical/http";
 import { formatZodError } from "@/lib/utils";
@@ -11,9 +12,12 @@ const querySchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireProfile("work");
+    const auth = await requireCandidateAppReady();
     if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(
+        { error: auth.error, code: auth.code },
+        { status: auth.status },
+      );
     }
 
     const parsed = querySchema.safeParse(

@@ -1,13 +1,6 @@
 "use client";
 
 import {
-  useEffect,
-  useEffectEvent,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import {
   CheckCircle2Icon,
   CircleAlertIcon,
   MicIcon,
@@ -17,8 +10,15 @@ import {
   WifiIcon,
   XCircleIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  useEffect,
+  useEffectEvent,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { PrimaryDither } from "@/components/landing/primary-dither";
+import { Button } from "@/components/ui/button";
 
 type CheckId = "internet" | "camera" | "voice" | "ai";
 type CheckStatus = "pending" | "running" | "pass" | "fail";
@@ -165,7 +165,7 @@ export function InterviewReadyPanel({
 
   const stopOwnedStreams = () => {
     for (const stream of streamsRef.current) {
-      stream.getTracks().forEach((t) => t.stop());
+      for (const track of stream.getTracks()) track.stop();
     }
     streamsRef.current = [];
     publishCamera(null);
@@ -211,7 +211,7 @@ export function InterviewReadyPanel({
         12000,
       );
       if (cancelledRef.current) {
-        camera.getTracks().forEach((t) => t.stop());
+        for (const track of camera.getTracks()) track.stop();
         return;
       }
       streamsRef.current.push(camera);
@@ -243,7 +243,7 @@ export function InterviewReadyPanel({
         12000,
       );
       if (cancelledRef.current) {
-        mic.getTracks().forEach((t) => t.stop());
+        for (const track of mic.getTracks()) track.stop();
         return;
       }
       streamsRef.current.push(mic);
@@ -286,7 +286,7 @@ export function InterviewReadyPanel({
       });
 
       await ctx.close().catch(() => undefined);
-      mic.getTracks().forEach((t) => t.stop());
+      for (const track of mic.getTracks()) track.stop();
       streamsRef.current = streamsRef.current.filter((s) => s !== mic);
 
       if (cancelledRef.current) return;
@@ -356,7 +356,9 @@ export function InterviewReadyPanel({
         {/* Far left: 4 system test blocks */}
         <div className="border-border flex min-h-0 flex-col gap-3 border p-3 md:p-4">
           <div className="flex shrink-0 items-center justify-between gap-2">
-            <h3 className="text-foreground text-sm font-semibold">System tests</h3>
+            <h3 className="text-foreground text-sm font-semibold">
+              System tests
+            </h3>
             {allPassed ? (
               <span className="text-primary inline-flex items-center gap-1 text-xs">
                 <CheckCircle2Icon className="size-3.5" />

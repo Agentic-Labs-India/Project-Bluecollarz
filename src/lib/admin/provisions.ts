@@ -1,4 +1,4 @@
-import client, { DB_NAME, COLLECTIONS } from "@/lib/db";
+import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 import type { ProfileType } from "@/lib/user/profile-types";
 
 export type ProvisionProfileType = Extract<ProfileType, "hire" | "admin">;
@@ -20,7 +20,11 @@ function provisions() {
 export async function upsertUserProvision(
   email: string,
   profileType: ProvisionProfileType,
-): Promise<{ email: string; profileType: ProvisionProfileType; created: boolean }> {
+): Promise<{
+  email: string;
+  profileType: ProvisionProfileType;
+  created: boolean;
+}> {
   const normalized = email.trim().toLowerCase();
   const now = new Date();
   const existing = await provisions().findOne({ email: normalized });
@@ -47,7 +51,9 @@ export async function upsertUserProvision(
 
 export async function listUserProvisions(
   profileType: ProvisionProfileType,
-): Promise<Array<{ email: string; profileType: ProvisionProfileType; createdAt: Date }>> {
+): Promise<
+  Array<{ email: string; profileType: ProvisionProfileType; createdAt: Date }>
+> {
   const docs = await provisions()
     .find({ profileType })
     .sort({ createdAt: -1 })
