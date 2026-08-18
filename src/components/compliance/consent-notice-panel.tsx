@@ -2,10 +2,17 @@
 
 import { RotateCwIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -72,6 +79,37 @@ function LegalFooterLinks() {
         Grievance
       </Link>
     </p>
+  );
+}
+
+function ConsentBody({
+  scroll,
+  compact,
+  children,
+}: {
+  scroll: boolean;
+  compact: boolean;
+  children: ReactNode;
+}) {
+  const pad = compact ? "p-5" : "p-6 sm:p-8";
+  if (!scroll) {
+    return (
+      <div className={cn(compact ? "space-y-6 p-5" : "space-y-8 p-6 sm:p-8")}>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <MessageScrollerProvider>
+      <MessageScroller className="min-h-0 flex-1">
+        <MessageScrollerViewport>
+          <MessageScrollerContent className={cn("gap-8", pad)}>
+            {children}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton />
+      </MessageScroller>
+    </MessageScrollerProvider>
   );
 }
 
@@ -369,10 +407,16 @@ export function ConsentNoticePanel({
     void playNotice(false).catch(() => undefined);
   };
 
+  const fillPage = isKyc && !compact;
+
   if (loading) {
     return (
       <div
-        className={cn("border-border bg-card overflow-hidden border", className)}
+        className={cn(
+          "border-border bg-card overflow-hidden border",
+          fillPage && "flex min-h-0 flex-1 flex-col",
+          className,
+        )}
       >
         {isKyc ? (
           <Skeleton className="h-6 w-full rounded-none" />
@@ -421,7 +465,11 @@ export function ConsentNoticePanel({
 
   return (
     <article
-      className={cn("border-border bg-card overflow-hidden border", className)}
+      className={cn(
+        "border-border bg-card overflow-hidden border",
+        fillPage && "flex min-h-0 flex-1 flex-col",
+        className,
+      )}
       aria-labelledby="consent-declaration-title"
     >
       {isKyc ? (
@@ -431,7 +479,7 @@ export function ConsentNoticePanel({
         />
       ) : null}
 
-      <div className={cn(compact ? "space-y-6 p-5" : "space-y-8 p-6 sm:p-8")}>
+      <ConsentBody scroll={fillPage} compact={compact}>
         <header className="flex items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
             <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
@@ -603,7 +651,7 @@ export function ConsentNoticePanel({
             <LegalFooterLinks />
           </div>
         )}
-      </div>
+      </ConsentBody>
     </article>
   );
 }

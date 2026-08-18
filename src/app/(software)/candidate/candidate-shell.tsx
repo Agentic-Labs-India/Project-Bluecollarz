@@ -10,7 +10,8 @@ import { CANDIDATE_NAV } from "@/lib/core/routes";
 
 const isFullBleed = (pathname: string) =>
   pathname.startsWith("/candidate/explore") ||
-  pathname.startsWith("/candidate/onboarding");
+  pathname.startsWith("/candidate/onboarding") ||
+  pathname.startsWith("/candidate/kyc");
 
 const hideMobileNav = (pathname: string) =>
   pathname.startsWith("/candidate/onboarding") ||

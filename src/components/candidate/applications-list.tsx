@@ -13,7 +13,7 @@ function applicationStatusLabel(
   status: CandidateApplicationListItem["status"],
 ): string {
   if (status === "interviewing") return "Interviewing";
-  if (status === "applied") return "Applied 👍";
+  if (status === "applied") return "Applied";
   return APPLICATION_STATUS_LABELS[status];
 }
 

@@ -41,7 +41,6 @@ export function OpportunityDetail({
   hasNext,
   applicationStatus,
   applying,
-  justApplied,
   profileComplete,
   startingInterview,
   onApply,
@@ -59,7 +58,6 @@ export function OpportunityDetail({
   hasNext: boolean;
   applicationStatus?: ApplicationStatus | null;
   applying?: boolean;
-  justApplied?: boolean;
   profileComplete?: boolean;
   startingInterview?: boolean;
   onApply?: () => void;
@@ -153,8 +151,8 @@ export function OpportunityDetail({
         className,
       )}
     >
-      {(cta.type === "selected" && !medicalClosed) || justApplied ? (
-        <PartyBurst shower={cta.type === "selected" && !medicalClosed} />
+      {cta.type === "selected" && !medicalClosed ? (
+        <PartyBurst shower />
       ) : null}
       <header className="border-border/60 shrink-0 border-b">
         <div className={cn(APP_PAGE_GUTTER, "py-3")}>
@@ -434,7 +432,7 @@ export function OpportunityDetail({
                 onClick={onApply}
               >
                 {cta.type === "applied"
-                  ? "Applied 👍"
+                  ? "Applied"
                   : applying
                     ? "Applying…"
                     : "Apply now"}

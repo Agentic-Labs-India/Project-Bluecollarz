@@ -1,5 +1,6 @@
-import { AppPage } from "@/components/layout/app-page";
+import { APP_PAGE_MAX, AppPage } from "@/components/layout/app-page";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 /** Profile header + form fields skeleton. */
 export function ProfilePageSkeleton() {
@@ -30,10 +31,15 @@ export function ProfilePageSkeleton() {
 /** KYC consent / verified-identity card skeleton. */
 export function KycPageSkeleton() {
   return (
-    <AppPage>
-      <div className="border-border overflow-hidden border">
-        <Skeleton className="h-6 w-full rounded-none" />
-        <div className="space-y-6 p-6 sm:p-8">
+    <div
+      className={cn(
+        "mx-auto flex min-h-0 w-full flex-1 flex-col p-4 md:p-8 lg:p-10",
+        APP_PAGE_MAX,
+      )}
+    >
+      <div className="border-border flex min-h-0 flex-1 flex-col overflow-hidden border">
+        <Skeleton className="h-6 w-full shrink-0 rounded-none" />
+        <div className="min-h-0 flex-1 space-y-6 overflow-hidden p-6 sm:p-8">
           <div className="space-y-2">
             <Skeleton className="h-3 w-28" />
             <Skeleton className="h-7 w-56" />
@@ -52,7 +58,7 @@ export function KycPageSkeleton() {
           </div>
         </div>
       </div>
-    </AppPage>
+    </div>
   );
 }
 

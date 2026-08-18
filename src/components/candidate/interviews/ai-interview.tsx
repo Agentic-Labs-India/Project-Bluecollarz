@@ -27,7 +27,14 @@ import {
   type VadController,
 } from "@/components/candidate/interviews/vad";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -90,7 +97,6 @@ export function AiInterview({
   const pausedRef = useRef(true);
   const vadRef = useRef<VadController | null>(null);
   const localTranscriptRef = useRef<LocalTurn[]>([]);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const busyUtteranceRef = useRef(false);
   const streamingRef = useRef(false);
   const closingRef = useRef(false);
@@ -157,10 +163,15 @@ export function AiInterview({
 
   const isStreaming = chatStatus === "submitted" || chatStatus === "streaming";
   streamingRef.current = isStreaming;
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, isStreaming, status]);
+  const lastVisibleMessageId = [...messages]
+    .reverse()
+    .find((message) =>
+      message.parts
+        .filter(isTextUIPart)
+        .map((p) => p.text)
+        .join("\n")
+        .trim(),
+    )?.id;
 
   const beginSession = useCallback(async () => {
     setError("");
@@ -404,48 +415,57 @@ export function AiInterview({
               />
             </div>
           ) : (
-            <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-6 px-4 py-5 md:px-6">
-                {messages.map((message) => {
-                  const text = message.parts
-                    .filter(isTextUIPart)
-                    .map((p) => p.text)
-                    .join("\n")
-                    .trim();
-                  if (!text) return null;
-                  const isUser = message.role === "user";
-                  return (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "flex max-w-[90%] items-start gap-2.5",
-                        isUser ? "ml-auto flex-row-reverse" : "mr-auto",
-                      )}
-                    >
-                      {isUser ? (
-                        <UserChatAvatar
-                          name={chatUser.name}
-                          image={chatUser.image}
-                        />
-                      ) : (
-                        <AssistantAvatar />
-                      )}
-                      <div
-                        className={cn(
-                          "min-w-0 text-sm leading-relaxed",
-                          isUser
-                            ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
-                            : "text-foreground/90 pt-0.5",
-                        )}
-                      >
-                        <p className="whitespace-pre-wrap">{text}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={bottomRef} />
-              </div>
-            </ScrollArea>
+            <MessageScrollerProvider>
+              <MessageScroller className="min-h-0 flex-1">
+                <MessageScrollerViewport className="px-4 md:px-6">
+                  <MessageScrollerContent className="gap-6 py-5">
+                    {messages.map((message) => {
+                      const text = message.parts
+                        .filter(isTextUIPart)
+                        .map((p) => p.text)
+                        .join("\n")
+                        .trim();
+                      if (!text) return null;
+                      const isUser = message.role === "user";
+                      return (
+                        <MessageScrollerItem
+                          key={message.id}
+                          scrollAnchor={message.id === lastVisibleMessageId}
+                          className="[content-visibility:visible] [contain-intrinsic-size:none]"
+                        >
+                          <div
+                            className={cn(
+                              "flex max-w-[90%] items-start gap-2.5",
+                              isUser ? "ml-auto flex-row-reverse" : "mr-auto",
+                            )}
+                          >
+                            {isUser ? (
+                              <UserChatAvatar
+                                name={chatUser.name}
+                                image={chatUser.image}
+                              />
+                            ) : (
+                              <AssistantAvatar />
+                            )}
+                            <div
+                              className={cn(
+                                "min-w-0 text-sm leading-relaxed",
+                                isUser
+                                  ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
+                                  : "text-foreground/90 pt-0.5",
+                              )}
+                            >
+                              <p className="whitespace-pre-wrap">{text}</p>
+                            </div>
+                          </div>
+                        </MessageScrollerItem>
+                      );
+                    })}
+                  </MessageScrollerContent>
+                </MessageScrollerViewport>
+                <MessageScrollerButton />
+              </MessageScroller>
+            </MessageScrollerProvider>
           )}
         </section>
 

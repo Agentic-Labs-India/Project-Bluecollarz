@@ -96,7 +96,7 @@ function OpportunityCard({
       : applicationStatus === "rejected"
         ? "Rejected"
         : hasApplied
-          ? "Applied 👍"
+          ? "Applied"
           : null;
 
   const bandLabel = stateName(countryCode, stateCode);
@@ -345,7 +345,6 @@ export function ExploreOpportunities({
     initialProfileComplete,
   );
   const [applying, setApplying] = useState(false);
-  const [justAppliedJobId, setJustAppliedJobId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [startingInterview, setStartingInterview] = useState(false);
@@ -550,11 +549,15 @@ export function ExploreOpportunities({
     setApplying(true);
     try {
       const res = await fetch(`/api/jobs/${jobId}/apply`, { method: "POST" });
-      if (!res.ok) throw new Error("apply failed");
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        toast.error(json.error || "Could not submit application");
+        return;
+      }
       setApplicationStatuses((prev) => ({ ...prev, [jobId]: "applied" }));
-      setJustAppliedJobId(jobId);
+      toast.success("Application submitted");
     } catch {
-      // surfaced via button state; safe to retry
+      toast.error("Could not submit application");
     } finally {
       setApplying(false);
     }
@@ -822,7 +825,6 @@ export function ExploreOpportunities({
                 applicationStatuses[selectedOpportunity.id] ?? null
               }
               applying={applying}
-              justApplied={justAppliedJobId === selectedOpportunity.id}
               profileComplete={profileComplete}
               startingInterview={startingInterview}
               onApply={() => applyToJob(selectedOpportunity.id)}

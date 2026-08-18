@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -31,6 +30,14 @@ import { APP_PAGE_MAX } from "@/components/layout/app-page";
 import { Badge } from "@/components/ui/badge";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchProfileVoiceLanguage,
@@ -128,6 +135,31 @@ function isHiddenInChat(message: UIMessage) {
     "hideInChat" in meta &&
     (meta as { hideInChat?: boolean }).hideInChat === true
   );
+}
+
+function isOnboardingMessageVisible(message: UIMessage) {
+  if (isHiddenInChat(message)) return false;
+  const text = message.parts
+    .filter(isTextUIPart)
+    .map((p) => p.text)
+    .join("\n")
+    .trim();
+  const langParts = langToolParts(message);
+  const resumeParts = resumeToolParts(message);
+  const otherTools = message.parts.filter(
+    (p) => isToolUIPart(p) && !isClientPickerTool(p.type),
+  );
+  if (!text && message.role === "user") return false;
+  if (
+    !text &&
+    message.role === "assistant" &&
+    !langParts.length &&
+    !resumeParts.length &&
+    !otherTools.length
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function LanguagePickerInChat({
@@ -296,7 +328,6 @@ export function OnboardingAgent() {
   );
   const [pendingLanguagePick, setPendingLanguagePick] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingResumeToolIdRef = useRef<string | null>(null);
   const skipAutoSendRef = useRef(false);
@@ -403,9 +434,9 @@ export function OnboardingAgent() {
     return { label: "SPEAK NOW", hint: "Your turn", tone: "speak" };
   })();
 
-  useLayoutEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, []);
+  const lastVisibleMessageId = [...messages]
+    .reverse()
+    .find(isOnboardingMessageVisible)?.id;
 
   const startOnboarding = useCallback(
     async (alreadyHasLanguage: boolean) => {
@@ -757,10 +788,16 @@ export function OnboardingAgent() {
         </Banner>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="space-y-6 px-4 py-5">
+      <MessageScrollerProvider>
+        <MessageScroller className="min-h-0 flex-1">
+          <MessageScrollerViewport className="px-4">
+            <MessageScrollerContent className="gap-6 py-5">
           {pendingLanguagePick ? (
-            <div className="mr-auto flex max-w-[90%] items-start gap-2.5">
+            <MessageScrollerItem
+              scrollAnchor={!lastVisibleMessageId}
+              className="[content-visibility:visible] [contain-intrinsic-size:none]"
+            >
+              <div className="mr-auto flex max-w-[90%] items-start gap-2.5">
               <AssistantAvatar />
               <div className="text-foreground/90 min-w-0 pt-0.5">
                 <LanguagePickerInChat
@@ -768,10 +805,11 @@ export function OnboardingAgent() {
                   onSelect={(code) => onPickLanguage(null, code)}
                 />
               </div>
-            </div>
+              </div>
+            </MessageScrollerItem>
           ) : null}
           {messages.map((message) => {
-            if (isHiddenInChat(message)) return null;
+            if (!isOnboardingMessageVisible(message)) return null;
             const text = message.parts
               .filter(isTextUIPart)
               .map((p) => p.text)
@@ -782,20 +820,14 @@ export function OnboardingAgent() {
             const otherTools = message.parts.filter(
               (p) => isToolUIPart(p) && !isClientPickerTool(p.type),
             );
-            if (!text && message.role === "user") return null;
-            if (
-              !text &&
-              message.role === "assistant" &&
-              !langParts.length &&
-              !resumeParts.length &&
-              !otherTools.length
-            ) {
-              return null;
-            }
             const isUser = message.role === "user";
             return (
-              <div
+              <MessageScrollerItem
                 key={message.id}
+                scrollAnchor={message.id === lastVisibleMessageId}
+                className="[content-visibility:visible] [contain-intrinsic-size:none]"
+              >
+              <div
                 className={cn(
                   "flex max-w-[90%] items-start gap-2.5",
                   isUser ? "ml-auto flex-row-reverse" : "mr-auto",
@@ -848,11 +880,14 @@ export function OnboardingAgent() {
                     ))}
                 </div>
               </div>
+              </MessageScrollerItem>
             );
           })}
-          <div ref={bottomRef} />
-        </div>
-      </div>
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
       <footer className="border-border shrink-0 border-t bg-background px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {!micReady ? (

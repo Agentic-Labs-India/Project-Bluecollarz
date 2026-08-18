@@ -2,17 +2,25 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
-import { AppPage } from "@/components/layout/app-page";
+import { APP_PAGE_MAX } from "@/components/layout/app-page";
 import { KycPageSkeleton } from "@/components/layout/page-skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 import { formatDateOnlyDisplay } from "@/lib/core/dates";
 import type {
   DigilockerKycView,
   DigilockerStatusResponse,
 } from "@/lib/kyc/digilocker";
+import { cn } from "@/lib/utils";
 
 const OWRC_HELP_LINE = "1800 11 3090";
 
@@ -64,6 +72,50 @@ function formatProvider(value: string | null | undefined): string {
   if (!value) return "DigiLocker";
   if (value.trim().toLowerCase() === "digilocker") return "DigiLocker";
   return value;
+}
+
+function KycFrame({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "mx-auto flex min-h-0 w-full flex-1 flex-col p-4 md:p-8 lg:p-10",
+        APP_PAGE_MAX,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function KycScrollDoc({
+  seed,
+  label,
+  labelledBy,
+  children,
+}: {
+  seed: string;
+  label: string;
+  labelledBy?: string;
+  children: ReactNode;
+}) {
+  return (
+    <article
+      className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden border"
+      aria-labelledby={labelledBy}
+    >
+      <PrimaryDitherBand seed={seed} label={label} />
+      <MessageScrollerProvider>
+        <MessageScroller className="min-h-0 flex-1">
+          <MessageScrollerViewport>
+            <MessageScrollerContent className="gap-8 p-6 sm:p-8">
+              {children}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
+    </article>
+  );
 }
 
 function particulars(data: DigilockerKycView): { label: string; value: string }[] {
@@ -164,10 +216,8 @@ export function KycVerification() {
 
   if (loadError) {
     return (
-      <AppPage>
-        <article className="border-border bg-card overflow-hidden border">
-          <PrimaryDitherBand seed="kyc-load-error" label="Not verified" />
-          <div className="space-y-8 p-6 sm:p-8">
+      <KycFrame>
+        <KycScrollDoc seed="kyc-load-error" label="Not verified">
             <header className="space-y-2">
               <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
                 Identity record
@@ -208,9 +258,8 @@ export function KycVerification() {
               </div>
               <LegalFooterLinks />
             </div>
-          </div>
-        </article>
-      </AppPage>
+        </KycScrollDoc>
+      </KycFrame>
     );
   }
 
@@ -227,14 +276,13 @@ export function KycVerification() {
   const consentRequired = searchParams.get("consent") === "required";
 
   return (
-    <AppPage>
+    <KycFrame>
       {verified ? (
-        <article
-          className="border-border bg-card overflow-hidden border"
-          aria-labelledby="kyc-verified-title"
+        <KycScrollDoc
+          seed="kyc-verified"
+          label="Verified"
+          labelledBy="kyc-verified-title"
         >
-          <PrimaryDitherBand seed="kyc-verified" label="Verified" />
-          <div className="space-y-8 p-6 sm:p-8">
             <header className="space-y-2">
               <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
                 Identity record
@@ -290,18 +338,13 @@ export function KycVerification() {
             </section>
 
             <KycActions primaryHref="/candidate/home" primaryLabel="Continue" />
-          </div>
-        </article>
+        </KycScrollDoc>
       ) : failed && !consentRequired ? (
-        <article
-          className="border-border bg-card overflow-hidden border"
-          aria-labelledby="kyc-unverified-title"
+        <KycScrollDoc
+          seed="kyc-unverified"
+          label={declined ? "Declined" : "Not verified"}
+          labelledBy="kyc-unverified-title"
         >
-          <PrimaryDitherBand
-            seed="kyc-unverified"
-            label={declined ? "Declined" : "Not verified"}
-          />
-          <div className="space-y-8 p-6 sm:p-8">
             <header className="space-y-2">
               <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
                 Identity record
@@ -340,12 +383,11 @@ export function KycVerification() {
               primaryHref={DIGILOCKER_START}
               primaryLabel="Reverify"
             />
-          </div>
-        </article>
+        </KycScrollDoc>
       ) : (
-        <div className="space-y-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           {consentRequired ? (
-            <p className="border-border bg-muted/40 text-muted-foreground border px-4 py-3 text-sm leading-relaxed">
+            <p className="border-border bg-muted/40 text-muted-foreground shrink-0 border px-4 py-3 text-sm leading-relaxed">
               Turn on every purpose in the declaration, then Agree and Verify.
             </p>
           ) : null}
@@ -355,6 +397,6 @@ export function KycVerification() {
           />
         </div>
       )}
-    </AppPage>
+    </KycFrame>
   );
 }
