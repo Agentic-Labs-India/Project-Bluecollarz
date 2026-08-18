@@ -23,8 +23,8 @@ Primary sources used for this write-up:
 
 | Lens | Score / 10 | Meaning |
 | --- | ---: | --- |
-| Product (onboarding, auth, UX, security, DPDP *controls*, spec) | **7.8** | Ship-bar hiring app. See the audit canvas. |
-| DPDP *engineering readiness* | **7.0** | Controls exist for consent, purposes, rights, age gate, private storage. Not a Board filing, not Rule 3-complete, not a 2027 attestation. |
+| Product (onboarding, auth, UX, security, DPDP *controls*, spec) | **7.9** | Mean of 7.7 / 8.0 / 7.8 / 8.0 / 8.2 / 7.5. One-sitting KYC consent. See the audit canvas. |
+| DPDP *engineering readiness* | **7.0** | Controls exist for consent, purposes, rights, age gate, private storage. Erasure cascade and access export are incomplete. Not a Board filing, not Rule 3-complete, not a 2027 attestation. |
 | Emigration Act *safety rails* | **8.0** | The machine is forbidden from pretending Blucollarz is an RA, from charging workers, and from “ECNR = no agent”. |
 | Licensed-RA operating model (this product’s actual scope) | **7.5** | KYC, verified companies, verified candidates, optional RA RC bind. eMigrate stays with the registered RA. Not scored as an eMigrate clone. |
 

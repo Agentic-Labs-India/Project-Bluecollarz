@@ -32,14 +32,18 @@ export function KycPageSkeleton() {
   return (
     <AppPage>
       <div className="border-border overflow-hidden border">
-        <Skeleton className="h-1.5 w-full" />
-        <div className="space-y-4 p-5">
-          <Skeleton className="h-4 w-56" />
-          <Skeleton className="h-16 w-full" />
-          {["k1", "k2", "k3", "k4", "k5", "k6"].map((id) => (
+        <Skeleton className="h-6 w-full rounded-none" />
+        <div className="space-y-6 p-6 sm:p-8">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-24 w-full" />
+          {["k1", "k2", "k3", "k4"].map((id) => (
             <div key={id} className="flex items-center justify-between gap-3">
               <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-6 w-10 shrink-0" />
+              <Skeleton className="h-5 w-8 shrink-0" />
             </div>
           ))}
           <div className="flex flex-col gap-2 sm:flex-row">

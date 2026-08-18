@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCwIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
@@ -15,17 +16,63 @@ import { cn } from "@/lib/utils";
 
 const OWRC_HELP_LINE = "1800 11 3090";
 
-const PURPOSE_LABELS: Record<string, string> = {
-  identity: "PAN, Aadhaar, Name — to confirm your identity",
-  contact: "Email & mobile — to contact you and secure your account",
-  evaluation:
-    "AI interviews, transcripts, and optional recording — to evaluate you for a role",
-  medical:
-    "Medical fitness test and its report — booked only after an employer selects you",
+const PURPOSE_ITEMS: Record<string, { title: string; detail: string }> = {
+  identity: {
+    title: "Identity",
+    detail: "PAN, Aadhaar, Name — to confirm your identity",
+  },
+  contact: {
+    title: "Contact",
+    detail: "Email & mobile — to contact you and secure your account",
+  },
+  evaluation: {
+    title: "Evaluation",
+    detail:
+      "AI interviews, transcripts, and optional recording — to evaluate you for a role",
+  },
+  medical: {
+    title: "Medical",
+    detail:
+      "Medical fitness test and its report — booked only after an employer selects you",
+  },
 };
 
 function offToggles(purposes: string[]): Record<string, boolean> {
   return Object.fromEntries(purposes.map((p) => [p, false]));
+}
+
+function ClauseLabel({ n, children }: { n: string; children: string }) {
+  return (
+    <p className="text-primary text-[11px] font-semibold tracking-[0.16em] uppercase">
+      {n} — {children}
+    </p>
+  );
+}
+
+function LegalFooterLinks() {
+  const linkClass =
+    "text-foreground underline underline-offset-2 decoration-border hover:decoration-foreground";
+  return (
+    <p className="text-muted-foreground text-xs leading-relaxed">
+      Full wording:{" "}
+      <Link href="/privacy" target="_blank" rel="noreferrer" className={linkClass}>
+        Privacy Notice
+      </Link>
+      {" · "}
+      <Link href="/terms" target="_blank" rel="noreferrer" className={linkClass}>
+        Terms
+      </Link>
+      {" · "}
+      <Link
+        href="/grievance"
+        target="_blank"
+        rel="noreferrer"
+        className={linkClass}
+      >
+        Grievance
+      </Link>
+    </p>
+  );
 }
 
 type ConsentActive = {
@@ -63,7 +110,7 @@ export function ConsentNoticePanel({
   const [error, setError] = useState("");
   const [noticeVersion, setNoticeVersion] = useState("1.4");
   const [available, setAvailable] = useState<string[]>(
-    Object.keys(PURPOSE_LABELS),
+    Object.keys(PURPOSE_ITEMS),
   );
   const [active, setActive] = useState<ConsentActive>({
     purposes: [],
@@ -71,7 +118,7 @@ export function ConsentNoticePanel({
     grantedAt: null,
   });
   const [toggles, setToggles] = useState<Record<string, boolean>>(() =>
-    offToggles(Object.keys(PURPOSE_LABELS)),
+    offToggles(Object.keys(PURPOSE_ITEMS)),
   );
   const [usedVoice, setUsedVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -324,97 +371,172 @@ export function ConsentNoticePanel({
 
   if (loading) {
     return (
-      <div className={cn("border-border space-y-2 border p-4", className)}>
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-9 w-full" />
+      <div
+        className={cn("border-border bg-card overflow-hidden border", className)}
+      >
+        {isKyc ? (
+          <Skeleton className="h-6 w-full rounded-none" />
+        ) : null}
+        <div className={cn("space-y-6", compact ? "p-5" : "p-6 sm:p-8")}>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-24 w-full" />
+          <div className="space-y-0">
+            {["s1", "s2", "s3", "s4"].map((id) => (
+              <div
+                key={id}
+                className="border-border flex items-center justify-between gap-3 border-t py-4"
+              >
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-5 w-8 shrink-0" />
+              </div>
+            ))}
+          </div>
+          <Skeleton className="h-11 w-40" />
+        </div>
       </div>
     );
   }
 
-  return (
-    <div
-      className={cn("border-border bg-card overflow-hidden border", className)}
+  const speakerButton = isKyc ? (
+    <button
+      type="button"
+      onClick={onSpeakerClick}
+      className="text-foreground hover:text-primary focus-visible:ring-ring relative inline-flex size-9 shrink-0 items-center justify-center border border-border focus-visible:ring-1 focus-visible:outline-none"
+      aria-label={speaking ? "Mute notice" : "Play notice again"}
     >
-      {isKyc ? <PrimaryDitherBand seed="kyc-consent-notice" /> : null}
-      <div className="space-y-4 p-5">
-        {!compact ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <p className="text-foreground text-sm font-medium">
-                Before you continue (notice v{noticeVersion})
-              </p>
-              {isKyc ? (
-                <button
-                  type="button"
-                  onClick={onSpeakerClick}
-                  className="text-foreground hover:text-primary focus-visible:ring-ring relative inline-flex size-8 shrink-0 items-center justify-center focus-visible:ring-1 focus-visible:outline-none"
-                  aria-label={speaking ? "Mute notice" : "Play notice again"}
-                >
-                  {speaking ? (
-                    <VolumeXIcon className="size-4" />
-                  ) : (
-                    <span className="relative inline-flex">
-                      <Volume2Icon className="size-4" />
-                      <RotateCwIcon className="absolute -right-1.5 -bottom-1 size-2.5" />
-                    </span>
-                  )}
-                </button>
-              ) : null}
-            </div>
+      {speaking ? (
+        <VolumeXIcon className="size-4" />
+      ) : (
+        <span className="relative inline-flex">
+          <Volume2Icon className="size-4" />
+          <RotateCwIcon className="absolute -right-1.5 -bottom-1 size-2.5" />
+        </span>
+      )}
+    </button>
+  ) : null;
+
+  return (
+    <article
+      className={cn("border-border bg-card overflow-hidden border", className)}
+      aria-labelledby="consent-declaration-title"
+    >
+      {isKyc ? (
+        <PrimaryDitherBand
+          seed="kyc-consent-notice"
+          label={`Notice v${noticeVersion}`}
+        />
+      ) : null}
+
+      <div className={cn(compact ? "space-y-6 p-5" : "space-y-8 p-6 sm:p-8")}>
+        <header className="flex items-start justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
+              Consent declaration
+            </p>
+            <h2
+              id="consent-declaration-title"
+              className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl"
+            >
+              {compact
+                ? `Purpose consent`
+                : `Before you continue`}
+            </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {noticeText}
+              Blucollarz Technologies Private Limited · Data Fiduciary ·
+              notice v{noticeVersion}
             </p>
           </div>
-        ) : (
-          <p className="text-foreground text-sm font-medium">
-            Purpose consent (notice v{noticeVersion})
+          {speakerButton}
+        </header>
+
+        <section className="space-y-3">
+          <ClauseLabel n="01">Notice</ClauseLabel>
+          <blockquote className="border-border font-serif text-foreground border-l-2 pl-4 text-[1.05rem] leading-[1.55]">
+            {noticeText}
+          </blockquote>
+          {!isKyc ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={speaking || saving}
+              onClick={() => void playNotice(false).catch(() => undefined)}
+            >
+              {speaking
+                ? "Reading…"
+                : usedVoice
+                  ? "Read aloud again"
+                  : "Read aloud"}
+            </Button>
+          ) : null}
+        </section>
+
+        <section className="space-y-3">
+          <ClauseLabel n="02">Purposes I agree to</ClauseLabel>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Each purpose starts off. Turn on only what you agree to
+            {isKyc ? " — all four are required to verify with DigiLocker" : ""}.
           </p>
-        )}
-        {!isKyc ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={speaking || saving}
-            onClick={() => void playNotice(false).catch(() => undefined)}
-          >
-            {speaking
-              ? "Reading…"
-              : usedVoice
-                ? "Read aloud again"
-                : "Read aloud"}
-          </Button>
+          <ol className="border-border divide-border divide-y border-y">
+            {available.map((purpose, index) => {
+              const item = PURPOSE_ITEMS[purpose];
+              const checked = Boolean(toggles[purpose]);
+              return (
+                <li
+                  key={purpose}
+                  className="flex items-start justify-between gap-4 py-4"
+                >
+                  <Label
+                    htmlFor={`consent-${purpose}`}
+                    className="flex min-w-0 cursor-pointer items-start gap-3 font-normal"
+                  >
+                    <span className="text-primary font-heading mt-0.5 w-6 shrink-0 text-sm font-semibold tabular-nums">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="min-w-0 space-y-0.5">
+                      <span className="text-foreground block text-sm font-semibold tracking-tight">
+                        {item?.title ?? purpose}
+                      </span>
+                      <span className="text-muted-foreground block text-sm leading-relaxed">
+                        {item?.detail ?? purpose}
+                      </span>
+                    </span>
+                  </Label>
+                  <Switch
+                    id={`consent-${purpose}`}
+                    className="mt-1"
+                    checked={checked}
+                    onCheckedChange={(next) =>
+                      setToggles((prev) => ({ ...prev, [purpose]: next }))
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+
+        {isKyc ? (
+          <section className="space-y-3">
+            <ClauseLabel n="03">Declaration</ClauseLabel>
+            <p className="text-foreground text-sm leading-relaxed">
+              I have read or heard this notice. By turning on every purpose and
+              tapping Agree and Verify, I record my consent under notice v
+              {noticeVersion}. I can view, fix, delete, or withdraw later in
+              Settings. I pay nothing. Blucollarz never sells my data.
+            </p>
+          </section>
         ) : null}
 
-        <div className="space-y-3">
-          {available.map((purpose) => (
-            <div
-              key={purpose}
-              className="flex items-start justify-between gap-3"
-            >
-              <Label
-                htmlFor={`consent-${purpose}`}
-                className="text-foreground cursor-pointer text-sm leading-snug font-normal"
-              >
-                {PURPOSE_LABELS[purpose] ?? purpose}
-              </Label>
-              <Switch
-                id={`consent-${purpose}`}
-                checked={Boolean(toggles[purpose])}
-                onCheckedChange={(checked) =>
-                  setToggles((prev) => ({ ...prev, [purpose]: checked }))
-                }
-              />
-            </div>
-          ))}
-        </div>
-
         {scopedActive.length && !isKyc ? (
-          <p className="text-muted-foreground text-xs">
-            Active consent recorded{" "}
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            Active consent recorded
             {active.grantedAt
-              ? new Date(active.grantedAt).toLocaleString()
+              ? ` ${new Date(active.grantedAt).toLocaleString()}`
               : ""}
             {active.noticeVersion ? ` · notice v${active.noticeVersion}` : null}
             {` · ${scopedActive.join(", ")}`}
@@ -424,59 +546,64 @@ export function ConsentNoticePanel({
         {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
         {isKyc ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-            <Button
-              type="button"
-              size="lg"
-              className="w-full sm:w-auto"
-              disabled={!canAgreeAndVerify}
-              onClick={() => void agreeAndVerify()}
-            >
-              Agree and Verify
-            </Button>
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              className="w-full sm:w-auto"
-              asChild
-            >
-              <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
-                Ask me a question → OWRC {OWRC_HELP_LINE}
-              </a>
-            </Button>
+          <div className="border-border space-y-4 border-t pt-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+              <Button
+                type="button"
+                size="lg"
+                className="w-full sm:w-auto"
+                disabled={!canAgreeAndVerify}
+                onClick={() => void agreeAndVerify()}
+              >
+                Agree and Verify
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+                asChild
+              >
+                <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
+                  Ask me a question → OWRC {OWRC_HELP_LINE}
+                </a>
+              </Button>
+            </div>
+            <LegalFooterLinks />
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              disabled={saving || speaking || !selected.length}
-              onClick={() => void grant()}
-            >
-              {saving ? "Saving…" : "I agree"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving || !scopedActive.length}
-              onClick={() => void withdrawAll()}
-            >
-              Withdraw
-            </Button>
-            <Button type="button" variant="ghost" asChild>
-              <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
-                Ask me a question → OWRC {OWRC_HELP_LINE}
-              </a>
-            </Button>
+          <div className="border-border space-y-3 border-t pt-5">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                disabled={saving || speaking || !selected.length}
+                onClick={() => void grant()}
+              >
+                {saving ? "Saving…" : "I agree"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving || !scopedActive.length}
+                onClick={() => void withdrawAll()}
+              >
+                Withdraw
+              </Button>
+              <Button type="button" variant="ghost" asChild>
+                <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
+                  Ask me a question → OWRC {OWRC_HELP_LINE}
+                </a>
+              </Button>
+            </div>
+            {!selected.length ? (
+              <p className="text-muted-foreground text-xs">
+                Turn on the purposes you agree to.
+              </p>
+            ) : null}
+            <LegalFooterLinks />
           </div>
         )}
-
-        {!isKyc && !selected.length ? (
-          <p className="text-muted-foreground text-xs">
-            Turn on the purposes you agree to.
-          </p>
-        ) : null}
       </div>
-    </div>
+    </article>
   );
 }
