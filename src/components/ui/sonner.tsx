@@ -51,8 +51,10 @@ function ToastDither() {
     };
 
     collect();
+    const toaster = document.querySelector("[data-sonner-toaster]");
+    if (!toaster) return;
     const observer = new MutationObserver(collect);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(toaster, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, []);
 

@@ -1,6 +1,6 @@
 /** Pre-login “I agree” (Terms, Privacy, 18+). Account terms + KYC consents come later. */
 
-export const SITE_AGREEMENT_KEY = "blucollarz_site_agreement_v1";
+export const SITE_AGREEMENT_KEY = "blucollarz_site_agreement";
 export const SITE_AGREEMENT_SHOW_EVENT = "blucollarz:site-agreement-show";
 
 export type SiteAgreement = "agreed" | "declined" | null;

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
-  SITE_AGREEMENT_KEY,
   hasAgreedToSite,
   readSiteAgreement,
+  SITE_AGREEMENT_KEY,
   writeSiteAgreement,
 } from "@/lib/compliance/site-agreement";
 

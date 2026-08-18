@@ -108,31 +108,3 @@ export async function assertNoLegalHold(
     );
   }
 }
-
-/**
- * Erasure is refused while a hold is live or a case still needs a human
- * (review open, or a mandatory report was recorded).
- */
-export async function assertAccountErasable(
-  dataPrincipalId: string,
-): Promise<void> {
-  await assertNoLegalHold(dataPrincipalId);
-  if (!dataPrincipalId) return;
-  const blocking = await client
-    .db(DB_NAME)
-    .collection(COLLECTIONS.LEGAL_SAFETY_CASES)
-    .findOne(
-      {
-        subjectUserId: dataPrincipalId,
-        state: {
-          $in: ["legal_review_required", "mandatory_report_triggered"],
-        },
-      },
-      { projection: { _id: 1 } },
-    );
-  if (blocking) {
-    throw new LegalHoldError(
-      "This account is under a legal hold and cannot be deleted. Contact the grievance officer.",
-    );
-  }
-}

@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth/auth-client";
+import { syncAnalyticsConsentWithAccount } from "@/lib/compliance/analytics";
 import {
-  SITE_AGREEMENT_SHOW_EVENT,
   readSiteAgreement,
+  SITE_AGREEMENT_SHOW_EVENT,
   writeSiteAgreement,
 } from "@/lib/compliance/site-agreement";
-import { syncAnalyticsConsentWithAccount } from "@/lib/compliance/analytics";
 
 /**
  * First-paint notice, same shape as other products: one I agree covering

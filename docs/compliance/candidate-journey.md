@@ -73,7 +73,7 @@ as other products: one **I agree**, then later purpose consents at KYC.
 
 | Action | What happens |
 | --- | --- |
-| Do nothing | Banner stays. `blucollarz_site_agreement_v1` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
+| Do nothing | Banner stays. `blucollarz_site_agreement` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
 | **I agree** | Writes `agreed`. Covers Terms, Privacy, 18+, and essential cookies. Log in / Get Started can run. Analytics stay **off** until Settings. |
 | **Decline** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner. |
 | After Google | Signed-in **Privacy & terms** modal records agreement on the user (`platformTermsAcceptedAt`). Not inferred from this banner. |

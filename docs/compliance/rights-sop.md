@@ -8,7 +8,7 @@ Internal SOP aligned to the DPDP Act, 2023 and DPDP Rules, 2025.
 | --- | --- | --- |
 | Access | Summary of data + who shared with | JSON export from Settings / rights API |
 | Correction | Fix wrong / complete missing | Worker updates `/candidate/profile`; request is logged; re-verify if needed |
-| Erasure | Delete data | **Do not auto-delete from the queue.** Verify identity, then the worker completes erasure via Delete account (cascade: apps, interviews, blobs, inquiries, consent, rights, legal-safety notices/closed cases). Live holds and mandatory-report cases block delete. Breach incidents are kept; the person's id is removed. |
+| Erasure | Delete data | **Do not auto-delete from the queue.** Verify identity, then the worker completes erasure via Delete account (cascade: apps, interviews, blobs, inquiries, consent, rights, legal-safety rows). Legal hold blocks delete. |
 | Withdraw consent | Stop consent-based processing | Append `withdrawn` ConsentEvent; DigiLocker gated |
 | Nominate | Name someone to act | Rights request with nominee fields |
 | Grievance | Complaint | Route to grievance desk (`/grievance`) |
