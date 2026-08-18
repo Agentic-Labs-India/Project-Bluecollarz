@@ -2,8 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth/auth-client";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
+import {
+  hasAgreedAdultAttestation,
+  requestAdultGate,
+} from "@/lib/compliance/age-gate";
 import { getProfileHomePath } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +31,12 @@ export function LoginButton({
 
     if (session?.user) {
       router.push(getProfileHomePath(session.user.profileType));
+      return;
+    }
+
+    if (!hasAgreedAdultAttestation()) {
+      requestAdultGate();
+      toast.message("Confirm you are 18 or older to continue.");
       return;
     }
 

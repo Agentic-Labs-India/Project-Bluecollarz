@@ -82,8 +82,11 @@ or do not process children.
 do **not** offer parental-consent onboarding. That is the correct product
 stance for overseas hiring.
 
-**Gap:** Google sign-in can create a session before age is known. Commitment
-APIs (`requireCandidateAppReady`) still need KYC, which rejects minors.
+**Gap:** Google sign-in can still create a session before DigiLocker DOB is
+known. The cookie banner now requires an 18+ self-attestation before Log in /
+Get Started (Decline blocks OAuth). That is not verifiable parental consent
+and a minor can still tick Agree. Commitment APIs
+(`requireCandidateAppReady`) still need KYC, which rejects minors.
 
 ### Storage, minimisation, erasure
 

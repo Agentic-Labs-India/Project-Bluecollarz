@@ -14,9 +14,9 @@ Related: `docs/compliance/dpdp-and-emigrate.md` (DPDP / RA split),
 
 ```mermaid
 flowchart TD
-  Open["Open site /"] --> Cookie["Cookie banner Allow or Reject"]
+  Open["Open site /"] --> Cookie["Cookie banner: 18+ Agree or Decline"]
   Cookie --> Browse["Browse landing, jobs, privacy, terms"]
-  Browse --> Google["Get Started / Log in — Google OAuth"]
+  Browse --> Google["Get Started / Log in — blocked until Agree"]
   Google --> Work["New user always profileType work"]
   Work --> OnboardPage["/candidate/onboarding"]
   OnboardPage --> Terms["Privacy and terms modal"]
@@ -55,31 +55,33 @@ Google. There is no email/password signup. There is no public recruiter signup.
 
 ---
 
-## 1. Cookies (first paint, every page)
+## 1. Age + cookies (first paint, every page)
 
 **UI:** `CookieBanner` in the root layout (`src/app/layout.tsx`). It sits on
 landing **and** the signed-in app.
 
-**Copy (Allow / Reject only):**
+**Copy (Agree / Decline):**
 
-> We use essential cookies to keep you signed in. Optional analytics cookies
-> (Google Analytics) help us improve the product — off until you Allow them.
-> Reject is as easy as Allow. Privacy
+> **I confirm I am 18 or older**
+>
+> Essential cookies keep you signed in. Optional analytics stay off. Privacy
 
 **Behaviour** (`src/components/compliance/cookie-banner.tsx`,
-`src/lib/compliance/analytics.ts`):
+`src/lib/compliance/age-gate.ts`, `src/lib/compliance/analytics.ts`):
 
 | Action | What happens |
 | --- | --- |
-| Do nothing | Banner stays. `localStorage` key `blucollarz_analytics_consent_v1` is unset. Google Analytics script does **not** load. |
-| **Allow** | Writes `granted`. `gtag('consent','update')` sets `analytics_storage: granted`. Ads storage / ad user data / ad personalization stay **denied**. GA script loads only if `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID` is set (`AnalyticsScripts`). |
-| **Reject** | Writes `denied`. Analytics stays off. Site still works. Essential session cookies are not optional. |
-| Later change | Signed-in desktop rail: cookie icon → `PreferenceDialog` toggle “Allow analytics cookies”. Same PATCH `/api/user/preferences` `{ cookiesEnabled }`. |
+| Do nothing | Banner stays. `blucollarz_adult_attestation_v1` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
+| **Agree** | Writes `agreed`. Log in / Get Started can run. Essential cookies only. Analytics stay **off** until Settings. |
+| **Decline** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner; they must Agree to continue. |
+| Analytics later | Signed-in desktop rail: cookie icon → `PreferenceDialog` toggle “Allow analytics cookies”. PATCH `/api/user/preferences` `{ cookiesEnabled }`. Not bundled with the 18+ Agree. |
 
-Signed-in: choice syncs to `users.cookiesEnabled` (default **false**). If this
-device already chose Allow/Reject, the device wins and the account is patched
-to match. If this device has no choice and the account already allowed
-analytics, the banner hides and GA is granted.
+This is a **self-attestation**, not DigiLocker DOB proof. KYC still rejects
+under-18.
+
+Signed-in analytics: if this device already chose Allow/Reject for GA, the
+device wins and the account is patched to match. GA is independent of the
+age gate.
 
 **Not in this banner:** DPDP purpose consent, DigiLocker, medical, interviews.
 Those are later, signed-in, purpose-scoped.
@@ -106,8 +108,10 @@ If a session cookie already exists and they hit `/`, `src/proxy.ts` sends:
 - hire incomplete → `/hire/onboarding`
 - hire complete → `/hire/roles`
 
-Google can create a session **before** age is known. Under-18 is refused at
-DigiLocker, not at OAuth.
+Google can still create a session **before** DigiLocker DOB is known. The
+cookie banner now requires an 18+ **self-attestation** before Log in / Get
+Started. Under-18 is still refused at DigiLocker (verifiable age). Decline
+blocks OAuth until they Agree.
 
 ---
 
@@ -438,7 +442,7 @@ Score the **implemented** funnel, then subtract for these. They are real.
    `/privacy`.
 5. **No Reject on platform terms.** Only leave the site.
 6. **Cookie choice is localStorage + account flag**, not a Consent Manager.
-7. **Under-18 only at DigiLocker**, not at Google create.
+7. **Under-18 self-attest at the cookie banner; verifiable age only at DigiLocker.** A minor can still tick Agree. Google can still create a session before DOB is known.
 8. **POL-0005 is draft.** Safety overlay is engineering, not counsel-approved
    law.
 
@@ -449,6 +453,7 @@ Score the **implemented** funnel, then subtract for these. They are real.
 | Step | Where |
 | --- | --- |
 | Cookie banner | `src/components/compliance/cookie-banner.tsx` |
+| 18+ self-attest | `src/lib/compliance/age-gate.ts` |
 | GA gate | `src/components/compliance/analytics-scripts.tsx` |
 | Public vs locked routes | `src/proxy.ts` |
 | Google | `src/lib/auth/google-sign-in.ts` |

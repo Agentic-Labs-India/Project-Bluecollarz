@@ -116,13 +116,13 @@ export default function PrivacyPage() {
 
         <LegalSection title="4. Cookies">
           <p>
-            Essential cookies keep you signed in and protect the account. They
-            are required for the service. Optional analytics cookies (Google
-            Analytics) measure usage. They stay off until you press{" "}
-            <strong className="text-foreground font-medium">Allow</strong>.{" "}
-            <strong className="text-foreground font-medium">Reject</strong> is
-            the same control and is as easy as Allow. You can change this later
-            in Settings. We do not use ads cookies.
+            Before you sign in, the first banner asks you to confirm you are 18
+            or older. Essential cookies keep you signed in and protect the
+            account. They are required for the service. Optional analytics
+            cookies (Google Analytics) measure usage. They stay off until you
+            allow them in Settings — the same control lets you turn them off
+            again. We do not use ads cookies. Decline on that banner means you
+            cannot Log in or Get Started until you Agree.
           </p>
         </LegalSection>
 
@@ -240,9 +240,10 @@ export default function PrivacyPage() {
 
         <LegalSection title="11. Children">
           <p>
-            Blucollarz is for persons 18 years or older. We confirm age from
-            DigiLocker date of birth. We do not knowingly collect personal data
-            from children. Accounts under 18 are refused.
+            Blucollarz is for persons 18 years or older. Before you create an
+            account you must confirm you are 18 or older. We then confirm age
+            from DigiLocker date of birth. We do not knowingly collect personal
+            data from children. Accounts under 18 are refused.
           </p>
         </LegalSection>
 
