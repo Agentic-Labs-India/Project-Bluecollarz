@@ -11,10 +11,10 @@ Manual checks before claiming packet-aligned:
 7. Cookie banner is one **I agree** (Terms, Privacy, 18+, essential cookies) or **Decline**. Decline blocks Log in / Get Started and re-opens the same banner if they try again. Analytics stay **off** until Settings → Allow analytics cookies. Browser analytics choice syncs to `users.cookiesEnabled` on login; rail must not overwrite a prior Allow.
 8. Settings → Access request downloads JSON export; `/admin/compliance` Rights queue works (admin notes not returned to workers). Correction points to `/candidate/profile`. Erasure is **not** auto-delete: log the request, then Delete account (`#delete-account`) after identity checks. Grievance SLA: 90 days.
 9. `/admin/compliance?tab=breaches` can open incident + mark Board/principal notified (copy preview includes Rule 7 fields). Board detailed report target: 72 hours.
-10. Account delete removes apps/interviews/blobs/inquiries/consent/rights.
+10. Account delete removes apps/interviews/blobs/inquiries/consent/rights/legal-safety notices and closed cases. Live holds or mandatory-report cases block delete. Breach incidents stay; that person's id is pulled off the register.
 11. Google signup cannot supply DOB. Onboarding collects **currently working as, years of experience, education, work experience, and languages** (resume PDF optional). After onboarding, DigiLocker KYC is required and writes identity (name, DOB, phone, location, gender, PAN, Aadhaar). Under-18 from DigiLocker is rejected. If a leftover profile DOB/phone/PAN/Aadhaar/gender already exists, it must **match** — mismatch fails, no overwrite. Google display name is not matched (Aadhaar name is source of truth).
 12. DigiLocker identity pack is name, DOB, phone, location, PAN, Aadhaar last 4, gender. Email stays from Google. Job applications show **Submitted / Selected / Rejected** only — no KYC badges or per-job KYC CTAs.
-13. Placement audit events **always** record. `jobs.raRcNumber` is writable on the hire job form and admin approve sheet.
+13. `jobs.raRcNumber` is writable on the hire job form and admin approve sheet.
 14. Platform Privacy & Terms gate persists on the user (`platformTermsVersion` / `platformTermsAcceptedAt`), not only localStorage.
 
 Not legal advice — appoint a named Grievance Officer in Admin → Settings when you have one. Counsel should still review notices before live regulated placements.

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { deleteBlobUrls } from "@/lib/blob/delete";
-import { assertNoLegalHold } from "@/lib/compliance/legal-hold";
+import { assertAccountErasable } from "@/lib/compliance/legal-hold";
 import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
 import { idHex } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ import { idHex } from "@/lib/utils";
  */
 export async function cascadeDeleteUserData(userId: string): Promise<void> {
   if (!userId) return;
-  await assertNoLegalHold(userId);
+  await assertAccountErasable(userId);
   const db = client.db(DB_NAME);
   const blobUrls: string[] = [];
 
@@ -68,16 +68,28 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
     await db.collection(COLLECTIONS.RECRUITER_INQUIRIES).deleteMany({ email });
   }
 
-  // Consent + rights artifacts for this principal.
+  // DPDP + legal-safety rows for this principal. The breach register stays;
+  // only this person's id is removed.
   await db
     .collection(COLLECTIONS.CONSENT_EVENTS)
     .deleteMany({ dataPrincipalId: userId });
-  await db
-    .collection(COLLECTIONS.CONSENT_PLAYBACKS)
-    .deleteMany({ userId });
+  await db.collection(COLLECTIONS.CONSENT_PLAYBACKS).deleteMany({ userId });
   await db
     .collection(COLLECTIONS.RIGHTS_REQUESTS)
     .deleteMany({ dataPrincipalId: userId });
+  await db
+    .collection(COLLECTIONS.LEGAL_SAFETY_NOTICES)
+    .deleteMany({ userId });
+  await db
+    .collection(COLLECTIONS.LEGAL_HOLDS)
+    .deleteMany({ dataPrincipalId: userId });
+  await db
+    .collection(COLLECTIONS.LEGAL_SAFETY_CASES)
+    .deleteMany({ subjectUserId: userId });
+  await db.collection(COLLECTIONS.BREACH_INCIDENTS).updateMany(
+    { affectedPrincipalIds: userId } as never,
+    { $pull: { affectedPrincipalIds: userId } } as never,
+  );
 
   // Hire-owned roles → applications + interviews for those jobs.
   const ownedJobs = await db

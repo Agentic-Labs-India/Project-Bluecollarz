@@ -283,7 +283,6 @@ Modules live in `src/lib/compliance/`.
 | `legal-hold.ts` | Blocks erasure while material must be preserved |
 | `grievance.ts` | Grievance officer contact, from settings with env fallback |
 | `timelines.ts` | Acknowledgement and resolution deadlines |
-| `placement-audit.ts` | Immutable placement journey events |
 | `arm.ts` | Strips PII before any employer-facing view |
 | `analytics.ts` | Client-side analytics consent |
 

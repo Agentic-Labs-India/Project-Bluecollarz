@@ -82,11 +82,6 @@ const RIGHTS_REQUEST_INDEX_SPECS = [
   { key: { requestId: 1 }, options: { unique: true } },
 ] as const;
 
-const PLACEMENT_AUDIT_INDEX_SPECS = [
-  { key: { createdAt: -1 }, options: {} },
-  { key: { jobId: 1, createdAt: -1 }, options: {} },
-] as const;
-
 const BREACH_INCIDENT_INDEX_SPECS = [
   { key: { createdAt: -1 }, options: {} },
   { key: { status: 1, createdAt: -1 }, options: {} },
@@ -243,13 +238,6 @@ export async function ensureIndexes() {
     ...RIGHTS_REQUEST_INDEX_SPECS.map((spec) =>
       ensureIndex(
         db.collection(COLLECTIONS.RIGHTS_REQUESTS),
-        spec.key,
-        spec.options,
-      ),
-    ),
-    ...PLACEMENT_AUDIT_INDEX_SPECS.map((spec) =>
-      ensureIndex(
-        db.collection(COLLECTIONS.PLACEMENT_AUDIT_EVENTS),
         spec.key,
         spec.options,
       ),

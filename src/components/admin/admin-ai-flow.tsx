@@ -545,7 +545,7 @@ export function AdminAiFlow({
                   <Box
                     id="a-publish"
                     title="Publish"
-                    detail="Live + placement audit."
+                    detail="Live."
                   />
                 }
                 right={

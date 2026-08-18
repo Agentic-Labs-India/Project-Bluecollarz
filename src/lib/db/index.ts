@@ -24,16 +24,23 @@ export const COLLECTIONS = {
   JOBS: "Jobs",
   APPLICATIONS: "Applications",
   INTERVIEWS: "Interviews",
-  CONSENT_EVENTS: "ConsentEvents",
-  CONSENT_PLAYBACKS: "ConsentPlaybacks",
-  RIGHTS_REQUESTS: "RightsRequests",
-  PLACEMENT_AUDIT_EVENTS: "PlacementAuditEvents",
-  BREACH_INCIDENTS: "BreachIncidents",
-  PLATFORM_SETTINGS: "PlatformSettings",
   MEDICAL_CENTERS: "MedicalCenters",
   MEDICAL_APPOINTMENTS: "MedicalAppointments",
+  /** Singleton: grievance officer, LLM, voice. Not a DPDP ledger. */
+  PLATFORM_SETTINGS: "PlatformSettings",
+  /** DPDP consent proof (append-only). */
+  CONSENT_EVENTS: "ConsentEvents",
+  /** Short-lived ticket that a notice was played before grant. */
+  CONSENT_PLAYBACKS: "ConsentPlaybacks",
+  /** DPDP Chapter III queue (access, correction, erasure, …). */
+  RIGHTS_REQUESTS: "RightsRequests",
+  /** DPDP Rule 7 breach register. */
+  BREACH_INCIDENTS: "BreachIncidents",
+  /** Blocks erasure while a review or report is live (s.12(3)). */
   LEGAL_HOLDS: "LegalHolds",
+  /** Serious-offence case file. Machine opens; only a named human closes. */
   LEGAL_SAFETY_CASES: "LegalSafetyCases",
+  /** Proof a safety notice was shown. Not consent. */
   LEGAL_SAFETY_NOTICES: "LegalSafetyNotices",
 } as const;
 

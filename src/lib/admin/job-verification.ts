@@ -4,7 +4,6 @@ import {
   getResendClient,
   getResendFromEmail,
 } from "@/lib/admin/resend";
-import { appendPlacementAuditEvent } from "@/lib/compliance/placement-audit";
 import { countryName, stateName } from "@/lib/core/geo/places";
 import client, {
   COLLECTIONS,
@@ -214,16 +213,6 @@ export async function approveJobVerification(opts: {
   );
   if (!updated) throw new Error("Update failed");
   revalidatePublishedJobsCache();
-
-  // Job-publish events always persist (RA binding trail).
-  await appendPlacementAuditEvent({
-    kind: "job_published_after_admin_verify",
-    jobId: id,
-    raRcNumber: updated.raRcNumber ?? undefined,
-    payload: { status: updated.status },
-  }).catch(() => {
-    /* best-effort */
-  });
 
   const title = updated.title.trim() || "your role";
   const safeTitle = escapeHtml(title);
