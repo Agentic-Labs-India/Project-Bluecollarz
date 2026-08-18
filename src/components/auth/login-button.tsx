@@ -6,9 +6,9 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth/auth-client";
 import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import {
-  hasAgreedAdultAttestation,
-  requestAdultGate,
-} from "@/lib/compliance/age-gate";
+  hasAgreedToSite,
+  requestSiteAgreement,
+} from "@/lib/compliance/site-agreement";
 import { getProfileHomePath } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
 
@@ -34,9 +34,9 @@ export function LoginButton({
       return;
     }
 
-    if (!hasAgreedAdultAttestation()) {
-      requestAdultGate();
-      toast.message("Confirm you are 18 or older to continue.");
+    if (!hasAgreedToSite()) {
+      requestSiteAgreement();
+      toast.message("Please agree to continue.");
       return;
     }
 

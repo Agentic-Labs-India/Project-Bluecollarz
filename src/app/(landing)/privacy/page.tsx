@@ -116,13 +116,14 @@ export default function PrivacyPage() {
 
         <LegalSection title="4. Cookies">
           <p>
-            Before you sign in, the first banner asks you to confirm you are 18
-            or older. Essential cookies keep you signed in and protect the
-            account. They are required for the service. Optional analytics
-            cookies (Google Analytics) measure usage. They stay off until you
-            allow them in Settings — the same control lets you turn them off
-            again. We do not use ads cookies. Decline on that banner means you
-            cannot Log in or Get Started until you Agree.
+            Before you sign in, the first banner asks you to click I agree to
+            our Terms and Privacy Notice, and to confirm you are 18 or older.
+            Essential cookies keep you signed in and protect the account. They
+            are required for the service. Optional analytics cookies (Google
+            Analytics) measure usage. They stay off until you allow them in
+            Settings — the same control lets you turn them off again. We do not
+            use ads cookies. Decline on that banner means you cannot Log in or
+            Get Started until you click I agree.
           </p>
         </LegalSection>
 

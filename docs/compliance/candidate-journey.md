@@ -14,9 +14,9 @@ Related: `docs/compliance/dpdp-and-emigrate.md` (DPDP / RA split),
 
 ```mermaid
 flowchart TD
-  Open["Open site /"] --> Cookie["Cookie banner: 18+ Agree or Decline"]
+  Open["Open site /"] --> Cookie["Cookie banner: I agree or Decline"]
   Cookie --> Browse["Browse landing, jobs, privacy, terms"]
-  Browse --> Google["Get Started / Log in — blocked until Agree"]
+  Browse --> Google["Get Started / Log in — blocked until I agree"]
   Google --> Work["New user always profileType work"]
   Work --> OnboardPage["/candidate/onboarding"]
   OnboardPage --> Terms["Privacy and terms modal"]
@@ -55,36 +55,35 @@ Google. There is no email/password signup. There is no public recruiter signup.
 
 ---
 
-## 1. Age + cookies (first paint, every page)
+## 1. First-paint notice (every page)
 
-**UI:** `CookieBanner` in the root layout (`src/app/layout.tsx`). It sits on
-landing **and** the signed-in app.
+**UI:** `CookieBanner` in the root layout (`src/app/layout.tsx`). Same shape
+as other products: one **I agree**, then later purpose consents at KYC.
 
-**Copy (Agree / Decline):**
+**Copy:**
 
-> **I confirm I am 18 or older**
+> By clicking I agree, you agree to our Terms and Privacy Notice, and confirm
+> you are 18 or older.
 >
-> Essential cookies keep you signed in. Optional analytics stay off. Privacy
+> We use essential cookies to keep you signed in. Optional analytics stay off
+> until Settings.
 
 **Behaviour** (`src/components/compliance/cookie-banner.tsx`,
-`src/lib/compliance/age-gate.ts`, `src/lib/compliance/analytics.ts`):
+`src/lib/compliance/site-agreement.ts`, `src/lib/compliance/analytics.ts`):
 
 | Action | What happens |
 | --- | --- |
-| Do nothing | Banner stays. `blucollarz_adult_attestation_v1` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
-| **Agree** | Writes `agreed`. Log in / Get Started can run. Essential cookies only. Analytics stay **off** until Settings. |
-| **Decline** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner; they must Agree to continue. |
-| Analytics later | Signed-in desktop rail: cookie icon → `PreferenceDialog` toggle “Allow analytics cookies”. PATCH `/api/user/preferences` `{ cookiesEnabled }`. Not bundled with the 18+ Agree. |
+| Do nothing | Banner stays. `blucollarz_site_agreement_v1` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
+| **I agree** | Writes `agreed`. Covers Terms, Privacy, 18+, and essential cookies. Log in / Get Started can run. Analytics stay **off** until Settings. |
+| **Decline** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner. |
+| After Google | Signed-in **Privacy & terms** modal records agreement on the user (`platformTermsAcceptedAt`). Not inferred from this banner. |
+| Analytics later | Signed-in desktop rail: cookie icon → `PreferenceDialog`. PATCH `/api/user/preferences` `{ cookiesEnabled }`. |
 
-This is a **self-attestation**, not DigiLocker DOB proof. KYC still rejects
-under-18.
+18+ here is a **self-attestation**. KYC still rejects under-18 from DigiLocker
+DOB.
 
-Signed-in analytics: if this device already chose Allow/Reject for GA, the
-device wins and the account is patched to match. GA is independent of the
-age gate.
-
-**Not in this banner:** DPDP purpose consent, DigiLocker, medical, interviews.
-Those are later, signed-in, purpose-scoped.
+**Not in this banner:** DPDP purpose consents (identity, contact, evaluation,
+medical). Those are later, signed-in, purpose-scoped.
 
 **Sidebar cookie:** shadcn sidebar open/closed is a separate UI cookie. It is
 not analytics.
@@ -109,9 +108,9 @@ If a session cookie already exists and they hit `/`, `src/proxy.ts` sends:
 - hire complete → `/hire/roles`
 
 Google can still create a session **before** DigiLocker DOB is known. The
-cookie banner now requires an 18+ **self-attestation** before Log in / Get
-Started. Under-18 is still refused at DigiLocker (verifiable age). Decline
-blocks OAuth until they Agree.
+first-paint banner requires **I agree** (Terms, Privacy, 18+) before Log in /
+Get Started. Under-18 is still refused at DigiLocker. Decline blocks OAuth
+until they click I agree.
 
 ---
 
@@ -431,8 +430,8 @@ Cookie / notification toggles: left rail (`AppUserMenu`), not only Settings.
 
 Score the **implemented** funnel, then subtract for these. They are real.
 
-1. **Terms after Google, not before.** OAuth runs; then the modal. Session
-   exists before terms and before age.
+1. **Recorded terms still after Google.** The first-paint I agree is
+   localStorage. The user-document Privacy & terms modal still runs after OAuth.
 2. **Playback ≠ listened.** Auto-play issues a ticket; Agree can proceed
    without proving the audio finished. That is not DPDP s.6(10) proof.
 3. **Notices are English.** Voice **locales** exist; Rule 3 / s.5 Eighth
@@ -442,7 +441,7 @@ Score the **implemented** funnel, then subtract for these. They are real.
    `/privacy`.
 5. **No Reject on platform terms.** Only leave the site.
 6. **Cookie choice is localStorage + account flag**, not a Consent Manager.
-7. **Under-18 self-attest at the cookie banner; verifiable age only at DigiLocker.** A minor can still tick Agree. Google can still create a session before DOB is known.
+7. **Under-18 on the first-paint I agree is self-attest; verifiable age only at DigiLocker.** A minor can still click I agree. Google can still create a session before DOB is known.
 8. **POL-0005 is draft.** Safety overlay is engineering, not counsel-approved
    law.
 
@@ -453,7 +452,7 @@ Score the **implemented** funnel, then subtract for these. They are real.
 | Step | Where |
 | --- | --- |
 | Cookie banner | `src/components/compliance/cookie-banner.tsx` |
-| 18+ self-attest | `src/lib/compliance/age-gate.ts` |
+| Site I agree | `src/lib/compliance/site-agreement.ts` |
 | GA gate | `src/components/compliance/analytics-scripts.tsx` |
 | Public vs locked routes | `src/proxy.ts` |
 | Google | `src/lib/auth/google-sign-in.ts` |
