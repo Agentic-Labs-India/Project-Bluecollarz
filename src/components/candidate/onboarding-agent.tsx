@@ -84,11 +84,6 @@ function isClientPickerTool(type: string) {
   return type === LANG_TOOL || type === RESUME_TOOL;
 }
 
-function waitingPickerStatus(awaitingResume: boolean) {
-  if (awaitingResume) return RESUME_PICK_STATUS;
-  return null;
-}
-
 function openPickerPrompt(
   parts: Array<{ state: string; input?: { prompt?: string } }>,
 ) {
@@ -378,7 +373,9 @@ export function OnboardingAgent() {
     const awaitingResume = Boolean(resumeHost);
     const pickerHint = awaitingLanguage
       ? "Pick a language to continue."
-      : waitingPickerStatus(awaitingResume);
+      : awaitingResume
+        ? RESUME_PICK_STATUS
+        : null;
     if (pickerHint) pausedRef.current = true;
 
     for (const part of langToolParts(last)) {

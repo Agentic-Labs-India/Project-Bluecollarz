@@ -287,7 +287,6 @@ export function OnboardingProfileStage({
   const writingNow: StageCard | null = catchingUp ?? toolWriting;
   const asking: StageCard | null =
     stage.asking && stage.asking !== "voiceLanguage" ? stage.asking : null;
-  const isComplete = (key: StageCard) => settled.has(key);
 
   for (const key of stage.writing) {
     if (key !== "voiceLanguage") seenWritingRef.current.add(key);
@@ -318,7 +317,7 @@ export function OnboardingProfileStage({
   }, [settled, stage.values, stage.writing]);
 
   const queue = STAGE_CARDS.filter((key) => {
-    if (isComplete(key)) return false;
+    if (settled.has(key)) return false;
     if (key === "summary") {
       return (
         Boolean(stage.values.summary) ||
@@ -339,7 +338,7 @@ export function OnboardingProfileStage({
   const stack = queue.filter((key) => STAGE_CARDS.indexOf(key) >= focusIndex);
 
   useEffect(() => {
-    const doneNow = new Set(STAGE_CARDS.filter((key) => settled.has(key)));
+    const doneNow = new Set(settled);
     if (seenDoneRef.current === null) {
       seenDoneRef.current = doneNow;
       return;

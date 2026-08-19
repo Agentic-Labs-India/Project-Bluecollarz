@@ -56,7 +56,6 @@ function VoiceOrb({
     >
       <Orb
         className="h-full w-full"
-        colors={["#233eff", "#c5ceff"]}
         seed={1000}
         agentState={toAgentState(mode)}
         volumeMode={listening ? "manual" : "auto"}

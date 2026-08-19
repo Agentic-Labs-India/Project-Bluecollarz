@@ -8,17 +8,11 @@ export type AgentState = null | "thinking" | "listening" | "talking";
 
 type OrbProps = {
   colors?: [string, string];
-  colorsRef?: RefObject<[string, string]>;
-  resizeDebounce?: number;
   seed?: number;
   agentState?: AgentState;
   volumeMode?: "auto" | "manual";
-  manualInput?: number;
-  manualOutput?: number;
   inputVolumeRef?: RefObject<number>;
   outputVolumeRef?: RefObject<number>;
-  getInputVolume?: () => number;
-  getOutputVolume?: () => number;
   className?: string;
 };
 
@@ -26,17 +20,11 @@ const PRIMARY_COLORS: [string, string] = ["#233eff", "#c5ceff"];
 
 export function Orb({
   colors = PRIMARY_COLORS,
-  colorsRef,
-  resizeDebounce = 100,
   seed,
   agentState = null,
   volumeMode = "auto",
-  manualInput,
-  manualOutput,
   inputVolumeRef,
   outputVolumeRef,
-  getInputVolume,
-  getOutputVolume,
   className,
 }: OrbProps) {
   const [ready, setReady] = useState(false);
@@ -48,7 +36,7 @@ export function Orb({
     <div className={className ?? "relative h-full w-full"}>
       {ready ? (
         <Canvas
-          resize={{ debounce: resizeDebounce }}
+          resize={{ debounce: 100 }}
           dpr={[1, 2]}
           gl={{
             alpha: true,
@@ -58,16 +46,11 @@ export function Orb({
         >
           <Scene
             colors={colors}
-            colorsRef={colorsRef}
             seed={seed}
             agentState={agentState}
             volumeMode={volumeMode}
-            manualInput={manualInput}
-            manualOutput={manualOutput}
             inputVolumeRef={inputVolumeRef}
             outputVolumeRef={outputVolumeRef}
-            getInputVolume={getInputVolume}
-            getOutputVolume={getOutputVolume}
           />
         </Canvas>
       ) : null}
@@ -77,28 +60,18 @@ export function Orb({
 
 function Scene({
   colors,
-  colorsRef,
   seed,
   agentState,
   volumeMode,
-  manualInput,
-  manualOutput,
   inputVolumeRef,
   outputVolumeRef,
-  getInputVolume,
-  getOutputVolume,
 }: {
   colors: [string, string];
-  colorsRef?: RefObject<[string, string]>;
   seed?: number;
   agentState: AgentState;
   volumeMode: "auto" | "manual";
-  manualInput?: number;
-  manualOutput?: number;
   inputVolumeRef?: RefObject<number>;
   outputVolumeRef?: RefObject<number>;
-  getInputVolume?: () => number;
-  getOutputVolume?: () => number;
 }) {
   const { gl } = useThree();
   const circleRef =
@@ -111,8 +84,6 @@ function Scene({
 
   const agentRef = useRef<AgentState>(agentState);
   const modeRef = useRef<"auto" | "manual">(volumeMode);
-  const manualInRef = useRef<number>(manualInput ?? 0);
-  const manualOutRef = useRef<number>(manualOutput ?? 0);
   const curInRef = useRef(0);
   const curOutRef = useRef(0);
 
@@ -123,18 +94,6 @@ function Scene({
   useEffect(() => {
     modeRef.current = volumeMode;
   }, [volumeMode]);
-
-  useEffect(() => {
-    manualInRef.current = clamp01(
-      manualInput ?? inputVolumeRef?.current ?? getInputVolume?.() ?? 0,
-    );
-  }, [manualInput, inputVolumeRef, getInputVolume]);
-
-  useEffect(() => {
-    manualOutRef.current = clamp01(
-      manualOutput ?? outputVolumeRef?.current ?? getOutputVolume?.() ?? 0,
-    );
-  }, [manualOutput, outputVolumeRef, getOutputVolume]);
 
   const random = useMemo(
     () => splitmix32(seed ?? Math.floor(Math.random() * 2 ** 32)),
@@ -177,11 +136,6 @@ function Scene({
   useFrame((_, delta: number) => {
     const mat = circleRef.current?.material;
     if (!mat) return;
-    const live = colorsRef?.current;
-    if (live) {
-      if (live[0]) targetColor1Ref.current.set(live[0]);
-      if (live[1]) targetColor2Ref.current.set(live[1]);
-    }
     const u = mat.uniforms;
     u.uTime.value += delta * 0.5;
 
@@ -192,12 +146,8 @@ function Scene({
     let targetIn = 0;
     let targetOut = 0.3;
     if (modeRef.current === "manual") {
-      targetIn = clamp01(
-        manualInput ?? inputVolumeRef?.current ?? getInputVolume?.() ?? 0,
-      );
-      targetOut = clamp01(
-        manualOutput ?? outputVolumeRef?.current ?? getOutputVolume?.() ?? 0,
-      );
+      targetIn = clamp01(inputVolumeRef?.current ?? 0);
+      targetOut = clamp01(outputVolumeRef?.current ?? 0);
     } else {
       const t = u.uTime.value * 2;
       if (agentRef.current === null) {
