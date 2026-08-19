@@ -14,9 +14,9 @@ Related: `docs/compliance/dpdp-and-emigrate.md` (DPDP / RA split),
 
 ```mermaid
 flowchart TD
-  Open["Open site /"] --> Cookie["Cookie banner: I agree or Decline"]
+  Open["Open site /"] --> Cookie["Cookie banner: Accept All / Reject All / Settings"]
   Cookie --> Browse["Browse landing, jobs, privacy, terms"]
-  Browse --> Google["Get Started / Log in — blocked until I agree"]
+  Browse --> Google["Get Started / Log in — blocked until Accept"]
   Google --> Work["New user always profileType work"]
   Work --> OnboardPage["/candidate/onboarding"]
   OnboardPage --> Terms["Privacy and terms modal"]
@@ -57,16 +57,17 @@ Google. There is no email/password signup. There is no public recruiter signup.
 
 ## 1. First-paint notice (every page)
 
-**UI:** `CookieBanner` in the root layout (`src/app/layout.tsx`). Same shape
-as other products: one **I agree**, then later purpose consents at KYC.
+**UI:** `CookieBanner` in the root layout (`src/app/layout.tsx`). Grok-style
+dark bottom bar: **Cookies Settings**, **Reject All**, **Accept All Cookies**,
+plus 18+ in the copy. Purpose consents still come later at KYC.
 
 **Copy:**
 
-> By clicking I agree, you agree to our Terms and Privacy Notice, and confirm
-> you are 18 or older.
->
-> We use essential cookies to keep you signed in. Optional analytics stay off
-> until Settings.
+> You must be 18 or older. Essential cookies keep the site working and stay on.
+> Optional analytics help with performance — accept, reject, or manage them.
+> We do not use advertising cookies. By clicking Accept All Cookies, you
+> confirm you are 18 or older and agree to our Cookie Policy, Privacy Notice,
+> and Terms of Service.
 
 **Behaviour** (`src/components/compliance/cookie-banner.tsx`,
 `src/lib/compliance/site-agreement.ts`, `src/lib/compliance/analytics.ts`):
@@ -74,8 +75,10 @@ as other products: one **I agree**, then later purpose consents at KYC.
 | Action | What happens |
 | --- | --- |
 | Do nothing | Banner stays. `blucollarz_site_agreement` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
-| **I agree** | Writes `agreed`. Covers Terms, Privacy, 18+, and essential cookies. Log in / Get Started can run. Analytics stay **off** until Settings. |
-| **Decline** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner. |
+| **X** | Banner hides. Login stays blocked until they accept. Trying Log in re-opens the banner. |
+| **Accept All Cookies** | Writes `agreed`. Covers Terms, Privacy, 18+, essential cookies, and turns analytics **on**. Log in / Get Started can run. |
+| **Cookies Settings → Accept** | Same 18+ / Terms / Privacy / essential. Analytics only if the switch is on (starts off). |
+| **Reject All** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner. |
 | After Google | Signed-in **Privacy & terms** modal records agreement on the user (`platformTermsAcceptedAt`). Not inferred from this banner. |
 | Analytics later | Signed-in desktop rail: cookie icon → `PreferenceDialog`. PATCH `/api/user/preferences` `{ cookiesEnabled }`. |
 
@@ -108,9 +111,9 @@ If a session cookie already exists and they hit `/`, `src/proxy.ts` sends:
 - hire complete → `/hire/roles`
 
 Google can still create a session **before** DigiLocker DOB is known. The
-first-paint banner requires **I agree** (Terms, Privacy, 18+) before Log in /
-Get Started. Under-18 is still refused at DigiLocker. Decline blocks OAuth
-until they click I agree.
+first-paint banner requires **Accept All Cookies** or **Cookies Settings →
+Accept** (Terms, Privacy, 18+) before Log in / Get Started. Under-18 is still
+refused at DigiLocker. Reject All blocks OAuth until they accept.
 
 ---
 
@@ -430,7 +433,7 @@ Cookie / notification toggles: left rail (`AppUserMenu`), not only Settings.
 
 Score the **implemented** funnel, then subtract for these. They are real.
 
-1. **Recorded terms still after Google.** The first-paint I agree is
+1. **Recorded terms still after Google.** The first-paint accept is
    localStorage. The user-document Privacy & terms modal still runs after OAuth.
 2. **Playback ≠ listened.** Auto-play issues a ticket; Agree can proceed
    without proving the audio finished. That is not DPDP s.6(10) proof.
@@ -441,7 +444,7 @@ Score the **implemented** funnel, then subtract for these. They are real.
    `/privacy`.
 5. **No Reject on platform terms.** Only leave the site.
 6. **Cookie choice is localStorage + account flag**, not a Consent Manager.
-7. **Under-18 on the first-paint I agree is self-attest; verifiable age only at DigiLocker.** A minor can still click I agree. Google can still create a session before DOB is known.
+7. **Under-18 on the first-paint accept is self-attest; verifiable age only at DigiLocker.** A minor can still click Accept All. Google can still create a session before DOB is known.
 8. **POL-0005 is draft.** Safety overlay is engineering, not counsel-approved
    law.
 
@@ -452,7 +455,7 @@ Score the **implemented** funnel, then subtract for these. They are real.
 | Step | Where |
 | --- | --- |
 | Cookie banner | `src/components/compliance/cookie-banner.tsx` |
-| Site I agree | `src/lib/compliance/site-agreement.ts` |
+| Site agreement | `src/lib/compliance/site-agreement.ts` |
 | GA gate | `src/components/compliance/analytics-scripts.tsx` |
 | Public vs locked routes | `src/proxy.ts` |
 | Google | `src/lib/auth/google-sign-in.ts` |

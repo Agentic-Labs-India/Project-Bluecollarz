@@ -29,13 +29,15 @@ export function LegalDoc({
 
 export function LegalSection({
   title,
+  id,
   children,
 }: {
   title: string;
+  id?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3">
+    <section id={id} className={id ? "scroll-mt-28 space-y-3" : "space-y-3"}>
       <h2 className="text-foreground text-lg font-semibold tracking-tight">
         {title}
       </h2>
