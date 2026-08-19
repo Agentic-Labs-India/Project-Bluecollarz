@@ -8,37 +8,21 @@ import {
   isToolUIPart,
   lastAssistantMessageIsCompleteWithToolCalls,
 } from "ai";
-import { CheckIcon, MicIcon, UploadIcon, Volume2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  AssistantAvatar,
-  UserChatAvatar,
-  useChatUserAvatar,
-} from "@/components/candidate/chat-avatars";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   startVadLoop,
   type VadController,
 } from "@/components/candidate/interviews/vad";
-import { APP_PAGE_MAX } from "@/components/layout/app-page";
-import { Badge } from "@/components/ui/badge";
-import { Banner } from "@/components/ui/banner";
-import { Button } from "@/components/ui/button";
 import {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "@/components/ui/message-scroller";
-import { Skeleton } from "@/components/ui/skeleton";
+  LanguagePickDialog,
+  ResumePickDialog,
+} from "@/components/candidate/onboarding-pickers";
+import { OnboardingProfileStage } from "@/components/candidate/onboarding-profile-stage";
+import {
+  OnboardingVoiceDock,
+  type OnboardingVoiceMode,
+} from "@/components/candidate/onboarding-voice-dock";
 import {
   fetchProfileVoiceLanguage,
   isTtsLanguageCode,
@@ -47,15 +31,14 @@ import {
   resumeVoicePrompt,
   saveProfileVoiceLanguage,
   type TtsLanguageCode,
-  VOICE_LANGUAGE_OPTIONS,
 } from "@/lib/ai/voice/languages";
 import { speakText } from "@/lib/ai/voice/speak";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
-import { cn } from "@/lib/utils";
+import { readOnboardingStage } from "@/lib/candidate/onboarding-stage";
 
 const LANG_TOOL = "tool-selectVoiceLanguage" as const;
 const RESUME_TOOL = "tool-selectResume" as const;
-const RESUME_PICK_STATUS = "Choose a resume option in the chat to continue.";
+const RESUME_PICK_STATUS = "Choose a resume option to continue.";
 
 function isPickerOpen(state: string) {
   return state === "input-available" || state === "approval-requested";
@@ -126,193 +109,26 @@ function pickerFallbackText(
   return null;
 }
 
-/** Kickoff prompts are sent to the model but should not appear in the chat UI. */
-function isHiddenInChat(message: UIMessage) {
-  const meta = message.metadata;
-  return (
-    typeof meta === "object" &&
-    meta !== null &&
-    "hideInChat" in meta &&
-    (meta as { hideInChat?: boolean }).hideInChat === true
-  );
-}
-
-function isOnboardingMessageVisible(message: UIMessage) {
-  if (isHiddenInChat(message)) return false;
-  const text = message.parts
-    .filter(isTextUIPart)
-    .map((p) => p.text)
-    .join("\n")
-    .trim();
-  const langParts = langToolParts(message);
-  const resumeParts = resumeToolParts(message);
-  const otherTools = message.parts.filter(
-    (p) => isToolUIPart(p) && !isClientPickerTool(p.type),
-  );
-  if (!text && message.role === "user") return false;
-  if (
-    !text &&
-    message.role === "assistant" &&
-    !langParts.length &&
-    !resumeParts.length &&
-    !otherTools.length
-  ) {
-    return false;
+function firstOpenLangPart(messages: UIMessage[]) {
+  for (const message of messages) {
+    if (message.role !== "assistant") continue;
+    const part = langToolParts(message).find((p) => isPickerOpen(p.state));
+    if (part) return part;
   }
-  return true;
+  return null;
 }
 
-function LanguagePickerInChat({
-  prompt,
-  disabled,
-  onSelect,
-}: {
-  prompt?: string;
-  disabled?: boolean;
-  onSelect: (code: TtsLanguageCode) => void;
-}) {
-  return (
-    <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
-      <p className="text-foreground text-sm leading-snug">
-        {prompt?.trim() || LANGUAGE_PICK_PROMPT}
-      </p>
-      <div
-        role="listbox"
-        aria-label="Select language"
-        className="grid grid-cols-2 gap-1.5"
-      >
-        {VOICE_LANGUAGE_OPTIONS.map((opt) => {
-          return (
-            <button
-              key={opt.code}
-              type="button"
-              role="option"
-              aria-selected={false}
-              disabled={disabled}
-              onClick={() => onSelect(opt.code)}
-              className={cn(
-                "border-border bg-background/80 flex items-center gap-2 border px-2.5 py-2 text-left transition-colors",
-                "hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
-                "disabled:pointer-events-none disabled:opacity-60",
-              )}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium leading-tight">
-                  {opt.nativeLabel}
-                </span>
-                <span className="text-muted-foreground block text-[11px]">
-                  {opt.label}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+function firstOpenResumePart(messages: UIMessage[]) {
+  for (const message of messages) {
+    if (message.role !== "assistant") continue;
+    const part = resumeToolParts(message).find((p) => isPickerOpen(p.state));
+    if (part) return part;
+  }
+  return null;
 }
-
-function ResumePickerInChat({
-  languageCode,
-  selected,
-  disabled,
-  uploading,
-  onUpload,
-  onSkip,
-}: {
-  languageCode?: TtsLanguageCode | null;
-  selected?: "upload" | "skip" | null;
-  disabled?: boolean;
-  uploading?: boolean;
-  onUpload: () => void;
-  onSkip: () => void;
-}) {
-  const confirmed = Boolean(selected);
-  return (
-    <div className="border-border bg-muted/30 mt-2 w-full max-w-sm space-y-2.5 border p-3">
-      <p className="text-foreground text-sm leading-snug">
-        {resumeVoicePrompt(languageCode)}
-      </p>
-      <div
-        role="listbox"
-        aria-label="Resume options"
-        className="grid grid-cols-1 gap-1.5"
-      >
-        <button
-          type="button"
-          role="option"
-          aria-selected={selected === "upload"}
-          disabled={disabled || confirmed || uploading}
-          onClick={onUpload}
-          className={cn(
-            "border-border flex items-center gap-2 border px-2.5 py-2.5 text-left transition-colors",
-            "hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
-            "disabled:pointer-events-none",
-            selected === "upload"
-              ? "border-primary bg-primary/10"
-              : "bg-background/80 disabled:opacity-60",
-          )}
-        >
-          {uploading ? (
-            <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-          ) : (
-            <UploadIcon className="text-primary size-3.5 shrink-0" />
-          )}
-          <span className="min-w-0 flex-1 text-sm font-medium leading-tight">
-            {uploading ? "Uploading…" : "Upload"}
-          </span>
-          {selected === "upload" ? (
-            <CheckIcon className="text-primary size-3.5 shrink-0" />
-          ) : null}
-        </button>
-        <button
-          type="button"
-          role="option"
-          aria-selected={selected === "skip"}
-          disabled={disabled || confirmed || uploading}
-          onClick={onSkip}
-          className={cn(
-            "border-border flex items-center gap-2 border px-2.5 py-2.5 text-left transition-colors",
-            "hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
-            "disabled:pointer-events-none",
-            selected === "skip"
-              ? "border-primary bg-primary/10"
-              : "bg-background/80 disabled:opacity-60",
-          )}
-        >
-          <span className="min-w-0 flex-1 text-sm font-medium leading-tight">
-            I don't have it.
-          </span>
-          {selected === "skip" ? (
-            <CheckIcon className="text-primary size-3.5 shrink-0" />
-          ) : null}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-type ActionCue = {
-  label: string;
-  hint: string;
-  tone: "start" | "speak" | "listen" | "wait" | "done" | "error";
-};
-
-const CUE_STYLES: Record<ActionCue["tone"], string> = {
-  start:
-    "border-amber-400/70 bg-amber-500/10 text-amber-700 dark:border-amber-500/50 dark:text-amber-300",
-  speak:
-    "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
-  listen:
-    "border-sky-400/70 bg-sky-500/10 text-sky-700 dark:border-sky-500/50 dark:text-sky-300",
-  wait: "border-orange-400/70 bg-orange-500/10 text-orange-700 dark:border-orange-500/50 dark:text-orange-300",
-  done: "border-emerald-400/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:text-emerald-300",
-  error: "border-destructive/60 bg-destructive/10 text-destructive",
-};
 
 export function OnboardingAgent() {
   const router = useRouter();
-  const chatUser = useChatUserAvatar();
   const [status, setStatus] = useState("Allow the microphone to begin.");
   const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
@@ -379,6 +195,9 @@ export function OnboardingAgent() {
     (m) => m.role === "assistant" && needsResumePick(m),
   );
   pickerGateRef.current = awaitingResume || uploading;
+  const openLang = firstOpenLangPart(messages);
+  const openResume = firstOpenResumePart(messages);
+  const stage = useMemo(() => readOnboardingStage(messages), [messages]);
 
   const haltMic = useCallback(() => {
     pausedRef.current = true;
@@ -398,45 +217,27 @@ export function OnboardingAgent() {
     [haltMic, router],
   );
 
-  const actionCue: ActionCue = (() => {
-    if (done) {
-      return { label: "DONE", hint: "All set", tone: "done" };
-    }
-    if (micError) {
-      return { label: "FIX MIC", hint: "Allow access", tone: "error" };
-    }
-    if (!micReady) {
-      return { label: "START", hint: "Enable mic", tone: "start" };
-    }
-    if (awaitingLanguage || pendingLanguagePick) {
-      return { label: "LANGUAGE", hint: "Pick in chat", tone: "start" };
-    }
-    if (awaitingResume || uploading) {
-      return {
-        label: uploading ? "WAIT" : "RESUME",
-        hint: uploading ? "Reading PDF" : "Pick in chat",
-        tone: uploading ? "wait" : "start",
-      };
-    }
-    if (listening) {
-      return { label: "LISTENING", hint: "Keep talking", tone: "listen" };
-    }
+  const voiceMode: OnboardingVoiceMode = (() => {
+    if (done) return "done";
+    if (micError) return "error";
+    if (!micReady) return "start";
+    if (awaitingLanguage || pendingLanguagePick || awaitingResume)
+      return "pick";
+    if (stage.writing.length) return "write";
+    if (listening) return "listen";
+    if (status.startsWith("Speaking")) return "speak";
     if (
       isStreaming ||
+      uploading ||
       status.startsWith("Thinking") ||
       status.startsWith("Transcribing") ||
-      status.startsWith("Speaking") ||
       status.startsWith("Starting") ||
       status.startsWith("Calibrating")
     ) {
-      return { label: "WAIT", hint: "Hold — don’t speak", tone: "wait" };
+      return "think";
     }
-    return { label: "SPEAK NOW", hint: "Your turn", tone: "speak" };
+    return "idle";
   })();
-
-  const lastVisibleMessageId = [...messages]
-    .reverse()
-    .find(isOnboardingMessageVisible)?.id;
 
   const startOnboarding = useCallback(
     async (alreadyHasLanguage: boolean) => {
@@ -445,7 +246,7 @@ export function OnboardingAgent() {
       setStatus(
         alreadyHasLanguage
           ? "Starting onboarding…"
-          : "Starting onboarding — pick your language in chat…",
+          : "Starting onboarding — pick your language…",
       );
       const kickoff = alreadyHasLanguage
         ? "Hi — I just signed in as a candidate. My voice language is already on my profile. Call getCandidateProfile first."
@@ -554,7 +355,7 @@ export function OnboardingAgent() {
         await startOnboarding(true);
       } else {
         setPendingLanguagePick(true);
-        setStatus("Pick a language in the chat to continue.");
+        setStatus("Pick a language to continue.");
         void speakText(LANGUAGE_PICK_PROMPT, "en-IN");
       }
     } catch {
@@ -576,7 +377,7 @@ export function OnboardingAgent() {
     const awaitingLanguage = needsLanguagePick(last);
     const awaitingResume = Boolean(resumeHost);
     const pickerHint = awaitingLanguage
-      ? "Pick a language in the chat to continue."
+      ? "Pick a language to continue."
       : waitingPickerStatus(awaitingResume);
     if (pickerHint) pausedRef.current = true;
 
@@ -771,194 +572,36 @@ export function OnboardingAgent() {
   };
 
   return (
-    <div
-      className={cn(
-        "bg-background fixed inset-x-0 top-14 bottom-0 z-30 mx-auto flex w-full min-w-0 flex-col overflow-hidden md:static md:inset-auto md:top-auto md:bottom-auto md:z-auto md:h-full md:min-h-0",
-        APP_PAGE_MAX,
-      )}
-    >
-      <header className="flex w-full shrink-0 items-center">
-        <Banner
-          variant="rainbow"
-          changeLayout={false}
-          className="relative w-full bg-background"
-        >
-          🚀 Welcome, Let&apos;s get you onboarded!
-          {voiceLanguage ? ` · ${languageLabel(voiceLanguage)}` : ""}
-        </Banner>
-      </header>
+    <div className="bg-background fixed inset-x-0 top-14 bottom-0 z-30 mx-auto flex w-full min-w-0 max-w-3xl flex-col overflow-hidden md:static md:inset-auto md:top-auto md:bottom-auto md:z-auto md:h-full md:min-h-0">
+      <OnboardingProfileStage messages={messages} />
 
-      <MessageScrollerProvider>
-        <MessageScroller className="min-h-0 flex-1">
-          <MessageScrollerViewport className="px-4">
-            <MessageScrollerContent className="gap-6 py-5">
-          {pendingLanguagePick ? (
-            <MessageScrollerItem
-              scrollAnchor={!lastVisibleMessageId}
-              className="[content-visibility:visible] [contain-intrinsic-size:none]"
-            >
-              <div className="mr-auto flex max-w-[90%] items-start gap-2.5">
-              <AssistantAvatar />
-              <div className="text-foreground/90 min-w-0 pt-0.5">
-                <LanguagePickerInChat
-                  prompt={LANGUAGE_PICK_PROMPT}
-                  onSelect={(code) => onPickLanguage(null, code)}
-                />
-              </div>
-              </div>
-            </MessageScrollerItem>
-          ) : null}
-          {messages.map((message) => {
-            if (!isOnboardingMessageVisible(message)) return null;
-            const text = message.parts
-              .filter(isTextUIPart)
-              .map((p) => p.text)
-              .join("\n")
-              .trim();
-            const langParts = langToolParts(message);
-            const resumeParts = resumeToolParts(message);
-            const otherTools = message.parts.filter(
-              (p) => isToolUIPart(p) && !isClientPickerTool(p.type),
-            );
-            const isUser = message.role === "user";
-            return (
-              <MessageScrollerItem
-                key={message.id}
-                scrollAnchor={message.id === lastVisibleMessageId}
-                className="[content-visibility:visible] [contain-intrinsic-size:none]"
-              >
-              <div
-                className={cn(
-                  "flex max-w-[90%] items-start gap-2.5",
-                  isUser ? "ml-auto flex-row-reverse" : "mr-auto",
-                )}
-              >
-                {isUser ? (
-                  <UserChatAvatar name={chatUser.name} image={chatUser.image} />
-                ) : (
-                  <AssistantAvatar />
-                )}
-                <div
-                  className={cn(
-                    "min-w-0 text-sm leading-relaxed",
-                    isUser
-                      ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
-                      : "text-foreground/90 pt-0.5",
-                  )}
-                >
-                  {text ? <p className="whitespace-pre-wrap">{text}</p> : null}
-                  {!text && otherTools.length ? (
-                    <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">
-                      <Skeleton className="h-3 w-3 shrink-0 rounded-full" />
-                      Updating your profile…
-                    </span>
-                  ) : null}
-                  {langParts
-                    .filter((part) => isPickerOpen(part.state))
-                    .map((part) => (
-                      <LanguagePickerInChat
-                        key={part.toolCallId}
-                        prompt={part.input?.prompt}
-                        disabled={isStreaming}
-                        onSelect={(code) =>
-                          onPickLanguage(part.toolCallId, code)
-                        }
-                      />
-                    ))}
-                  {resumeParts
-                    .filter((part) => isPickerOpen(part.state))
-                    .map((part) => (
-                      <ResumePickerInChat
-                        key={part.toolCallId}
-                        languageCode={voiceLanguage}
-                        selected={resumeChoice}
-                        disabled={isStreaming}
-                        uploading={uploading}
-                        onUpload={() => onUploadResumeClick(part.toolCallId)}
-                        onSkip={() => onSkipResume(part.toolCallId)}
-                      />
-                    ))}
-                </div>
-              </div>
-              </MessageScrollerItem>
-            );
-          })}
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-          <MessageScrollerButton />
-        </MessageScroller>
-      </MessageScrollerProvider>
+      <OnboardingVoiceDock
+        mode={voiceMode}
+        status={status}
+        micReady={micReady}
+        micError={micError}
+        level={level}
+        onEnableMic={() => void enableMic()}
+      />
 
-      <footer className="border-border shrink-0 border-t bg-background px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        {!micReady ? (
-          <div className="space-y-2">
-            {micError ? (
-              <p className="text-destructive text-sm">{micError}</p>
-            ) : null}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
-                <Volume2Icon className="size-3.5 shrink-0" />
-                <span className="truncate">{status}</span>
-              </p>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "h-auto shrink-0 gap-1 px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase",
-                  CUE_STYLES[actionCue.tone],
-                )}
-                aria-live="polite"
-              >
-                {actionCue.label}
-              </Badge>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              onClick={() => void enableMic()}
-            >
-              <MicIcon className="size-4" />
-              Enable microphone &amp; start
-            </Button>
-          </div>
-        ) : (
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
-                <Volume2Icon className="size-3.5 shrink-0" />
-                <span className="truncate">{status}</span>
-              </p>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "h-auto shrink-0 gap-1 px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase",
-                  CUE_STYLES[actionCue.tone],
-                )}
-                aria-live="polite"
-              >
-                {actionCue.label}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-[11px]">
-                <MicIcon className="size-3" />
-                {listening ? "Listening" : "Idle"}
-              </p>
-              <div className="bg-muted h-1.5 min-w-0 flex-1 overflow-hidden rounded-none">
-                <div
-                  className={cn(
-                    "h-full transition-all duration-100",
-                    listening ? "bg-primary" : "bg-primary/40",
-                  )}
-                  style={{
-                    width: `${Math.min(100, Math.round(level * 400))}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </footer>
+      <LanguagePickDialog
+        open={pendingLanguagePick || Boolean(openLang)}
+        disabled={isStreaming}
+        onSelect={(code) => onPickLanguage(openLang?.toolCallId ?? null, code)}
+      />
+      <ResumePickDialog
+        open={Boolean(openResume)}
+        languageCode={voiceLanguage}
+        selected={resumeChoice}
+        disabled={isStreaming}
+        uploading={uploading}
+        onUpload={() => {
+          if (openResume) onUploadResumeClick(openResume.toolCallId);
+        }}
+        onSkip={() => {
+          if (openResume) onSkipResume(openResume.toolCallId);
+        }}
+      />
 
       <input
         ref={fileInputRef}

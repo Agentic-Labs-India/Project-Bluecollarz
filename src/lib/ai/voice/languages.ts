@@ -68,22 +68,92 @@ export function languageLabel(code: string | null | undefined): string {
 }
 
 export const LANGUAGE_PICK_PROMPT = "Which language should we use?";
-const RESUME_VOICE_PROMPT: Record<TtsLanguageCode, string> = {
-  "en-IN": "Do you have a resume PDF to upload?",
-  "hi-IN": "क्या आपके पास अपलोड करने के लिए resume PDF है?",
-  "bn-IN": "আপনার কাছে আপলোড করার জন্য resume PDF আছে কি?",
-  "gu-IN": "તમારી પાસે અપલોડ કરવા માટે resume PDF છે?",
-  "kn-IN": "ನಿಮ್ಮ ಬಳಿ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು resume PDF ಇದೆಯೇ?",
-  "ml-IN": "നിങ്ങളുടെ കൈയിൽ അപ്‌ലോഡ് ചെയ്യാൻ resume PDF ഉണ്ടോ?",
-  "mr-IN": "तुमच्याकडे अपलोड करण्यासाठी resume PDF आहे का?",
-  "od-IN": "ଆପଣଙ୍କ ପାଖରେ ଅପଲୋଡ୍ କରିବାକୁ resume PDF ଅଛି କି?",
-  "pa-IN": "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਅਪਲੋਡ ਕਰਨ ਲਈ resume PDF ਹੈ?",
-  "ta-IN": "உங்களிடம் அப்லோட் செய்ய resume PDF இருக்கா?",
-  "te-IN": "మీ దగ్గర అప్‌లోడ్ చేయడానికి resume PDF ఉందా?",
+
+export type ResumePickCopy = {
+  title: string;
+  upload: string;
+  uploading: string;
+  skip: string;
 };
 
+/** Static resume-picker copy. Not model-generated. */
+export const RESUME_PICK_COPY: Record<TtsLanguageCode, ResumePickCopy> = {
+  "en-IN": {
+    title: "Do you have a resume PDF to upload?",
+    upload: "Upload",
+    uploading: "Uploading…",
+    skip: "I don't have it",
+  },
+  "hi-IN": {
+    title: "क्या आपके पास अपलोड करने के लिए resume PDF है?",
+    upload: "अपलोड करें",
+    uploading: "अपलोड हो रहा है…",
+    skip: "मेरे पास नहीं है",
+  },
+  "bn-IN": {
+    title: "আপনার কাছে আপলোড করার জন্য resume PDF আছে কি?",
+    upload: "আপলোড",
+    uploading: "আপলোড হচ্ছে…",
+    skip: "আমার কাছে নেই",
+  },
+  "gu-IN": {
+    title: "તમારી પાસે અપલોડ કરવા માટે resume PDF છે?",
+    upload: "અપલોડ",
+    uploading: "અપલોડ થઈ રહ્યું છે…",
+    skip: "મારી પાસે નથી",
+  },
+  "kn-IN": {
+    title: "ನಿಮ್ಮ ಬಳಿ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು resume PDF ಇದೆಯೇ?",
+    upload: "ಅಪ್‌ಲೋಡ್",
+    uploading: "ಅಪ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ…",
+    skip: "ನನ್ನ ಬಳಿ ಇಲ್ಲ",
+  },
+  "ml-IN": {
+    title: "നിങ്ങളുടെ കൈയിൽ അപ്‌ലോഡ് ചെയ്യാൻ resume PDF ഉണ്ടോ?",
+    upload: "അപ്‌ലോഡ്",
+    uploading: "അപ്‌ലോഡ് ചെയ്യുന്നു…",
+    skip: "എന്റെ കൈയിൽ ഇല്ല",
+  },
+  "mr-IN": {
+    title: "तुमच्याकडे अपलोड करण्यासाठी resume PDF आहे का?",
+    upload: "अपलोड",
+    uploading: "अपलोड होत आहे…",
+    skip: "माझ्याकडे नाही",
+  },
+  "od-IN": {
+    title: "ଆପଣଙ୍କ ପାଖରେ ଅପଲୋଡ୍ କରିବାକୁ resume PDF ଅଛି କି?",
+    upload: "ଅପଲୋଡ୍",
+    uploading: "ଅପଲୋଡ୍ ହେଉଛି…",
+    skip: "ମୋ ପାଖରେ ନାହିଁ",
+  },
+  "pa-IN": {
+    title: "ਕੀ ਤੁਹਾਡੇ ਕੋਲ ਅਪਲੋਡ ਕਰਨ ਲਈ resume PDF ਹੈ?",
+    upload: "ਅਪਲੋਡ",
+    uploading: "ਅਪਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…",
+    skip: "ਮੇਰੇ ਕੋਲ ਨਹੀਂ ਹੈ",
+  },
+  "ta-IN": {
+    title: "உங்களிடம் அப்லோட் செய்ய resume PDF இருக்கா?",
+    upload: "அப்லோட்",
+    uploading: "அப்லோட் ஆகிறது…",
+    skip: "என்னிடம் இல்லை",
+  },
+  "te-IN": {
+    title: "మీ దగ్గర అప్‌లోడ్ చేయడానికి resume PDF ఉందా?",
+    upload: "అప్‌లోడ్",
+    uploading: "అప్‌లోడ్ అవుతోంది…",
+    skip: "నా దగ్గర లేదు",
+  },
+};
+
+export function resumePickCopy(
+  code: string | null | undefined,
+): ResumePickCopy {
+  return RESUME_PICK_COPY[resolveTtsLanguage(code)];
+}
+
 export function resumeVoicePrompt(code: string | null | undefined): string {
-  return RESUME_VOICE_PROMPT[resolveTtsLanguage(code)];
+  return resumePickCopy(code).title;
 }
 
 /** Load profile.voiceLanguage for work candidates (null if unset). */
