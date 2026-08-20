@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
-import { APP_PAGE_GUTTER, AppPage } from "@/components/layout/app-page";
+import { APP_PAGE_PAD, AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -710,14 +710,7 @@ export function ExploreOpportunities({
 
   const listHeader = (compact: boolean) => (
     <>
-      <h1
-        className={cn(
-          "text-foreground shrink-0 font-semibold tracking-tight",
-          compact ? "mb-4 text-xl md:text-2xl" : "mb-6 text-2xl md:text-3xl",
-        )}
-      >
-        Explore opportunities
-      </h1>
+      <AppPageTitle>Explore opportunities</AppPageTitle>
 
       <ExploreFilters
         search={search}
@@ -798,7 +791,7 @@ export function ExploreOpportunities({
             </div>
           ) : (
             <ScrollArea className={EXPLORE_GRID_SCROLL}>
-              <div className={cn(APP_PAGE_GUTTER, "py-6 md:py-8")}>
+              <div className={APP_PAGE_PAD}>
                 <AppPage>
                   {listHeader(false)}
                   {gridBody}

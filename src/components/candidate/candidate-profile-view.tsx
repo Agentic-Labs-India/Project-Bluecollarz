@@ -9,7 +9,7 @@ import { DateOfBirthPicker } from "@/components/candidate/date-of-birth-picker";
 import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
 import { ResidencePlaceFields } from "@/components/candidate/residence-place-fields";
 import { PrimaryDither } from "@/components/landing/primary-dither";
-import { AppPage } from "@/components/layout/app-page";
+import { AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -346,17 +346,22 @@ export function CandidateProfileView() {
   const identityLocked = profile.isKycVerified === true;
 
   return (
-    <AppPage className="space-y-8 pb-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
-          Profile
-        </h1>
-        <p className="text-muted-foreground min-h-5 text-sm" aria-live="polite">
-          {saving ? "Saving…" : saved ? "Saved" : null}
-        </p>
-      </div>
+    <AppPage className="pb-10">
+      <AppPageTitle
+        trailing={
+          <p
+            className="text-muted-foreground min-h-5 text-sm"
+            aria-live="polite"
+          >
+            {saving ? "Saving…" : saved ? "Saved" : null}
+          </p>
+        }
+      >
+        Profile
+      </AppPageTitle>
 
-      <div className="bg-primary relative flex flex-col items-start gap-5 overflow-hidden border border-white/15 p-6 sm:flex-row sm:items-center">
+      <div className="space-y-8">
+        <div className="bg-primary relative flex flex-col items-start gap-5 overflow-hidden border border-white/15 p-6 sm:flex-row sm:items-center">
         <PrimaryDither seed="candidate-profile-header" opacity={0.85} />
         <Avatar className="relative z-10 size-20 ring-2 ring-white/25">
           {profile.image ? (
@@ -1073,6 +1078,7 @@ export function CandidateProfileView() {
       </section>
 
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      </div>
     </AppPage>
   );
 }

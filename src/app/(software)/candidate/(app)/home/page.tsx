@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { CandidateApplicationsList } from "@/components/candidate/applications-list";
 import { CandidateMedicalAppointmentCard } from "@/components/candidate/candidate-medical-appointment-card";
-import { AppPage } from "@/components/layout/app-page";
+import { AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth/auth";
@@ -37,12 +37,7 @@ export default async function HomePage() {
 
   return (
     <AppPage>
-      <header className="mb-10">
-        <p className="text-muted-foreground mb-2 text-sm">Welcome back</p>
-        <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
-          Hey {firstName}, ready to work?
-        </h1>
-      </header>
+      <AppPageTitle>Hey {firstName}, ready to work?</AppPageTitle>
 
       <div className="mb-8 grid gap-4 md:grid-cols-3">
         {cards.map((stat) => (

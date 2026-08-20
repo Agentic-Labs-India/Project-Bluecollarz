@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
 import { DataRightsSection } from "@/components/compliance/data-rights-section";
 import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
-import { AppPage } from "@/components/layout/app-page";
+import { AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
 import {
   Accordion,
@@ -22,9 +22,7 @@ export default function CandidateSettingsPage() {
 
   return (
     <AppPage>
-      <h1 className="text-foreground mb-8 text-2xl font-semibold tracking-tight md:text-3xl">
-        Settings
-      </h1>
+      <AppPageTitle>Settings</AppPageTitle>
 
       <section className="border-border/80 bg-card divide-border/60 mb-6 divide-y rounded-none border shadow-sm">
         <div className="flex items-center justify-between gap-4 p-5">

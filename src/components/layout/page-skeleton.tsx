@@ -5,8 +5,11 @@ import { cn } from "@/lib/utils";
 /** Profile header + form fields skeleton. */
 export function ProfilePageSkeleton() {
   return (
-    <AppPage className="space-y-8 pb-10">
-      <Skeleton className="h-9 w-40" />
+    <AppPage className="pb-10">
+      <header className="mb-8">
+        <Skeleton className="h-8 w-40 md:h-9" />
+      </header>
+      <div className="space-y-8">
       <div className="border-border flex flex-col items-start gap-5 border p-6 sm:flex-row sm:items-center">
         <Skeleton className="size-20 shrink-0 rounded-full" />
         <div className="w-full space-y-2">
@@ -24,6 +27,7 @@ export function ProfilePageSkeleton() {
       </div>
       <Skeleton className="h-28 w-full" />
       <Skeleton className="h-10 w-32" />
+      </div>
     </AppPage>
   );
 }
