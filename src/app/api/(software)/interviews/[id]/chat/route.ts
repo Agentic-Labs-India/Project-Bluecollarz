@@ -1,5 +1,6 @@
 import { createAgentUIStreamResponse } from "ai";
 import type { NextRequest } from "next/server";
+import { parseTtsLanguage } from "@/lib/ai/voice/languages";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
@@ -8,8 +9,8 @@ import type { InterviewDocument } from "@/lib/interviews";
 import { isAiInterviewStage, isCustomQuestionsStage } from "@/lib/interviews";
 import { buildInterviewAgent } from "@/lib/interviews/agent";
 import { isInterviewKickoffText } from "@/lib/interviews/labels";
-import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
+import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
@@ -74,16 +75,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       ? (body as { language_code: string }).language_code.trim()
       : "";
 
-  // Prefer client override; otherwise load from the candidate profile.
-  let languageCode: string | null = bodyLanguageCode || null;
-  if (!languageCode) {
-    const userDoc = await db
-      .collection<{ voiceLanguage?: string }>(COLLECTIONS.USERS_COLLECTION)
-      .findOne({ _id: matchId(auth.user.id) as never }, {
-        projection: { voiceLanguage: 1 },
-      } as never);
-    languageCode = userDoc?.voiceLanguage?.trim() || "en-IN";
-  }
+  const languageCode =
+    parseTtsLanguage(interview.voiceLanguage) ||
+    parseTtsLanguage(bodyLanguageCode) ||
+    "en-IN";
 
   const lastUser = [...messages]
     .reverse()

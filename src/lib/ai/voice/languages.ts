@@ -190,6 +190,7 @@ export async function saveProfileVoiceLanguage(
 export function voiceLanguagePrompt(languageCode?: string | null): string {
   const selected = languageCode?.trim();
   const simplicity = `Vocabulary: use simple, well-known everyday words. Keep sentences short. Avoid rare or overly formal words.`;
+  const kickoffRule = `- English setup messages (start interview, tool results) are instructions only. Do not switch to English because of them.`;
 
   if (selected) {
     const tts = resolveTtsLanguage(selected);
@@ -198,13 +199,15 @@ export function voiceLanguagePrompt(languageCode?: string | null): string {
     if (tts === "en-IN") {
       return `Language (spoken aloud by TTS):
 - Reply in clear, simple Indian English (${tts}). Stick to this for the whole session.
+${kickoffRule}
 ${simplicity}`;
     }
 
     return `Language (spoken aloud by TTS):
 - Speak casual conversational ${label} mixed with everyday English — how workers actually talk, not textbook ${label}.
 - Keep work words in English: experience, skills, resume, location, education, job, company, role, etc.
-- Stick to this mixed spoken style for the whole session (${tts}).
+- Stick to this mixed spoken style for the whole session (${tts}). The first greeting must already be in ${label}.
+${kickoffRule}
 ${simplicity}`;
   }
 

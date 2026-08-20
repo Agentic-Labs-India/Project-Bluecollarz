@@ -65,6 +65,8 @@ export interface InterviewDocument {
   jobTitle: string;
   /** Snapshot of job.overview for domain interview prompts. */
   jobOverview?: string;
+  /** Snapshot of profile.voiceLanguage at interview start. */
+  voiceLanguage?: string;
   transcript: InterviewTranscriptTurn[];
   analysis?: CommunicationAnalysis;
   /**

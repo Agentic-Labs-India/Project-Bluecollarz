@@ -15,9 +15,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { PrimaryDither } from "@/components/landing/primary-dither";
+import {
+  PrimaryDither,
+  PrimaryDitherBand,
+} from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Markdown } from "@/components/ui/markdown";
 import { cn } from "@/lib/utils";
 
 type CheckId = "internet" | "camera" | "voice" | "ai";
@@ -42,29 +45,50 @@ const INITIAL: Record<CheckId, CheckState> = {
 const CHECK_META: {
   id: CheckId;
   label: string;
+  description: string;
   icon: typeof WifiIcon;
 }[] = [
-  { id: "internet", label: "Internet", icon: WifiIcon },
-  { id: "camera", label: "Camera", icon: VideoIcon },
-  { id: "voice", label: "Microphone", icon: MicIcon },
-  { id: "ai", label: "AI engine", icon: SparklesIcon },
+  {
+    id: "internet",
+    label: "Internet",
+    description: "Stable connection to our servers for the whole session.",
+    icon: WifiIcon,
+  },
+  {
+    id: "camera",
+    label: "Camera",
+    description: "Front camera stays on. There is no preview on your screen.",
+    icon: VideoIcon,
+  },
+  {
+    id: "voice",
+    label: "Microphone",
+    description: "Speak clearly in your own words when the AI asks.",
+    icon: MicIcon,
+  },
+  {
+    id: "ai",
+    label: "AI engine",
+    description: "Voice interview engine must be reachable before you start.",
+    icon: SparklesIcon,
+  },
 ];
 
-const ENVIRONMENT = [
-  "Quiet, well-lit room with a plain background",
-  "Stable Wi‑Fi or ethernet — avoid hotspot switching",
-  "A device with a working camera and microphone",
-  "Allow camera and microphone in the browser",
-];
+const ENVIRONMENT_MD = `Set this up before you tap start:
 
-const GUIDELINES = [
-  "Sit alone in a quiet room. No one else should be present — the AI may reject your application if another person is detected.",
-  "Keep your face clearly visible on camera for the entire session.",
-  "Camera video is recorded. Keep this tab open until you finish.",
-  "Speak clearly in your own words. Do not read notes or get help from others.",
-  "Do not mute yourself or leave this screen until finished.",
-  "Close other apps using your camera or microphone before you start.",
-];
+- Quiet, well-lit room with a plain background
+- Stable Wi‑Fi or ethernet — avoid hotspot switching
+- A device with a working camera and microphone
+- Allow camera and microphone in the browser`;
+
+const GUIDELINES_MD = `Breaking these can cause the AI to **end or reject** your interview.
+
+- Sit alone. Nobody else should be in the room
+- Keep your face clearly visible on camera the entire time
+- Camera video is recorded — keep this tab open until you finish
+- Speak in your own words. Do not read notes or get help
+- Do not mute yourself or leave this screen until finished
+- Close other apps using your camera or microphone`;
 
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -80,15 +104,17 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
-function CheckOrb({
+function CheckCard({
   id,
   label,
+  description,
   icon: Icon,
   state,
   micLevel,
 }: {
   id: CheckId;
   label: string;
+  description: string;
   icon: typeof WifiIcon;
   state: CheckState;
   micLevel: number;
@@ -117,43 +143,54 @@ function CheckOrb({
       : progress;
   const failed = state.status === "fail";
   const pending = state.status === "pending";
+  const running = state.status === "running";
 
   return (
-    <li className="flex flex-col items-center gap-2 text-center">
-      <div
-        className={cn(
-          "relative flex size-16 items-center justify-center overflow-hidden rounded-full md:size-18",
-          failed ? "bg-destructive" : "bg-primary",
-          state.status === "running" &&
-            "ring-primary/35 ring-2 ring-offset-2 ring-offset-background",
-        )}
-        aria-hidden
-      >
-        {failed ? null : (
-          <PrimaryDither
-            seed={`check-orb-${id}`}
-            opacity={pending ? 0.45 : 0.92}
-            wash={false}
-            className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
-          />
-        )}
-        {failed || pending ? null : (
-          <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_30%_24%,rgb(255_255_255_/_0.35),transparent_44%)] mix-blend-soft-light dark:hidden" />
-        )}
-        <Icon
-          className="relative z-10 size-5 text-white"
-          strokeWidth={1.75}
+    <article
+      className={cn(
+        "relative flex h-full min-h-42 min-w-0 flex-col overflow-hidden border p-4 sm:min-h-46 sm:p-5",
+        failed
+          ? "bg-destructive border-white/15"
+          : "bg-primary border-white/15",
+      )}
+    >
+      {failed ? null : (
+        <PrimaryDither
+          seed={`check-card-${id}`}
+          opacity={pending ? 0.45 : 0.85}
         />
-      </div>
-      <div className="min-w-0">
-        <p className="text-foreground text-xs font-medium tracking-wide uppercase">
-          {label}
+      )}
+      {failed || pending ? null : (
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_24%,rgb(255_255_255/0.28),transparent_44%)] mix-blend-soft-light dark:hidden" />
+      )}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col text-white">
+        <Icon className="mb-3 size-5 text-white/90" strokeWidth={1.75} />
+        <p className="text-sm font-semibold tracking-tight">{label}</p>
+        <p className="mt-1 text-xs leading-snug text-white/75">{description}</p>
+        <p className="mt-auto pt-3 text-xs font-medium text-white/90">
+          {running ? `${value}%` : state.detail}
         </p>
-        <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">
-          {state.status === "running" ? `${value}%` : state.detail}
-        </p>
       </div>
-    </li>
+    </article>
+  );
+}
+
+function InfoCard({
+  seed,
+  label,
+  markdown,
+}: {
+  seed: string;
+  label: string;
+  markdown: string;
+}) {
+  return (
+    <article className="border-border bg-card flex min-w-0 flex-col overflow-hidden border">
+      <PrimaryDitherBand seed={seed} label={label} />
+      <div className="p-4 sm:p-5">
+        <Markdown className="text-foreground/90">{markdown}</Markdown>
+      </div>
+    </article>
   );
 }
 
@@ -343,11 +380,16 @@ export function InterviewReadyPanel({
     }
   });
 
+  // runChecks is an effect event — include it in deps and the checks restart every render.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only device checks
   useEffect(() => {
     void runChecks();
     return () => {
       cancelledRef.current = true;
-      stopOwnedStreams();
+      for (const stream of streamsRef.current) {
+        for (const track of stream.getTracks()) track.stop();
+      }
+      streamsRef.current = [];
     };
   }, []);
 
@@ -360,8 +402,8 @@ export function InterviewReadyPanel({
   }, [allPassed, onReadyChange]);
 
   return (
-    <div className="h-full min-h-0 w-full overflow-y-auto px-5 py-6 md:px-8">
-      <div className="mx-auto flex min-h-full max-w-xl flex-col">
+    <div className="h-full min-h-0 w-full overflow-y-auto px-4 py-5 md:px-8 md:py-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 md:gap-6">
         <div className="flex items-center justify-between gap-2">
           <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
             System tests
@@ -379,16 +421,18 @@ export function InterviewReadyPanel({
           ) : null}
         </div>
 
-        <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {CHECK_META.map((meta) => (
-            <CheckOrb
-              key={meta.id}
-              id={meta.id}
-              label={meta.label}
-              icon={meta.icon}
-              state={checks[meta.id]}
-              micLevel={micLevel}
-            />
+            <li key={meta.id} className="min-w-0">
+              <CheckCard
+                id={meta.id}
+                label={meta.label}
+                description={meta.description}
+                icon={meta.icon}
+                state={checks[meta.id]}
+                micLevel={micLevel}
+              />
+            </li>
           ))}
         </ul>
 
@@ -397,7 +441,7 @@ export function InterviewReadyPanel({
             type="button"
             variant="outline"
             size="sm"
-            className="mt-5 w-full"
+            className="w-full sm:w-auto"
             disabled={running}
             onClick={() => void runChecks()}
           >
@@ -405,42 +449,18 @@ export function InterviewReadyPanel({
           </Button>
         ) : null}
 
-        <Separator className="my-6" />
-
-        <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-          Recommended environment
-        </p>
-        <ul className="mt-3 space-y-0">
-          {ENVIRONMENT.map((item) => (
-            <li key={item}>
-              <p className="text-foreground/90 py-2.5 text-sm leading-snug">
-                {item}
-              </p>
-              <Separator />
-            </li>
-          ))}
-        </ul>
-
-        <p className="text-muted-foreground mt-6 text-[11px] font-medium tracking-wide uppercase">
-          Interview guidelines
-        </p>
-        <p className="text-muted-foreground mt-1 text-[11px] leading-snug">
-          Violating these rules can cause the AI to end or reject your
-          interview.
-        </p>
-        <ol className="mt-3 space-y-0">
-          {GUIDELINES.map((item, index) => (
-            <li key={item}>
-              <p className="text-foreground/90 flex gap-2 py-2.5 text-sm leading-snug">
-                <span className="text-muted-foreground w-4 shrink-0 font-medium tabular-nums">
-                  {index + 1}.
-                </span>
-                <span>{item}</span>
-              </p>
-              <Separator />
-            </li>
-          ))}
-        </ol>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+          <InfoCard
+            seed="interview-environment"
+            label="Environment"
+            markdown={ENVIRONMENT_MD}
+          />
+          <InfoCard
+            seed="interview-guidelines"
+            label="Guidelines"
+            markdown={GUIDELINES_MD}
+          />
+        </div>
       </div>
     </div>
   );

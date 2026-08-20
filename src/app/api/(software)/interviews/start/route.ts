@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
+import { parseTtsLanguage } from "@/lib/ai/voice/languages";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
@@ -62,15 +63,24 @@ export async function POST(req: NextRequest) {
 
     const db = client.db(DB_NAME);
 
-    const job = await db
-      .collection<JobDocument>(COLLECTIONS.JOBS)
-      .findOne({ _id: matchId(jobId) as never, status: "published" });
+    const [job, userDoc] = await Promise.all([
+      db
+        .collection<JobDocument>(COLLECTIONS.JOBS)
+        .findOne({ _id: matchId(jobId) as never, status: "published" }),
+      db
+        .collection<{ voiceLanguage?: string }>(COLLECTIONS.USERS_COLLECTION)
+        .findOne(
+          { _id: matchId(auth.user.id) as never },
+          { projection: { voiceLanguage: 1 } },
+        ),
+    ]);
     if (!job) {
       return NextResponse.json(
         { error: "This role is no longer accepting interviews." },
         { status: 404 },
       );
     }
+    const voiceLanguage = parseTtsLanguage(userDoc?.voiceLanguage) || "en-IN";
 
     const stages = normalizeStepTemplates(job.applicationStepTemplates);
     if (!stages.some((s) => s.id === stageId)) {
@@ -117,16 +127,20 @@ export async function POST(req: NextRequest) {
       const snapshot = existing.customQuestions?.length
         ? existing.customQuestions
         : jobQuestions;
-      // Backfill snapshot on older in-progress docs that lacked it.
-      if (
+      const needsQuestions =
         isCustomQuestionsStage(stageId) &&
         !existing.customQuestions?.length &&
-        snapshot.length
-      ) {
+        snapshot.length > 0;
+      const needsLanguage = !parseTtsLanguage(existing.voiceLanguage);
+      if (needsQuestions || needsLanguage) {
         await interviews.updateOne(
           { _id: existing._id } as never,
           {
-            $set: { customQuestions: snapshot, updatedAt: new Date() },
+            $set: {
+              ...(needsQuestions ? { customQuestions: snapshot } : {}),
+              ...(needsLanguage ? { voiceLanguage } : {}),
+              updatedAt: new Date(),
+            },
           } as never,
         );
       }
@@ -148,6 +162,7 @@ export async function POST(req: NextRequest) {
       status: "in_progress",
       jobTitle: job.title,
       jobOverview: job.overview ?? "",
+      voiceLanguage,
       transcript: [],
       ...(isCustomQuestionsStage(stageId)
         ? { customQuestions: jobQuestions }

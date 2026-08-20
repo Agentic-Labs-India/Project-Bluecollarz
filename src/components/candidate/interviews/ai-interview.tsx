@@ -127,13 +127,28 @@ export function AiInterview({
     setError("Camera turned off. Please restart the interview.");
   }, [phase, cameraRecording, cameraStream]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetchProfileVoiceLanguage().then((code) => {
+      if (cancelled) return;
+      const next = code ?? "en-IN";
+      voiceLanguageRef.current = next;
+      languageReadyRef.current = true;
+      setVoiceLanguage(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `/api/interviews/${interviewId}/chat`,
-        body: () => ({
-          language_code: voiceLanguageRef.current,
-        }),
+        body: () =>
+          languageReadyRef.current
+            ? { language_code: voiceLanguageRef.current }
+            : {},
       }),
     [interviewId],
   );
@@ -172,10 +187,12 @@ export function AiInterview({
     setError("");
     setStatus("Loading your voice language…");
     try {
-      const code = (await fetchProfileVoiceLanguage()) ?? "en-IN";
-      voiceLanguageRef.current = code;
-      languageReadyRef.current = true;
-      setVoiceLanguage(code);
+      if (!languageReadyRef.current) {
+        const code = (await fetchProfileVoiceLanguage()) ?? "en-IN";
+        voiceLanguageRef.current = code;
+        languageReadyRef.current = true;
+        setVoiceLanguage(code);
+      }
 
       setStatus("Turning on camera…");
       readyPanelRef.current?.releaseDevices();
@@ -230,7 +247,11 @@ export function AiInterview({
       if (!startedChatRef.current) {
         startedChatRef.current = true;
         await sendMessage({
-          text: interviewKickoffText(stageId, jobTitle),
+          text: interviewKickoffText(
+            stageId,
+            jobTitle,
+            voiceLanguageRef.current,
+          ),
         });
       }
     } catch (e) {
@@ -409,22 +430,26 @@ export function AiInterview({
               onReadyChange={setChecksReady}
             />
           </div>
-          <div className="border-border shrink-0 space-y-3 border-t px-4 py-4 md:px-6">
-            {error ? <p className="text-destructive text-sm">{error}</p> : null}
-            <DitherButton
-              className="w-full"
-              size="lg"
-              seed="interview-start"
-              disabled={!checksReady}
-              onClick={() => void beginSession()}
-            >
-              Start interview
-            </DitherButton>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {checksReady
-                ? "Starting records camera and microphone in the background. You will not see your camera. Your profile voice language will be used."
-                : "Complete every system check before you can start."}
-            </p>
+          <div className="border-border shrink-0 space-y-3 border-t px-4 py-4 md:px-8">
+            <div className="mx-auto w-full max-w-3xl space-y-3">
+              {error ? (
+                <p className="text-destructive text-sm">{error}</p>
+              ) : null}
+              <DitherButton
+                className="w-full"
+                size="lg"
+                seed="interview-start"
+                disabled={!checksReady}
+                onClick={() => void beginSession()}
+              >
+                Start interview
+              </DitherButton>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {checksReady
+                  ? "Starting records camera and microphone in the background. You will not see your camera. Your profile voice language will be used."
+                  : "Complete every system check before you can start."}
+              </p>
+            </div>
           </div>
         </div>
       ) : (

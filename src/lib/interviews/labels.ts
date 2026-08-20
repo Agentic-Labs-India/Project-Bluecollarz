@@ -1,3 +1,4 @@
+import { languageLabel, resolveTtsLanguage } from "@/lib/ai/voice/languages";
 import type { InterviewStageId } from "@/lib/interviews";
 
 /** Short label used in spoken kickoff copy. */
@@ -17,8 +18,11 @@ export function interviewStageTitle(stageId: InterviewStageId): string {
 export function interviewKickoffText(
   stageId: InterviewStageId,
   jobTitle: string,
+  languageCode?: string | null,
 ): string {
-  return `Please start the ${interviewStageLabel(stageId)} interview for the role: ${jobTitle}. Use my profile voice language for the whole interview.`;
+  const code = resolveTtsLanguage(languageCode);
+  const label = languageLabel(code);
+  return `Please start the ${interviewStageLabel(stageId)} interview for the role: ${jobTitle}. The candidate already selected ${label} (${code}) as their voice language. Greet them and conduct the entire interview in that spoken language. Do not switch languages.`;
 }
 
 export function isInterviewKickoffText(text: string): boolean {
