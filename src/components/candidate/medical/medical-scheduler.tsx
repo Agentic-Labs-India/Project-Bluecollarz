@@ -1,20 +1,24 @@
 "use client";
 
-import {
-  ArrowUpRightIcon,
-  CalendarIcon,
-  CheckCircle2Icon,
-  MapPinIcon,
-} from "lucide-react";
+import { ArrowUpRightIcon, CheckCircle2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
-import { AppPage } from "@/components/layout/app-page";
+import { AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { MedicalPageSkeleton } from "@/components/layout/page-skeleton";
+import { DitherButton } from "@/components/shared/dither-button";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dateOnlyToLocalDate, formatDateOnly } from "@/lib/core/dates";
 import {
@@ -25,10 +29,8 @@ import {
 } from "@/lib/medical/time";
 import type {
   CandidateMedicalAppointment,
-  CandidateMedicalCenter,
   CandidateMedicalScheduleContext,
 } from "@/lib/medical/types";
-import { cn } from "@/lib/utils";
 
 export function CandidateMedicalScheduler() {
   const searchParams = useSearchParams();
@@ -151,14 +153,12 @@ export function CandidateMedicalScheduler() {
 
   if (error || !context) {
     return (
-      <AppPage className="py-10">
-        <p className="text-foreground text-lg font-semibold">
-          Schedule Medical Test
-        </p>
-        <p className="text-muted-foreground mt-2 text-sm">
+      <AppPage>
+        <AppPageTitle>Schedule Medical Test</AppPageTitle>
+        <p className="text-muted-foreground -mt-5 mb-8 text-sm">
           {error || "You need to be selected for a role first."}
         </p>
-        <Button asChild className="mt-4">
+        <Button asChild>
           <Link href="/candidate/home">Back to home</Link>
         </Button>
       </AppPage>
@@ -232,25 +232,41 @@ export function CandidateMedicalScheduler() {
     <AppPage>
       <Header jobTitle={context.jobTitle} />
       <div className="space-y-6">
-        <section className="space-y-3">
-          <p className="text-foreground text-sm font-medium">Medical center</p>
+        <section className="space-y-2">
+          <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+            Medical center
+          </p>
           {context.centers.length ? (
-            <ul className="space-y-2">
-              {context.centers.map((center) => (
-                <CenterChoice
-                  key={center.id}
-                  center={center}
-                  selected={centerId === center.id}
-                  onSelect={() => {
-                    setCenterId(center.id);
-                    setTime("");
-                    if (date && !isOperatingDay(date, center.hours.days)) {
-                      setDate("");
-                    }
-                  }}
-                />
-              ))}
-            </ul>
+            <Select
+              value={centerId || undefined}
+              onValueChange={(id) => {
+                setCenterId(id);
+                setTime("");
+                const next = context.centers.find((center) => center.id === id);
+                if (
+                  next &&
+                  date &&
+                  !isOperatingDay(date, next.hours.days)
+                ) {
+                  setDate("");
+                }
+              }}
+            >
+              <SelectTrigger className="h-auto min-h-9 w-full min-w-0 py-2 text-left text-sm whitespace-normal data-[size=default]:h-auto">
+                <SelectValue placeholder="Select address" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-w-[min(100vw-2rem,40rem)]">
+                {context.centers.map((center) => (
+                  <SelectItem
+                    key={center.id}
+                    value={center.id}
+                    className="whitespace-normal text-sm leading-snug"
+                  >
+                    {center.address}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : (
             <p className="text-muted-foreground text-sm">
               No medical centers are available yet.
@@ -259,63 +275,72 @@ export function CandidateMedicalScheduler() {
         </section>
 
         {selectedCenter ? (
-          <section className="grid gap-6 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-            <div className="border-border bg-card border p-3">
-              <Calendar
-                mode="single"
-                selected={dateOnlyToLocalDate(date)}
-                onSelect={(next) => {
-                  setDate(next ? formatDateOnly(next) : "");
-                  setTime("");
-                }}
-                disabled={[
-                  { before: dateOnlyToLocalDate(today) ?? new Date() },
-                  (value) =>
-                    !isOperatingDay(
-                      formatDateOnly(value),
-                      selectedCenter.hours.days,
-                    ),
-                ]}
-                className="w-full [--cell-size:2.5rem]"
-              />
-            </div>
-            <div>
-              <p className="text-foreground text-sm font-medium">Time · IST</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {selectedCenter.hoursLabel}
-              </p>
-              {!date ? (
-                <p className="text-muted-foreground mt-4 text-sm">
-                  Pick an open day.
+          <>
+            <Separator />
+            <section className="grid gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+              <div>
+                <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-wide uppercase">
+                  Date
                 </p>
-              ) : slotsLoading ? (
-                <SlotChipsSkeleton />
-              ) : slots.length ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {slots.map((slot) => (
-                    <Button
-                      key={slot}
-                      type="button"
-                      size="sm"
-                      variant={time === slot ? "default" : "outline"}
-                      onClick={() => setTime(slot)}
-                    >
-                      {formatClock(slot)}
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground mt-4 text-sm">
-                  No open slots on this day.
+                <Calendar
+                  mode="single"
+                  selected={dateOnlyToLocalDate(date)}
+                  onSelect={(next) => {
+                    setDate(next ? formatDateOnly(next) : "");
+                    setTime("");
+                  }}
+                  disabled={[
+                    { before: dateOnlyToLocalDate(today) ?? new Date() },
+                    (value) =>
+                      !isOperatingDay(
+                        formatDateOnly(value),
+                        selectedCenter.hours.days,
+                      ),
+                  ]}
+                  className="w-full p-0 [--cell-size:2.5rem]"
+                />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                  Time · IST
                 </p>
-              )}
-            </div>
-          </section>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {selectedCenter.hoursLabel}
+                </p>
+                {!date ? (
+                  <p className="text-muted-foreground mt-4 text-sm">
+                    Pick an open day.
+                  </p>
+                ) : slotsLoading ? (
+                  <SlotChipsSkeleton />
+                ) : slots.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {slots.map((slot) => (
+                      <Button
+                        key={slot}
+                        type="button"
+                        size="sm"
+                        variant={time === slot ? "default" : "outline"}
+                        onClick={() => setTime(slot)}
+                      >
+                        {formatClock(slot)}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground mt-4 text-sm">
+                    No open slots on this day.
+                  </p>
+                )}
+              </div>
+            </section>
+          </>
         ) : null}
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
+          <DitherButton
             size="lg"
+            seed="medical-confirm"
             className="w-full sm:w-auto"
             disabled={!centerId || !date || !time || saving}
             onClick={() => void confirm()}
@@ -325,7 +350,7 @@ export function CandidateMedicalScheduler() {
               : booked
                 ? "Update appointment"
                 : "Confirm appointment"}
-          </Button>
+          </DitherButton>
           {booked ? (
             <Button
               type="button"
@@ -355,56 +380,19 @@ export function CandidateMedicalScheduler() {
 function Header({
   jobTitle,
   title = "Schedule Medical Test",
-  copy = "Pick a center, then a day and time it is open. Times are IST.",
+  copy = "Pick an address, then a day and time. Times are IST.",
 }: {
   jobTitle: string;
   title?: string;
   copy?: string;
 }) {
   return (
-    <header className="mb-6">
-      <p className="text-muted-foreground mb-1 text-sm">{jobTitle}</p>
-      <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
-        {title}
-      </h1>
-      <p className="text-muted-foreground mt-2 max-w-xl text-sm">{copy}</p>
-    </header>
-  );
-}
-
-function CenterChoice({
-  center,
-  selected,
-  onSelect,
-}: {
-  center: CandidateMedicalCenter;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onSelect}
-        className={cn(
-          "border-border w-full rounded-none border p-4 text-left transition-colors",
-          selected ? "border-primary bg-primary/5" : "hover:bg-muted/40",
-        )}
-      >
-        <p className="text-foreground font-medium">{center.name}</p>
-        <p className="text-muted-foreground mt-1 flex items-start gap-1.5 text-sm">
-          <MapPinIcon className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            {center.address}
-            {center.placeLabel ? ` · ${center.placeLabel}` : ""}
-          </span>
-        </p>
-        <p className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
-          <CalendarIcon className="size-3.5 shrink-0" />
-          {center.hoursLabel}
-        </p>
-      </button>
-    </li>
+    <>
+      <AppPageTitle className="mb-2">{title}</AppPageTitle>
+      <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+        {jobTitle}. {copy}
+      </p>
+    </>
   );
 }
 

@@ -70,24 +70,18 @@ export function KycPageSkeleton() {
 export function MedicalPageSkeleton() {
   return (
     <AppPage>
-      <header className="mb-6 space-y-2">
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-8 w-64 max-w-full" />
-        <Skeleton className="h-4 w-80 max-w-full" />
+      <header className="mb-8">
+        <Skeleton className="h-8 w-64 max-w-full md:h-9" />
+        <Skeleton className="mt-2 h-4 w-80 max-w-full" />
       </header>
-      <div className="space-y-3">
-        {["c1", "c2", "c3"].map((id) => (
-          <div key={id} className="border-border space-y-2 border p-4">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-3 w-56" />
-          </div>
-        ))}
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-9 w-full" />
       </div>
-      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+      <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <Skeleton className="h-72 w-full" />
         <div className="space-y-3">
-          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-24" />
           <Skeleton className="h-3 w-48" />
           <div className="flex flex-wrap gap-2">
             {["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"].map((id) => (
@@ -96,7 +90,7 @@ export function MedicalPageSkeleton() {
           </div>
         </div>
       </div>
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-8 flex flex-col gap-2 sm:flex-row">
         <Skeleton className="h-11 w-full sm:w-48" />
         <Skeleton className="h-11 w-full sm:w-24" />
       </div>

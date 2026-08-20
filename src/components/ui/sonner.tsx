@@ -10,6 +10,7 @@ import { useTheme } from "next-themes";
 import { type CSSProperties, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   PRIMARY_DITHER,
   PrimaryDither,
@@ -73,15 +74,16 @@ function ToastDither() {
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+  const isMobile = useIsMobile();
 
   return (
     <>
       <Sonner
         theme={theme as ToasterProps["theme"]}
         className="toaster group"
-        position="top-right"
-        offset={{ top: 16, right: 16 }}
-        mobileOffset={{ top: "18vh", left: 16, right: 16 }}
+        position={isMobile ? "top-left" : "bottom-right"}
+        offset={isMobile ? 0 : 24}
+        mobileOffset={{ top: 0, left: 0, right: 0 }}
         icons={{
           success: <CircleCheckIcon className="size-4" />,
           info: <InfoIcon className="size-4" />,
@@ -94,7 +96,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "--normal-bg": PRIMARY_DITHER.colorBack,
             "--normal-text": "#fff",
             "--normal-border": "rgb(255 255 255 / 0.18)",
-            "--border-radius": "var(--radius)",
+            "--border-radius": isMobile ? "0px" : "var(--radius)",
+            ...(isMobile
+              ? {
+                  "--width": "100%",
+                  "--offset-top": "0px",
+                  "--offset-left": "0px",
+                  "--offset-right": "0px",
+                }
+              : null),
           } as CSSProperties
         }
         toastOptions={{
