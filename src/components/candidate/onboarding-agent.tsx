@@ -125,7 +125,6 @@ function firstOpenResumePart(messages: UIMessage[]) {
 export function OnboardingAgent() {
   const router = useRouter();
   const [status, setStatus] = useState("Allow the microphone to begin.");
-  const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [micReady, setMicReady] = useState(false);
@@ -301,7 +300,6 @@ export function OnboardingAgent() {
           doneRef.current ||
           !languageLockedRef.current ||
           pickerGateRef.current,
-        onLevel: setLevel,
         onSpeechStart: () => {
           setListening(true);
           setStatus("Listening…");
@@ -577,7 +575,6 @@ export function OnboardingAgent() {
         status={status}
         micReady={micReady}
         micError={micError}
-        level={level}
         onEnableMic={() => void enableMic()}
       />
 

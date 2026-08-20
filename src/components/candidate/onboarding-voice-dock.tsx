@@ -1,9 +1,10 @@
 "use client";
 
 import { MicIcon } from "lucide-react";
-import { useRef } from "react";
+import type { PersonaState } from "@/components/ai-elements/persona";
+import { Persona } from "@/components/ai-elements/persona";
+import { useAfterPlatformTerms } from "@/components/compliance/platform-terms-gate";
 import { Button } from "@/components/ui/button";
-import { type AgentState, Orb } from "@/components/ui/orb";
 
 export type OnboardingVoiceMode =
   | "start"
@@ -28,40 +29,58 @@ const MODE_LABEL: Record<OnboardingVoiceMode, string> = {
   error: "Mic needed",
 };
 
-function toAgentState(mode: OnboardingVoiceMode): AgentState {
+function toPersonaState(mode: OnboardingVoiceMode): PersonaState {
   if (mode === "listen") return "listening";
-  if (mode === "speak") return "talking";
+  if (mode === "speak") return "speaking";
   if (mode === "think" || mode === "write") return "thinking";
-  return null;
+  if (mode === "done") return "asleep";
+  return "idle";
 }
 
-function VoiceOrb({
-  mode,
-  level,
-}: {
-  mode: OnboardingVoiceMode;
-  level: number;
-}) {
-  const listening = mode === "listen";
-  const inputRef = useRef(0);
-  const outputRef = useRef(0);
-  inputRef.current = Math.min(1, Math.max(0, level) * 3.2);
-  outputRef.current = listening ? 0.45 : 0.3;
+function OrbPrimaryFilter() {
+  return (
+    <svg
+      aria-hidden
+      className="pointer-events-none absolute size-0 overflow-hidden"
+    >
+      <title>Primary orb tint</title>
+      <filter id="voice-orb-primary-light" colorInterpolationFilters="sRGB">
+        <feColorMatrix
+          type="matrix"
+          values="0.085 0.286 0.029 0 0.42 0.102 0.343 0.035 0 0.50 0.017 0.057 0.006 0 0.93 0 0 0 1 0"
+        />
+      </filter>
+      <filter id="voice-orb-primary-dark" colorInterpolationFilters="sRGB">
+        <feColorMatrix
+          type="matrix"
+          values="0.029 0.098 0.010 0 0 0.052 0.174 0.018 0 0 0.213 0.715 0.072 0 0 0 0 0 1 0"
+        />
+      </filter>
+    </svg>
+  );
+}
+
+function VoicePersona({ mode }: { mode: OnboardingVoiceMode }) {
+  const live = useAfterPlatformTerms(500);
 
   return (
-    <div
-      className="relative size-28 overflow-hidden rounded-full md:size-48"
-      role="img"
-      aria-label={MODE_LABEL[mode]}
-    >
-      <Orb
-        className="h-full w-full"
-        seed={1000}
-        agentState={toAgentState(mode)}
-        volumeMode={listening ? "manual" : "auto"}
-        inputVolumeRef={inputRef}
-        outputVolumeRef={outputRef}
-      />
+    <div className="relative size-48" role="img" aria-label={MODE_LABEL[mode]}>
+      <OrbPrimaryFilter />
+      {live ? (
+        <>
+          <div className="size-full [filter:url(#voice-orb-primary-light)] dark:[filter:url(#voice-orb-primary-dark)]">
+            <Persona
+              className="size-full bg-transparent"
+              state={toPersonaState(mode)}
+              variant="opal"
+            />
+          </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_30%_24%,rgb(255_255_255_/_0.35),transparent_44%)] mix-blend-soft-light dark:hidden"
+          />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -71,20 +90,18 @@ export function OnboardingVoiceDock({
   status,
   micReady,
   micError,
-  level,
   onEnableMic,
 }: {
   mode: OnboardingVoiceMode;
   status: string;
   micReady: boolean;
   micError?: string;
-  level?: number;
   onEnableMic: () => void;
 }) {
   return (
     <div className="bg-background relative shrink-0">
       <div className="flex flex-col items-center px-4 pt-2 pb-[max(0.85rem,env(safe-area-inset-bottom))]">
-        <VoiceOrb mode={mode} level={level ?? 0} />
+        <VoicePersona mode={mode} />
         <p
           className="text-muted-foreground mt-1 max-w-sm text-center text-xs font-bold tracking-wide md:text-sm"
           aria-live="polite"

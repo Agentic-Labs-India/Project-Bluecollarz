@@ -14,6 +14,75 @@ import {
   toAcceptedAtIso,
 } from "@/lib/user/preferences";
 
+const PLATFORM_TERMS_READY_EVENT = "blucollarz:platform-terms-ready";
+
+function emitPlatformTermsReady() {
+  window.dispatchEvent(new Event(PLATFORM_TERMS_READY_EVENT));
+}
+
+/**
+ * Becomes true 500ms after Privacy & Terms are accepted
+ * (this click, or a previous session).
+ */
+export function useAfterPlatformTerms(delayMs = 500) {
+  const [live, setLive] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+  const sessionUser = session?.user as
+    | {
+        id?: string;
+        platformTermsVersion?: number | string | null;
+        platformTermsAcceptedAt?: Date | string | null;
+      }
+    | undefined;
+  const userId = sessionUser?.id;
+  const sessionTermsVersion = asTermsVersion(sessionUser?.platformTermsVersion);
+  const sessionTermsAt = toAcceptedAtIso(sessionUser?.platformTermsAcceptedAt);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer = 0;
+
+    const arm = () => {
+      if (cancelled || timer) return;
+      timer = window.setTimeout(() => {
+        if (!cancelled) setLive(true);
+      }, delayMs);
+    };
+
+    window.addEventListener(PLATFORM_TERMS_READY_EVENT, arm);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener(PLATFORM_TERMS_READY_EVENT, arm);
+    };
+  }, [delayMs]);
+
+  useEffect(() => {
+    if (live || isPending || !userId) return;
+
+    if (hasAcceptedPlatformTerms(sessionTermsVersion, sessionTermsAt)) {
+      emitPlatformTermsReady();
+      return;
+    }
+
+    let cancelled = false;
+    void fetchUserPreferences()
+      .then((prefs) => {
+        if (!cancelled && prefs.platformTermsAccepted) {
+          emitPlatformTermsReady();
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [live, isPending, userId, sessionTermsVersion, sessionTermsAt]);
+
+  return live;
+}
+
 /**
  * First-session gate: privacy/terms acknowledgment before using the app.
  * The Users document is the only source of truth. Acceptance is never inferred
@@ -48,7 +117,10 @@ export function PlatformTermsGate() {
     let cancelled = false;
     const run = async () => {
       if (hasAcceptedPlatformTerms(sessionTermsVersion, sessionTermsAt)) {
-        if (!cancelled) setOpen(false);
+        if (!cancelled) {
+          setOpen(false);
+          emitPlatformTermsReady();
+        }
         return;
       }
 
@@ -57,6 +129,7 @@ export function PlatformTermsGate() {
         if (cancelled) return;
         if (prefs.platformTermsAccepted) {
           setOpen(false);
+          emitPlatformTermsReady();
           return;
         }
       } catch {
@@ -182,6 +255,7 @@ export function PlatformTermsGate() {
                 await patchUserPreferences({ platformTermsAccepted: true });
                 await authClient.getSession();
                 setOpen(false);
+                emitPlatformTermsReady();
               } catch {
                 setError(
                   "Could not save. Check your connection and try again.",

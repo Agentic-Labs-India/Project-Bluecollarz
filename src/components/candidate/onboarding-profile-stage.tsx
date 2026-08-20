@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Separator } from "@/components/ui/separator";
 import {
   ONBOARDING_STAGE_FIELDS,
   ONBOARDING_STAGE_LABELS,
@@ -25,7 +26,7 @@ const STAGE_CARDS = ONBOARDING_STAGE_FIELDS.filter(
     key !== "voiceLanguage",
 );
 type StageCard = (typeof STAGE_CARDS)[number];
-const FIELD_GAP = 14;
+const FIELD_GAP = 0;
 const STACK_EASE = [0.22, 1, 0.36, 1] as const;
 
 function Caret({ reducedMotion }: { reducedMotion: boolean }) {
@@ -125,7 +126,7 @@ function TypedBody({
   );
 }
 
-function FieldCard({
+function FieldRow({
   field,
   target,
   isFocus,
@@ -159,40 +160,46 @@ function FieldCard({
       initial={initial}
       animate={animate}
       onAnimationComplete={onAnimationComplete}
-      className={cn(
-        "bg-card absolute right-0 left-0 space-y-1.5 border px-4 py-3.5",
-        isFocus ? "border-primary" : "border-border",
-        className,
-      )}
+      className={cn("absolute right-0 left-0", className)}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-          {ONBOARDING_STAGE_LABELS[field]}
+      <div className="space-y-1.5 px-1 py-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <p
+            className={cn(
+              "text-[11px] font-medium tracking-wide uppercase",
+              isFocus ? "text-primary" : "text-muted-foreground",
+            )}
+          >
+            {ONBOARDING_STAGE_LABELS[field]}
+          </p>
+          {done ? (
+            <CheckIcon className="text-primary size-3.5 shrink-0" />
+          ) : null}
+        </div>
+        <p
+          className={cn(
+            "text-foreground min-h-7 text-base leading-snug font-medium tracking-tight md:text-lg",
+            field === "summary" &&
+              "text-sm leading-relaxed font-normal md:text-base",
+          )}
+          aria-live={isWriting ? "polite" : "off"}
+        >
+          {isWriting || isFocus ? (
+            <TypedBody
+              target={target}
+              active={Boolean(target)}
+              showCaret={isWriting}
+              reducedMotion={reducedMotion}
+              onProgress={onProgress}
+            />
+          ) : done && target ? (
+            <span className="whitespace-pre-wrap">{target}</span>
+          ) : (
+            <span className="text-muted-foreground">Waiting…</span>
+          )}
         </p>
-        {done ? <CheckIcon className="text-primary size-3.5 shrink-0" /> : null}
       </div>
-      <p
-        className={cn(
-          "text-foreground min-h-7 text-base leading-snug font-medium tracking-tight md:text-lg",
-          field === "summary" &&
-            "text-sm leading-relaxed font-normal md:text-base",
-        )}
-        aria-live={isWriting ? "polite" : "off"}
-      >
-        {isWriting || isFocus ? (
-          <TypedBody
-            target={target}
-            active={Boolean(target)}
-            showCaret={isWriting}
-            reducedMotion={reducedMotion}
-            onProgress={onProgress}
-          />
-        ) : done && target ? (
-          <span className="whitespace-pre-wrap">{target}</span>
-        ) : (
-          <span className="text-muted-foreground">Waiting…</span>
-        )}
-      </p>
+      <Separator />
     </motion.div>
   );
 }
@@ -203,15 +210,13 @@ function slotAnimate(
   reducedMotion: boolean,
 ): TargetAndTransition {
   const y = slot * (currentHeight + FIELD_GAP);
-  const blur =
-    slot <= 0 ? 0 : slot === 1 ? 2.5 : slot === 2 ? 5 : Math.min(8, slot * 2.8);
-  const opacity = slot === 0 ? 1 : slot === 1 ? 0.58 : slot === 2 ? 0.34 : 0.14;
+  const opacity = slot === 0 ? 1 : slot === 1 ? 0.55 : slot === 2 ? 0.32 : 0.14;
   return {
     top: "50%",
     y: `calc(-50% + ${y}px)`,
-    scale: slot === 0 ? 1 : 0.97,
+    scale: 1,
     opacity,
-    filter: blur ? `blur(${blur}px)` : "blur(0px)",
+    filter: "blur(0px)",
     zIndex: 20 - slot,
     pointerEvents: slot === 0 ? "auto" : "none",
     transition: reducedMotion
@@ -383,7 +388,7 @@ export function OnboardingProfileStage({
     >
       <div className="relative mx-auto h-full w-full max-w-xl">
         {leaving.map((key) => (
-          <FieldCard
+          <FieldRow
             key={`leave-${key}`}
             field={key}
             target={stage.values[key]}
@@ -417,7 +422,7 @@ export function OnboardingProfileStage({
           const isFocus = key === focus;
           const isWriting = writingNow === key;
           return (
-            <FieldCard
+            <FieldRow
               key={key}
               field={key}
               target={stage.values[key]}
