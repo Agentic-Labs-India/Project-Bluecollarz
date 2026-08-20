@@ -5,21 +5,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type RecorderState = {
   recorder: MediaRecorder | null;
   chunks: Blob[];
-  /** Source streams we own (stop these on teardown — not the derived mix). */
   ownedStreams: MediaStream[];
 };
 
-type ScreenRecorderStartResult = {
+type CameraRecorderStartResult = {
   camera: MediaStream;
-  /** Mic-only stream (same tracks as camera audio) for VAD. */
   mic: MediaStream;
 };
 
-/**
- * Capture entire screen + mic. Camera is a UI preview in the interview
- * sidebar (picked up by the screen share) — no burned-in PiP overlay.
- */
-export function useScreenRecorder() {
+/** Record the candidate camera + mic. No screen share. */
+export function useCameraRecorder() {
   const stateRef = useRef<RecorderState>({
     recorder: null,
     chunks: [],
@@ -40,15 +35,14 @@ export function useScreenRecorder() {
     setRecording(false);
   }, []);
 
-  const start = useCallback(async (): Promise<ScreenRecorderStartResult> => {
+  const start = useCallback(async (): Promise<CameraRecorderStartResult> => {
     setError("");
     try {
-      // One camera+mic grant: preview video in UI, mic for recording + VAD.
       const camera = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
           frameRate: { ideal: 24, max: 30 },
         },
         audio: {
@@ -58,34 +52,9 @@ export function useScreenRecorder() {
         },
       });
 
-      // Prefer / require the full monitor — window or browser-tab share is rejected.
-      const display = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          frameRate: 15,
-          displaySurface: "monitor",
-        } as MediaTrackConstraints,
-        audio: true,
-        preferCurrentTab: false,
-        selfBrowserSurface: "exclude",
-        surfaceSwitching: "exclude",
-        monitorTypeSurfaces: "include",
-      } as DisplayMediaStreamOptions);
-
-      const screenTrack = display.getVideoTracks()[0];
-      const surface = screenTrack?.getSettings()?.displaySurface;
-      if (surface && surface !== "monitor") {
-        for (const track of display.getTracks()) track.stop();
-        for (const track of camera.getTracks()) track.stop();
-        throw new Error(
-          "Please share your entire screen (not a window or browser tab).",
-        );
-      }
-
-      // Record screen video + candidate mic (+ optional system audio from share).
       const mixed = new MediaStream([
-        ...display.getVideoTracks(),
+        ...camera.getVideoTracks(),
         ...camera.getAudioTracks(),
-        ...display.getAudioTracks(),
       ]);
 
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
@@ -106,7 +75,7 @@ export function useScreenRecorder() {
       stateRef.current = {
         recorder,
         chunks: [],
-        ownedStreams: [display, camera],
+        ownedStreams: [camera],
       };
 
       recorder.ondataavailable = (e) => {
@@ -116,8 +85,7 @@ export function useScreenRecorder() {
       setCameraStream(camera);
       setRecording(true);
 
-      screenTrack?.addEventListener("ended", () => {
-        // User stopped sharing from the browser chrome.
+      camera.getVideoTracks()[0]?.addEventListener("ended", () => {
         try {
           if (stateRef.current.recorder?.state === "recording") {
             stateRef.current.recorder.stop();
@@ -133,9 +101,7 @@ export function useScreenRecorder() {
     } catch (e) {
       stopTracks();
       setError(
-        e instanceof Error
-          ? e.message
-          : "Camera, microphone, and screen share are required.",
+        e instanceof Error ? e.message : "Camera and microphone are required.",
       );
       throw e;
     }
@@ -148,7 +114,6 @@ export function useScreenRecorder() {
       return null;
     }
 
-    // Flush the current timeslice before stopping so we don't lose the tail.
     try {
       if (recorder.state === "recording") recorder.requestData();
     } catch {

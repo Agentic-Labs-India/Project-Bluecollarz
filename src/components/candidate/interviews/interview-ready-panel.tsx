@@ -4,11 +4,9 @@ import {
   CheckCircle2Icon,
   CircleAlertIcon,
   MicIcon,
-  MonitorIcon,
   SparklesIcon,
   VideoIcon,
   WifiIcon,
-  XCircleIcon,
 } from "lucide-react";
 import {
   useEffect,
@@ -19,6 +17,8 @@ import {
 } from "react";
 import { PrimaryDither } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 type CheckId = "internet" | "camera" | "voice" | "ai";
 type CheckStatus = "pending" | "running" | "pass" | "fail";
@@ -53,16 +53,16 @@ const CHECK_META: {
 const ENVIRONMENT = [
   "Quiet, well-lit room with a plain background",
   "Stable Wi‑Fi or ethernet — avoid hotspot switching",
-  "Laptop, tablet, or PC with camera and mic",
-  "Allow camera, mic, and entire-screen share in the browser",
+  "A device with a working camera and microphone",
+  "Allow camera and microphone in the browser",
 ];
 
 const GUIDELINES = [
   "Sit alone in a quiet room. No one else should be present — the AI may reject your application if another person is detected.",
   "Keep your face clearly visible on camera for the entire session.",
-  "Share your entire screen (not a window or tab) for the full interview. Ending share early can invalidate the session.",
+  "Camera video is recorded. Keep this tab open until you finish.",
   "Speak clearly in your own words. Do not read notes or get help from others.",
-  "Do not switch tabs, mute yourself, or leave this screen until finished.",
+  "Do not mute yourself or leave this screen until finished.",
   "Close other apps using your camera or microphone before you start.",
 ];
 
@@ -80,7 +80,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
-function CheckCard({
+function CheckOrb({
   id,
   label,
   icon: Icon,
@@ -115,27 +115,43 @@ function CheckCard({
     id === "voice" && state.status === "running"
       ? Math.max(progress, Math.min(92, Math.round(micLevel * 500)))
       : progress;
+  const failed = state.status === "fail";
+  const pending = state.status === "pending";
 
   return (
-    <li className="bg-primary relative flex min-h-0 flex-1 items-center gap-2.5 overflow-hidden border border-white/15 px-3 py-2">
-      <PrimaryDither seed={`check-${id}`} opacity={0.85} />
-      <span className="relative z-10 flex size-8 shrink-0 items-center justify-center bg-white/15 text-white">
-        <Icon className="size-4" strokeWidth={1.75} />
-      </span>
-      <div className="relative z-10 min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-medium text-white">{label}</p>
-          {state.status === "pass" ? (
-            <CheckCircle2Icon className="size-3.5 shrink-0 text-white" />
-          ) : state.status === "fail" ? (
-            <XCircleIcon className="size-3.5 shrink-0 text-white" />
-          ) : (
-            <span className="text-[11px] font-medium tabular-nums text-white/80">
-              {value}%
-            </span>
-          )}
-        </div>
-        <p className="truncate text-xs text-white/75">{state.detail}</p>
+    <li className="flex flex-col items-center gap-2 text-center">
+      <div
+        className={cn(
+          "relative flex size-16 items-center justify-center overflow-hidden rounded-full md:size-18",
+          failed ? "bg-destructive" : "bg-primary",
+          state.status === "running" &&
+            "ring-primary/35 ring-2 ring-offset-2 ring-offset-background",
+        )}
+        aria-hidden
+      >
+        {failed ? null : (
+          <PrimaryDither
+            seed={`check-orb-${id}`}
+            opacity={pending ? 0.45 : 0.92}
+            wash={false}
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
+          />
+        )}
+        {failed || pending ? null : (
+          <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_30%_24%,rgb(255_255_255_/_0.35),transparent_44%)] mix-blend-soft-light dark:hidden" />
+        )}
+        <Icon
+          className="relative z-10 size-5 text-white"
+          strokeWidth={1.75}
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="text-foreground text-xs font-medium tracking-wide uppercase">
+          {label}
+        </p>
+        <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">
+          {state.status === "running" ? `${value}%` : state.detail}
+        </p>
       </div>
     </li>
   );
@@ -143,11 +159,9 @@ function CheckCard({
 
 export function InterviewReadyPanel({
   onReadyChange,
-  onCameraPreviewChange,
   ref,
 }: {
   onReadyChange: (ready: boolean) => void;
-  onCameraPreviewChange?: (stream: MediaStream | null) => void;
   ref?: React.Ref<InterviewReadyPanelHandle>;
 }) {
   const [checks, setChecks] = useState(INITIAL);
@@ -159,16 +173,11 @@ export function InterviewReadyPanel({
     setChecks((prev) => ({ ...prev, [id]: next }));
   };
 
-  const publishCamera = (stream: MediaStream | null) => {
-    onCameraPreviewChange?.(stream);
-  };
-
   const stopOwnedStreams = () => {
     for (const stream of streamsRef.current) {
       for (const track of stream.getTracks()) track.stop();
     }
     streamsRef.current = [];
-    publishCamera(null);
   };
 
   useImperativeHandle(ref, () => ({
@@ -214,12 +223,12 @@ export function InterviewReadyPanel({
         for (const track of camera.getTracks()) track.stop();
         return;
       }
-      streamsRef.current.push(camera);
-      publishCamera(camera);
       const track = camera.getVideoTracks()[0];
       if (!track || track.readyState !== "live") {
+        for (const cameraTrack of camera.getTracks()) cameraTrack.stop();
         throw new Error("Camera track is not live");
       }
+      for (const cameraTrack of camera.getTracks()) cameraTrack.stop();
       setCheck("camera", { status: "pass", detail: "Camera ready" });
     } catch (e) {
       if (cancelledRef.current) return;
@@ -351,91 +360,87 @@ export function InterviewReadyPanel({
   }, [allPassed, onReadyChange]);
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-3 p-4 md:gap-4 md:p-5">
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-[minmax(16rem,22rem)_1fr] md:gap-4">
-        {/* Far left: 4 system test blocks */}
-        <div className="border-border flex min-h-0 flex-col gap-3 border p-3 md:p-4">
-          <div className="flex shrink-0 items-center justify-between gap-2">
-            <h3 className="text-foreground text-sm font-semibold">
-              System tests
-            </h3>
-            {allPassed ? (
-              <span className="text-primary inline-flex items-center gap-1 text-xs">
-                <CheckCircle2Icon className="size-3.5" />
-                Ready
-              </span>
-            ) : anyFailed ? (
-              <span className="text-destructive inline-flex items-center gap-1 text-xs">
-                <CircleAlertIcon className="size-3.5" />
-                Fix & retry
-              </span>
-            ) : null}
-          </div>
-
-          <ul className="flex min-h-0 flex-1 flex-col gap-2">
-            {CHECK_META.map((meta) => (
-              <CheckCard
-                key={meta.id}
-                id={meta.id}
-                label={meta.label}
-                icon={meta.icon}
-                state={checks[meta.id]}
-                micLevel={micLevel}
-              />
-            ))}
-          </ul>
-
-          {anyFailed || (!running && !allPassed) ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full shrink-0"
-              disabled={running}
-              onClick={() => void runChecks()}
-            >
-              Retry checks
-            </Button>
+    <div className="h-full min-h-0 w-full overflow-y-auto px-5 py-6 md:px-8">
+      <div className="mx-auto flex min-h-full max-w-xl flex-col">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+            System tests
+          </p>
+          {allPassed ? (
+            <span className="text-primary inline-flex items-center gap-1 text-xs">
+              <CheckCircle2Icon className="size-3.5" />
+              Ready
+            </span>
+          ) : anyFailed ? (
+            <span className="text-destructive inline-flex items-center gap-1 text-xs">
+              <CircleAlertIcon className="size-3.5" />
+              Fix & retry
+            </span>
           ) : null}
         </div>
 
-        {/* Right of tests: environment + guidelines */}
-        <div className="border-border flex min-h-0 flex-col gap-3 border p-3 md:p-4">
-          <div className="shrink-0 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <MonitorIcon className="text-muted-foreground size-3.5" />
-              Recommended environment
-            </div>
-            <ul className="text-muted-foreground space-y-1.5 text-xs leading-snug md:text-sm">
-              {ENVIRONMENT.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-foreground/40 shrink-0">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4">
+          {CHECK_META.map((meta) => (
+            <CheckOrb
+              key={meta.id}
+              id={meta.id}
+              label={meta.label}
+              icon={meta.icon}
+              state={checks[meta.id]}
+              micLevel={micLevel}
+            />
+          ))}
+        </ul>
 
-          <div className="border-border flex min-h-0 flex-1 flex-col gap-2 border-t pt-3">
-            <h3 className="text-foreground shrink-0 text-sm font-semibold">
-              Interview guidelines
-            </h3>
-            <p className="text-muted-foreground shrink-0 text-[11px] leading-snug md:text-xs">
-              Violating these rules can cause the AI to end or reject your
-              interview.
-            </p>
-            <ol className="min-h-0 flex-1 space-y-2 overflow-y-auto text-xs leading-snug md:text-sm">
-              {GUIDELINES.map((item, index) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-muted-foreground w-4 shrink-0 font-medium tabular-nums">
-                    {index + 1}.
-                  </span>
-                  <span className="text-foreground/90">{item}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+        {anyFailed || (!running && !allPassed) ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-5 w-full"
+            disabled={running}
+            onClick={() => void runChecks()}
+          >
+            Retry checks
+          </Button>
+        ) : null}
+
+        <Separator className="my-6" />
+
+        <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+          Recommended environment
+        </p>
+        <ul className="mt-3 space-y-0">
+          {ENVIRONMENT.map((item) => (
+            <li key={item}>
+              <p className="text-foreground/90 py-2.5 text-sm leading-snug">
+                {item}
+              </p>
+              <Separator />
+            </li>
+          ))}
+        </ul>
+
+        <p className="text-muted-foreground mt-6 text-[11px] font-medium tracking-wide uppercase">
+          Interview guidelines
+        </p>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-snug">
+          Violating these rules can cause the AI to end or reject your
+          interview.
+        </p>
+        <ol className="mt-3 space-y-0">
+          {GUIDELINES.map((item, index) => (
+            <li key={item}>
+              <p className="text-foreground/90 flex gap-2 py-2.5 text-sm leading-snug">
+                <span className="text-muted-foreground w-4 shrink-0 font-medium tabular-nums">
+                  {index + 1}.
+                </span>
+                <span>{item}</span>
+              </p>
+              <Separator />
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   );

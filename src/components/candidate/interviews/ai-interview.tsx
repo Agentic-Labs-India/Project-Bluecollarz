@@ -2,41 +2,24 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart } from "ai";
-import {
-  MicIcon,
-  MonitorIcon,
-  SquareIcon,
-  VideoIcon,
-  Volume2Icon,
-  XIcon,
-} from "lucide-react";
+import { SquareIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AssistantAvatar,
-  UserChatAvatar,
-  useChatUserAvatar,
-} from "@/components/candidate/chat-avatars";
-import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
 import {
   InterviewReadyPanel,
   type InterviewReadyPanelHandle,
 } from "@/components/candidate/interviews/interview-ready-panel";
-import { useScreenRecorder } from "@/components/candidate/interviews/use-screen-recorder";
+import { useCameraRecorder } from "@/components/candidate/interviews/use-camera-recorder";
 import {
   startVadLoop,
   type VadController,
 } from "@/components/candidate/interviews/vad";
-import { Button } from "@/components/ui/button";
 import {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "@/components/ui/message-scroller";
+  VoiceSessionDock,
+  type VoiceSessionMode,
+} from "@/components/candidate/voice-orb";
+import { DitherButton } from "@/components/shared/dither-button";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
@@ -52,9 +35,36 @@ import {
   interviewStageLabel,
   interviewStageTitle,
 } from "@/lib/interviews/labels";
-import { cn } from "@/lib/utils";
 
 type LocalTurn = { role: "assistant" | "user"; text: string };
+
+function toVoiceMode({
+  phase,
+  listening,
+  isStreaming,
+  status,
+}: {
+  phase: string;
+  listening: boolean;
+  isStreaming: boolean;
+  status: string;
+}): VoiceSessionMode {
+  if (phase === "done") return "done";
+  if (listening) return "listen";
+  if (status.startsWith("Speaking")) return "speak";
+  if (
+    phase === "finalizing" ||
+    isStreaming ||
+    status.startsWith("Thinking") ||
+    status.startsWith("Transcribing") ||
+    status.startsWith("Uploading") ||
+    status.startsWith("Interview starting") ||
+    status.startsWith("Calibrating")
+  ) {
+    return "think";
+  }
+  return "idle";
+}
 
 export function AiInterview({
   interviewId,
@@ -74,8 +84,6 @@ export function AiInterview({
 }) {
   const stageLabel = interviewStageLabel(stageId);
   const stageTitle = interviewStageTitle(stageId);
-  const chatUser = useChatUserAvatar();
-  const isMobile = useIsMobile();
 
   const [phase, setPhase] = useState<
     "permissions" | "live" | "finalizing" | "done" | "error"
@@ -83,12 +91,9 @@ export function AiInterview({
   const [status, setStatus] = useState(
     "Complete the system checks, then start the interview.",
   );
-  const [level, setLevel] = useState(0);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const [checksReady, setChecksReady] = useState(false);
-  const [checkCameraStream, setCheckCameraStream] =
-    useState<MediaStream | null>(null);
   const [voiceLanguage, setVoiceLanguage] = useState<TtsLanguageCode | null>(
     null,
   );
@@ -101,46 +106,26 @@ export function AiInterview({
   const streamingRef = useRef(false);
   const closingRef = useRef(false);
   const languageReadyRef = useRef(false);
-  const sidebarCameraRef = useRef<HTMLVideoElement>(null);
   const readyPanelRef = useRef<InterviewReadyPanelHandle>(null);
   const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
 
   const {
-    start: startScreen,
-    stop: stopScreen,
-    recording: screenRecording,
-    error: screenError,
+    start: startCamera,
+    stop: stopCamera,
+    recording: cameraRecording,
+    error: cameraError,
     cameraStream,
-  } = useScreenRecorder();
+  } = useCameraRecorder();
 
-  const sidebarPreviewStream =
-    phase === "permissions" || phase === "error"
-      ? checkCameraStream
-      : cameraStream;
-
-  useEffect(() => {
-    const el = sidebarCameraRef.current;
-    if (!el) return;
-    el.srcObject = sidebarPreviewStream;
-    if (sidebarPreviewStream) {
-      void el.play().catch(() => undefined);
-    } else {
-      el.srcObject = null;
-    }
-  }, [sidebarPreviewStream]);
-
-  // If the candidate stops screen share mid-interview, end cleanly.
   useEffect(() => {
     if (closingRef.current || phase !== "live") return;
-    if (screenRecording || cameraStream) return;
+    if (cameraRecording || cameraStream) return;
     pausedRef.current = true;
     vadRef.current?.stop();
     vadRef.current = null;
     setPhase("error");
-    setError(
-      "Screen share ended. Please restart the interview and keep sharing your entire screen until you finish.",
-    );
-  }, [phase, screenRecording, cameraStream]);
+    setError("Camera turned off. Please restart the interview.");
+  }, [phase, cameraRecording, cameraStream]);
 
   const transport = useMemo(
     () =>
@@ -163,15 +148,25 @@ export function AiInterview({
 
   const isStreaming = chatStatus === "submitted" || chatStatus === "streaming";
   streamingRef.current = isStreaming;
-  const lastVisibleMessageId = [...messages]
-    .reverse()
-    .find((message) =>
-      message.parts
-        .filter(isTextUIPart)
-        .map((p) => p.text)
-        .join("\n")
-        .trim(),
-    )?.id;
+
+  const currentQuestion = useMemo(() => {
+    const last = [...messages]
+      .reverse()
+      .find((message) => message.role === "assistant");
+    if (!last) return "";
+    return last.parts
+      .filter(isTextUIPart)
+      .map((part) => part.text)
+      .join("\n")
+      .trim();
+  }, [messages]);
+
+  const voiceMode = toVoiceMode({
+    phase,
+    listening,
+    isStreaming,
+    status,
+  });
 
   const beginSession = useCallback(async () => {
     setError("");
@@ -182,14 +177,12 @@ export function AiInterview({
       languageReadyRef.current = true;
       setVoiceLanguage(code);
 
-      setStatus("Turning on camera, then entire-screen share…");
+      setStatus("Turning on camera…");
       readyPanelRef.current?.releaseDevices();
-      setCheckCameraStream(null);
-      const { mic } = await startScreen();
+      const { mic } = await startCamera();
       setStatus("Calibrating microphone…");
       pausedRef.current = true;
       vadRef.current?.stop();
-      // Reuse the same mic track as the screen recorder (no second getUserMedia).
       vadRef.current = await startVadLoop({
         stream: mic,
         isPaused: () =>
@@ -197,7 +190,6 @@ export function AiInterview({
           busyUtteranceRef.current ||
           streamingRef.current ||
           !languageReadyRef.current,
-        onLevel: setLevel,
         onSpeechStart: () => {
           setListening(true);
           setStatus("Listening…");
@@ -246,12 +238,11 @@ export function AiInterview({
       setError(
         e instanceof Error
           ? e.message
-          : screenError || "Camera, microphone, and screen share are required.",
+          : cameraError || "Camera and microphone are required.",
       );
     }
-  }, [startScreen, sendMessage, jobTitle, stageId, screenError]);
+  }, [startCamera, sendMessage, jobTitle, stageId, cameraError]);
 
-  // Speak each finished assistant message once.
   useEffect(() => {
     if (isStreaming || phase !== "live") return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
@@ -294,10 +285,10 @@ export function AiInterview({
 
         let videoUrl: string | null = null;
         try {
-          const blob = await stopScreen();
+          const blob = await stopCamera();
           if (!blob || blob.size === 0) {
             throw new Error(
-              "Screen recording was empty. Please restart and keep screen share on until the end.",
+              "Camera recording was empty. Please restart and keep the camera on until the end.",
             );
           }
 
@@ -362,7 +353,7 @@ export function AiInterview({
     messages,
     isStreaming,
     phase,
-    stopScreen,
+    stopCamera,
     interviewId,
     onCompleted,
     stageLabel,
@@ -375,16 +366,22 @@ export function AiInterview({
     };
   }, []);
 
-  // Phones can't reliably screen-share; require tablet / laptop / PC.
-  if (isMobile) {
-    return <InterviewDeviceGate onClose={onClose} />;
-  }
+  const endEarly = () => {
+    closingRef.current = true;
+    pausedRef.current = true;
+    vadRef.current?.stop();
+    vadRef.current = null;
+    void stopCamera();
+    onClose();
+  };
+
+  const checking = phase === "permissions" || phase === "error";
 
   return (
     <div className="bg-background fixed inset-0 z-50 flex flex-col">
       <header className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3 md:px-6">
         <div className="min-w-0">
-          <p className="text-muted-foreground text-xs uppercase tracking-wide">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
             {stageTitle}
             {voiceLanguage ? ` · ${languageLabel(voiceLanguage)}` : ""}
           </p>
@@ -404,191 +401,75 @@ export function AiInterview({
         </Button>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <section className="border-border flex min-h-0 flex-1 flex-col border-b md:border-r md:border-b-0">
-          {phase === "permissions" || phase === "error" ? (
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <InterviewReadyPanel
-                ref={readyPanelRef}
-                onReadyChange={setChecksReady}
-                onCameraPreviewChange={setCheckCameraStream}
-              />
-            </div>
-          ) : (
-            <MessageScrollerProvider>
-              <MessageScroller className="min-h-0 flex-1">
-                <MessageScrollerViewport className="px-4 md:px-6">
-                  <MessageScrollerContent className="gap-6 py-5">
-                    {messages.map((message) => {
-                      const text = message.parts
-                        .filter(isTextUIPart)
-                        .map((p) => p.text)
-                        .join("\n")
-                        .trim();
-                      if (!text) return null;
-                      const isUser = message.role === "user";
-                      return (
-                        <MessageScrollerItem
-                          key={message.id}
-                          scrollAnchor={message.id === lastVisibleMessageId}
-                          className="[content-visibility:visible] [contain-intrinsic-size:none]"
-                        >
-                          <div
-                            className={cn(
-                              "flex max-w-[90%] items-start gap-2.5",
-                              isUser ? "ml-auto flex-row-reverse" : "mr-auto",
-                            )}
-                          >
-                            {isUser ? (
-                              <UserChatAvatar
-                                name={chatUser.name}
-                                image={chatUser.image}
-                              />
-                            ) : (
-                              <AssistantAvatar />
-                            )}
-                            <div
-                              className={cn(
-                                "min-w-0 text-sm leading-relaxed",
-                                isUser
-                                  ? "bg-muted text-foreground w-fit rounded-3xl px-4 py-2"
-                                  : "text-foreground/90 pt-0.5",
-                              )}
-                            >
-                              <p className="whitespace-pre-wrap">{text}</p>
-                            </div>
-                          </div>
-                        </MessageScrollerItem>
-                      );
-                    })}
-                  </MessageScrollerContent>
-                </MessageScrollerViewport>
-                <MessageScrollerButton />
-              </MessageScroller>
-            </MessageScrollerProvider>
-          )}
-        </section>
-
-        <aside className="flex w-full shrink-0 flex-col gap-4 p-4 md:w-80 md:p-6">
-          <div className="border-border relative aspect-video w-full overflow-hidden border bg-muted/20">
-            <video
-              ref={sidebarCameraRef}
-              className={cn(
-                "size-full -scale-x-100 object-cover",
-                !sidebarPreviewStream && "invisible",
-              )}
-              muted
-              playsInline
-              autoPlay
+      {checking ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <InterviewReadyPanel
+              ref={readyPanelRef}
+              onReadyChange={setChecksReady}
             />
-            {sidebarPreviewStream ? (
-              <span className="bg-background/80 text-foreground absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium">
-                <VideoIcon className="size-3" />
-                Camera
-              </span>
-            ) : (
-              <div className="text-muted-foreground absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-xs">
-                <VideoIcon className="size-5 opacity-50" />
-                Waiting for camera…
-              </div>
-            )}
           </div>
-
-          <div className="border-border bg-card space-y-3 border p-4">
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <Volume2Icon className="size-3.5" />
-              {status}
-            </div>
-            <div className="bg-muted h-2 overflow-hidden rounded-full">
-              <div
-                className={cn(
-                  "h-full transition-all duration-100",
-                  listening ? "bg-primary" : "bg-primary/40",
-                )}
-                style={{ width: `${Math.min(100, Math.round(level * 400))}%` }}
-              />
-            </div>
-            <div className="text-muted-foreground flex flex-wrap gap-3 text-xs">
-              <span className="inline-flex items-center gap-1.5">
-                <MicIcon className="size-3.5" />
-                {listening ? "Listening" : "Idle"}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <VideoIcon className="size-3.5" />
-                {cameraStream || checkCameraStream ? "Camera on" : "Camera off"}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <MonitorIcon className="size-3.5" />
-                {screenRecording ? "Recording screen" : "Screen idle"}
-              </span>
-            </div>
+          <div className="border-border shrink-0 space-y-3 border-t px-4 py-4 md:px-6">
+            {error ? <p className="text-destructive text-sm">{error}</p> : null}
+            <DitherButton
+              className="w-full"
+              size="lg"
+              seed="interview-start"
+              disabled={!checksReady}
+              onClick={() => void beginSession()}
+            >
+              Start interview
+            </DitherButton>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {checksReady
+                ? "Starting records camera and microphone in the background. You will not see your camera. Your profile voice language will be used."
+                : "Complete every system check before you can start."}
+            </p>
           </div>
-
-          {phase === "permissions" || phase === "error" ? (
-            <div className="space-y-3">
-              {error ? (
-                <p className="text-destructive text-sm">{error}</p>
-              ) : null}
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={!checksReady}
-                onClick={() => void beginSession()}
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <section className="min-h-0 w-full flex-1 overflow-y-auto px-5 md:px-8">
+            <div className="mx-auto flex h-full max-w-xl items-center">
+              <p
+                className="text-foreground w-full text-center text-xl leading-snug font-medium tracking-tight md:text-2xl"
+                aria-live="polite"
               >
-                Start interview
-              </Button>
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                {checksReady
-                  ? "Starting will turn on camera, microphone, and entire-screen share. Your profile voice language will be used."
-                  : "Complete every system check on the left before you can start. Entire-screen share will be requested when you begin."}
+                {currentQuestion || status}
               </p>
             </div>
-          ) : null}
+          </section>
 
-          {phase === "finalizing" ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-3 w-full" />
-              <p className="text-muted-foreground text-sm">Finalizing…</p>
-            </div>
-          ) : null}
-
-          {phase === "done" ? (
-            <Button className="w-full" size="lg" onClick={onClose}>
-              Done
-            </Button>
-          ) : null}
-
-          {phase === "live" ? (
-            <>
-              {voiceLanguage ? (
-                <p className="text-muted-foreground text-xs">
-                  Language:{" "}
-                  <span className="text-foreground font-medium">
-                    {languageLabel(voiceLanguage)}
-                  </span>
-                </p>
-              ) : null}
+          <VoiceSessionDock live mode={voiceMode} status={status}>
+            {phase === "finalizing" ? (
+              <div className="mt-3 w-full max-w-xs space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            ) : null}
+            {phase === "done" ? (
+              <Button
+                className="mt-3 w-full max-w-xs"
+                size="lg"
+                onClick={onClose}
+              >
+                Done
+              </Button>
+            ) : null}
+            {phase === "live" ? (
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
-                onClick={() => {
-                  closingRef.current = true;
-                  pausedRef.current = true;
-                  vadRef.current?.stop();
-                  vadRef.current = null;
-                  void stopScreen();
-                  onClose();
-                }}
+                className="mt-3 w-full max-w-xs"
+                onClick={endEarly}
               >
                 <SquareIcon className="size-4" />
                 End early
               </Button>
-            </>
-          ) : null}
-        </aside>
-      </div>
+            ) : null}
+          </VoiceSessionDock>
+        </div>
+      )}
     </div>
   );
 }

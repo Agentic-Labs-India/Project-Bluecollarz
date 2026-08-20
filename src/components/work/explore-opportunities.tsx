@@ -11,7 +11,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
-import { InterviewDeviceGate } from "@/components/candidate/interviews/interview-device-gate";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { APP_PAGE_GUTTER, AppPage } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
@@ -26,9 +25,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { stateName } from "@/lib/core/geo/places";
-import { type InterviewStageId, isAiInterviewStage } from "@/lib/interviews";
+import type { InterviewStageId } from "@/lib/interviews";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
 import type { CustomQuestion } from "@/lib/jobs/custom-questions";
 import {
@@ -219,22 +217,24 @@ function ExploreFilters({
   return (
     <div
       className={cn(
-        "shrink-0",
+        "min-w-0 shrink-0",
         compact
           ? "space-y-2 pb-4"
           : "mb-8 flex flex-col gap-3 lg:flex-row lg:items-center",
       )}
     >
-      <div className={cn("relative", compact ? "w-full" : "flex-1")}>
+      <div
+        className={cn("relative min-w-0 w-full", !compact && "lg:flex-1")}
+      >
         <SearchIcon className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search opportunities..."
-          className="pl-8"
+          className="w-full min-w-0 pl-8"
         />
       </div>
-      <div className={cn("flex items-center gap-2", compact && "w-full")}>
+      <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
         <Select
           value={priority}
           onValueChange={(value) =>
@@ -242,7 +242,10 @@ function ExploreFilters({
           }
         >
           <SelectTrigger
-            className={cn(compact ? "min-w-0 flex-1" : "w-[160px]")}
+            className={cn(
+              "h-8 w-0 min-w-0 flex-1 basis-0",
+              !compact && "md:w-40 md:flex-none md:basis-auto",
+            )}
           >
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
@@ -259,7 +262,10 @@ function ExploreFilters({
           onValueChange={(value) => onWorkTypeChange(value as WorkTypeFilter)}
         >
           <SelectTrigger
-            className={cn(compact ? "min-w-0 flex-1" : "w-[180px]")}
+            className={cn(
+              "h-8 w-0 min-w-0 flex-1 basis-0",
+              !compact && "md:w-44 md:flex-none md:basis-auto",
+            )}
           >
             <SelectValue placeholder="Work type" />
           </SelectTrigger>
@@ -271,24 +277,26 @@ function ExploreFilters({
             ))}
           </SelectContent>
         </Select>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <Button
             type="button"
             variant="outline"
             size="icon"
+            className="size-8"
             aria-label="Previous page"
             disabled={!canPrev}
             onClick={() => onPageChange(page - 1)}
           >
             <ChevronLeftIcon />
           </Button>
-          <span className="text-muted-foreground min-w-10 text-center text-xs tabular-nums">
+          <span className="text-muted-foreground min-w-8 px-0.5 text-center text-xs tabular-nums">
             {page}/{pageCount}
           </span>
           <Button
             type="button"
             variant="outline"
             size="icon"
+            className="size-8"
             aria-label="Next page"
             disabled={!canNext}
             onClick={() => onPageChange(page + 1)}
@@ -348,7 +356,6 @@ export function ExploreOpportunities({
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [startingInterview, setStartingInterview] = useState(false);
-  const [showDeviceGate, setShowDeviceGate] = useState(false);
   const [activeInterview, setActiveInterview] = useState<{
     interviewId: string;
     jobId: string;
@@ -361,7 +368,6 @@ export function ExploreOpportunities({
     jobTitle: string;
     questions: CustomQuestion[];
   } | null>(null);
-  const isMobile = useIsMobile();
   const skipInitialFetch = useRef(true);
   const prevWorkTypeRef = useRef(workType);
   const lastSeededJobId = useRef<string | null>(null);
@@ -567,11 +573,6 @@ export function ExploreOpportunities({
     opportunity: Opportunity,
     stageId: InterviewStageId,
   ) => {
-    if (isAiInterviewStage(stageId) && isMobile) {
-      setShowDeviceGate(true);
-      return;
-    }
-
     setStartingInterview(true);
     try {
       const res = await fetch("/api/interviews/start", {
@@ -842,10 +843,6 @@ export function ExploreOpportunities({
           </section>
         ) : null}
       </div>
-
-      {showDeviceGate ? (
-        <InterviewDeviceGate onClose={() => setShowDeviceGate(false)} />
-      ) : null}
 
       {activeInterview ? (
         <AiInterview

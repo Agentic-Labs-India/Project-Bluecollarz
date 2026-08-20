@@ -19,8 +19,8 @@ Blucollarz is AI-native hiring infrastructure for skilled candidates and recruit
 2. DigiLocker KYC — required next. Identity only: name, date of birth (18+), phone, location, gender, PAN, Aadhaar last 4. Email stays from Google. We do not collect passport or PCC. Emigration clearance is the licensed RA's job on eMigrate, not this app.
 3. Home dashboard — application stats and next actions.
 4. Explore opportunities — browse published roles. Application status is Submitted, Selected, or Rejected.
-5. AI Communication interview — camera + mic + entire-screen share; scored on clarity, fluency, confidence, professionalism.
-6. AI Domain interview — role-aware questions from the job overview; same device rules.
+5. AI Communication interview — camera + mic on phone or computer (camera is recorded in the background; no screen share); scored on clarity, fluency, confidence, professionalism.
+6. AI Domain interview — role-aware questions from the job overview; same recording rules.
 7. After interviews, wait for recruiter selection.
 
 ## Recruiter (hire) flow
@@ -33,8 +33,8 @@ Blucollarz is AI-native hiring infrastructure for skilled candidates and recruit
 - Manage recruiters/admins, email desk, and support tickets in /admin.
 
 ## Device rules for interviews
-- Laptop, tablet, or PC (not phone).
-- Entire screen share required (not a window or tab).
+- Phone, tablet, laptop, or PC.
+- Camera and microphone required. Camera video is recorded; the candidate does not see a self-view.
 - Keep face visible; stay alone in a quiet room.
 
 ## Preferences

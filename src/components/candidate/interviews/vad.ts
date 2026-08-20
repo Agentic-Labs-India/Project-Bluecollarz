@@ -23,7 +23,7 @@ export async function startVadLoop(opts: {
   onSpeechEnd: (blob: Blob) => void;
   onLevel?: (level: number) => void;
   /**
-   * Reuse an existing mic stream (e.g. from screen recorder) instead of
+   * Reuse an existing mic stream (e.g. from the camera recorder) instead of
    * opening a second getUserMedia. When provided, tracks are not stopped
    * on teardown — the owner remains responsible.
    */
