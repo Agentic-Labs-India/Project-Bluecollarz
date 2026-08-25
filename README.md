@@ -339,7 +339,7 @@ Every LLM call goes through the **Vercel AI Gateway**. The model id is set in **
 | Job overview | `generateText` + `Output.object` | `api/hire/job-overview` |
 | Help and support tickets | `streamText` + tool | `api/help/chat` |
 
-**Voice** is Sarvam: TTS `bulbul:v3` (speaker `priya`, temperature `0.15`, pace `1`, mp3 128k) and STT `saaras:v3` in `transcribe` mode. Eleven Indian locales are supported for the spoken agent. Functions pin to Vercel `bom1` (Mumbai). Defaults are overridable in Admin → Settings except STT mode, which is locked to `transcribe`.
+**Voice** is Sarvam: TTS `bulbul:v3` (speaker `priya`, temperature `0.15`, pace `1`, mp3 128k) and STT `saaras:v3` in `transcribe` mode. Eleven Indian locales are supported for the spoken agent. Defaults are overridable in Admin → Settings except STT mode, which is locked to `transcribe`.
 
 ---
 
@@ -438,7 +438,7 @@ Jobs are closed with `PATCH { action: "close" }`; there is no delete.
 | Layer | Choice |
 |---|---|
 | Framework | Next.js 16 (App Router, Cache Components) with React 19 |
-| Hosting | Vercel Functions in `bom1` (Mumbai) |
+| Hosting | Vercel |
 | Language | TypeScript 5 |
 | Database | MongoDB 7 |
 | Auth | Better Auth 1.6 with Google OAuth |

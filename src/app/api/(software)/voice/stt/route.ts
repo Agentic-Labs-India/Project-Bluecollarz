@@ -4,10 +4,8 @@ import { parseTtsLanguage } from "@/lib/ai/voice/languages";
 import { STT_MAX_AUDIO_BYTES } from "@/lib/ai/voice/stt-limits";
 import { requireUser } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 
 export const maxDuration = 30;
-export const preferredRegion = PREFERRED_REGION;
 
 /**
  * Sarvam STT REST for VAD clips.

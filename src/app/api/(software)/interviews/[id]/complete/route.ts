@@ -1,7 +1,6 @@
 import { after, type NextRequest, NextResponse } from "next/server";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
-import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument } from "@/lib/interviews";
@@ -11,7 +10,6 @@ import { screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
-export const preferredRegion = PREFERRED_REGION;
 
 type RouteContext = { params: Promise<{ id: string }> };
 

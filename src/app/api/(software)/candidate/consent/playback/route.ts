@@ -11,12 +11,9 @@ import {
 } from "@/lib/compliance/consent-notices";
 import { issueConsentPlayback } from "@/lib/compliance/consent-playback";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
-
-export const preferredRegion = PREFERRED_REGION;
 
 const bodySchema = z.object({
   scope: z.string().trim().min(1),

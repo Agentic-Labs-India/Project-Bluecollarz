@@ -16,7 +16,6 @@ import {
 } from "@/lib/ai/runtime";
 import { requireUser } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 import { lastUserText, screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { createSupportTicket } from "@/lib/support/tickets";
@@ -28,7 +27,6 @@ import {
 } from "@/lib/support/types";
 
 export const maxDuration = 60;
-export const preferredRegion = PREFERRED_REGION;
 
 /** Turns sent to the model (short context window). */
 const HELP_MODEL_MESSAGE_LIMIT = 16;

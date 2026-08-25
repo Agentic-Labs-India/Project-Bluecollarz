@@ -9,12 +9,10 @@ import {
 } from "@/lib/ai/runtime";
 import { requireProfile } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 import { sanitizeRichTextHtml } from "@/lib/core/rich-text";
 import { findProhibitedOutput } from "@/lib/legal-safety/lexicon";
 
 export const maxDuration = 60;
-export const preferredRegion = PREFERRED_REGION;
 
 const requestSchema = z.object({
   roleType: z.string().trim().min(2).max(120),

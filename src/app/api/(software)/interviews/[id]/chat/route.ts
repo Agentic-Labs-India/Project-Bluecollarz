@@ -3,7 +3,6 @@ import { after, type NextRequest } from "next/server";
 import { parseTtsLanguage } from "@/lib/ai/voice/languages";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import type { InterviewDocument } from "@/lib/interviews";
 import { isAiInterviewStage, isCustomQuestionsStage } from "@/lib/interviews";
@@ -14,7 +13,6 @@ import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
-export const preferredRegion = PREFERRED_REGION;
 
 type RouteContext = { params: Promise<{ id: string }> };
 

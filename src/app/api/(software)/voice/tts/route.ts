@@ -5,10 +5,8 @@ import { streamSarvamTts } from "@/lib/ai/voice/sarvam-tts";
 import { sanitizeForTts } from "@/lib/ai/voice/style";
 import { requireUser } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 
 export const maxDuration = 30;
-export const preferredRegion = PREFERRED_REGION;
 
 /**
  * Cheap reachability check: session + Sarvam key present.

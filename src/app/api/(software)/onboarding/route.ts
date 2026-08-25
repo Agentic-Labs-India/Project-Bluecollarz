@@ -33,7 +33,6 @@ import {
 import { parseDateOnly } from "@/lib/core/dates";
 import { lookupPlaceOptions } from "@/lib/core/geo/places";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
-import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { isIdentityVerified } from "@/lib/kyc";
 import { lastUserText, screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
@@ -41,7 +40,6 @@ import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { hasProhibitedOutput } from "@/lib/legal-safety/lexicon";
 
 export const maxDuration = 90;
-export const preferredRegion = PREFERRED_REGION;
 
 const GEO_PLACE_PROMPT = `Places (must use country-state-city official English names):
 - Do not interview location, residence, or identity — DigiLocker KYC fills those after onboarding.
