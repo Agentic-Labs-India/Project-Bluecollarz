@@ -90,6 +90,8 @@ async function isAuthorized(
       return canReadMedical(viewer, segments[2]);
     case "company":
       return viewer.profileType === "admin" || segments[1] === viewer.id;
+    case "knowledge":
+      return viewer.profileType === "admin";
     default:
       return false;
   }
@@ -128,7 +130,10 @@ export async function GET(request: NextRequest) {
     if (!publiclyServed) {
       const auth = await requireUser();
       if (!auth.ok) {
-        return NextResponse.json({ error: auth.error }, { status: auth.status });
+        return NextResponse.json(
+          { error: auth.error },
+          { status: auth.status },
+        );
       }
 
       const viewer: Viewer = {

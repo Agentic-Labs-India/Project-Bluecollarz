@@ -32,11 +32,11 @@ const COPY: Record<Tab, string> = {
     "Add by email to promote an existing user or queue an invite for first sign-in.",
   voice:
     "Sarvam TTS and STT. Changes save automatically and apply on the next voice request.",
-  llm: "Vercel AI Gateway model and per-surface temperature. Applies on the next AI request.",
+  llm: "Vercel AI Gateway chat and embedding models, plus per-surface temperature. Applies on the next AI request.",
   grievance:
     "Shown on /grievance. Email is published; add a named officer, phone, and street address when appointed.",
   prompts:
-    "System prompts for help, onboarding, interviews, scoring, and writers.",
+    "System prompts for help, onboarding, interviews, scoring, writers, and the knowledge base.",
   flow: "Candidate, recruiter, and admin — the real sequence, and where this page feeds every AI call.",
 };
 

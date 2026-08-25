@@ -1,24 +1,29 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 import {
   CircleHelpIcon,
   KeyboardIcon,
   MicIcon,
-  SendIcon,
   Volume2Icon,
 } from "lucide-react";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
-  AssistantAvatar,
-  UserChatAvatar,
-  useChatUserAvatar,
-} from "@/components/candidate/chat-avatars";
+  PromptInput,
+  PromptInputBody,
+  PromptInputFooter,
+  type PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from "@/components/ai-elements/prompt-input";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { useChatUserAvatar } from "@/components/candidate/chat-avatars";
 import {
   startVadLoop,
   type VadController,
 } from "@/components/candidate/interviews/vad";
+import { ChatTranscript } from "@/components/chat/chat-transcript";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,28 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { Markdown } from "@/components/ui/markdown";
-import { Marker, MarkerContent } from "@/components/ui/marker";
-import {
-  Message,
-  MessageAvatar,
-  MessageContent,
-  MessageGroup,
-} from "@/components/ui/message";
-import {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-} from "@/components/ui/message-scroller";
+import { uiMessageText } from "@/lib/ai/ui-message-text";
 import {
   fetchProfileVoiceLanguage,
   languageLabel,
@@ -61,14 +45,6 @@ import { authClient } from "@/lib/auth/auth-client";
 import { HELP_SUGGESTIONS, type HelpInputMode } from "@/lib/support/prompt";
 import { cn } from "@/lib/utils";
 
-function messageText(message: UIMessage): string {
-  return message.parts
-    .filter(isTextUIPart)
-    .map((p) => p.text)
-    .join("\n")
-    .trim();
-}
-
 export function HelpDialog({
   open,
   onOpenChange,
@@ -80,7 +56,7 @@ export function HelpDialog({
   const { data: session } = authClient.useSession();
   const profileType = session?.user?.profileType as string | undefined;
 
-  const [input, setInput] = useState("");
+  const [text, setText] = useState("");
   const [mode, setMode] = useState<HelpInputMode>("text");
   const [voiceStatus, setVoiceStatus] = useState("Tap Enable mic to talk.");
   const [listening, setListening] = useState(false);
@@ -133,10 +109,10 @@ export function HelpDialog({
     setVoiceStatus("Voice paused.");
   });
 
-  const submit = useEffectEvent((text: string) => {
-    const trimmed = text.trim();
+  const submit = useEffectEvent((next: string) => {
+    const trimmed = next.trim();
     if (!trimmed || isBusy || busyRef.current) return;
-    setInput("");
+    setText("");
     void sendMessage({ text: trimmed });
   });
 
@@ -208,14 +184,13 @@ export function HelpDialog({
     }
   };
 
-  // Speak each finished assistant message once in voice mode.
   useEffect(() => {
     if (!open || mode !== "voice" || isBusy) return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
     if (!last || spokenIdsRef.current.has(last.id)) return;
 
-    const text = messageText(last);
-    if (!text) return;
+    const spoken = uiMessageText(last);
+    if (!spoken) return;
 
     spokenIdsRef.current.add(last.id);
 
@@ -223,7 +198,7 @@ export function HelpDialog({
       busyRef.current = true;
       pausedRef.current = true;
       setVoiceStatus("Speaking…");
-      await speakText(text, voiceLanguageRef.current);
+      await speakText(spoken, voiceLanguageRef.current);
       busyRef.current = false;
       if (modeRef.current === "voice" && micReady) {
         pausedRef.current = false;
@@ -232,7 +207,6 @@ export function HelpDialog({
     })();
   }, [messages, isBusy, mode, open, micReady]);
 
-  // Tear down mic when leaving voice mode or closing the dialog.
   useEffect(() => {
     if (!open || mode === "text") {
       stopVoice();
@@ -245,7 +219,7 @@ export function HelpDialog({
       languageReadyRef.current = false;
       setVoiceLanguage(null);
       voiceLanguageRef.current = TTS_VOICE.languageCode;
-      setInput("");
+      setText("");
       setMode("text");
       setMicError("");
     }
@@ -256,6 +230,10 @@ export function HelpDialog({
       vadRef.current?.stop();
     };
   }, []);
+
+  function onPromptSubmit(message: PromptInputMessage) {
+    submit(message.text);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -300,123 +278,52 @@ export function HelpDialog({
           </div>
         </DialogHeader>
 
-        <MessageScrollerProvider>
-          <MessageScroller className="min-h-0 flex-1">
-            <MessageScrollerViewport className="px-4">
-              <MessageScrollerContent className="gap-4 py-4">
-                {messages.length === 0 ? (
-                  <MessageScrollerItem>
-                    <div className="space-y-3">
-                      <p className="text-muted-foreground text-sm leading-relaxed">
-                        {mode === "voice"
-                          ? "Enable the mic and ask out loud — or tap a prompt."
-                          : "Try one of these, or type your own question below."}
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        {HELP_SUGGESTIONS.map((suggestion) => (
-                          <button
-                            key={suggestion}
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => submit(suggestion)}
-                            className="border-border hover:bg-muted/50 text-foreground rounded-none border px-3 py-2 text-start text-sm transition-colors disabled:opacity-50"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </MessageScrollerItem>
-                ) : null}
-
-                {messages.map((message, index) => {
-                  const text = messageText(message);
-                  if (!text && message.role === "user") return null;
-                  const isUser = message.role === "user";
-                  const isLast = index === messages.length - 1;
-
-                  return (
-                    <MessageScrollerItem
-                      key={message.id}
-                      scrollAnchor={isLast}
-                      // Avoid content-visibility recycling that drops avatars mid-stream.
-                      className="[content-visibility:visible] [contain-intrinsic-size:none]"
-                    >
-                      <MessageGroup>
-                        <Message align={isUser ? "end" : "start"}>
-                          <MessageAvatar>
-                            {isUser ? (
-                              <UserChatAvatar
-                                name={chatUser.name}
-                                image={chatUser.image}
-                                className="size-8 shrink-0"
-                              />
-                            ) : (
-                              <AssistantAvatar className="size-8 shrink-0" />
-                            )}
-                          </MessageAvatar>
-                          <MessageContent>
-                            {isUser ? (
-                              <div className="bg-muted text-foreground w-fit max-w-[min(100%,22rem)] rounded-3xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap">
-                                {text}
-                              </div>
-                            ) : (
-                              <div className="bg-card text-foreground border-border w-fit max-w-[min(100%,22rem)] space-y-2 border px-3.5 py-2">
-                                <Markdown>{text || "_Thinking…_"}</Markdown>
-                              </div>
-                            )}
-                          </MessageContent>
-                        </Message>
-                      </MessageGroup>
-                    </MessageScrollerItem>
-                  );
-                })}
-
-                {error ? (
-                  <MessageScrollerItem>
-                    <Marker variant="border">
-                      <MarkerContent className="text-destructive">
-                        {error.message ||
-                          "Something went wrong. Please try again."}
-                      </MarkerContent>
-                    </Marker>
-                  </MessageScrollerItem>
-                ) : null}
-              </MessageScrollerContent>
-            </MessageScrollerViewport>
-            <MessageScrollerButton />
-          </MessageScroller>
-        </MessageScrollerProvider>
+        <ChatTranscript
+          messages={messages}
+          isBusy={isBusy}
+          error={error}
+          user={chatUser}
+          empty={
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {mode === "voice"
+                  ? "Enable the mic and ask out loud — or tap a prompt."
+                  : "Try one of these, or type your own question below."}
+              </p>
+              <Suggestions>
+                {HELP_SUGGESTIONS.map((suggestion) => (
+                  <Suggestion
+                    key={suggestion}
+                    suggestion={suggestion}
+                    onClick={submit}
+                    disabled={isBusy}
+                  />
+                ))}
+              </Suggestions>
+            </div>
+          }
+        />
 
         <div className="border-border shrink-0 border-t p-3">
           {mode === "text" ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submit(input);
-              }}
-            >
-              <InputGroup className="h-auto">
-                <InputGroupInput
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
+            <PromptInput onSubmit={onPromptSubmit}>
+              <PromptInputBody>
+                <PromptInputTextarea
+                  value={text}
+                  onChange={(event) => setText(event.currentTarget.value)}
                   placeholder="Ask about Blucollarz…"
                   disabled={isBusy}
                   aria-label="Help message"
+                  className="min-h-12"
                 />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    type="submit"
-                    size="icon-sm"
-                    variant="default"
-                    disabled={isBusy || !input.trim()}
-                    aria-label="Send"
-                  >
-                    <SendIcon />
-                  </InputGroupButton>
-                </InputGroupAddon>
-              </InputGroup>
-            </form>
+              </PromptInputBody>
+              <PromptInputFooter className="justify-end">
+                <PromptInputSubmit
+                  status={status}
+                  disabled={isBusy || !text.trim()}
+                />
+              </PromptInputFooter>
+            </PromptInput>
           ) : (
             <div className="space-y-2">
               {micError ? (

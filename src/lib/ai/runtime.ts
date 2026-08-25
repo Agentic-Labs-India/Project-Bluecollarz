@@ -25,6 +25,10 @@ export function llmModel(settings: PlatformSettingsPublic): string {
   return settings.llm.model;
 }
 
+export function embeddingModel(settings: PlatformSettingsPublic): string {
+  return settings.llm.embeddingModel;
+}
+
 export function llmTemp(
   settings: PlatformSettingsPublic,
   key: Parameters<typeof llmTemperature>[1],
@@ -177,5 +181,20 @@ export function renderJobOverviewPrompt(
     applyPromptTemplate(settings.prompts.jobOverview, { brief }),
     brief,
     "Recruiter brief:",
+  );
+}
+
+export function renderKnowledgePrompt(
+  settings: PlatformSettingsPublic,
+): string {
+  return ensurePromptContains(
+    settings.prompts.knowledge,
+    [
+      "Always call a tool before you answer.",
+      "Use listDocuments when the user asks what files exist, whether anything is uploaded, or for a catalogue.",
+      "Use searchDocuments for the content of those files. Put the topic in the query string.",
+      "Do not set docType=legal just because the question mentions law, legalities, or a legal memo — that field is only the admin upload tag. A legal memo may be tagged general. Only pass docType when the user explicitly asks to restrict to that tag, or the UI already applied a filter.",
+    ].join(" "),
+    "Tool use:",
   );
 }

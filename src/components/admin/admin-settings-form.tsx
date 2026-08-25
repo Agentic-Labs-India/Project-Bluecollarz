@@ -62,6 +62,7 @@ const TEMP_FIELDS: { key: LlmTemperatureKey; label: string }[] = [
   { key: "jobOverview", label: "Job overview writer" },
   { key: "profileSummary", label: "Profile summary" },
   { key: "resumeParse", label: "Resume extract" },
+  { key: "knowledge", label: "Knowledge base" },
 ];
 
 const TTS_LANG_LABELS = Object.fromEntries(
@@ -86,6 +87,7 @@ function payloadOf(settings: PlatformSettingsPublic) {
 
 function isSavable(settings: PlatformSettingsPublic): boolean {
   if (!settings.llm.model.trim()) return false;
+  if (!settings.llm.embeddingModel.trim()) return false;
   return PROMPT_KEYS.every((key) => settings.prompts[key].trim().length >= 20);
 }
 
@@ -433,6 +435,22 @@ export function AdminSettingsForm({
                 setForm((p) => ({
                   ...p,
                   llm: { ...p.llm, model: e.target.value },
+                }))
+              }
+            />
+          </Field>
+          <Field
+            id="llm-embedding"
+            label="Embedding model id"
+            hint="Used for knowledge-base RAG. Default openai/text-embedding-3-small is 1536 dimensions — keep the Atlas index in sync if you change it."
+          >
+            <Input
+              id="llm-embedding"
+              value={form.llm.embeddingModel}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  llm: { ...p.llm, embeddingModel: e.target.value },
                 }))
               }
             />

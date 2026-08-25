@@ -4,6 +4,10 @@ import type {
   IndexSpecification,
 } from "mongodb";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
+import {
+  KNOWLEDGE_EMBEDDING_DIMENSIONS,
+  KNOWLEDGE_VECTOR_INDEX,
+} from "@/lib/knowledge/types";
 
 /** Kept here (not in @/lib/jobs) so ensureIndexes stays free of app domain imports. */
 const JOB_INDEX_SPECS = [
@@ -114,6 +118,16 @@ const LEGAL_SAFETY_NOTICE_INDEX_SPECS = [
 
 const RATE_LIMIT_INDEX_SPECS = [
   { key: { resetAt: 1 }, options: { expireAfterSeconds: 0 } },
+] as const;
+
+const KNOWLEDGE_SOURCE_INDEX_SPECS = [
+  { key: { sourceKey: 1 }, options: { unique: true } },
+  { key: { status: 1, createdAt: -1 }, options: {} },
+] as const;
+
+const KNOWLEDGE_CHUNK_INDEX_SPECS = [
+  { key: { sourceId: 1 }, options: {} },
+  { key: { source: 1, chunkIndex: 1 }, options: {} },
 ] as const;
 
 const MEDICAL_APPOINTMENT_INDEX_SPECS = [
@@ -302,6 +316,21 @@ async function createIndexes() {
         spec.options,
       ),
     ),
+    ...KNOWLEDGE_SOURCE_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.KNOWLEDGE_SOURCES),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ...KNOWLEDGE_CHUNK_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.KNOWLEDGE_CHUNKS),
+        spec.key,
+        spec.options,
+      ),
+    ),
+    ensureKnowledgeVectorIndex(db.collection(COLLECTIONS.KNOWLEDGE_CHUNKS)),
   ];
   // Log and continue if an index cannot build (e.g. unique conflict).
   await Promise.all(
@@ -311,4 +340,38 @@ async function createIndexes() {
       }),
     ),
   );
+}
+
+/**
+ * Atlas Vector Search is not a B-tree index. Local Mongo will skip this.
+ * Rebuild in Atlas if you change embedding dimensions.
+ */
+async function ensureKnowledgeVectorIndex(collection: Collection) {
+  try {
+    await collection.createSearchIndex({
+      name: KNOWLEDGE_VECTOR_INDEX,
+      type: "vectorSearch",
+      definition: {
+        fields: [
+          {
+            type: "vector",
+            path: "embedding",
+            numDimensions: KNOWLEDGE_EMBEDDING_DIMENSIONS,
+            similarity: "cosine",
+          },
+          { type: "filter", path: "docType" },
+          { type: "filter", path: "source" },
+        ],
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      /already exists|IndexAlreadyExists|duplicate/i.test(message) ||
+      (error as { code?: number }).code === 68
+    ) {
+      return;
+    }
+    throw error;
+  }
 }

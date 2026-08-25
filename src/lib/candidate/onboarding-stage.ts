@@ -1,5 +1,5 @@
-import type { UIMessage } from "ai";
-import { isTextUIPart, isToolUIPart } from "ai";
+import { isToolUIPart, type UIMessage } from "ai";
+import { uiMessageText } from "@/lib/ai/ui-message-text";
 import { languageLabel, parseTtsLanguage } from "@/lib/ai/voice/languages";
 import {
   CANDIDATE_FIELD_LABELS,
@@ -227,11 +227,7 @@ function lastAssistantText(messages: UIMessage[]) {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     if (message?.role !== "assistant") continue;
-    const text = message.parts
-      .filter(isTextUIPart)
-      .map((p) => p.text)
-      .join(" ")
-      .trim();
+    const text = uiMessageText(message);
     if (text) return text;
   }
   return "";

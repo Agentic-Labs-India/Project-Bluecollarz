@@ -12,6 +12,9 @@ export const COMPANY_DOC_MAX_MB = 4;
 /** Medical fitness reports uploaded by admin. */
 export const MEDICAL_REPORT_MAX_BYTES = 8 * 1024 * 1024;
 export const MEDICAL_REPORT_MAX_MB = 8;
+/** Knowledge-base PDFs ingested for RAG. */
+export const KNOWLEDGE_PDF_MAX_BYTES = 20 * 1024 * 1024;
+export const KNOWLEDGE_PDF_MAX_MB = 20;
 
 export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client-upload";
 
@@ -82,7 +85,13 @@ export function isVercelBlobUrl(url: string): boolean {
 export type BlobAccess = "public" | "private";
 
 /** Path families under the root. Store access is always private. */
-export type BlobKind = "interview" | "medical" | "company" | "blog" | "email";
+export type BlobKind =
+  | "interview"
+  | "medical"
+  | "company"
+  | "blog"
+  | "email"
+  | "knowledge";
 
 /** Only marketing and outbound-email assets are world-readable. */
 const PUBLIC_KINDS = new Set<BlobKind>(["blog", "email"]);
@@ -98,6 +107,9 @@ export function blobKindFromRelative(relative: string): BlobKind | null {
   }
   if (parts[0] === "admin" && parts[1] === "email" && parts.length >= 3) {
     return "email";
+  }
+  if (parts[0] === "admin" && parts[1] === "knowledge" && parts.length >= 3) {
+    return "knowledge";
   }
   if (parts[0] === "users" && parts[2] === "company" && parts.length >= 4) {
     return "company";
@@ -207,6 +219,12 @@ export function isMedicalReportUrl(
   } catch {
     return false;
   }
+}
+
+/** Admin knowledge PDFs: `{DB_NAME}/admin/knowledge/…` */
+export function isKnowledgePdfRelativePath(relative: string): boolean {
+  const parts = relative.split("/").filter(Boolean);
+  return parts[0] === "admin" && parts[1] === "knowledge" && parts.length >= 3;
 }
 
 /** Blog cover images: `{DB_NAME}/admin/blog/…` on Vercel Blob. */

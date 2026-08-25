@@ -7,7 +7,9 @@ import {
   COMPANY_DOC_MAX_BYTES,
   getBlobRoot,
   isCompanyDocumentRelativePath,
+  isKnowledgePdfRelativePath,
   isMedicalReportRelativePath,
+  KNOWLEDGE_PDF_MAX_BYTES,
   MEDICAL_REPORT_MAX_BYTES,
 } from "@/lib/blob/pathname";
 import { blobReadWriteToken } from "@/lib/blob/token";
@@ -18,6 +20,7 @@ import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
  * Allowed prefixes:
  * - `interviews/{interviewId}/…` (work; must own the interview)
  * - `admin/email/…` (admin only)
+ * - `admin/knowledge/…` (admin only)
  * - `admin/medical/{appointmentId}/…` (admin only)
  * - `users/{userId}/…` (own user id only)
  */
@@ -96,6 +99,15 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (segments.length < 3) {
             throw new Error("Invalid blog upload path");
           }
+        } else if (kind === "admin" && segments[1] === "knowledge") {
+          if (auth.user.profileType !== "admin") {
+            throw new Error("Knowledge uploads require an admin profile");
+          }
+          if (!isKnowledgePdfRelativePath(relative)) {
+            throw new Error("Invalid knowledge upload path");
+          }
+          maximumSizeInBytes = KNOWLEDGE_PDF_MAX_BYTES;
+          allowedContentTypes = ["application/pdf"];
         } else if (kind === "admin" && segments[1] === "medical") {
           if (auth.user.profileType !== "admin") {
             throw new Error("Medical report uploads require an admin profile");

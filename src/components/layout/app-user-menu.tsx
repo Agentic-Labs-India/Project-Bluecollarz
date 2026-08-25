@@ -9,10 +9,11 @@ import {
   MoonIcon,
   SunIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import * as React from "react";
-import { HelpDialog, HelpMenuButton } from "@/components/help";
+import { HelpMenuButton } from "@/components/help/help-menu-button";
 import {
   fetchUserPreferences,
   PreferenceDialog,
@@ -38,6 +39,12 @@ import {
 import type { UserPreferences } from "@/lib/user/preferences";
 import { getProfileIdLabel } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
+
+const HelpDialog = dynamic(() =>
+  import("@/components/help/help-dialog").then((mod) => ({
+    default: mod.HelpDialog,
+  })),
+);
 
 type AppUser = { name: string; email: string; avatar: string };
 

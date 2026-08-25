@@ -53,6 +53,7 @@ export const AI_RATE_LIMITS = {
   helpChat: 20,
   jobOverview: 10,
   consentPlayback: 20,
+  knowledgeChat: 20,
 } as const;
 
 /**

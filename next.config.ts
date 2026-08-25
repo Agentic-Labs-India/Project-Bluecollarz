@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
   env: {
     DB_NAME: process.env.DB_NAME,
   },
+  serverExternalPackages: ["unpdf", "pdf-parse"],
   images: {
     remotePatterns: [
       {

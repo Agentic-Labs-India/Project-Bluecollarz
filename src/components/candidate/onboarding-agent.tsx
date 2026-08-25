@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import {
   DefaultChatTransport,
-  isTextUIPart,
   isToolUIPart,
   lastAssistantMessageIsCompleteWithToolCalls,
 } from "ai";
@@ -23,6 +22,7 @@ import {
   OnboardingVoiceDock,
   type OnboardingVoiceMode,
 } from "@/components/candidate/onboarding-voice-dock";
+import { uiMessageText } from "@/lib/ai/ui-message-text";
 import {
   fetchProfileVoiceLanguage,
   isTtsLanguageCode,
@@ -272,12 +272,7 @@ export function OnboardingAgent() {
         ),
     );
     if (!host) return;
-    const existingText = host.parts
-      .filter(isTextUIPart)
-      .map((p) => p.text)
-      .join(" ")
-      .trim();
-    pickBaselineRef.current = { id: host.id, text: existingText };
+    pickBaselineRef.current = { id: host.id, text: uiMessageText(host) };
   };
 
   const enableMic = async () => {
@@ -385,11 +380,7 @@ export function OnboardingAgent() {
 
     if (!languageLockedRef.current && !awaitingLanguage) return;
 
-    let text = last.parts
-      .filter(isTextUIPart)
-      .map((p) => p.text)
-      .join(" ")
-      .trim();
+    let text = uiMessageText(last);
     const speakId = resumeHost?.id ?? last.id;
     if (awaitingResume) {
       // After getCandidateProfile / updateCandidateProfile the model often

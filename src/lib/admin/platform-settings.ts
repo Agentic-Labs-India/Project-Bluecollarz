@@ -38,10 +38,12 @@ const temperaturesSchema = z.object({
   jobOverview: z.number().min(0).max(2),
   profileSummary: z.number().min(0).max(2),
   resumeParse: z.number().min(0).max(2),
+  knowledge: z.number().min(0).max(2),
 });
 
 const llmSchema = z.object({
   model: z.string().trim().min(1).max(120),
+  embeddingModel: z.string().trim().min(1).max(120),
   temperatures: temperaturesSchema,
 });
 
@@ -56,6 +58,7 @@ const promptsSchema = z.object({
   jobOverview: z.string().min(20).max(PROMPT_MAX),
   resumeParse: z.string().min(20).max(PROMPT_MAX),
   voiceDelivery: z.string().min(20).max(PROMPT_MAX),
+  knowledge: z.string().min(20).max(PROMPT_MAX),
 });
 
 export const platformSettingsPatchSchema = z.object({
@@ -127,6 +130,8 @@ function mergeSettings(
     },
     llm: {
       model: stored?.llm?.model?.trim() || defaults.llm.model,
+      embeddingModel:
+        stored?.llm?.embeddingModel?.trim() || defaults.llm.embeddingModel,
       temperatures: temps,
     },
     voice: parseVoiceSettings({

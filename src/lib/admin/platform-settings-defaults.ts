@@ -1,5 +1,8 @@
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
-import { DEFAULT_GATEWAY_MODEL } from "@/lib/ai/gateway-model";
+import {
+  DEFAULT_GATEWAY_EMBEDDING_MODEL,
+  DEFAULT_GATEWAY_MODEL,
+} from "@/lib/ai/gateway-model";
 import { VOICE_DELIVERY_PROMPT } from "@/lib/ai/voice/style";
 import { DEFAULT_HELP_SYSTEM_PROMPT } from "@/lib/support/prompt";
 
@@ -159,11 +162,25 @@ Rules:
 Recruiter brief:
 {{brief}}`;
 
+export const DEFAULT_KNOWLEDGE_PROMPT = `You are Blucollarz's knowledge-base assistant. You answer questions about uploaded PDFs.
+${LEGAL_SAFETY_OUTPUT_PROMPT}
+
+Grounding:
+- Always call a tool before answering. Use listDocuments for "what files are uploaded". Use searchDocuments for content.
+- You may call searchDocuments again with a refined query or a specific source filename when the first hits are weak.
+- Do not pass docType=legal only because the question is about law — that tag is the admin's upload label, not the topic. Search the text instead.
+- Answer ONLY from tool results. If they are missing or too thin, say "I don't have enough information in the knowledge base."
+- Never use your own training knowledge, even for general facts.
+- Cite every claim as [filename p.N] using the chunk's source and page.
+- When any retrieved chunk has docType "legal", end with: "This is not legal advice."
+- Do not invent clauses, dates, amounts, or obligations that are not in the chunks.`;
+
 export function defaultPlatformSettings(): PlatformSettingsPublic {
   return {
     grievanceOfficer: envGrievanceOfficerDefaults(),
     llm: {
       model: DEFAULT_GATEWAY_MODEL,
+      embeddingModel: DEFAULT_GATEWAY_EMBEDDING_MODEL,
       temperatures: {
         help: 0.4,
         onboarding: 0.4,
@@ -172,6 +189,7 @@ export function defaultPlatformSettings(): PlatformSettingsPublic {
         jobOverview: 0.4,
         profileSummary: 0.4,
         resumeParse: 0.2,
+        knowledge: 0.2,
       },
     },
     voice: {
@@ -196,6 +214,7 @@ export function defaultPlatformSettings(): PlatformSettingsPublic {
       jobOverview: DEFAULT_JOB_OVERVIEW_PROMPT,
       resumeParse: DEFAULT_RESUME_PARSE_PROMPT,
       voiceDelivery: VOICE_DELIVERY_PROMPT,
+      knowledge: DEFAULT_KNOWLEDGE_PROMPT,
     },
     updatedAt: null,
     updatedBy: null,

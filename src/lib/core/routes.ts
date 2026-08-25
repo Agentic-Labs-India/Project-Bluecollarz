@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Briefcase,
   FileText,
   Home,
@@ -39,6 +40,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { title: "Email", url: "/admin/email", icon: Mail },
   { title: "Support", url: "/admin/support", icon: LifeBuoy },
   { title: "Blog", url: "/admin/blog", icon: FileText },
+  { title: "Knowledge", url: "/admin/knowledge", icon: BookOpen },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 

@@ -90,6 +90,11 @@ const PROMPT_FIELDS: PromptField[] = (
       label: "Voice delivery (injected into spoken agents)",
       placeholders: "Used as {{voiceDelivery}} in onboarding and interviews",
     },
+    {
+      key: "knowledge",
+      label: "Knowledge base RAG",
+      placeholders: "Grounded answers over uploaded PDFs",
+    },
   ] satisfies Omit<PromptField, "tokens">[]
 ).map((field) => ({ ...field, tokens: tokensIn(field.placeholders) }));
 

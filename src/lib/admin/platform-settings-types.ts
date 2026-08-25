@@ -15,6 +15,7 @@ export const LLM_TEMPERATURE_KEYS = [
   "jobOverview",
   "profileSummary",
   "resumeParse",
+  "knowledge",
 ] as const;
 
 export type LlmTemperatureKey = (typeof LLM_TEMPERATURE_KEYS)[number];
@@ -30,6 +31,7 @@ export const PROMPT_KEYS = [
   "jobOverview",
   "resumeParse",
   "voiceDelivery",
+  "knowledge",
 ] as const;
 
 export type PromptKey = (typeof PROMPT_KEYS)[number];
@@ -44,6 +46,7 @@ export interface GrievanceOfficerSettings {
 
 export interface LlmSettings {
   model: string;
+  embeddingModel: string;
   temperatures: Record<LlmTemperatureKey, number>;
 }
 

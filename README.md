@@ -50,6 +50,7 @@ Blucollarz onboards workers through a voice-first AI agent, verifies identity th
 | **Job overview writer** | Drafts a role description for recruiters from a few structured inputs |
 | **In-app help agent** | Signed-in assistant (text and voice) that can open structured support tickets |
 | **Prohibited-output guard** | Blocks the model from making legal determinations, at runtime rather than by prompt |
+| **Knowledge base RAG** | Admin uploads PDFs; they chunk, embed via the AI Gateway, and answer only from retrieved pages |
 
 There is **no AI document verification**. Identity is established through DigiLocker, not by a model looking at photographs of documents.
 
@@ -63,7 +64,7 @@ There is **no AI document verification**. Identity is established through DigiLo
 | **Private blob storage** | Interview recordings, medical reports and company documents are private and served through an authorizing proxy |
 | **Published-jobs caching** | Landing and explore read a cached list, invalidated when a recruiter publishes or edits |
 | **Rate limiting** | Shared per-user and global Sarvam caps on every AI and voice endpoint |
-| **Admin console** | Recruiters, medical, compliance, email, support, blog and settings |
+| **Admin console** | Recruiters, medical, compliance, email, support, blog, knowledge base, and settings |
 
 ---
 
@@ -221,6 +222,7 @@ Access requires `profileType === "admin"`. Nav is defined in `src/lib/core/route
 | Email | `/admin/email` | Resend outbound and inbound desk |
 | Support | `/admin/support` | Ticket queue from the help agent |
 | Blog | `/admin/blog` | Post authoring |
+| Knowledge | `/admin/knowledge` | PDF ingest (background) and grounded Q&A |
 | Settings | `/admin/settings` | Admin, voice, language model, grievance officer, system prompts, flow |
 
 Legal-safety cases and legal holds are **API only** at present (`/api/admin/legal-safety/*`); there is no console page yet.
@@ -327,7 +329,7 @@ stateDiagram-v2
 
 ## AI models and features
 
-Every LLM call goes through the **Vercel AI Gateway**. The model id is set in **Admin → Settings** and cached; the code default when nothing is saved is `openai/gpt-4o`. The model id is not read from the environment.
+Every LLM call goes through the **Vercel AI Gateway**. Chat and embedding model ids are set in **Admin → Settings** and cached; code defaults when nothing is saved are `openai/gpt-4o` and `openai/text-embedding-3-small`. Model ids are not read from the environment.
 
 | Feature | SDK call | Location |
 |---|---|---|
@@ -338,6 +340,7 @@ Every LLM call goes through the **Vercel AI Gateway**. The model id is set in **
 | Interview scoring | `generateText` + `Output.object` | `lib/interviews/analysis.ts` |
 | Job overview | `generateText` + `Output.object` | `api/hire/job-overview` |
 | Help and support tickets | `streamText` + tool | `api/help/chat` |
+| Knowledge base RAG | `streamText` + `searchDocuments` tool | `api/admin/knowledge/chat` |
 
 **Voice** is Sarvam: TTS `bulbul:v3` (speaker `priya`, temperature `0.15`, pace `1`, mp3 128k) and STT `saaras:v3` in `transcribe` mode. Eleven Indian locales are supported for the spoken agent. Defaults are overridable in Admin → Settings except STT mode, which is locked to `transcribe`.
 
@@ -354,8 +357,27 @@ Vercel Blob, with every path rooted under `DB_NAME`. Access is derived from the 
 | `company` | `{DB_NAME}/users/{userId}/company/…` | private |
 | `blog` | `{DB_NAME}/admin/blog/…` | public |
 | `email` | `{DB_NAME}/admin/email/…` | public |
+| `knowledge` | `{DB_NAME}/admin/knowledge/…` | private |
 
-Uploads go straight from the browser using a token minted by `POST /api/blob/client-upload`, which enforces the allowed prefixes. Private files are read through `GET /api/blob/file?path=…`, which authorizes the viewer before streaming: an interview is readable by its owner or by a hirer holding evaluation consent, a medical report by the candidate or an admin, a company document by its owner or an admin.
+Uploads go straight from the browser using a token minted by `POST /api/blob/client-upload`, which enforces the allowed prefixes. Private files are read through `GET /api/blob/file?path=…`, which authorizes the viewer before streaming: an interview is readable by its owner or by a hirer holding evaluation consent, a medical report by the candidate or an admin, a company document by its owner or an admin, a knowledge PDF by an admin.
+
+### Knowledge base (Atlas Vector Search)
+
+Admin **Knowledge** (`/admin/knowledge`) stores PDFs privately, then ingests them in the background (`after()` on `POST /api/admin/knowledge`):
+
+1. Extract text per page (`unpdf`, fallback `pdf-parse`).
+2. Chunk with LangChain `RecursiveCharacterTextSplitter` (~800 tokens, ~100 overlap).
+3. Embed each chunk through the AI Gateway (embedding model from Admin → Settings).
+4. Replace existing chunks for that filename (re-upload is idempotent).
+
+Chunks live in Mongo `KnowledgeChunks` (`text`, `embedding`, `source`, `docType`, `page`, `chunkIndex`, `createdAt`). `ensureIndexes()` tries to create Atlas Vector Search index `knowledge_vector_index` (cosine, 1536 dims, filterable `docType` and `source`). If you are not on Atlas, or the index was created with different dimensions, create or update it in the Atlas UI:
+
+- Index name: `knowledge_vector_index`
+- Type: Vector Search
+- Path: `embedding`, cosine, 1536 dimensions (must match `openai/text-embedding-3-small`; change both if you swap embedding models)
+- Filter fields: `docType`, `source`
+
+Ask tab streams answers from `POST /api/admin/knowledge/chat`. The model must call `searchDocuments` (`$vectorSearch`, top 5 by default, max 4 retrieval rounds) and cite `[filename p.N]`. Legal chunks always add that the output is not legal advice.
 
 ---
 
@@ -370,6 +392,7 @@ Fixed 60-second windows in `src/lib/core/rate-limit.ts`, stored in Mongo (`RateL
 | `interviews/[id]/chat` | 40 |
 | `onboarding` | 40 |
 | `help/chat` | 20 |
+| `admin/knowledge/chat` | 20 |
 | `hire/job-overview` | 10 |
 | `candidate/consent/playback` | 20 (counts toward global TTS) |
 
@@ -426,6 +449,9 @@ Jobs are closed with `PATCH { action: "close" }`; there is no delete.
 | `/api/admin/support/tickets`, `/[id]`, `/[id]/reply` | GET, PATCH / GET / POST |
 | `/api/admin/emails`, `/[id]` | GET, POST / GET |
 | `/api/admin/blog`, `/[id]` | GET, POST, PATCH, DELETE / GET |
+| `/api/admin/knowledge` | GET, POST |
+| `/api/admin/knowledge/[id]` | POST (retry ingest), DELETE |
+| `/api/admin/knowledge/chat` | POST |
 | `/api/admin/settings` | GET, PATCH |
 
 ### Shared

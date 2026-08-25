@@ -37,6 +37,8 @@ export const COLLECTIONS = {
   LEGAL_SAFETY_CASES: "LegalSafetyCases",
   LEGAL_SAFETY_NOTICES: "LegalSafetyNotices",
   RATE_LIMITS: "RateLimits",
+  KNOWLEDGE_SOURCES: "KnowledgeSources",
+  KNOWLEDGE_CHUNKS: "KnowledgeChunks",
 } as const;
 
 /** 24-char hex Mongo id. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, isToolUIPart } from "ai";
+import { DefaultChatTransport, isToolUIPart } from "ai";
 import { SquareIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -20,6 +20,7 @@ import {
 import { DitherButton } from "@/components/shared/dither-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { uiMessageText } from "@/lib/ai/ui-message-text";
 import { languageLabel, type TtsLanguageCode } from "@/lib/ai/voice/languages";
 import { speakText } from "@/lib/ai/voice/speak";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
@@ -144,12 +145,7 @@ export function AiInterview({
     const last = [...messages]
       .reverse()
       .find((message) => message.role === "assistant");
-    if (!last) return "";
-    return last.parts
-      .filter(isTextUIPart)
-      .map((part) => part.text)
-      .join("\n")
-      .trim();
+    return last ? uiMessageText(last) : "";
   }, [messages]);
 
   const voiceMode = toVoiceMode({
@@ -230,11 +226,7 @@ export function AiInterview({
     const last = [...messages].reverse().find((m) => m.role === "assistant");
     if (!last || spokenIdsRef.current.has(last.id)) return;
 
-    const text = last.parts
-      .filter(isTextUIPart)
-      .map((p) => p.text)
-      .join(" ")
-      .trim();
+    const text = uiMessageText(last);
     if (!text) return;
 
     spokenIdsRef.current.add(last.id);
