@@ -36,7 +36,6 @@ import { VOICE_LANGUAGE_OPTIONS } from "@/lib/ai/voice/languages";
 import {
   defaultSpeakerForTtsModel,
   SARVAM_STT_MODELS,
-  SARVAM_STT_MODES,
   SARVAM_TTS_BITRATES,
   SARVAM_TTS_CODECS,
   SARVAM_TTS_MODELS,
@@ -136,7 +135,7 @@ function titleCase(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 }
 
-function SettingSelect({
+function SettingSelect<T extends string>({
   id,
   value,
   options,
@@ -144,14 +143,14 @@ function SettingSelect({
   onValueChange,
 }: {
   id: string;
-  value: string;
-  options: readonly string[];
+  value: T;
+  options: readonly T[];
   labels?: Record<string, string>;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: T) => void;
 }) {
   const items = options.includes(value) ? options : [value, ...options];
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={(next) => onValueChange(next as T)}>
       <SelectTrigger id={id} className="w-full">
         <SelectValue />
       </SelectTrigger>
@@ -575,33 +574,13 @@ export function AdminSettingsForm({
                 value={voice.sttModel}
                 options={SARVAM_STT_MODELS}
                 labels={{
-                  "saaras:v3": "saaras:v3",
-                  "saaras:v4": "saaras:v4 (latest)",
+                  "saaras:v3": "saaras:v3 (recommended)",
+                  "saaras:v4": "saaras:v4 (Global English — not for Indic)",
                 }}
                 onValueChange={(sttModel) =>
                   setForm((p) => ({
                     ...p,
                     voice: { ...p.voice, sttModel },
-                  }))
-                }
-              />
-            </Field>
-            <Field id="stt-mode" label="STT mode">
-              <SettingSelect
-                id="stt-mode"
-                value={voice.sttMode}
-                options={SARVAM_STT_MODES}
-                labels={{
-                  transcribe: "transcribe (same language)",
-                  translate: "translate (to English)",
-                  verbatim: "verbatim (word-for-word)",
-                  translit: "translit (romanization)",
-                  codemix: "codemix (mixed script)",
-                }}
-                onValueChange={(sttMode) =>
-                  setForm((p) => ({
-                    ...p,
-                    voice: { ...p.voice, sttMode },
                   }))
                 }
               />

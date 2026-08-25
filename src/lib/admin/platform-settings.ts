@@ -12,7 +12,9 @@ import {
   type PlatformSettingsPublic,
   PROMPT_KEYS,
   type PromptKey,
+  type VoiceSettings,
 } from "@/lib/admin/platform-settings-types";
+import { voiceSettingsSchema } from "@/lib/ai/voice/settings-schema";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
 export const PLATFORM_SETTINGS_CACHE_TAG = "platform-settings";
@@ -43,18 +45,6 @@ const llmSchema = z.object({
   temperatures: temperaturesSchema,
 });
 
-const voiceSchema = z.object({
-  ttsModel: z.string().trim().min(1).max(80),
-  ttsSpeaker: z.string().trim().min(1).max(80),
-  ttsTemperature: z.number().min(0.01).max(2),
-  ttsPace: z.number().min(0.3).max(3),
-  ttsLanguageCode: z.string().trim().min(2).max(16),
-  ttsCodec: z.string().trim().min(2).max(16),
-  ttsBitrate: z.string().trim().min(2).max(16),
-  sttModel: z.string().trim().min(1).max(80),
-  sttMode: z.string().trim().min(1).max(40),
-});
-
 const promptsSchema = z.object({
   help: z.string().min(20).max(PROMPT_MAX),
   onboarding: z.string().min(20).max(PROMPT_MAX),
@@ -71,7 +61,7 @@ const promptsSchema = z.object({
 export const platformSettingsPatchSchema = z.object({
   grievanceOfficer: grievanceSchema,
   llm: llmSchema,
-  voice: voiceSchema,
+  voice: voiceSettingsSchema,
   prompts: promptsSchema,
 });
 
@@ -91,6 +81,11 @@ function col() {
   return client
     .db(DB_NAME)
     .collection<PlatformSettingsDocument>(COLLECTIONS.PLATFORM_SETTINGS);
+}
+
+function parseVoiceSettings(value: unknown): VoiceSettings {
+  const parsed = voiceSettingsSchema.safeParse(value);
+  return parsed.success ? parsed.data : defaultPlatformSettings().voice;
 }
 
 function clampTemp(value: unknown, fallback: number): number {
@@ -134,10 +129,10 @@ function mergeSettings(
       model: stored?.llm?.model?.trim() || defaults.llm.model,
       temperatures: temps,
     },
-    voice: {
+    voice: parseVoiceSettings({
       ...defaults.voice,
       ...stored?.voice,
-    },
+    }),
     prompts,
     updatedAt: stored?.updatedAt ? stored.updatedAt.toISOString() : null,
     updatedBy: stored?.updatedBy ?? null,

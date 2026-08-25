@@ -10,3 +10,9 @@ const STT_REST_MAX_SECONDS = 30;
  * and a little encoder delay.
  */
 export const STT_LISTEN_CAP_MS = (STT_REST_MAX_SECONDS - 5) * 1000;
+
+/**
+ * Hard POST cap. 25s of speech in webm/opus is well under 1MB; 3MB
+ * covers uncompressed wav with margin and rejects dump uploads.
+ */
+export const STT_MAX_AUDIO_BYTES = 3 * 1024 * 1024;

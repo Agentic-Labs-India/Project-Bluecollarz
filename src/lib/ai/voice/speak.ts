@@ -5,7 +5,7 @@ import { sanitizeForTts, TTS_VOICE } from "@/lib/ai/voice/style";
 
 /**
  * Speak text via Sarvam HTTP stream (/api/voice/tts).
- * Pass `languageCode` from Sarvam STT detection so TTS matches the user.
+ * Pass the interview / profile voice language so TTS matches the session.
  */
 export async function speakText(text: string, languageCode?: string | null) {
   const clean = sanitizeForTts(text).slice(0, 3500);

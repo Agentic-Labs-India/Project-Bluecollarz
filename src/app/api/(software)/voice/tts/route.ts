@@ -1,16 +1,43 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getAiRuntime } from "@/lib/ai/runtime";
 import { resolveTtsLanguage } from "@/lib/ai/voice/languages";
+import { streamSarvamTts } from "@/lib/ai/voice/sarvam-tts";
 import { sanitizeForTts } from "@/lib/ai/voice/style";
 import { requireUser } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { PREFERRED_REGION } from "@/lib/core/region";
 
 export const maxDuration = 30;
+export const preferredRegion = PREFERRED_REGION;
 
 /**
- * Sarvam TTS HTTP stream (Bulbul v3).
- * Proxies the binary audio stream — right fit for Vercel (no persistent WS).
+ * Cheap reachability check: session + Sarvam key present.
+ * Does not synthesize audio.
  */
+export async function GET() {
+  try {
+    const authed = await requireUser();
+    if (!authed.ok) {
+      return NextResponse.json(
+        { error: authed.error },
+        { status: authed.status },
+      );
+    }
+    const apiKey = process.env.SARVAM_API_KEY?.trim();
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "SARVAM_API_KEY is not configured" },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("GET /api/voice/tts:", error);
+    return NextResponse.json({ error: "TTS unavailable" }, { status: 500 });
+  }
+}
+
+/** Proxies Sarvam TTS HTTP stream using Admin voice settings. */
 export async function POST(req: NextRequest) {
   try {
     const authed = await requireUser();
@@ -20,7 +47,7 @@ export async function POST(req: NextRequest) {
         { status: authed.status },
       );
     }
-    const limit = rateLimitPerMinute("tts", authed.user.id);
+    const limit = await rateLimitPerMinute("tts", authed.user.id);
     if (!limit.ok) return tooManyRequests(limit);
 
     const apiKey = process.env.SARVAM_API_KEY?.trim();
@@ -47,26 +74,12 @@ export async function POST(req: NextRequest) {
       resolveTtsLanguage(voice.ttsLanguageCode),
     );
 
-    const upstream = await fetch(
-      "https://api.sarvam.ai/text-to-speech/stream",
-      {
-        method: "POST",
-        headers: {
-          "api-subscription-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text,
-          target_language_code: languageCode,
-          model: voice.ttsModel,
-          speaker: voice.ttsSpeaker,
-          pace: voice.ttsPace,
-          temperature: voice.ttsTemperature,
-          output_audio_codec: voice.ttsCodec,
-          output_audio_bitrate: voice.ttsBitrate,
-        }),
-      },
-    );
+    const upstream = await streamSarvamTts({
+      apiKey,
+      text,
+      languageCode,
+      voice,
+    });
 
     if (!upstream.ok || !upstream.body) {
       const detail = await upstream.text().catch(() => "");

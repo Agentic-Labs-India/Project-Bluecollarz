@@ -12,7 +12,11 @@ import { toast } from "sonner";
 import { AiInterview } from "@/components/candidate/interviews/ai-interview";
 import { CustomQuestionsForm } from "@/components/candidate/interviews/custom-questions-form";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
-import { APP_PAGE_PAD, AppPage, AppPageTitle } from "@/components/layout/app-page";
+import {
+  APP_PAGE_PAD,
+  AppPage,
+  AppPageTitle,
+} from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,6 +29,10 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OpportunityDetail } from "@/components/work/opportunity-detail";
+import {
+  parseTtsLanguage,
+  type TtsLanguageCode,
+} from "@/lib/ai/voice/languages";
 import { stateName } from "@/lib/core/geo/places";
 import type { InterviewStageId } from "@/lib/interviews";
 import type { ApplicationStatus } from "@/lib/jobs/applications";
@@ -223,9 +231,7 @@ function ExploreFilters({
           : "mb-8 flex flex-col gap-3 lg:flex-row lg:items-center",
       )}
     >
-      <div
-        className={cn("relative min-w-0 w-full", !compact && "lg:flex-1")}
-      >
+      <div className={cn("relative min-w-0 w-full", !compact && "lg:flex-1")}>
         <SearchIcon className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           value={search}
@@ -361,6 +367,7 @@ export function ExploreOpportunities({
     jobId: string;
     jobTitle: string;
     stageId: "ai-communication" | "ai-domain";
+    voiceLanguage: TtsLanguageCode;
   } | null>(null);
   const [activeCustomForm, setActiveCustomForm] = useState<{
     interviewId: string;
@@ -589,6 +596,7 @@ export function ExploreOpportunities({
         error?: string;
         code?: string;
         customQuestions?: CustomQuestion[];
+        voiceLanguage?: string;
       };
       if (!res.ok || !data.interviewId) {
         if (data.code === "EVALUATION_CONSENT_REQUIRED") {
@@ -617,11 +625,17 @@ export function ExploreOpportunities({
         return;
       }
 
+      const voiceLanguage = parseTtsLanguage(data.voiceLanguage);
+      if (!voiceLanguage) {
+        throw new Error("Interview language is not set.");
+      }
+
       setActiveInterview({
         interviewId: data.interviewId,
         jobId: opportunity.id,
         jobTitle: opportunity.title,
         stageId,
+        voiceLanguage,
       });
     } catch {
       // keep CTA available for retry
@@ -842,6 +856,7 @@ export function ExploreOpportunities({
           interviewId={activeInterview.interviewId}
           jobTitle={activeInterview.jobTitle}
           stageId={activeInterview.stageId}
+          voiceLanguage={activeInterview.voiceLanguage}
           onClose={() => setActiveInterview(null)}
           onCompleted={() => {
             markInterviewComplete(

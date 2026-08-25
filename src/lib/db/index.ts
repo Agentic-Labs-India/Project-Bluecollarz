@@ -3,8 +3,10 @@ import { attachDatabasePool } from "@vercel/functions";
 import { MongoClient, type MongoClientOptions, ObjectId } from "mongodb";
 
 const options: MongoClientOptions = {
-  appName: "devrel.vercel.integration",
-  maxIdleTimeMS: 5000,
+  appName: "blucollarz",
+  maxIdleTimeMS: 60_000,
+  maxPoolSize: 10,
+  minPoolSize: 0,
 };
 
 const client = new MongoClient(process.env.MONGODB_URI || "", options);
@@ -34,6 +36,7 @@ export const COLLECTIONS = {
   LEGAL_HOLDS: "LegalHolds",
   LEGAL_SAFETY_CASES: "LegalSafetyCases",
   LEGAL_SAFETY_NOTICES: "LegalSafetyNotices",
+  RATE_LIMITS: "RateLimits",
 } as const;
 
 /** 24-char hex Mongo id. */

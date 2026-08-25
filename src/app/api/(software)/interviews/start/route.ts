@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
 import { parseTtsLanguage } from "@/lib/ai/voice/languages";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
+import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
@@ -31,6 +32,8 @@ function questionsPayload(
 ) {
   return isCustomQuestionsStage(stageId) ? (questions ?? []) : undefined;
 }
+
+export const preferredRegion = PREFERRED_REGION;
 
 /** Start (or resume) an interview stage for a published role. */
 export async function POST(req: NextRequest) {
@@ -149,6 +152,8 @@ export async function POST(req: NextRequest) {
         status: "in_progress",
         jobTitle: existing.jobTitle,
         stageId: existing.stageId,
+        voiceLanguage:
+          parseTtsLanguage(existing.voiceLanguage) || voiceLanguage,
         customQuestions: questionsPayload(stageId, snapshot),
       });
     }
@@ -182,6 +187,7 @@ export async function POST(req: NextRequest) {
         status: "in_progress",
         jobTitle: job.title,
         stageId,
+        voiceLanguage,
         customQuestions: questionsPayload(stageId, jobQuestions),
       });
     } catch (error) {
@@ -198,6 +204,7 @@ export async function POST(req: NextRequest) {
         alreadyComplete: raced.status === "completed",
         jobTitle: raced.jobTitle,
         stageId: raced.stageId,
+        voiceLanguage: parseTtsLanguage(raced.voiceLanguage) || voiceLanguage,
         customQuestions: questionsPayload(
           stageId,
           raced.customQuestions?.length ? raced.customQuestions : jobQuestions,

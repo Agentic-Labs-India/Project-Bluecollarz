@@ -6,6 +6,7 @@ import {
   tool,
   type UIMessage,
 } from "ai";
+import { after } from "next/server";
 import { z } from "zod";
 import {
   getAiRuntime,
@@ -15,11 +16,9 @@ import {
 } from "@/lib/ai/runtime";
 import { requireUser } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { PREFERRED_REGION } from "@/lib/core/region";
+import { lastUserText, screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
-import {
-  lastUserText,
-  screenWorkerTurnSafe,
-} from "@/lib/legal-safety/detect";
 import { createSupportTicket } from "@/lib/support/tickets";
 import {
   SUPPORT_PRIORITIES,
@@ -29,6 +28,7 @@ import {
 } from "@/lib/support/types";
 
 export const maxDuration = 60;
+export const preferredRegion = PREFERRED_REGION;
 
 /** Turns sent to the model (short context window). */
 const HELP_MODEL_MESSAGE_LIMIT = 16;
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return new Response(auth.error, { status: auth.status });
   }
-  const limit = rateLimitPerMinute("helpChat", auth.user.id);
+  const limit = await rateLimitPerMinute("helpChat", auth.user.id);
   if (!limit.ok) return tooManyRequests(limit);
 
   let body: unknown;
@@ -81,12 +81,14 @@ export async function POST(request: Request) {
   const recent = messages.slice(-HELP_MODEL_MESSAGE_LIMIT);
   const transcript = transcriptFromMessages(messages);
 
-  await screenWorkerTurnSafe({
-    userId: auth.user.id,
-    profileType: auth.user.profileType,
-    text: lastUserText(messages),
-    sourceKind: "chat",
-    sourceId: `help:${auth.user.id}`,
+  after(async () => {
+    await screenWorkerTurnSafe({
+      userId: auth.user.id,
+      profileType: auth.user.profileType,
+      text: lastUserText(messages),
+      sourceKind: "chat",
+      sourceId: `help:${auth.user.id}`,
+    });
   });
 
   const settings = await getAiRuntime();

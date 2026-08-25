@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAiRuntime } from "@/lib/ai/runtime";
 import { resolveTtsLanguage } from "@/lib/ai/voice/languages";
+import { streamSarvamTts } from "@/lib/ai/voice/sarvam-tts";
 import { sanitizeForTts } from "@/lib/ai/voice/style";
 import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import {
@@ -10,9 +11,12 @@ import {
 } from "@/lib/compliance/consent-notices";
 import { issueConsentPlayback } from "@/lib/compliance/consent-playback";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { formatZodError } from "@/lib/utils";
+
+export const preferredRegion = PREFERRED_REGION;
 
 const bodySchema = z.object({
   scope: z.string().trim().min(1),
@@ -30,7 +34,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const limit = rateLimitPerMinute("consentPlayback", auth.user.id);
+    const limit = await rateLimitPerMinute("consentPlayback", auth.user.id);
     if (!limit.ok) return tooManyRequests(limit);
 
     const body = await req.json().catch(() => null);
@@ -80,26 +84,12 @@ export async function POST(req: Request) {
       resolveTtsLanguage(settings.voice.ttsLanguageCode),
     );
 
-    const upstream = await fetch(
-      "https://api.sarvam.ai/text-to-speech/stream",
-      {
-        method: "POST",
-        headers: {
-          "api-subscription-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text,
-          target_language_code: languageCode,
-          model: settings.voice.ttsModel,
-          speaker: settings.voice.ttsSpeaker,
-          pace: settings.voice.ttsPace,
-          temperature: settings.voice.ttsTemperature,
-          output_audio_codec: settings.voice.ttsCodec,
-          output_audio_bitrate: settings.voice.ttsBitrate,
-        }),
-      },
-    );
+    const upstream = await streamSarvamTts({
+      apiKey,
+      text,
+      languageCode,
+      voice: settings.voice,
+    });
 
     if (!upstream.ok || !upstream.body) {
       return NextResponse.json(
@@ -126,6 +116,9 @@ export async function POST(req: Request) {
   } catch (error) {
     rethrowIfPrerenderAbort(error);
     console.error("POST /api/candidate/consent/playback:", error);
-    return NextResponse.json({ error: "Could not play notice" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not play notice" },
+      { status: 500 },
+    );
   }
 }

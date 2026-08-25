@@ -20,13 +20,8 @@ import {
 import { DitherButton } from "@/components/shared/dither-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  fetchProfileVoiceLanguage,
-  languageLabel,
-  type TtsLanguageCode,
-} from "@/lib/ai/voice/languages";
+import { languageLabel, type TtsLanguageCode } from "@/lib/ai/voice/languages";
 import { speakText } from "@/lib/ai/voice/speak";
-import { TTS_VOICE } from "@/lib/ai/voice/style";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { uploadBlob } from "@/lib/blob/upload";
 import type { AiInterviewStageId } from "@/lib/interviews";
@@ -70,12 +65,14 @@ export function AiInterview({
   interviewId,
   jobTitle,
   stageId = "ai-communication",
+  voiceLanguage: sessionLanguage,
   onClose,
   onCompleted,
 }: {
   interviewId: string;
   jobTitle: string;
   stageId?: AiInterviewStageId;
+  voiceLanguage: TtsLanguageCode;
   onClose: () => void;
   onCompleted: (result: {
     analysis?: unknown;
@@ -94,9 +91,6 @@ export function AiInterview({
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
   const [checksReady, setChecksReady] = useState(false);
-  const [voiceLanguage, setVoiceLanguage] = useState<TtsLanguageCode | null>(
-    null,
-  );
   const spokenIdsRef = useRef<Set<string>>(new Set());
   const startedChatRef = useRef(false);
   const pausedRef = useRef(true);
@@ -105,9 +99,9 @@ export function AiInterview({
   const busyUtteranceRef = useRef(false);
   const streamingRef = useRef(false);
   const closingRef = useRef(false);
-  const languageReadyRef = useRef(false);
   const readyPanelRef = useRef<InterviewReadyPanelHandle>(null);
-  const voiceLanguageRef = useRef(TTS_VOICE.languageCode);
+  const voiceLanguageRef = useRef(sessionLanguage);
+  voiceLanguageRef.current = sessionLanguage;
 
   const {
     start: startCamera,
@@ -127,28 +121,10 @@ export function AiInterview({
     setError("Camera turned off. Please restart the interview.");
   }, [phase, cameraRecording, cameraStream]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void fetchProfileVoiceLanguage().then((code) => {
-      if (cancelled) return;
-      const next = code ?? "en-IN";
-      voiceLanguageRef.current = next;
-      languageReadyRef.current = true;
-      setVoiceLanguage(next);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `/api/interviews/${interviewId}/chat`,
-        body: () =>
-          languageReadyRef.current
-            ? { language_code: voiceLanguageRef.current }
-            : {},
       }),
     [interviewId],
   );
@@ -185,15 +161,7 @@ export function AiInterview({
 
   const beginSession = useCallback(async () => {
     setError("");
-    setStatus("Loading your voice language…");
     try {
-      if (!languageReadyRef.current) {
-        const code = (await fetchProfileVoiceLanguage()) ?? "en-IN";
-        voiceLanguageRef.current = code;
-        languageReadyRef.current = true;
-        setVoiceLanguage(code);
-      }
-
       setStatus("Turning on camera…");
       readyPanelRef.current?.releaseDevices();
       const { mic } = await startCamera();
@@ -203,10 +171,7 @@ export function AiInterview({
       vadRef.current = await startVadLoop({
         stream: mic,
         isPaused: () =>
-          pausedRef.current ||
-          busyUtteranceRef.current ||
-          streamingRef.current ||
-          !languageReadyRef.current,
+          pausedRef.current || busyUtteranceRef.current || streamingRef.current,
         onSpeechStart: () => {
           setListening(true);
           setStatus("Listening…");
@@ -214,11 +179,7 @@ export function AiInterview({
         onSpeechEnd: (blob) => {
           setListening(false);
           void (async () => {
-            if (
-              busyUtteranceRef.current ||
-              streamingRef.current ||
-              !languageReadyRef.current
-            ) {
+            if (busyUtteranceRef.current || streamingRef.current) {
               return;
             }
             busyUtteranceRef.current = true;
@@ -404,7 +365,7 @@ export function AiInterview({
         <div className="min-w-0">
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             {stageTitle}
-            {voiceLanguage ? ` · ${languageLabel(voiceLanguage)}` : ""}
+            {` · ${languageLabel(sessionLanguage)}`}
           </p>
           <h1 className="text-foreground truncate text-base font-semibold md:text-lg">
             {jobTitle}

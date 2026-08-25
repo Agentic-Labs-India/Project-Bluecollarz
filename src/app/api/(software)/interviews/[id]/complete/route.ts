@@ -1,15 +1,17 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { after, type NextRequest, NextResponse } from "next/server";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { isInterviewRecordingUrl } from "@/lib/blob/pathname";
+import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument } from "@/lib/interviews";
 import { isCustomQuestionsStage } from "@/lib/interviews";
 import { analyzeInterviewTranscript } from "@/lib/interviews/analysis";
-import { screenWorkerText } from "@/lib/legal-safety/detect";
+import { screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
+export const preferredRegion = PREFERRED_REGION;
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -132,24 +134,19 @@ export async function POST(req: NextRequest, context: RouteContext) {
       },
     );
 
-    // Screen the candidate's own answers once the transcript is final. A
-    // screening failure must not cost the candidate a completed interview.
-    try {
-      await screenWorkerText({
+    const userAnswers = transcript
+      .filter((turn) => turn.role === "user")
+      .map((turn) => turn.text)
+      .join("\n");
+    after(async () => {
+      await screenWorkerTurnSafe({
         userId: auth.user.id,
-        text: transcript
-          .filter((turn) => turn.role === "user")
-          .map((turn) => turn.text)
-          .join("\n"),
+        profileType: "work",
+        text: userAnswers,
         sourceKind: "interview",
         sourceId: id,
       });
-    } catch (screeningError) {
-      console.error(
-        "[legal-safety] screening failed for interview",
-        screeningError,
-      );
-    }
+    });
 
     return NextResponse.json({
       ok: true,

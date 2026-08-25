@@ -353,14 +353,7 @@ export function InterviewReadyPanel({
 
     setCheck("ai", { status: "running", detail: "Contacting AI…" });
     try {
-      const res = await withTimeout(
-        fetch("/api/voice/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: "Ready." }),
-        }),
-        15000,
-      );
+      const res = await withTimeout(fetch("/api/voice/tts"), 8000);
       if (cancelledRef.current) return;
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as {
@@ -368,8 +361,6 @@ export function InterviewReadyPanel({
         } | null;
         throw new Error(data?.error || `AI engine returned ${res.status}`);
       }
-      await res.arrayBuffer();
-      if (cancelledRef.current) return;
       setCheck("ai", { status: "pass", detail: "AI engine reachable" });
     } catch (e) {
       if (cancelledRef.current) return;

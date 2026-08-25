@@ -112,6 +112,10 @@ const LEGAL_SAFETY_NOTICE_INDEX_SPECS = [
   { key: { deliveryId: 1 }, options: { unique: true } },
 ] as const;
 
+const RATE_LIMIT_INDEX_SPECS = [
+  { key: { resetAt: 1 }, options: { expireAfterSeconds: 0 } },
+] as const;
+
 const MEDICAL_APPOINTMENT_INDEX_SPECS = [
   { key: { applicationId: 1 }, options: { unique: true } },
   {
@@ -128,7 +132,7 @@ const MEDICAL_APPOINTMENT_INDEX_SPECS = [
   { key: { centerId: 1, status: 1, scheduledAt: 1 }, options: {} },
 ] as const;
 
-let ensured = false;
+let indexesPromise: Promise<void> | null = null;
 
 /** Mongo auto-name for a key pattern, e.g. { a: 1, b: -1 } → "a_1_b_-1". */
 function defaultIndexName(key: IndexSpecification): string {
@@ -163,7 +167,14 @@ async function ensureIndex(
 
 /** Create the indexes the app relies on. Runs once per process. */
 export async function ensureIndexes() {
-  if (ensured) return;
+  indexesPromise ??= createIndexes().catch((error) => {
+    indexesPromise = null;
+    throw error;
+  });
+  return indexesPromise;
+}
+
+async function createIndexes() {
   const db = client.db(DB_NAME);
   const tasks = [
     ...JOB_INDEX_SPECS.map((spec) =>
@@ -284,6 +295,13 @@ export async function ensureIndexes() {
         spec.options,
       ),
     ),
+    ...RATE_LIMIT_INDEX_SPECS.map((spec) =>
+      ensureIndex(
+        db.collection(COLLECTIONS.RATE_LIMITS),
+        spec.key,
+        spec.options,
+      ),
+    ),
   ];
   // Log and continue if an index cannot build (e.g. unique conflict).
   await Promise.all(
@@ -293,5 +311,4 @@ export async function ensureIndexes() {
       }),
     ),
   );
-  ensured = true;
 }

@@ -1,3 +1,12 @@
+import type { TtsLanguageCode } from "@/lib/ai/voice/languages";
+import type {
+  SARVAM_STT_MODELS,
+  SARVAM_STT_MODES,
+  SARVAM_TTS_BITRATES,
+  SARVAM_TTS_CODECS,
+  SARVAM_TTS_MODELS,
+} from "@/lib/ai/voice/sarvam-options";
+
 export const LLM_TEMPERATURE_KEYS = [
   "help",
   "onboarding",
@@ -39,15 +48,15 @@ export interface LlmSettings {
 }
 
 export interface VoiceSettings {
-  ttsModel: string;
+  ttsModel: (typeof SARVAM_TTS_MODELS)[number];
   ttsSpeaker: string;
   ttsTemperature: number;
   ttsPace: number;
-  ttsLanguageCode: string;
-  ttsCodec: string;
-  ttsBitrate: string;
-  sttModel: string;
-  sttMode: string;
+  ttsLanguageCode: TtsLanguageCode;
+  ttsCodec: (typeof SARVAM_TTS_CODECS)[number];
+  ttsBitrate: (typeof SARVAM_TTS_BITRATES)[number];
+  sttModel: (typeof SARVAM_STT_MODELS)[number];
+  sttMode: (typeof SARVAM_STT_MODES)[number];
 }
 
 export type PromptSettings = Record<PromptKey, string>;

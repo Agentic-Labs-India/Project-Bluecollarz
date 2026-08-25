@@ -5,6 +5,7 @@ import {
   ToolLoopAgent,
   tool,
 } from "ai";
+import { after } from "next/server";
 import { z } from "zod";
 import {
   getAiRuntime,
@@ -32,16 +33,15 @@ import {
 import { parseDateOnly } from "@/lib/core/dates";
 import { lookupPlaceOptions } from "@/lib/core/geo/places";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { isIdentityVerified } from "@/lib/kyc";
+import { lastUserText, screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { hasProhibitedOutput } from "@/lib/legal-safety/lexicon";
-import {
-  lastUserText,
-  screenWorkerTurnSafe,
-} from "@/lib/legal-safety/detect";
 
 export const maxDuration = 90;
+export const preferredRegion = PREFERRED_REGION;
 
 const GEO_PLACE_PROMPT = `Places (must use country-state-city official English names):
 - Do not interview location, residence, or identity — DigiLocker KYC fills those after onboarding.
@@ -581,7 +581,7 @@ export async function POST(request: Request) {
   if (!authResult.ok) {
     return new Response(authResult.error, { status: authResult.status });
   }
-  const limit = rateLimitPerMinute("onboardingChat", authResult.user.id);
+  const limit = await rateLimitPerMinute("onboardingChat", authResult.user.id);
   if (!limit.ok) return tooManyRequests(limit);
   const user = {
     id: authResult.user.id,
@@ -644,12 +644,14 @@ export async function POST(request: Request) {
     missingLabels: resumeApplied?.missing ?? missingLabels,
     alreadyComplete,
   });
-  await screenWorkerTurnSafe({
-    userId: user.id,
-    profileType: "work",
-    text: lastUserText(uiMessages),
-    sourceKind: "chat",
-    sourceId: `onboarding:${user.id}`,
+  after(async () => {
+    await screenWorkerTurnSafe({
+      userId: user.id,
+      profileType: "work",
+      text: lastUserText(uiMessages),
+      sourceKind: "chat",
+      sourceId: `onboarding:${user.id}`,
+    });
   });
   return createAgentUIStreamResponse({
     agent,

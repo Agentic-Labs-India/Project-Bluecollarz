@@ -62,7 +62,7 @@ There is **no AI document verification**. Identity is established through DigiLo
 | **DPDP-oriented controls** | Purpose-scoped consent, data principal rights, breach register, legal holds. Not a Board certificate. See `docs/compliance/dpdp-and-emigrate.md` |
 | **Private blob storage** | Interview recordings, medical reports and company documents are private and served through an authorizing proxy |
 | **Published-jobs caching** | Landing and explore read a cached list, invalidated when a recruiter publishes or edits |
-| **Rate limiting** | Per-user sliding window on every AI and voice endpoint |
+| **Rate limiting** | Shared per-user and global Sarvam caps on every AI and voice endpoint |
 | **Admin console** | Recruiters, medical, compliance, email, support, blog and settings |
 
 ---
@@ -339,7 +339,7 @@ Every LLM call goes through the **Vercel AI Gateway**. The model id is set in **
 | Job overview | `generateText` + `Output.object` | `api/hire/job-overview` |
 | Help and support tickets | `streamText` + tool | `api/help/chat` |
 
-**Voice** is Sarvam: TTS `bulbul:v3` (speaker `priya`, `en-IN`, mp3 128k) and STT `saaras:v3`. Eleven Indian locales are supported for the spoken agent. Defaults are overridable in Admin → Settings.
+**Voice** is Sarvam: TTS `bulbul:v3` (speaker `priya`, temperature `0.15`, pace `1`, mp3 128k) and STT `saaras:v3` in `transcribe` mode. Eleven Indian locales are supported for the spoken agent. Functions pin to Vercel `bom1` (Mumbai). Defaults are overridable in Admin → Settings except STT mode, which is locked to `transcribe`.
 
 ---
 
@@ -361,17 +361,17 @@ Uploads go straight from the browser using a token minted by `POST /api/blob/cli
 
 ## Rate limits
 
-Per-user sliding window, in `src/lib/core/rate-limit.ts`. Exceeding a limit returns `429` with `Retry-After`.
+Fixed 60-second windows in `src/lib/core/rate-limit.ts`, stored in Mongo (`RateLimits`) so every function instance shares the same counters. Exceeding a limit returns `429` with `Retry-After`.
 
 | Route | Requests per minute |
 |---|---|
-| `voice/stt`, `voice/tts` | 90 |
+| `voice/stt`, `voice/tts` | 90 per user |
+| Sarvam STT / TTS (all users) | 600 global |
 | `interviews/[id]/chat` | 40 |
 | `onboarding` | 40 |
 | `help/chat` | 20 |
 | `hire/job-overview` | 10 |
-
-The store is in-process, so limits are per instance rather than global.
+| `candidate/consent/playback` | 20 (counts toward global TTS) |
 
 ---
 
@@ -429,7 +429,7 @@ Jobs are closed with `PATCH { action: "close" }`; there is no delete.
 | `/api/admin/settings` | GET, PATCH |
 
 ### Shared
-`/api/onboarding` (POST) · `/api/help/chat` (POST) · `/api/voice/stt` (POST) · `/api/voice/tts` (POST) · `/api/blob/client-upload` (POST) · `/api/blob/file` (GET) · `/api/user/preferences` (GET, PATCH) · `/api/recruiter-inquiries` (POST)
+`/api/onboarding` (POST) · `/api/help/chat` (POST) · `/api/voice/stt` (POST) · `/api/voice/tts` (GET health, POST stream) · `/api/blob/client-upload` (POST) · `/api/blob/file` (GET) · `/api/user/preferences` (GET, PATCH) · `/api/recruiter-inquiries` (POST)
 
 ---
 
@@ -438,6 +438,7 @@ Jobs are closed with `PATCH { action: "close" }`; there is no delete.
 | Layer | Choice |
 |---|---|
 | Framework | Next.js 16 (App Router, Cache Components) with React 19 |
+| Hosting | Vercel Functions in `bom1` (Mumbai) |
 | Language | TypeScript 5 |
 | Database | MongoDB 7 |
 | Auth | Better Auth 1.6 with Google OAuth |

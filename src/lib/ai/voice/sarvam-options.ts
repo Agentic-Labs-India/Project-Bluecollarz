@@ -78,13 +78,8 @@ export const SARVAM_TTS_BITRATES = [
 
 export const SARVAM_STT_MODELS = ["saaras:v3", "saaras:v4"] as const;
 
-export const SARVAM_STT_MODES = [
-  "transcribe",
-  "translate",
-  "verbatim",
-  "translit",
-  "codemix",
-] as const;
+/** Same-language interviews. `translate` is not used — it English-ifies answers. */
+export const SARVAM_STT_MODES = ["transcribe"] as const;
 
 export function speakersForTtsModel(model: string): readonly string[] {
   return model === "bulbul:v2"
@@ -93,7 +88,7 @@ export function speakersForTtsModel(model: string): readonly string[] {
 }
 
 export function defaultSpeakerForTtsModel(model: string): string {
-  return model === "bulbul:v2" ? "anushka" : "shubh";
+  return model === "bulbul:v2" ? "anushka" : "priya";
 }
 
 export function ttsPaceRange(model: string): { min: number; max: number } {

@@ -1,10 +1,10 @@
 import { createAgentUIStreamResponse } from "ai";
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { parseTtsLanguage } from "@/lib/ai/voice/languages";
 import { requireInterviewEvaluationConsent } from "@/lib/auth/candidate-guard";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { PREFERRED_REGION } from "@/lib/core/region";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
-import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument } from "@/lib/interviews";
 import { isAiInterviewStage, isCustomQuestionsStage } from "@/lib/interviews";
 import { buildInterviewAgent } from "@/lib/interviews/agent";
@@ -14,16 +14,16 @@ import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { idHex } from "@/lib/utils";
 
 export const maxDuration = 90;
+export const preferredRegion = PREFERRED_REGION;
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  await ensureIndexes();
   const auth = await requireInterviewEvaluationConsent();
   if (!auth.ok) {
     return new Response(auth.error, { status: auth.status });
   }
-  const limit = rateLimitPerMinute("interviewChat", auth.user.id);
+  const limit = await rateLimitPerMinute("interviewChat", auth.user.id);
   if (!limit.ok) return tooManyRequests(limit);
   if (!auth.user.id) {
     return new Response("Invalid user", { status: 400 });
@@ -37,10 +37,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const db = client.db(DB_NAME);
   const interview = await db
     .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
-    .findOne({
-      _id: matchId(id) as never,
-      applicantId: auth.user.id,
-    } as never);
+    .findOne(
+      {
+        _id: matchId(id) as never,
+        applicantId: auth.user.id,
+      } as never,
+      {
+        projection: {
+          stageId: 1,
+          status: 1,
+          jobTitle: 1,
+          jobOverview: 1,
+          voiceLanguage: 1,
+        },
+      },
+    );
 
   if (!interview) {
     return new Response("Interview not found", { status: 404 });
@@ -57,6 +68,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return new Response("Interview already completed", { status: 409 });
   }
 
+  const languageCode = parseTtsLanguage(interview.voiceLanguage);
+  if (!languageCode) {
+    return new Response("Interview language is not set", { status: 409 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -64,21 +80,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const messages = (body as { messages?: unknown; language_code?: unknown })
-    .messages;
+  const messages = (body as { messages?: unknown }).messages;
   if (!Array.isArray(messages)) {
     return new Response("Expected { messages: unknown[] }", { status: 400 });
   }
-
-  const bodyLanguageCode =
-    typeof (body as { language_code?: unknown }).language_code === "string"
-      ? (body as { language_code: string }).language_code.trim()
-      : "";
-
-  const languageCode =
-    parseTtsLanguage(interview.voiceLanguage) ||
-    parseTtsLanguage(bodyLanguageCode) ||
-    "en-IN";
 
   const lastUser = [...messages]
     .reverse()
@@ -96,24 +101,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .trim() || "";
 
   if (userText && !isInterviewKickoffText(userText)) {
-    await db
-      .collection(COLLECTIONS.INTERVIEWS)
-      .updateOne({ _id: matchId(id) as never }, {
-        $push: {
-          transcript: {
-            role: "user" as const,
-            text: userText.slice(0, 4000),
-            at: new Date(),
-          },
-        },
-        $set: { updatedAt: new Date() },
-      } as never);
-    await screenWorkerTurnSafe({
-      userId: auth.user.id,
-      profileType: "work",
-      text: userText,
-      sourceKind: "interview",
-      sourceId: id,
+    after(async () => {
+      await screenWorkerTurnSafe({
+        userId: auth.user.id,
+        profileType: "work",
+        text: userText,
+        sourceKind: "interview",
+        sourceId: id,
+      });
     });
   }
 
