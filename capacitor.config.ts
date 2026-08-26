@@ -50,10 +50,12 @@ const config: CapacitorConfig = {
       launchShowDuration: 1200,
       launchAutoHide: true,
       backgroundColor: "#ffffffff",
+      androidScaleType: "CENTER_CROP",
       showSpinner: false,
     },
     StatusBar: {
       style: "LIGHT",
+      overlaysWebView: true,
     },
     Keyboard: {
       resize: "body",

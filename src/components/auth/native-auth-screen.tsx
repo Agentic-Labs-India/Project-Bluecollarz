@@ -6,7 +6,7 @@ import { DitherLoginButton } from "@/components/landing/dither-login-button";
 
 export function NativeAuthScreen() {
   return (
-    <main className="bg-canvas text-foreground flex min-h-dvh flex-col items-center justify-center px-6 py-10">
+    <main className="bg-canvas text-foreground flex h-dvh min-h-dvh w-full flex-col items-center justify-center px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <div className="flex w-full max-w-sm flex-col items-center text-center">
         <Image
           src="/logo.svg"
