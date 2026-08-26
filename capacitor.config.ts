@@ -53,9 +53,9 @@ const config: CapacitorConfig = {
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
     },
-    StatusBar: {
+    SystemBars: {
+      insetsHandling: "css",
       style: "LIGHT",
-      overlaysWebView: true,
     },
     Keyboard: {
       resize: "body",
