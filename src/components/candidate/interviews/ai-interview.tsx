@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart } from "ai";
-import { CheckCircle2Icon, SquareIcon, XIcon } from "lucide-react";
+import { SquareIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   InterviewReadyPanel,
@@ -402,7 +402,6 @@ export function AiInterview({
                   ? "Starting records camera and microphone in the background. You will not see your camera. Your profile voice language will be used."
                   : "Complete every system check before you can start."}
               </p>
-
             </div>
           </div>
         </div>

@@ -22,7 +22,6 @@ export const PRIMARY_DITHER = {
 /** Danger-zone dither — same grain, destructive red. */
 export const DESTRUCTIVE_DITHER = {
   colorBack: "#9f1c24",
-  colorFront: "#d03238",
 } as const;
 
 export type DitherTone = "primary" | "destructive";
