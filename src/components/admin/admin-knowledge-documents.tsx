@@ -14,7 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { blobFileUrl, KNOWLEDGE_PDF_MAX_BYTES } from "@/lib/blob/pathname";
+import {
+  blobFileUrl,
+  KNOWLEDGE_PDF_MAX_BYTES,
+  KNOWLEDGE_PDF_MAX_MB,
+} from "@/lib/blob/pathname";
 import { uploadBlob } from "@/lib/blob/upload";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import {
@@ -87,7 +91,7 @@ export function AdminKnowledgeDocuments() {
       throw new Error(`${file.name} is not a PDF`);
     }
     if (file.size > KNOWLEDGE_PDF_MAX_BYTES) {
-      throw new Error(`${file.name} is over 20 MB`);
+      throw new Error(`${file.name} is over ${KNOWLEDGE_PDF_MAX_MB} MB`);
     }
     const uploaded = await uploadBlob({
       file,

@@ -1,5 +1,3 @@
-import { voiceLanguagePrompt } from "@/lib/ai/voice/languages";
-import { applyPromptTemplate } from "@/lib/core/prompt-template";
 import {
   SUPPORT_PRIORITIES,
   SUPPORT_PROBLEM_TYPES,
@@ -79,17 +77,6 @@ export function helpAudienceLine(profileType: ProfileType): string {
     : profileType === "hire"
       ? "The signed-in user is a recruiter (hire profile)."
       : "The signed-in user is a candidate / worker (work profile).";
-}
-
-export function buildHelpSystemPrompt(
-  profileType: ProfileType,
-  languageCode?: string | null,
-  template = DEFAULT_HELP_SYSTEM_PROMPT,
-): string {
-  return applyPromptTemplate(template, {
-    audience: helpAudienceLine(profileType),
-    languagePrompt: voiceLanguagePrompt(languageCode),
-  });
 }
 
 export const HELP_SUGGESTIONS = [

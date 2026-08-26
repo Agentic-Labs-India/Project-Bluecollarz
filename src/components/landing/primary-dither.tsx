@@ -168,7 +168,7 @@ function retainSharedDither() {
 }
 
 /** Tear down the shared decorative context; recreate after a beat if still needed. */
-export function releaseSharedPrimaryDither() {
+function releaseSharedPrimaryDither() {
   sharedSubscribers = Math.max(sharedSubscribers, 0);
   scheduleSharedTeardown(0);
 
