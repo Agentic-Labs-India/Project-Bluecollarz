@@ -4,6 +4,7 @@ import {
   getPlatformSettings,
   llmTemperature,
 } from "@/lib/admin/platform-settings";
+import { ONBOARDING_EDUCATION_SAVE_RULE } from "@/lib/admin/platform-settings-defaults";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import {
   VOICE_TOOL_DATA_PROMPT,
@@ -79,9 +80,13 @@ export function renderOnboardingPrompt(
       "Interview fields only: currently working as (headline / current role), years of experience (number, 0 is ok), education (at least one entry), work experience (at least one entry), and languages.",
     );
   return ensurePromptContains(
-    ensurePromptContains(rendered, vars.resumeContext, "Session state:"),
-    languagePrompt,
-    "Language:",
+    ensurePromptContains(
+      ensurePromptContains(rendered, vars.resumeContext, "Session state:"),
+      languagePrompt,
+      "Language:",
+    ),
+    ONBOARDING_EDUCATION_SAVE_RULE,
+    "Education:",
   );
 }
 

@@ -50,6 +50,8 @@ export const LEGAL_SAFETY_OUTPUT_PROMPT = `Legal-safety output rules (enforced b
 - Never say a Non-ECR or ECNR worker does not need a registered recruiting agent.
 - Never guarantee a job, visa, salary, or placement.`;
 
+export const ONBOARDING_EDUCATION_SAVE_RULE = `Education: ask the highest completed qualification in one question, then immediately call updateCandidateProfile with education[] and isECR in that same call. isECR is a boolean only — false if they passed class 10 / matric / 12th / diploma / ITI / degree / postgraduate (or similar); true if they have no schooling or only studied below class 10 (e.g. class 6). Do not ask them if they are ECR. Do not say ECR, Non-ECR, or ECNR out loud.`;
+
 export const DEFAULT_ONBOARDING_PROMPT = `You are Blucollarz's onboarding voice coach for candidates (workers).
 ${LEGAL_SAFETY_OUTPUT_PROMPT}
 Speak in short, clear spoken sentences (1–3). The user answers by voice.
@@ -59,6 +61,7 @@ Speak in short, clear spoken sentences (1–3). The user answers by voice.
 {{geoPlacePrompt}}
 
 Interview fields only: currently working as (headline / current role), years of experience (number, 0 is ok), education (at least one entry), work experience (at least one entry), and languages.
+${ONBOARDING_EDUCATION_SAVE_RULE}
 NEVER ask about skills — skills are filled only when a resume PDF provides them. Do not invent or voice-collect skills.
 NEVER ask about professional summary — finishOnboarding generates and saves it automatically.
 NEVER ask for name, email, phone, location, gender, PAN, date of birth, or Aadhaar — DigiLocker KYC fills identity after this interview.
@@ -139,6 +142,7 @@ Return ONLY the summary text.`;
 export const DEFAULT_RESUME_PARSE_PROMPT = `Extract candidate profile JSON from this resume PDF. Return ONLY valid JSON with keys:
 phoneNumber (number|null — national digits only), phoneCountryCode (number|null — calling code, e.g. 91), headline, location, yearsExperience (number|null), skills (string[]), preferredCountries (string[]), summary (2-4 paragraphs),
 education (array of {school, degree, startYear (number|null), endYear (number|null), major, gpa (number|null)}),
+isECR (boolean — false if class 10 / 12 / diploma / degree / postgraduate or similar; true if no schooling or below class 10),
 workExperience (array of {company, role, startYear (number|null), endYear (number|null), city, country, description}),
 languages (string[]), hobbies (string[]), portfolioUrl, otherLinks (string[]),
 residenceCountry, residenceState, residenceCity, residencePostalCode,

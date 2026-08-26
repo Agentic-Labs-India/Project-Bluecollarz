@@ -76,6 +76,8 @@ export type HireSafeProfile = {
   otherLinks: string[];
   languages: string[];
   hobbies: string[];
+  /** true = ECR, false = Non-ECR. */
+  isECR: boolean | null;
   fullTimeCompensation: number | null;
   partTimeCompensation: number | null;
 };
@@ -116,6 +118,7 @@ export function toHireSafeProfile(
     hobbies: Array.isArray(profile.hobbies)
       ? profile.hobbies.filter((s): s is string => typeof s === "string")
       : [],
+    isECR: typeof profile.isECR === "boolean" ? profile.isECR : null,
     fullTimeCompensation: asNumberOrNull(profile.fullTimeCompensation),
     partTimeCompensation: asNumberOrNull(profile.partTimeCompensation),
   };

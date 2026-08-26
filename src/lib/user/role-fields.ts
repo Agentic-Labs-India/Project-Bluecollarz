@@ -11,6 +11,7 @@ export const CANDIDATE_ONLY_USER_FIELDS = [
   "preferredCountries",
   "summary",
   "education",
+  "isECR",
   "workExperience",
   "portfolioUrl",
   "otherLinks",

@@ -344,6 +344,8 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
   const otherLinks = asStringList(extracted.otherLinks);
   const preferredCountries = asStringList(extracted.preferredCountries);
   const skills = asStringList(extracted.skills);
+  const isECR =
+    typeof extracted.isECR === "boolean" ? extracted.isECR : undefined;
 
   const result = await saveProfile(userId, {
     headline: String(extracted.headline ?? ""),
@@ -354,6 +356,7 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
     // Identity (phone, location, DOB, name) comes from DigiLocker KYC — not the PDF.
     // Summary is AI-generated at the end of onboarding — do not take from PDF.
     ...(education.length ? { education } : {}),
+    ...(typeof isECR === "boolean" ? { isECR } : {}),
     ...(workExperience.length ? { workExperience } : {}),
     ...(languages.length ? { languages } : {}),
     ...(hobbies.length ? { hobbies } : {}),
@@ -414,7 +417,7 @@ Flow:
               ? `Voice language is already set (${opts.languageCode}). Do NOT call selectVoiceLanguage. Greet ${userName || "the candidate"} briefly in that language.`
               : `If voice language is not set yet, say one short spoken sentence asking them to pick a language, then call selectVoiceLanguage (interactive picker in chat). Do not ask onboarding questions before they pick. After they pick, the language is saved to their profile. Then greet ${userName || "the candidate"} briefly in that language.`
           }
-2. Immediately call getCandidateProfile (do this every session after language is set). Ask ONLY for fields listed in missing — currently working as (headline), years of experience, education, work experience, and languages. Never re-ask filled ones. Never ask identity fields (name, email, phone, location, gender, PAN, DOB, Aadhaar).
+2. Immediately call getCandidateProfile (do this every session after language is set). Ask ONLY for fields listed in missing — currently working as (headline), years of experience, education, work experience, and languages. Never re-ask filled ones. Never ask identity fields (name, email, phone, location, gender, PAN, DOB, Aadhaar). After they answer education, call updateCandidateProfile in that turn with education[] and isECR.
 3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence in their voice language asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most interview fields are already filled.
 4. If has_resume is true: PDF is parsed automatically (education, work, languages, and skills may come from PDF). Ask only remaining interview fields.
 5. If has_resume is false (or resume skipped): interview only missing interview fields, one at a time. Use updateCandidateProfile after each useful answer.
@@ -499,13 +502,19 @@ Call selectResume at most once per session.`;
       }),
       updateCandidateProfile: tool({
         description:
-          "Partially update candidate profile fields from the voice interview. Always pass field values in clear English. headline = currently working as (current role / job title). yearsExperience = total years as a JSON number (0 is ok). Do not set skills or summary here.",
+          "Partially update candidate profile fields from the voice interview. Always pass field values in clear English. headline = currently working as (current role / job title). yearsExperience = total years as a JSON number (0 is ok). When they answer education, save education[] and isECR (boolean) in that same call: isECR false for class 10 / 12 / diploma / ITI / degree / postgraduate; isECR true for no schooling or below class 10. Do not set skills or summary here.",
         inputSchema: candidateProfileUpdateSchema.partial().extend({
           preferredCountries: z.array(z.string()).optional(),
           languages: z.array(z.string()).optional(),
           voiceLanguage: z.enum(TTS_LANGUAGE_CODES).optional(),
           hobbies: z.array(z.string()).optional(),
           otherLinks: z.array(z.string()).optional(),
+          isECR: z
+            .boolean()
+            .optional()
+            .describe(
+              "false = Non-ECR (class 10 / 12 / diploma / degree / postgraduate). true = ECR (no schooling or below class 10). Set in the same call as education.",
+            ),
         }),
         execute: async (input) => {
           const rest = { ...input } as Partial<CandidateProfileUpdateInput>;

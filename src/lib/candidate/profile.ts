@@ -47,6 +47,10 @@ export interface CandidateProfileFields {
   summary?: string;
   candidateOnboardingComplete?: boolean;
   education?: CandidateEducationEntry[];
+  /**
+   * Agent-set from education. true = ECR, false = Non-ECR.
+   */
+  isECR?: boolean;
   workExperience?: CandidateWorkEntry[];
   portfolioUrl?: string;
   otherLinks?: string[];
@@ -103,6 +107,8 @@ export interface CandidateProfileData {
   summary: string;
   candidateOnboardingComplete: boolean;
   education: EducationFormEntry[];
+  /** true = ECR, false = Non-ECR, null = education not saved yet. */
+  isECR: boolean | null;
   workExperience: WorkFormEntry[];
   portfolioUrl: string;
   otherLinks: string[];
@@ -197,6 +203,7 @@ export const emptyCandidateProfileData = (): CandidateProfileData => ({
   summary: "",
   candidateOnboardingComplete: false,
   education: [],
+  isECR: null,
   workExperience: [],
   portfolioUrl: "",
   otherLinks: [],
@@ -332,6 +339,7 @@ export const candidateProfileUpdateSchema = z.object({
   preferredCountries: countriesSchema,
   summary: optionalTrimmed(6000),
   education: educationListSchema,
+  isECR: z.boolean().optional(),
   workExperience: workListSchema,
   portfolioUrl: optionalTrimmed(500),
   otherLinks: otherLinksSchema,
@@ -441,6 +449,7 @@ export function toCandidateProfileData(
     summary: doc.summary ?? "",
     candidateOnboardingComplete: Boolean(doc.candidateOnboardingComplete),
     education: mapEducation(doc.education),
+    isECR: typeof doc.isECR === "boolean" ? doc.isECR : null,
     workExperience: mapWork(doc.workExperience),
     portfolioUrl: doc.portfolioUrl ?? "",
     otherLinks: doc.otherLinks ?? [],
@@ -572,6 +581,7 @@ export function candidateUpdateToMongo(
   $set.skills = data.skills;
   $set.preferredCountries = data.preferredCountries;
   $set.education = data.education;
+  if (typeof data.isECR === "boolean") $set.isECR = data.isECR;
   $set.workExperience = data.workExperience;
   $set.otherLinks = data.otherLinks;
   $set.languages = data.languages;
@@ -628,6 +638,8 @@ export function mergeCandidateProfilePatch(
       summary: pickStr(patch.summary, current.summary),
       education:
         patch.education !== undefined ? patch.education : current.education,
+      isECR:
+        patch.isECR !== undefined ? patch.isECR : (current.isECR ?? undefined),
       workExperience:
         patch.workExperience !== undefined
           ? patch.workExperience

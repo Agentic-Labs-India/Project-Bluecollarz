@@ -65,6 +65,7 @@ type ApplicantDetailResponse = {
     otherLinks: string[];
     languages: string[];
     hobbies: string[];
+    isECR: boolean | null;
     fullTimeCompensation: number | null;
     partTimeCompensation: number | null;
   };
@@ -177,6 +178,16 @@ function ResumeAccordionBody({
             profile.yearsExperience === null
               ? ""
               : String(profile.yearsExperience)
+          }
+        />
+        <Field
+          label="ECR"
+          value={
+            profile.isECR === true
+              ? "ECR"
+              : profile.isECR === false
+                ? "Non-ECR"
+                : ""
           }
         />
       </div>
