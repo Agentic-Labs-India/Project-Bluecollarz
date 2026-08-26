@@ -222,8 +222,7 @@ Access requires `profileType === "admin"`. Nav is defined in `src/lib/core/route
 | Email | `/admin/email` | Resend outbound and inbound desk |
 | Support | `/admin/support` | Ticket queue from the help agent |
 | Blog | `/admin/blog` | Post authoring |
-| Knowledge | `/admin/knowledge` | PDF ingest (background) and grounded Q&A |
-| Settings | `/admin/settings` | Admin, voice, language model, grievance officer, system prompts, flow |
+| Settings | `/admin/settings` | Admin, knowledge base, test, voice, language model, grievance officer, system prompts, flow |
 
 Legal-safety cases and legal holds are **API only** at present (`/api/admin/legal-safety/*`); there is no console page yet.
 
@@ -363,7 +362,7 @@ Uploads go straight from the browser via `uploadBlob()` (`src/lib/blob/client/up
 
 ### Knowledge base (Atlas Vector Search)
 
-Admin **Knowledge** (`/admin/knowledge`) stores PDFs privately, then ingests them in the background (`after()` on `POST /api/admin/knowledge`):
+Admin **Settings → Knowledge Base** stores PDFs privately, then ingests them in the background (`after()` on `POST /api/admin/knowledge`):
 
 1. Extract text per page (`unpdf`, fallback `pdf-parse`).
 2. Chunk with LangChain `RecursiveCharacterTextSplitter` (~800 tokens, ~100 overlap).
@@ -377,7 +376,7 @@ Chunks live in Mongo `KnowledgeChunks` (`text`, `embedding`, `source`, `docType`
 - Path: `embedding`, cosine, 1536 dimensions (must match `openai/text-embedding-3-small`; change both if you swap embedding models)
 - Filter fields: `docType`, `source`
 
-Ask tab streams answers from `POST /api/admin/knowledge/chat`. The model must call `searchDocuments` (`$vectorSearch`, top 5 by default, max 4 retrieval rounds) and cite `[filename p.N]`. Legal chunks always add that the output is not legal advice.
+Settings → Test streams answers from `POST /api/admin/knowledge/chat`. The model must call `searchDocuments` (`$vectorSearch`, top 5 by default, max 4 retrieval rounds) and cite `[filename p.N]`. Legal chunks always add that the output is not legal advice.
 
 ---
 

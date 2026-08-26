@@ -1,11 +1,11 @@
 import "server-only";
 
 import { ObjectId, type WithId } from "mongodb";
-import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import {
   blobPathRelativeToRoot,
   isKnowledgePdfRelativePath,
 } from "@/lib/blob/pathname";
+import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
@@ -14,6 +14,7 @@ import {
   type KnowledgeSourceStatus,
   knowledgeSourceKey,
   normalizeKnowledgeSource,
+  parseKnowledgeDocType,
 } from "@/lib/knowledge/types";
 import { idHex } from "@/lib/utils";
 
@@ -61,7 +62,7 @@ function toListItem(
   return {
     id: idHex(doc._id),
     source: doc.source,
-    docType: doc.docType,
+    docType: parseKnowledgeDocType(doc.docType),
     status: doc.status,
     error: doc.error,
     chunkCount: doc.chunkCount,
@@ -101,7 +102,7 @@ export async function listReadyKnowledgeCatalog(): Promise<
     .toArray();
   return docs.map((doc) => ({
     source: doc.source,
-    docType: doc.docType,
+    docType: parseKnowledgeDocType(doc.docType),
     chunkCount: doc.chunkCount,
     pageCount: doc.pageCount,
   }));

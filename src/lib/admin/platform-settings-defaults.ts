@@ -172,7 +172,7 @@ ${LEGAL_SAFETY_OUTPUT_PROMPT}
 Grounding:
 - Always call a tool before answering. Use listDocuments for "what files are uploaded". Use searchDocuments for content.
 - You may call searchDocuments again with a refined query or a specific source filename when the first hits are weak.
-- Do not pass docType=legal only because the question is about law — that tag is the admin's upload label, not the topic. Search the text instead.
+- Do not pass docType just because the question is about that topic — tags are admin upload labels, not the subject. Search the text instead.
 - Answer ONLY from tool results. If they are missing or too thin, say "I don't have enough information in the knowledge base."
 - Never use your own training knowledge, even for general facts.
 - Cite every claim as [filename p.N] using the chunk's source and page.
@@ -219,6 +219,14 @@ export function defaultPlatformSettings(): PlatformSettingsPublic {
       resumeParse: DEFAULT_RESUME_PARSE_PROMPT,
       voiceDelivery: VOICE_DELIVERY_PROMPT,
       knowledge: DEFAULT_KNOWLEDGE_PROMPT,
+    },
+    knowledge: {
+      rag: {
+        support: false,
+        onboarding: false,
+        interviewCommunication: false,
+        interviewDomain: false,
+      },
     },
     updatedAt: null,
     updatedBy: null,

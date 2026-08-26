@@ -64,12 +64,29 @@ export interface VoiceSettings {
 
 export type PromptSettings = Record<PromptKey, string>;
 
+/** Surfaces that can call knowledge-base RAG when the admin switch is on. */
+export const KNOWLEDGE_RAG_KEYS = [
+  "support",
+  "onboarding",
+  "interviewCommunication",
+  "interviewDomain",
+] as const;
+
+export type KnowledgeRagKey = (typeof KNOWLEDGE_RAG_KEYS)[number];
+
+export type KnowledgeRagSettings = Record<KnowledgeRagKey, boolean>;
+
+export interface KnowledgeSettings {
+  rag: KnowledgeRagSettings;
+}
+
 /** Public platform settings — what admin edits and runtime consumes. */
 export interface PlatformSettingsPublic {
   grievanceOfficer: GrievanceOfficerSettings;
   llm: LlmSettings;
   voice: VoiceSettings;
   prompts: PromptSettings;
+  knowledge: KnowledgeSettings;
   updatedAt: string | null;
   updatedBy: string | null;
 }

@@ -15,19 +15,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
+import type {
+  KnowledgeRagKey,
+  KnowledgeRagSettings,
+} from "@/lib/admin/platform-settings-types";
+import { uploadBlob } from "@/lib/blob/client/upload";
+import {
   blobFileUrl,
   KNOWLEDGE_PDF_MAX_BYTES,
   KNOWLEDGE_PDF_MAX_MB,
 } from "@/lib/blob/pathname";
-import { uploadBlob } from "@/lib/blob/client/upload";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import {
+  KNOWLEDGE_DOC_TYPE_LABELS,
   KNOWLEDGE_DOC_TYPES,
   type KnowledgeDocType,
   type KnowledgeSourceListItem,
   type KnowledgeSourceStatus,
 } from "@/lib/knowledge/types";
 import { cn } from "@/lib/utils";
+
+const RAG_SWITCHES: {
+  key: KnowledgeRagKey;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    key: "support",
+    label: "Support",
+    hint: "Help chat can search uploaded PDFs.",
+  },
+  {
+    key: "onboarding",
+    label: "Onboarding",
+    hint: "Candidate onboarding coach can search uploaded PDFs.",
+  },
+  {
+    key: "interviewCommunication",
+    label: "Interview communication",
+    hint: "Communication interview can search uploaded PDFs.",
+  },
+  {
+    key: "interviewDomain",
+    label: "Interview domain",
+    hint: "Domain interview can search uploaded PDFs.",
+  },
+];
 
 function statusLabel(status: KnowledgeSourceStatus) {
   if (status === "queued") return "Queued";
@@ -41,10 +83,17 @@ function safePdfName(name: string) {
   return base.toLowerCase().endsWith(".pdf") ? base : `${base}.pdf`;
 }
 
-export function AdminKnowledgeDocuments() {
+export function AdminKnowledgeDocuments({
+  rag,
+  onRagChange,
+}: {
+  rag: KnowledgeRagSettings;
+  onRagChange: (key: KnowledgeRagKey, next: boolean) => void;
+}) {
   const [items, setItems] = useState<KnowledgeSourceListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const [docType, setDocType] = useState<KnowledgeDocType>("general");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -181,7 +230,8 @@ export function AdminKnowledgeDocuments() {
     () => [
       {
         id: "search",
-        accessorFn: (row) => `${row.source} ${row.docType} ${row.status}`,
+        accessorFn: (row) =>
+          `${row.source} ${KNOWLEDGE_DOC_TYPE_LABELS[row.docType]} ${row.docType} ${row.status}`,
         header: "File",
         cell: ({ row }) => (
           <div className="min-w-0 max-w-[280px]">
@@ -205,8 +255,8 @@ export function AdminKnowledgeDocuments() {
         accessorKey: "docType",
         header: "Type",
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-sm capitalize">
-            {row.original.docType}
+          <span className="text-muted-foreground text-sm">
+            {KNOWLEDGE_DOC_TYPE_LABELS[row.original.docType]}
           </span>
         ),
       },
@@ -273,59 +323,121 @@ export function AdminKnowledgeDocuments() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="border-border flex flex-wrap items-end gap-3 border p-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="kb-doc-type">Document type</Label>
-          <Select
-            value={docType}
-            onValueChange={(value) => setDocType(value as KnowledgeDocType)}
-          >
-            <SelectTrigger id="kb-doc-type" className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {KNOWLEDGE_DOC_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type === "legal" ? "Legal" : "General"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="kb-pdf">PDFs</Label>
-          <input
-            ref={inputRef}
-            id="kb-pdf"
-            type="file"
-            accept="application/pdf,.pdf"
-            multiple
-            className="sr-only"
-            onChange={(e) => void onFilesSelected(e.target.files)}
-          />
-          <Button
-            type="button"
-            disabled={uploading}
-            onClick={() => inputRef.current?.click()}
-          >
-            <UploadIcon />
-            {uploading ? "Uploading…" : "Upload PDFs"}
-          </Button>
-        </div>
-        <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
-          Files go to private blob storage, then chunk and embed in the
-          background. Same filename replaces the previous ingest.
-        </p>
-      </div>
-
+    <>
       <DataTable
         columns={columns}
         data={items}
         searchKey="search"
         searchPlaceholder="Search files…"
         loading={loading}
+        leftActions={
+          <Button type="button" onClick={() => setManageOpen(true)}>
+            Manage
+          </Button>
+        }
       />
-    </div>
+
+      <Sheet open={manageOpen} onOpenChange={setManageOpen}>
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 p-0 sm:max-w-md!"
+          onPointerDownOutside={(event) => {
+            const node = event.target;
+            if (
+              node instanceof Element &&
+              node.closest("[data-slot=select-content]")
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
+          <SheetHeader className="shrink-0 border-b px-4 py-4">
+            <SheetTitle className="text-base">Manage</SheetTitle>
+            <SheetDescription>
+              Upload PDFs and turn RAG on for Help, onboarding, and interviews.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
+            <section className="space-y-3">
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Off until you enable a surface. Test always searches these PDFs.
+              </p>
+              {RAG_SWITCHES.map((item) => {
+                const id = `rag-${item.key}`;
+                return (
+                  <div
+                    key={item.key}
+                    className="flex items-center justify-between gap-4 border border-border px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <Label htmlFor={id}>{item.label}</Label>
+                      <p className="text-muted-foreground text-xs">
+                        {item.hint}
+                      </p>
+                    </div>
+                    <Switch
+                      id={id}
+                      checked={rag[item.key]}
+                      onCheckedChange={(next) => onRagChange(item.key, next)}
+                    />
+                  </div>
+                );
+              })}
+            </section>
+            <section className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="kb-doc-type">Document type</Label>
+                <Select
+                  value={docType}
+                  onValueChange={(value) =>
+                    setDocType(value as KnowledgeDocType)
+                  }
+                >
+                  <SelectTrigger id="kb-doc-type" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KNOWLEDGE_DOC_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {KNOWLEDGE_DOC_TYPE_LABELS[type]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <input
+                ref={inputRef}
+                id="kb-pdf"
+                type="file"
+                accept="application/pdf,.pdf"
+                multiple
+                className="sr-only"
+                onChange={(e) => void onFilesSelected(e.target.files)}
+              />
+              <Button
+                type="button"
+                className="w-full"
+                disabled={uploading}
+                onClick={() => inputRef.current?.click()}
+              >
+                <UploadIcon />
+                {uploading ? "Uploading…" : "Upload PDFs"}
+              </Button>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Private storage, then chunk and embed in the background. Same
+                filename replaces the previous ingest.
+              </p>
+            </section>
+          </div>
+          <SheetFooter className="border-border shrink-0 border-t">
+            <SheetClose asChild>
+              <Button type="button" variant="outline">
+                Close
+              </Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

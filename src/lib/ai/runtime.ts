@@ -5,7 +5,10 @@ import {
   llmTemperature,
 } from "@/lib/admin/platform-settings";
 import { ONBOARDING_EDUCATION_SAVE_RULE } from "@/lib/admin/platform-settings-defaults";
-import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
+import type {
+  KnowledgeRagKey,
+  PlatformSettingsPublic,
+} from "@/lib/admin/platform-settings-types";
 import {
   VOICE_TOOL_DATA_PROMPT,
   voiceLanguagePrompt,
@@ -15,6 +18,7 @@ import {
   ensurePromptContains,
 } from "@/lib/core/prompt-template";
 import { htmlToPlainText } from "@/lib/core/rich-text";
+import { KNOWLEDGE_RAG_SURFACE_HINT } from "@/lib/knowledge/prompt";
 import { helpAudienceLine } from "@/lib/support/prompt";
 import type { ProfileType } from "@/lib/user/profile-types";
 
@@ -44,7 +48,7 @@ export function renderHelpPrompt(
 ): string {
   const audience = helpAudienceLine(profileType);
   const languagePrompt = voiceLanguagePrompt(languageCode);
-  return ensurePromptContains(
+  const rendered = ensurePromptContains(
     ensurePromptContains(
       applyPromptTemplate(settings.prompts.help, { audience, languagePrompt }),
       audience,
@@ -53,6 +57,7 @@ export function renderHelpPrompt(
     languagePrompt,
     "Language:",
   );
+  return withKnowledgeRagPrompt(settings, "support", rendered);
 }
 
 export function renderOnboardingPrompt(
@@ -79,14 +84,18 @@ export function renderOnboardingPrompt(
       /Interview fields only:[^\n]*/g,
       "Interview fields only: currently working as (headline / current role), years of experience (number, 0 is ok), education (at least one entry), work experience (at least one entry), and languages.",
     );
-  return ensurePromptContains(
+  return withKnowledgeRagPrompt(
+    settings,
+    "onboarding",
     ensurePromptContains(
-      ensurePromptContains(rendered, vars.resumeContext, "Session state:"),
-      languagePrompt,
-      "Language:",
+      ensurePromptContains(
+        ensurePromptContains(rendered, vars.resumeContext, "Session state:"),
+        languagePrompt,
+        "Language:",
+      ),
+      ONBOARDING_EDUCATION_SAVE_RULE,
+      "Education:",
     ),
-    ONBOARDING_EDUCATION_SAVE_RULE,
-    "Education:",
   );
 }
 
@@ -127,10 +136,10 @@ export function renderInterviewPrompt(
     settings.prompts.voiceDelivery,
     "Voice delivery:",
   );
-  return ensurePromptContains(
-    rendered,
-    VOICE_TOOL_DATA_PROMPT,
-    "Structured data:",
+  return withKnowledgeRagPrompt(
+    settings,
+    opts.domain ? "interviewDomain" : "interviewCommunication",
+    ensurePromptContains(rendered, VOICE_TOOL_DATA_PROMPT, "Structured data:"),
   );
 }
 
@@ -191,15 +200,34 @@ export function renderJobOverviewPrompt(
 
 export function renderKnowledgePrompt(
   settings: PlatformSettingsPublic,
+  languageCode?: string | null,
 ): string {
+  const languagePrompt = voiceLanguagePrompt(languageCode);
   return ensurePromptContains(
-    settings.prompts.knowledge,
-    [
-      "Always call a tool before you answer.",
-      "Use listDocuments when the user asks what files exist, whether anything is uploaded, or for a catalogue.",
-      "Use searchDocuments for the content of those files. Put the topic in the query string.",
-      "Do not set docType=legal just because the question mentions law, legalities, or a legal memo — that field is only the admin upload tag. A legal memo may be tagged general. Only pass docType when the user explicitly asks to restrict to that tag, or the UI already applied a filter.",
-    ].join(" "),
-    "Tool use:",
+    ensurePromptContains(
+      settings.prompts.knowledge,
+      [
+        "Always call a tool before you answer.",
+        "Use listDocuments when the user asks what files exist, whether anything is uploaded, or for a catalogue.",
+        "Use searchDocuments for the content of those files. Put the topic in the query string.",
+        "Do not set docType just because the question mentions that topic — that field is only the admin upload tag. Only pass docType when the user explicitly asks to restrict to that tag, or the UI already applied a filter.",
+      ].join(" "),
+      "Tool use:",
+    ),
+    languagePrompt,
+    "Language:",
+  );
+}
+
+export function withKnowledgeRagPrompt(
+  settings: PlatformSettingsPublic,
+  key: KnowledgeRagKey,
+  prompt: string,
+): string {
+  if (!settings.knowledge?.rag?.[key]) return prompt;
+  return ensurePromptContains(
+    prompt,
+    KNOWLEDGE_RAG_SURFACE_HINT,
+    "Knowledge base:",
   );
 }

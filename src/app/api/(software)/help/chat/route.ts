@@ -9,6 +9,7 @@ import {
 import { after } from "next/server";
 import { z } from "zod";
 import {
+  embeddingModel,
   getAiRuntime,
   llmModel,
   llmTemp,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/ai/runtime";
 import { requireUser } from "@/lib/auth/session";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
+import { knowledgeRagTools } from "@/lib/knowledge/tools";
 import { lastUserText, screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
 import { createSupportTicket } from "@/lib/support/tickets";
@@ -102,6 +104,9 @@ export async function POST(request: Request) {
     experimental_transform: prohibitedOutputGuard({ surface: "help/chat" }),
     stopWhen: isStepCount(6),
     tools: {
+      ...(settings.knowledge?.rag?.support
+        ? knowledgeRagTools({ embeddingModel: embeddingModel(settings) })
+        : {}),
       createSupportTicket: tool({
         description:
           "Create a support ticket after the user confirmed their problem and said they have nothing else to add (or after capturing extra notes). Call once per issue.",

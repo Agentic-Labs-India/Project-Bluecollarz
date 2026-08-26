@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { AdminAiFlow } from "@/components/admin/admin-ai-flow";
+import { AdminKnowledgeDocuments } from "@/components/admin/admin-knowledge-documents";
 import { AdminPromptCards } from "@/components/admin/admin-prompt-cards";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +83,7 @@ function payloadOf(settings: PlatformSettingsPublic) {
     llm: settings.llm,
     voice: settings.voice,
     prompts: settings.prompts,
+    knowledge: settings.knowledge,
   };
 }
 
@@ -222,7 +224,8 @@ export type AdminSettingsSection =
   | "llm"
   | "grievance"
   | "prompts"
-  | "flow";
+  | "flow"
+  | "knowledge";
 
 export function AdminSettingsForm({
   initial,
@@ -233,7 +236,10 @@ export function AdminSettingsForm({
   defaults: PlatformSettingsPublic;
   section: AdminSettingsSection;
 }) {
-  const [form, setForm] = useState<PlatformSettingsPublic>(initial);
+  const [form, setForm] = useState<PlatformSettingsPublic>({
+    ...initial,
+    knowledge: initial.knowledge ?? defaults.knowledge,
+  });
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle",
   );
@@ -426,7 +432,7 @@ export function AdminSettingsForm({
           <Field
             id="llm-model"
             label="Gateway model id"
-            hint="Vercel AI Gateway id, e.g. openai/gpt-4o"
+            hint="Vercel AI Gateway id, e.g. openai/gpt-4o. Knowledge Base Test and RAG (when a surface switch is on) use this chat model."
           >
             <Input
               id="llm-model"
@@ -442,7 +448,7 @@ export function AdminSettingsForm({
           <Field
             id="llm-embedding"
             label="Embedding model id"
-            hint="Used for knowledge-base RAG. Default openai/text-embedding-3-small is 1536 dimensions — keep the Atlas index in sync if you change it."
+            hint="Used for knowledge-base RAG (Test tab and any surface switch that is on). Default openai/text-embedding-3-small is 1536 dimensions — keep the Atlas index in sync if you change it."
           >
             <Input
               id="llm-embedding"
@@ -633,6 +639,21 @@ export function AdminSettingsForm({
             </Field>
           </div>
         </section>
+      ) : null}
+
+      {section === "knowledge" ? (
+        <AdminKnowledgeDocuments
+          rag={form.knowledge.rag}
+          onRagChange={(key, next) =>
+            setForm((p) => ({
+              ...p,
+              knowledge: {
+                ...p.knowledge,
+                rag: { ...p.knowledge.rag, [key]: next },
+              },
+            }))
+          }
+        />
       ) : null}
 
       {section === "prompts" ? (

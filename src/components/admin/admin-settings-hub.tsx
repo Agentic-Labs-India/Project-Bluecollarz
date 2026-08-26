@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { AdminKnowledgeChat } from "@/components/admin/admin-knowledge-chat";
 import {
   AdminHubHeader,
   AdminPageTabs,
@@ -19,6 +20,8 @@ import { placeholderKeys } from "@/lib/utils";
 
 const TABS = [
   { value: "admins", label: "Admin" },
+  { value: "knowledge", label: "Knowledge Base" },
+  { value: "test", label: "Test" },
   { value: "voice", label: "Voice (Sarvam)" },
   { value: "llm", label: "Language Model" },
   { value: "grievance", label: "Grievance Officer" },
@@ -31,9 +34,12 @@ type Tab = (typeof TABS)[number]["value"];
 const COPY: Record<Tab, string> = {
   admins:
     "Add by email to promote an existing user or queue an invite for first sign-in.",
+  knowledge:
+    "Upload PDFs and switch RAG on for Help, onboarding, and interviews. Off until you turn a surface on.",
+  test: "Ask in text or voice. Voice uses Sarvam STT/TTS and the language you pick. Answers use the Language Model and uploaded PDFs.",
   voice:
-    "Sarvam TTS and STT. Changes save automatically and apply on the next voice request.",
-  llm: "Vercel AI Gateway chat and embedding models, plus per-surface temperature. Applies on the next AI request.",
+    "Sarvam TTS and STT. Knowledge Base Test uses these for voice. Changes save automatically and apply on the next voice request.",
+  llm: "Vercel AI Gateway chat and embedding models, plus per-surface temperature. Knowledge Base Test and RAG use this chat model, the embedding model, and the knowledge temperature.",
   grievance:
     "Shown on /grievance. Email is published; add a named officer, phone, and street address when appointed.",
   prompts:
@@ -42,7 +48,7 @@ const COPY: Record<Tab, string> = {
 };
 
 function isConfigSection(tab: Tab): tab is AdminSettingsSection {
-  return tab !== "admins";
+  return tab !== "admins" && tab !== "test";
 }
 
 function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
@@ -68,6 +74,9 @@ function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
         ))}
       </div>
     );
+  }
+  if (section === "knowledge") {
+    return <Skeleton className="h-64 w-full" />;
   }
   return (
     <div className="max-w-xl space-y-4">
@@ -133,10 +142,16 @@ function AdminSettingsHubInner({
   const [tab, setTab] = useAdminTab(TABS, "admins");
   const configOpen = isConfigSection(tab);
   const [configSeen, setConfigSeen] = useState(configOpen);
+  const [testSeen, setTestSeen] = useState(tab === "test");
+  const [lastConfig, setLastConfig] = useState<AdminSettingsSection>("voice");
 
   useEffect(() => {
-    if (configOpen) setConfigSeen(true);
-  }, [configOpen]);
+    if (configOpen) {
+      setConfigSeen(true);
+      setLastConfig(tab);
+    }
+    if (tab === "test") setTestSeen(true);
+  }, [configOpen, tab]);
 
   return (
     <>
@@ -147,7 +162,12 @@ function AdminSettingsHubInner({
       </div>
       {configSeen ? (
         <div hidden={!configOpen}>
-          <AdminConfigurationPanel section={configOpen ? tab : "voice"} />
+          <AdminConfigurationPanel section={configOpen ? tab : lastConfig} />
+        </div>
+      ) : null}
+      {testSeen ? (
+        <div hidden={tab !== "test"}>
+          <AdminKnowledgeChat active={tab === "test"} />
         </div>
       ) : null}
     </>

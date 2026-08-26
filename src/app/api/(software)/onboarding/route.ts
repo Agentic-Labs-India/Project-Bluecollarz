@@ -8,6 +8,7 @@ import {
 import { after } from "next/server";
 import { z } from "zod";
 import {
+  embeddingModel,
   getAiRuntime,
   llmModel,
   llmTemp,
@@ -34,6 +35,7 @@ import { parseDateOnly } from "@/lib/core/dates";
 import { lookupPlaceOptions } from "@/lib/core/geo/places";
 import { rateLimitPerMinute, tooManyRequests } from "@/lib/core/rate-limit";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
+import { knowledgeRagTools } from "@/lib/knowledge/tools";
 import { isIdentityVerified } from "@/lib/kyc";
 import { lastUserText, screenWorkerTurnSafe } from "@/lib/legal-safety/detect";
 import { prohibitedOutputGuard } from "@/lib/legal-safety/guard-stream";
@@ -441,6 +443,9 @@ Call selectResume at most once per session.`;
     }),
     stopWhen: isStepCount(24),
     tools: {
+      ...(settings.knowledge?.rag?.onboarding
+        ? knowledgeRagTools({ embeddingModel: embeddingModel(settings) })
+        : {}),
       selectVoiceLanguage: tool({
         description:
           "Show the spoken-language picker in chat. Speak a short question first, then call this and wait for their selection. Call FIRST before other onboarding questions.",

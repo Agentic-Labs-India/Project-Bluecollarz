@@ -92,7 +92,7 @@ const PROMPT_FIELDS: PromptField[] = (
     },
     {
       key: "knowledge",
-      label: "Knowledge base RAG",
+      label: "Knowledge base Test / RAG",
       placeholders: "Grounded answers over uploaded PDFs",
     },
   ] satisfies Omit<PromptField, "tokens">[]

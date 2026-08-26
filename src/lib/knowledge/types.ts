@@ -1,5 +1,47 @@
-export const KNOWLEDGE_DOC_TYPES = ["legal", "general"] as const;
+export const KNOWLEDGE_DOC_TYPES = [
+  "legal",
+  "policy",
+  "recruitment",
+  "emigration",
+  "gulf_labour",
+  "kyc",
+  "medical",
+  "interview",
+  "onboarding",
+  "jobs",
+  "safety",
+  "support",
+  "grievance",
+  "general",
+] as const;
 export type KnowledgeDocType = (typeof KNOWLEDGE_DOC_TYPES)[number];
+
+export const KNOWLEDGE_DOC_TYPE_LABELS: Record<KnowledgeDocType, string> = {
+  legal: "Legal / contracts",
+  policy: "Platform policy",
+  recruitment: "Recruiting agent / RA",
+  emigration: "Emigration / ECR",
+  gulf_labour: "Gulf labour (UAE, KSA, Qatar)",
+  kyc: "KYC / DigiLocker",
+  medical: "Medical fitness",
+  interview: "Interviews",
+  onboarding: "Candidate onboarding",
+  jobs: "Roles & job posts",
+  safety: "Worker safety",
+  support: "Help & support",
+  grievance: "Grievance / DPDP",
+  general: "General",
+};
+
+const DOC_TYPE_SET = new Set<string>(KNOWLEDGE_DOC_TYPES);
+
+export function isKnowledgeDocType(value: unknown): value is KnowledgeDocType {
+  return typeof value === "string" && DOC_TYPE_SET.has(value);
+}
+
+export function parseKnowledgeDocType(value: unknown): KnowledgeDocType {
+  return isKnowledgeDocType(value) ? value : "general";
+}
 
 export const KNOWLEDGE_SOURCE_STATUSES = [
   "queued",

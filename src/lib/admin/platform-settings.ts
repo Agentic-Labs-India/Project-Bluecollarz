@@ -7,6 +7,8 @@ import {
   parseLanguageList,
 } from "@/lib/admin/platform-settings-defaults";
 import {
+  KNOWLEDGE_RAG_KEYS,
+  type KnowledgeRagKey,
   LLM_TEMPERATURE_KEYS,
   type LlmTemperatureKey,
   type PlatformSettingsPublic,
@@ -61,11 +63,23 @@ const promptsSchema = z.object({
   knowledge: z.string().min(20).max(PROMPT_MAX),
 });
 
+const knowledgeRagSchema = z.object({
+  support: z.boolean(),
+  onboarding: z.boolean(),
+  interviewCommunication: z.boolean(),
+  interviewDomain: z.boolean(),
+});
+
+const knowledgeSchema = z.object({
+  rag: knowledgeRagSchema,
+});
+
 export const platformSettingsPatchSchema = z.object({
   grievanceOfficer: grievanceSchema,
   llm: llmSchema,
   voice: voiceSettingsSchema,
   prompts: promptsSchema,
+  knowledge: knowledgeSchema,
 });
 
 export type PlatformSettingsPatch = z.infer<typeof platformSettingsPatchSchema>;
@@ -76,6 +90,7 @@ interface PlatformSettingsDocument {
   llm: PlatformSettingsPublic["llm"];
   voice: PlatformSettingsPublic["voice"];
   prompts: PlatformSettingsPublic["prompts"];
+  knowledge: PlatformSettingsPublic["knowledge"];
   updatedAt: Date;
   updatedBy: string;
 }
@@ -119,6 +134,15 @@ function mergeSettings(
     }
   }
 
+  const rag = { ...defaults.knowledge.rag };
+  const storedRag = stored?.knowledge?.rag;
+  if (storedRag) {
+    for (const key of KNOWLEDGE_RAG_KEYS) {
+      const value = storedRag[key as KnowledgeRagKey];
+      if (typeof value === "boolean") rag[key] = value;
+    }
+  }
+
   return {
     grievanceOfficer: {
       ...defaults.grievanceOfficer,
@@ -139,6 +163,7 @@ function mergeSettings(
       ...stored?.voice,
     }),
     prompts,
+    knowledge: { rag },
     updatedAt: stored?.updatedAt ? stored.updatedAt.toISOString() : null,
     updatedBy: stored?.updatedBy ?? null,
   };
@@ -182,6 +207,7 @@ export async function savePlatformSettings(input: {
     llm: input.patch.llm,
     voice: input.patch.voice,
     prompts: input.patch.prompts,
+    knowledge: input.patch.knowledge,
     updatedAt: now,
     updatedBy: input.updatedBy,
   };
