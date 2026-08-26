@@ -168,7 +168,6 @@ export function blobFileUrl(pathnameOrUrl: string): string {
 export function blobAbsoluteFileUrl(pathnameOrUrl: string): string {
   const path = blobFileUrl(pathnameOrUrl);
   const origin = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.BETTER_AUTH_URL ||
     ""
   ).replace(/\/$/, "");

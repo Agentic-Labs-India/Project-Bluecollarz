@@ -514,7 +514,7 @@ bun dev
 | `SARVAM_API_KEY` | yes | Voice TTS and STT |
 | `RESEND_API_KEY` | for email | Outbound mail. `RESEND_API` is accepted as an alias |
 | `RESEND_FROM_EMAIL` | for email | Sender address |
-| `NEXT_PUBLIC_SITE_URL` | for SEO | Sitemap and robots |
+| `BETTER_AUTH_URL` | for SEO | Sitemap and robots |
 | `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID` | optional | Analytics, consent-gated |
 | `DPDP_GRIEVANCE_OFFICER_NAME` | optional | Fallback when settings are unset |
 | `DPDP_GRIEVANCE_OFFICER_EMAIL` | optional | Fallback when settings are unset |

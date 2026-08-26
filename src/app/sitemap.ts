@@ -3,7 +3,7 @@ import { listPublishedBlogsForSitemap } from "@/lib/blog";
 import { listPublishedJobsForSitemap } from "@/lib/jobs/queries";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+  process.env.BETTER_AUTH_URL?.replace(/\/$/, "") ||
   "https://www.blucollarz.com";
 
 /** Stable lastModified for evergreen marketing pages (avoids crawl churn). */
