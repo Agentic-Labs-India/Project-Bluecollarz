@@ -3,7 +3,6 @@ import { z } from "zod";
 import { deleteUserProvision } from "@/lib/admin/provisions";
 import {
   listUsersByProfileType,
-  setUserProfileType,
   upsertUserProfileTypeByEmail,
 } from "@/lib/admin/queries";
 import { requireProfile } from "@/lib/auth/session";
@@ -14,18 +13,10 @@ const provisionSchema = z.object({
   profileType: z.enum(["hire", "admin"]),
 });
 
-const updateSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("user"),
-    userId: z.string().trim().min(1),
-    profileType: z.literal("work"),
-  }),
-  z.object({
-    kind: z.literal("pending"),
-    email: z.string().trim().email(),
-    profileType: z.literal("work"),
-  }),
-]);
+const updateSchema = z.object({
+  kind: z.literal("pending"),
+  email: z.string().trim().email(),
+});
 
 /** List provisioned hire or admin users. Admin-only. */
 export async function GET(req: NextRequest) {
@@ -110,33 +101,14 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    if (parsed.data.kind === "pending") {
-      const removed = await deleteUserProvision(parsed.data.email);
-      if (!removed) {
-        return NextResponse.json(
-          { error: "Invite not found" },
-          { status: 404 },
-        );
-      }
-      return NextResponse.json({ ok: true });
-    }
-
-    if (parsed.data.userId === auth.user.id) {
+    const removed = await deleteUserProvision(parsed.data.email);
+    if (!removed) {
       return NextResponse.json(
-        { error: "You cannot change your own role" },
-        { status: 400 },
+        { error: "Invite not found" },
+        { status: 404 },
       );
     }
-
-    const item = await setUserProfileType(
-      parsed.data.userId,
-      parsed.data.profileType,
-    );
-    if (!item) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ item });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("PATCH /api/admin/users:", error);
     return NextResponse.json(

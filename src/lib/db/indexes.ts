@@ -51,6 +51,10 @@ const HIRE_ONBOARDING_INDEX_SPECS = [
 const USER_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
   { key: { email: 1 }, options: {} },
+  {
+    key: { digilockerId: 1 },
+    options: { unique: true, sparse: true },
+  },
   /** Re-consent campaigns: users still on an older notice version. */
   { key: { platformTermsVersion: 1 }, options: {} },
 ] as const;

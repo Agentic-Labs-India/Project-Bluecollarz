@@ -5,14 +5,13 @@ import {
   type ProvisionProfileType,
   upsertUserProvision,
 } from "@/lib/admin/provisions";
-import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import type { ProfileType } from "@/lib/user/profile-types";
 import {
   CANDIDATE_ONLY_USER_FIELDS,
   HIRE_ONLY_USER_FIELDS,
   KYC_USER_FIELDS,
-  LEGACY_USER_FIELDS,
   unsetFields,
 } from "@/lib/user/role-fields";
 import { idHex } from "@/lib/utils";
@@ -37,7 +36,7 @@ type UserDoc = {
   createdAt?: Date | string | null;
 };
 
-/** Strip opposite-role + legacy fields when an admin changes profileType. */
+/** Strip opposite-role fields when an admin changes profileType. */
 async function applyProfileTypeCleanup(
   userId: string,
   profileType: ProfileType,
@@ -51,7 +50,6 @@ async function applyProfileTypeCleanup(
   const dropHire = profileType === "work" || profileType === "admin";
 
   const $unset = {
-    ...unsetFields(LEGACY_USER_FIELDS),
     ...(dropCandidate
       ? {
           ...unsetFields(CANDIDATE_ONLY_USER_FIELDS),
@@ -197,31 +195,4 @@ export async function upsertUserProfileTypeByEmail(
     ),
     created: provision.created,
   };
-}
-
-/** Change profileType for an existing signed-up user by id. */
-export async function setUserProfileType(
-  userId: string,
-  profileType: ProfileType,
-): Promise<AdminUserListItem | null> {
-  if (!isId(userId)) return null;
-  await ensureIndexes();
-  const users = client
-    .db(DB_NAME)
-    .collection<UserDoc>(COLLECTIONS.USERS_COLLECTION);
-
-  const result = await users.findOneAndUpdate(
-    { _id: matchId(userId) as never },
-    {
-      $set: {
-        profileType,
-        updatedAt: new Date(),
-      },
-    },
-    { returnDocument: "after" },
-  );
-
-  if (!result) return null;
-  await applyProfileTypeCleanup(userId, profileType);
-  return toListItem(result, profileType, false);
 }

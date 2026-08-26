@@ -23,13 +23,13 @@ type JourneyStep = {
 const STEPS: JourneyStep[] = [
   {
     code: "01",
-    title: "Get onboarded with AI",
-    body: "Voice onboarding collects currently working as, years of experience, education, work experience, and languages.",
+    title: "Sign in with DigiLocker",
+    body: "DigiLocker creates your account and verifies identity: name, date of birth, phone, location, gender, PAN, and Aadhaar. Your DigiLocker user id is your account id.",
   },
   {
     code: "02",
-    title: "Verify with DigiLocker",
-    body: "Identity comes from DigiLocker: name, date of birth, phone, location, gender, PAN, and Aadhaar.",
+    title: "Get onboarded with AI",
+    body: "Voice onboarding collects currently working as, years of experience, education, work experience, and languages.",
   },
   {
     code: "03",

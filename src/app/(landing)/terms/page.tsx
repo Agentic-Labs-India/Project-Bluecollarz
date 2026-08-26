@@ -41,12 +41,14 @@ export default function TermsPage() {
 
         <LegalSection title="3. Accounts and profile types">
           <p>
-            Google sign-in creates a candidate (“work”) account. Hirer (“hire”)
-            access is provisioned by Blucollarz for approved companies — it is
-            not available as a public sign-up option. You are responsible for
-            activity under your account and for keeping your sign-in credentials
-            secure. Provide accurate information and keep your profile up to
-            date.
+            DigiLocker sign-in creates a candidate (“work”) account and verifies
+            identity in the same step. The unique DigiLocker user id is the
+            candidate account id. Hirer (“hire”) and admin access uses Google
+            sign-in from Corporate Login after Blucollarz provisions that email
+            — it is not available as a public sign-up option. You are
+            responsible for activity under your account and for keeping your
+            sign-in credentials secure. Provide accurate information and keep
+            your profile up to date.
           </p>
         </LegalSection>
 
@@ -103,14 +105,13 @@ export default function TermsPage() {
 
         <LegalSection title="7. Personal data">
           <p>
-            How we process personal data is set out in the Privacy Notice, which
-            is part of these Terms. Purpose consents (identity, contact,
-            evaluation, medical) are granted separately before DigiLocker.
-            You may withdraw those consents and delete your account from
-            Settings. Delete account removes profile data, applications,
-            interviews, recordings, medical reports, and hire company documents
-            from our systems, except where a legal hold requires us to keep
-            material.
+            Purpose consents (identity, contact, evaluation, medical) are
+            granted when you sign in with DigiLocker (candidates) or use the
+            product features that need them. You may withdraw those consents and
+            delete your account from Settings. Delete account removes profile
+            data, applications, interviews, recordings, medical reports, and
+            hire company documents from our systems, except where a legal hold
+            requires us to keep material.
           </p>
         </LegalSection>
 
@@ -146,10 +147,12 @@ export default function TermsPage() {
 
         <LegalSection title="10. Third-party services">
           <p>
-            The Service relies on processors including Google (sign-in), MongoDB
-            (database), Vercel (hosting and private file storage), AI providers
-            via the Vercel AI Gateway, Sarvam (voice), and Resend (email). Your
-            use of those providers may also be subject to their terms.
+            The Service relies on processors including DigiLocker / MeriPehchaan
+            (candidate sign-in and identity), Google (recruiter and admin
+            sign-in), MongoDB (database), Vercel (hosting and private file
+            storage), AI providers via the Vercel AI Gateway, Sarvam (voice),
+            and Resend (email). Your use of those providers may also be subject
+            to their terms.
           </p>
         </LegalSection>
 
@@ -183,8 +186,9 @@ export default function TermsPage() {
             You may stop using the Service and delete your account from
             Settings. We may suspend or terminate access if you violate these
             Terms or if needed to protect the Service or other users. After
-            deletion you may create a new Google account later; we may wait
-            before allowing the same email to return.
+            deletion you may create a new DigiLocker candidate account later, or
+            a provisioned Google recruiter/admin account; we may wait before
+            allowing the same identity to return.
           </p>
         </LegalSection>
 

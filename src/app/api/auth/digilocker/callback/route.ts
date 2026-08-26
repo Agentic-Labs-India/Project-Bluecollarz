@@ -1,29 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
-import {
-  DIGILOCKER_REQUIRED_PURPOSES,
-  hasGrantedPurposes,
-} from "@/lib/compliance/consent";
-import { parseDateOnly } from "@/lib/core/dates";
-import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
-import { ensureIndexes } from "@/lib/db/indexes";
-import {
-  digilockerProfileSet,
-  identityMismatches,
-  type UserKyc,
-} from "@/lib/kyc";
+import { upsertCandidateFromDigilocker } from "@/lib/auth/digilocker-account";
+import { attachAuthSession } from "@/lib/auth/session-cookie";
 import {
   cookieOptions,
   DIGILOCKER_OAUTH_COOKIE,
   exchangeAuthorizationCode,
   gatherDigilockerKyc,
   openOAuthCookie,
+  requestOrigin,
 } from "@/lib/kyc/digilocker";
+import { isNativeUserAgent } from "@/lib/native/platform";
 
 function appOrigin(req: NextRequest) {
-  return (
-    process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") || req.nextUrl.origin
-  );
+  return requestOrigin(req.headers, req.nextUrl.origin);
+}
+
+function loginHome(req: NextRequest) {
+  return isNativeUserAgent(req.headers.get("user-agent")) ? "/auth" : "/";
 }
 
 function redirectWithError(req: NextRequest, returnTo: string, error: string) {
@@ -39,13 +32,13 @@ function redirectWithError(req: NextRequest, returnTo: string, error: string) {
 }
 
 /**
- * DigiLocker callback → match identity to this profile → set isKycVerified.
+ * DigiLocker callback → candidate login/signup + KYC, or reverify an existing work profile.
  */
 export async function GET(req: NextRequest) {
   const oauth = openOAuthCookie(
     req.cookies.get(DIGILOCKER_OAUTH_COOKIE)?.value,
   );
-  const returnTo = oauth?.returnTo || "/candidate/kyc";
+  const returnTo = oauth?.returnTo || loginHome(req);
 
   const error = req.nextUrl.searchParams.get("error");
   if (error) {
@@ -68,29 +61,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    if (!(await isCandidateOnboardingDone(oauth.userId))) {
-      return redirectWithError(
-        req,
-        "/candidate/onboarding",
-        "Finish onboarding before DigiLocker KYC.",
-      );
-    }
-
-    const consentOk = await hasGrantedPurposes(
-      oauth.userId,
-      DIGILOCKER_REQUIRED_PURPOSES,
-    );
-    if (!consentOk) {
-      return redirectWithError(
-        req,
-        returnTo,
-        "Turn on every permission, then Agree and Verify, before DigiLocker.",
-      );
-    }
-
     const token = await exchangeAuthorizationCode({
       code,
       codeVerifier: oauth.codeVerifier,
+      redirectUri: oauth.redirectUri,
     });
     const verifiedAt = new Date();
     const payload = await gatherDigilockerKyc({
@@ -99,64 +73,26 @@ export async function GET(req: NextRequest) {
       tokenEaadhaar: token.eaadhaar,
     });
 
-    await ensureIndexes();
-    const filter = { _id: matchId(oauth.userId) as never };
-    const existing = await client
-      .db(DB_NAME)
-      .collection(COLLECTIONS.USERS_COLLECTION)
-      .findOne(filter, {
-        projection: {
-          phoneNumber: 1,
-          dateOfBirth: 1,
-          kyc: 1,
-        },
-      });
-
-    const existingKyc = (existing?.kyc as UserKyc | undefined) ?? null;
-    const mismatches = identityMismatches(
-      {
-        phoneNumber:
-          typeof existing?.phoneNumber === "number"
-            ? existing.phoneNumber
-            : null,
-        dateOfBirth: parseDateOnly(existing?.dateOfBirth),
-        pan: existingKyc?.pan ?? null,
-        aadhaarLast4: existingKyc?.aadhaarLast4 ?? null,
-        gender: existingKyc?.gender ?? null,
-      },
+    const { userId } = await upsertCandidateFromDigilocker({
       payload,
-    );
-    if (mismatches.length) {
-      return redirectWithError(req, returnTo, mismatches.join(" "));
-    }
+      verifiedAt,
+      sessionUserId: oauth.intent === "reverify" ? oauth.userId : undefined,
+    });
 
-    let profileUpdate: ReturnType<typeof digilockerProfileSet>;
-    try {
-      profileUpdate = digilockerProfileSet(payload, verifiedAt);
-    } catch (ageError) {
-      return redirectWithError(
-        req,
-        returnTo,
-        ageError instanceof Error
-          ? ageError.message
-          : "Could not complete DigiLocker verification.",
-      );
+    const successTo =
+      oauth.intent === "reverify" ? "/candidate/kyc" : loginHome(req);
+    const successUrl = new URL(successTo, appOrigin(req));
+    if (oauth.intent === "reverify") {
+      successUrl.searchParams.set("digilocker", "success");
+      successUrl.searchParams.delete("message");
     }
-    const { $set } = profileUpdate;
-    await client
-      .db(DB_NAME)
-      .collection(COLLECTIONS.USERS_COLLECTION)
-      .updateOne(filter, { $set });
-
-    const successUrl = new URL(returnTo, appOrigin(req));
-    successUrl.searchParams.set("digilocker", "success");
-    successUrl.searchParams.delete("message");
 
     const res = NextResponse.redirect(successUrl);
     res.cookies.set(DIGILOCKER_OAUTH_COOKIE, "", {
       ...cookieOptions(0),
       maxAge: 0,
     });
+    await attachAuthSession(res, userId);
     return res;
   } catch (error) {
     console.error("GET /api/auth/digilocker/callback:", error);
@@ -165,7 +101,7 @@ export async function GET(req: NextRequest) {
       returnTo,
       error instanceof Error
         ? error.message
-        : "DigiLocker KYC failed. Please try again.",
+        : "DigiLocker sign-in failed. Please try again.",
     );
   }
 }

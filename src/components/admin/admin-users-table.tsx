@@ -92,7 +92,7 @@ export function AdminUsersTable({
       setEmail("");
       toast.success(
         json.created
-          ? `${roleLabel} invite saved — they’ll get access on Google sign-in`
+          ? `${roleLabel} invite saved — they’ll get access on Corporate Login (Google)`
           : `Updated to ${roleLabel.toLowerCase()}`,
       );
       await load();
@@ -103,29 +103,27 @@ export function AdminUsersTable({
     }
   }
 
-  async function makeCandidate(user: AdminUserListItem) {
+  async function cancelInvite(user: AdminUserListItem) {
+    if (!user.pending) return;
     setRowBusyId(user.id);
     try {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          user.pending
-            ? { kind: "pending", email: user.email, profileType: "work" }
-            : { kind: "user", userId: user.id, profileType: "work" },
-        ),
+        body: JSON.stringify({
+          kind: "pending",
+          email: user.email,
+        }),
       });
       if (!res.ok) {
         const json = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(json.error || "Could not update user");
+        toast.error(json.error || "Could not cancel invite");
         return;
       }
       setData((prev) => prev.filter((row) => row.id !== user.id));
-      toast.success(
-        user.pending ? "Invite cancelled" : "Moved back to candidate",
-      );
+      toast.success("Invite cancelled");
     } catch {
-      toast.error("Could not update user");
+      toast.error("Could not cancel invite");
     } finally {
       setRowBusyId(null);
     }
@@ -183,6 +181,7 @@ export function AdminUsersTable({
       header: () => <span className="sr-only">Actions</span>,
       enableHiding: false,
       cell: ({ row }) => {
+        if (!row.original.pending) return null;
         const busy = rowBusyId === row.original.id;
         return (
           <div className="flex justify-end">
@@ -200,10 +199,10 @@ export function AdminUsersTable({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   disabled={busy}
-                  onSelect={() => void makeCandidate(row.original)}
+                  onSelect={() => void cancelInvite(row.original)}
                 >
                   <UserRound className="size-4" />
-                  {row.original.pending ? "Cancel invite" : "Make candidate"}
+                  Cancel invite
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -254,7 +253,7 @@ export function AdminUsersTable({
               <DialogDescription>
                 Enter an email. If they already have an account, their role
                 becomes {roleLabel.toLowerCase()}. If not, an invite is queued
-                and applied on their first Google sign-in.
+                and applied on their first Corporate Login (Google).
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-2 py-2">

@@ -88,7 +88,7 @@ export default function ContactPage() {
 
       <DocSection id="in-app-help" number="03" title="In-app Help (preferred)">
         <p>
-          After you sign in with Google, use the Help control in the left rail
+          After you sign in, use the Help control in the left rail
           (desktop) — it sits just above cookie preferences. Help opens a chat
           where you describe the problem. The agent clarifies what is wrong,
           offers to open a ticket, asks if you want to add anything else, then
@@ -99,7 +99,7 @@ export default function ContactPage() {
           steps={[
             {
               title: "Sign in",
-              body: "Use Google on Blucollarz so Help can attach your account, email, and profile type (candidate, recruiter, or admin).",
+              body: "Candidates use DigiLocker (phone / PIN / OTP). Recruiters and admins use Corporate Login (Google). Help attaches the signed-in account and profile type.",
             },
             {
               title: "Open Help",
@@ -157,7 +157,7 @@ export default function ContactPage() {
           items={[
             {
               title: "Sign-in",
-              body: "Google OAuth failures, unexpected redirects, session loops.",
+              body: "DigiLocker or Corporate Login failures, unexpected redirects, session loops.",
             },
             {
               title: "Onboarding",
@@ -169,7 +169,7 @@ export default function ContactPage() {
             },
             {
               title: "KYC",
-              body: "Failed authenticity checks, deferred PAN/Passport undertaking, document mismatch to profile.",
+              body: "DigiLocker verification issues, document mismatch, under-18 date of birth.",
             },
           ]}
         />
@@ -246,7 +246,7 @@ export default function ContactPage() {
             ],
             [
               "Support email (fallback)",
-              "Account email, profile type (work/hire/admin), URL, steps to reproduce, screenshots if safe",
+              "DigiLocker user id (candidates) or Google email (recruiters/admins), profile type, URL, steps to reproduce, screenshots if safe",
             ],
             [
               "Recruiter access",

@@ -75,7 +75,7 @@ type IdentityProfile = {
 };
 
 /**
- * DigiLocker is the identity source. Google display names are ignored.
+ * DigiLocker is the identity source.
  * If a field is already on the profile (re-verify), it must match.
  */
 export function identityMismatches(
@@ -84,6 +84,7 @@ export function identityMismatches(
 ): string[] {
   const errors: string[] = [];
 
+  if (!dl.digilockerId) errors.push("DigiLocker did not return a user id.");
   if (!dl.name?.trim()) errors.push("DigiLocker did not return a name.");
 
   const pDob = formatDateOnly(profile.dateOfBirth);
@@ -130,6 +131,9 @@ export function digilockerProfileSet(
   dl: DigilockerKycPayload,
   verifiedAt: Date,
 ): { $set: Record<string, unknown> } {
+  if (!dl.digilockerId) {
+    throw new Error("DigiLocker did not return a user id.");
+  }
   const dobWire = digilockerDobToWire(dl.dob);
   const dob = dobWire ? parseDateOnly(dobWire) : null;
   if (!dob) {
@@ -164,6 +168,9 @@ export function digilockerProfileSet(
   if (phoneNumber !== null) $set.phoneNumber = phoneNumber;
   if (phoneCountryCode !== null) $set.phoneCountryCode = phoneCountryCode;
   if (dl.address?.trim()) $set.location = dl.address.trim();
+  $set.digilockerId = dl.digilockerId;
+  // Better Auth unique key — DigiLocker user id, not a DigiLocker email.
+  $set.email = dl.digilockerId;
 
   return { $set };
 }

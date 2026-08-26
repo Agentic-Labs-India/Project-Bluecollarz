@@ -6,7 +6,6 @@ import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types
 type FlowId =
   | "c-signin"
   | "c-onboard"
-  | "c-kyc"
   | "c-explore"
   | "c-resume"
   | "c-comm"
@@ -356,8 +355,12 @@ export function AdminAiFlow({
           </svg>
 
           <div className="relative z-10 grid grid-cols-3">
-            <Lane title="Candidate" note="Work sign-in. KYC after onboarding.">
-              <Box id="c-signin" title="Sign in" detail="Work profile." />
+            <Lane title="Candidate" note="DigiLocker sign-in. KYC at login.">
+              <Box
+                id="c-signin"
+                title="DigiLocker sign-in"
+                detail="Account + KYC. User id from DigiLocker."
+              />
               <ArrowDown />
               <Box
                 id="c-onboard"
@@ -365,12 +368,6 @@ export function AdminAiFlow({
                 title="Onboarding voice"
                 detail="Education, experience, languages."
                 meta={`t ${t.onboarding} · onboarding`}
-              />
-              <ArrowDown />
-              <Box
-                id="c-kyc"
-                title="DigiLocker KYC"
-                detail="Name, DOB 18+, phone, location, PAN, Aadhaar."
               />
               <ArrowDown />
               <Box id="c-explore" title="Explore" detail="Published roles." />
@@ -541,13 +538,7 @@ export function AdminAiFlow({
                 leftLabel="approve"
                 rightLabel="deny"
                 rightDashed
-                left={
-                  <Box
-                    id="a-publish"
-                    title="Publish"
-                    detail="Live."
-                  />
-                }
+                left={<Box id="a-publish" title="Publish" detail="Live." />}
                 right={
                   <Box
                     aside

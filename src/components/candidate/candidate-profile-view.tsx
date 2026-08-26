@@ -362,722 +362,730 @@ export function CandidateProfileView() {
 
       <div className="space-y-8">
         <div className="bg-primary relative flex flex-col items-start gap-5 overflow-hidden border border-white/15 p-6 sm:flex-row sm:items-center">
-        <PrimaryDither seed="candidate-profile-header" opacity={0.85} />
-        <Avatar className="relative z-10 size-20 ring-2 ring-white/25">
-          {profile.image ? (
-            <AvatarImage src={profile.image} alt={profile.name || "User"} />
-          ) : null}
-          <AvatarFallback className="bg-white/15 text-xl font-semibold text-white">
-            {initial}
-          </AvatarFallback>
-        </Avatar>
-        <div className="relative z-10 min-w-0 flex-1">
-          <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-white">
-            <span>{profile.name || "Your name"}</span>
-            {identityLocked ? (
-              <span
-                className="inline-flex items-center gap-1 text-sm font-medium text-white"
-                title="Identity verified via DigiLocker"
-              >
-                <BadgeCheckIcon className="size-5 fill-white text-primary" />
-                Verified
-              </span>
+          <PrimaryDither seed="candidate-profile-header" opacity={0.85} />
+          <Avatar className="relative z-10 size-20 ring-2 ring-white/25">
+            {profile.image ? (
+              <AvatarImage src={profile.image} alt={profile.name || "User"} />
             ) : null}
-          </h2>
-          <p className="mt-1 text-sm text-white/75">
-            {profile.headline || "Add your headline"}
-          </p>
-          {identityLocked ? (
-            <p className="mt-2 text-xs text-white/65">
-              DigiLocker verified — phone, DOB, address, PAN, Aadhaar, and
-              gender are locked.
+            <AvatarFallback className="bg-white/15 text-xl font-semibold text-white">
+              {initial}
+            </AvatarFallback>
+          </Avatar>
+          <div className="relative z-10 min-w-0 flex-1">
+            <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-white">
+              <span>{profile.name || "Your name"}</span>
+              {identityLocked ? (
+                <span
+                  className="inline-flex items-center gap-1 text-sm font-medium text-white"
+                  title="Identity verified via DigiLocker"
+                >
+                  <BadgeCheckIcon className="size-5 fill-white text-primary" />
+                  Verified
+                </span>
+              ) : null}
+            </h2>
+            <p className="mt-1 text-sm text-white/75">
+              {profile.headline || "Add your headline"}
             </p>
-          ) : profile.candidateOnboardingComplete ? (
-            <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/65">
-              <BadgeCheckIcon className="size-3.5" />
-              Profile ready for applications
-            </p>
-          ) : (
-            <p className="mt-2 text-xs text-white/65">
-              Profile incomplete —{" "}
-              <a
-                href="/candidate/onboarding"
-                className="text-white underline underline-offset-4 hover:text-white/90"
-              >
-                continue onboarding
-              </a>
-            </p>
-          )}
+            {identityLocked ? (
+              <p className="mt-2 text-xs text-white/65">
+                DigiLocker verified — phone, DOB, address, PAN, Aadhaar, and
+                gender are locked.
+              </p>
+            ) : profile.candidateOnboardingComplete ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/65">
+                <BadgeCheckIcon className="size-3.5" />
+                Profile ready for applications
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-white/65">
+                Profile incomplete —{" "}
+                <a
+                  href="/candidate/onboarding"
+                  className="text-white underline underline-offset-4 hover:text-white/90"
+                >
+                  continue onboarding
+                </a>
+              </p>
+            )}
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            className="relative z-10 border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          >
+            <Link href="/candidate/kyc">
+              <ShieldCheckIcon className="size-4" />
+              {identityLocked ? "View KYC" : "Complete KYC"}
+            </Link>
+          </Button>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="relative z-10 border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-        >
-          <Link href="/candidate/kyc">
-            <ShieldCheckIcon className="size-4" />
-            {identityLocked ? "View KYC" : "Complete KYC"}
-          </Link>
-        </Button>
-      </div>
 
-      <CandidateMedicalReports />
+        <CandidateMedicalReports />
 
-      {/* Basics */}
-      <section className="space-y-4">
-        <h3 className="text-foreground text-xl font-semibold">Basics</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={profile.email} disabled />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <PhoneNumberInput
-              id="phone"
-              countryCode={profile.phoneCountryCode}
-              number={profile.phoneNumber}
-              disabled={identityLocked}
-              defaultIso={countryCodeFromName(profile.residenceCountry) ?? "IN"}
-              onChange={({ phoneCountryCode, phoneNumber }) =>
-                setProfile((p) => ({
-                  ...p,
-                  phoneCountryCode,
-                  phoneNumber,
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">Location / address</Label>
-            <Input
-              id="location"
-              value={profile.location}
-              disabled={identityLocked}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, location: e.target.value }))
-              }
-            />
-          </div>
-          {identityLocked ||
-          profile.gender ||
-          profile.pan ||
-          profile.aadhaarLast4 ? (
-            <>
-              <div className="space-y-2">
-                <Label>Gender</Label>
-                <Input value={profile.gender || "—"} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label>PAN</Label>
-                <Input value={profile.pan || "—"} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label>Aadhaar (last 4)</Label>
-                <Input
-                  value={
-                    profile.aadhaarLast4
-                      ? `XXXXXXXX${profile.aadhaarLast4}`
-                      : "—"
-                  }
-                  disabled
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dob">Date of birth</Label>
-                {identityLocked ? (
-                  <Input id="dob" value={profile.dateOfBirth || "—"} disabled />
-                ) : (
-                  <DateOfBirthPicker
-                    id="dob"
-                    value={profile.dateOfBirth}
-                    onChange={(dateOfBirth) =>
-                      setProfile((p) => ({ ...p, dateOfBirth }))
-                    }
-                  />
-                )}
-              </div>
-            </>
-          ) : (
+        {/* Basics */}
+        <section className="space-y-4">
+          <h3 className="text-foreground text-xl font-semibold">Basics</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="digilocker-id">DigiLocker ID</Label>
+              <Input id="digilocker-id" value={profile.digilockerId} disabled />
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="dob">Date of birth</Label>
-              <DateOfBirthPicker
-                id="dob"
-                value={profile.dateOfBirth}
-                onChange={(dateOfBirth) =>
-                  setProfile((p) => ({ ...p, dateOfBirth }))
+              <Label htmlFor="phone">Phone</Label>
+              <PhoneNumberInput
+                id="phone"
+                countryCode={profile.phoneCountryCode}
+                number={profile.phoneNumber}
+                disabled={identityLocked}
+                defaultIso={
+                  countryCodeFromName(profile.residenceCountry) ?? "IN"
+                }
+                onChange={({ phoneCountryCode, phoneNumber }) =>
+                  setProfile((p) => ({
+                    ...p,
+                    phoneCountryCode,
+                    phoneNumber,
+                  }))
                 }
               />
             </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="headline">Headline / current role</Label>
-            <Input
-              id="headline"
-              value={profile.headline}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, headline: e.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="years">Years of experience</Label>
-            <Input
-              id="years"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={80}
-              step={1}
-              value={profile.yearsExperience ?? ""}
-              onChange={(e) =>
-                setProfile((p) => ({
-                  ...p,
-                  yearsExperience: readNullableInt(e.target.value),
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="summary">Professional summary</Label>
-            <Textarea
-              id="summary"
-              rows={6}
-              value={profile.summary}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, summary: e.target.value }))
-              }
-            />
-          </div>
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Education */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-foreground text-xl font-semibold">
-            Education{" "}
-            <span className="text-muted-foreground text-sm font-normal">
-              (required)
-            </span>
-          </h3>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-primary"
-            onClick={() =>
-              setProfile((p) => ({
-                ...p,
-                education: [...p.education, emptyEducationEntry()],
-              }))
-            }
-          >
-            <PlusIcon className="size-4" />
-            Add education
-          </Button>
-        </div>
-        {profile.education.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No education added yet.
-          </p>
-        ) : null}
-        <div className="space-y-4">
-          {profile.education.map((entry, index) => (
-            <div
-              key={`edu-${entry.school}-${entry.degree}-${entry.startYear}-${index}`}
-              className="border-border space-y-3 border p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-foreground text-sm font-medium">
-                  {educationTitle(entry)}
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  onClick={() =>
-                    setProfile((p) => ({
-                      ...p,
-                      education: p.education.filter((_, i) => i !== index),
-                    }))
-                  }
-                >
-                  <XIcon className="size-3.5" />
-                  Remove
-                </Button>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>School</Label>
-                  <Input
-                    value={entry.school}
-                    onChange={(e) =>
-                      updateEducation(index, { school: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Degree</Label>
-                  <Input
-                    value={entry.degree}
-                    onChange={(e) =>
-                      updateEducation(index, { degree: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Major</Label>
-                  <Input
-                    value={entry.major}
-                    onChange={(e) =>
-                      updateEducation(index, { major: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Start year</Label>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1900}
-                    max={2100}
-                    step={1}
-                    value={entry.startYear ?? ""}
-                    onChange={(e) =>
-                      updateEducation(index, {
-                        startYear: readNullableInt(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>End year</Label>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1900}
-                    max={2100}
-                    step={1}
-                    placeholder="Blank = Present"
-                    value={entry.endYear ?? ""}
-                    onChange={(e) =>
-                      updateEducation(index, {
-                        endYear: readNullableInt(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>GPA</Label>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    max={10}
-                    step={0.01}
-                    value={entry.gpa ?? ""}
-                    onChange={(e) =>
-                      updateEducation(index, {
-                        gpa: readNullableFloat(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Work experience */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-foreground text-xl font-semibold">
-            Work experience{" "}
-            <span className="text-muted-foreground text-sm font-normal">
-              (required)
-            </span>
-          </h3>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-primary"
-            onClick={() =>
-              setProfile((p) => ({
-                ...p,
-                workExperience: [...p.workExperience, emptyWorkEntry()],
-              }))
-            }
-          >
-            <PlusIcon className="size-4" />
-            Add work experience
-          </Button>
-        </div>
-        {profile.workExperience.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No work experience added yet.
-          </p>
-        ) : null}
-        <div className="space-y-4">
-          {profile.workExperience.map((entry, index) => (
-            <div
-              key={`work-${entry.company}-${entry.role}-${entry.startYear}-${index}`}
-              className="border-border space-y-3 border p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-foreground text-sm font-medium">
-                  {workTitle(entry)}
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  onClick={() =>
-                    setProfile((p) => ({
-                      ...p,
-                      workExperience: p.workExperience.filter(
-                        (_, i) => i !== index,
-                      ),
-                    }))
-                  }
-                >
-                  <XIcon className="size-3.5" />
-                  Remove
-                </Button>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Company</Label>
-                  <Input
-                    value={entry.company}
-                    onChange={(e) =>
-                      updateWork(index, { company: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Role</Label>
-                  <Input
-                    value={entry.role}
-                    onChange={(e) =>
-                      updateWork(index, { role: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Start year</Label>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1900}
-                    max={2100}
-                    step={1}
-                    value={entry.startYear ?? ""}
-                    onChange={(e) =>
-                      updateWork(index, {
-                        startYear: readNullableInt(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>End year</Label>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1900}
-                    max={2100}
-                    step={1}
-                    placeholder="Blank = Present"
-                    value={entry.endYear ?? ""}
-                    onChange={(e) =>
-                      updateWork(index, {
-                        endYear: readNullableInt(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>City</Label>
-                  <Input
-                    value={entry.city}
-                    onChange={(e) =>
-                      updateWork(index, { city: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Country</Label>
-                  <Input
-                    value={entry.country}
-                    onChange={(e) =>
-                      updateWork(index, { country: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    rows={5}
-                    value={entry.description}
-                    onChange={(e) =>
-                      updateWork(index, { description: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Links */}
-      <section className="space-y-4">
-        <h3 className="text-foreground text-xl font-semibold">Links</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="portfolio">Portfolio URL</Label>
-            <Input
-              id="portfolio"
-              placeholder="https://yourportfolio.com"
-              value={profile.portfolioUrl}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, portfolioUrl: e.target.value }))
-              }
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Other links</Label>
-          <TagList
-            values={profile.otherLinks}
-            placeholder="https://example.com"
-            onChange={(otherLinks) => setProfile((p) => ({ ...p, otherLinks }))}
-          />
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Skills */}
-      <section className="space-y-4">
-        <h3 className="text-foreground text-xl font-semibold">Skills</h3>
-        <TagList
-          values={profile.skills}
-          placeholder="Add a skill and press Enter"
-          onChange={(skills) => setProfile((p) => ({ ...p, skills }))}
-        />
-      </section>
-
-      <Separator />
-
-      {/* Languages */}
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-foreground text-xl font-semibold">
-            Languages{" "}
-            <span className="text-muted-foreground text-sm font-normal">
-              (required)
-            </span>
-          </h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            What languages can you natively speak, read, and write?
-          </p>
-        </div>
-        <TagList
-          values={profile.languages}
-          placeholder="Search and add languages…"
-          onChange={(languages) => setProfile((p) => ({ ...p, languages }))}
-        />
-      </section>
-
-      <Separator />
-
-      {/* Hobbies */}
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-foreground text-xl font-semibold">Hobbies</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Select all that apply:
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {HOBBY_PRESETS.map((hobby) => {
-            const selected = profile.hobbies.some(
-              (h) => h.toLowerCase() === hobby.toLowerCase(),
-            );
-            return (
-              <button
-                key={hobby}
-                type="button"
-                onClick={() => toggleHobby(hobby)}
-                className={cn(
-                  "border px-3 py-1.5 text-xs transition-colors",
-                  selected
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {hobby}
-              </button>
-            );
-          })}
-        </div>
-        <TagList
-          values={profile.hobbies.filter(
-            (h) =>
-              !HOBBY_PRESETS.some((p) => p.toLowerCase() === h.toLowerCase()),
-          )}
-          placeholder="Add a custom hobby"
-          onChange={(custom) =>
-            setProfile((p) => ({
-              ...p,
-              hobbies: [
-                ...p.hobbies.filter((h) =>
-                  HOBBY_PRESETS.some(
-                    (preset) => preset.toLowerCase() === h.toLowerCase(),
-                  ),
-                ),
-                ...custom,
-              ],
-            }))
-          }
-        />
-      </section>
-
-      <Separator />
-
-      {/* Location */}
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-foreground text-xl font-semibold">Location</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Where you are based for most of the year.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h4 className="text-foreground text-sm font-semibold">
-            Location of residence
-          </h4>
-          <p className="text-muted-foreground text-xs">
-            Where you are based for most of the year. This might differ from
-            citizenship.
-          </p>
-          <fieldset disabled={identityLocked} className="min-w-0 space-y-3">
-            <ResidencePlaceFields
-              country={profile.residenceCountry}
-              state={profile.residenceState}
-              city={profile.residenceCity}
-              postalCode={profile.residencePostalCode}
-              onChange={(place) =>
-                setProfile((p) => ({
-                  ...p,
-                  residenceCountry: place.country,
-                  residenceState: place.state,
-                  residenceCity: place.city,
-                  residencePostalCode: place.postalCode,
-                }))
-              }
-            />
-          </fieldset>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Preferred countries</Label>
-          <p className="text-muted-foreground text-xs">
-            Select one or more countries where you want to work.
-          </p>
-          <CountryMultiSelect
-            value={profile.preferredCountries}
-            onChange={(preferredCountries) =>
-              setProfile((p) => ({ ...p, preferredCountries }))
-            }
-          />
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Work preferences */}
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-foreground text-xl font-semibold">
-            Work preferences
-          </h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Minimum expected compensation. Shown to recruiters when you apply.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="ft-comp">Full-time (USD / year)</Label>
-            <div className="relative">
-              <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
-                $
-              </span>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location / address</Label>
               <Input
-                id="ft-comp"
-                className="pl-6"
+                id="location"
+                value={profile.location}
+                disabled={identityLocked}
+                onChange={(e) =>
+                  setProfile((p) => ({ ...p, location: e.target.value }))
+                }
+              />
+            </div>
+            {identityLocked ||
+            profile.gender ||
+            profile.pan ||
+            profile.aadhaarLast4 ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <Input value={profile.gender || "—"} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label>PAN</Label>
+                  <Input value={profile.pan || "—"} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label>Aadhaar (last 4)</Label>
+                  <Input
+                    value={
+                      profile.aadhaarLast4
+                        ? `XXXXXXXX${profile.aadhaarLast4}`
+                        : "—"
+                    }
+                    disabled
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dob">Date of birth</Label>
+                  {identityLocked ? (
+                    <Input
+                      id="dob"
+                      value={profile.dateOfBirth || "—"}
+                      disabled
+                    />
+                  ) : (
+                    <DateOfBirthPicker
+                      id="dob"
+                      value={profile.dateOfBirth}
+                      onChange={(dateOfBirth) =>
+                        setProfile((p) => ({ ...p, dateOfBirth }))
+                      }
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of birth</Label>
+                <DateOfBirthPicker
+                  id="dob"
+                  value={profile.dateOfBirth}
+                  onChange={(dateOfBirth) =>
+                    setProfile((p) => ({ ...p, dateOfBirth }))
+                  }
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="headline">Headline / current role</Label>
+              <Input
+                id="headline"
+                value={profile.headline}
+                onChange={(e) =>
+                  setProfile((p) => ({ ...p, headline: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="years">Years of experience</Label>
+              <Input
+                id="years"
                 type="number"
                 inputMode="numeric"
                 min={0}
+                max={80}
                 step={1}
-                placeholder="25000"
-                value={profile.fullTimeCompensation ?? ""}
+                value={profile.yearsExperience ?? ""}
                 onChange={(e) =>
                   setProfile((p) => ({
                     ...p,
-                    fullTimeCompensation: readNullableFloat(e.target.value),
+                    yearsExperience: readNullableInt(e.target.value),
                   }))
                 }
               />
             </div>
-            <p className="text-muted-foreground text-xs">
-              We won&apos;t reach out about roles below this.
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="summary">Professional summary</Label>
+              <Textarea
+                id="summary"
+                rows={6}
+                value={profile.summary}
+                onChange={(e) =>
+                  setProfile((p) => ({ ...p, summary: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Education */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-foreground text-xl font-semibold">
+              Education{" "}
+              <span className="text-muted-foreground text-sm font-normal">
+                (required)
+              </span>
+            </h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-primary"
+              onClick={() =>
+                setProfile((p) => ({
+                  ...p,
+                  education: [...p.education, emptyEducationEntry()],
+                }))
+              }
+            >
+              <PlusIcon className="size-4" />
+              Add education
+            </Button>
+          </div>
+          {profile.education.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No education added yet.
             </p>
+          ) : null}
+          <div className="space-y-4">
+            {profile.education.map((entry, index) => (
+              <div
+                key={`edu-${entry.school}-${entry.degree}-${entry.startYear}-${index}`}
+                className="border-border space-y-3 border p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-foreground text-sm font-medium">
+                    {educationTitle(entry)}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() =>
+                      setProfile((p) => ({
+                        ...p,
+                        education: p.education.filter((_, i) => i !== index),
+                      }))
+                    }
+                  >
+                    <XIcon className="size-3.5" />
+                    Remove
+                  </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>School</Label>
+                    <Input
+                      value={entry.school}
+                      onChange={(e) =>
+                        updateEducation(index, { school: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Degree</Label>
+                    <Input
+                      value={entry.degree}
+                      onChange={(e) =>
+                        updateEducation(index, { degree: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Major</Label>
+                    <Input
+                      value={entry.major}
+                      onChange={(e) =>
+                        updateEducation(index, { major: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Start year</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1900}
+                      max={2100}
+                      step={1}
+                      value={entry.startYear ?? ""}
+                      onChange={(e) =>
+                        updateEducation(index, {
+                          startYear: readNullableInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>End year</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1900}
+                      max={2100}
+                      step={1}
+                      placeholder="Blank = Present"
+                      value={entry.endYear ?? ""}
+                      onChange={(e) =>
+                        updateEducation(index, {
+                          endYear: readNullableInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>GPA</Label>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      max={10}
+                      step={0.01}
+                      value={entry.gpa ?? ""}
+                      onChange={(e) =>
+                        updateEducation(index, {
+                          gpa: readNullableFloat(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Work experience */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-foreground text-xl font-semibold">
+              Work experience{" "}
+              <span className="text-muted-foreground text-sm font-normal">
+                (required)
+              </span>
+            </h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-primary"
+              onClick={() =>
+                setProfile((p) => ({
+                  ...p,
+                  workExperience: [...p.workExperience, emptyWorkEntry()],
+                }))
+              }
+            >
+              <PlusIcon className="size-4" />
+              Add work experience
+            </Button>
+          </div>
+          {profile.workExperience.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No work experience added yet.
+            </p>
+          ) : null}
+          <div className="space-y-4">
+            {profile.workExperience.map((entry, index) => (
+              <div
+                key={`work-${entry.company}-${entry.role}-${entry.startYear}-${index}`}
+                className="border-border space-y-3 border p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-foreground text-sm font-medium">
+                    {workTitle(entry)}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() =>
+                      setProfile((p) => ({
+                        ...p,
+                        workExperience: p.workExperience.filter(
+                          (_, i) => i !== index,
+                        ),
+                      }))
+                    }
+                  >
+                    <XIcon className="size-3.5" />
+                    Remove
+                  </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Company</Label>
+                    <Input
+                      value={entry.company}
+                      onChange={(e) =>
+                        updateWork(index, { company: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Role</Label>
+                    <Input
+                      value={entry.role}
+                      onChange={(e) =>
+                        updateWork(index, { role: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Start year</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1900}
+                      max={2100}
+                      step={1}
+                      value={entry.startYear ?? ""}
+                      onChange={(e) =>
+                        updateWork(index, {
+                          startYear: readNullableInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>End year</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1900}
+                      max={2100}
+                      step={1}
+                      placeholder="Blank = Present"
+                      value={entry.endYear ?? ""}
+                      onChange={(e) =>
+                        updateWork(index, {
+                          endYear: readNullableInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>City</Label>
+                    <Input
+                      value={entry.city}
+                      onChange={(e) =>
+                        updateWork(index, { city: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Country</Label>
+                    <Input
+                      value={entry.country}
+                      onChange={(e) =>
+                        updateWork(index, { country: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      rows={5}
+                      value={entry.description}
+                      onChange={(e) =>
+                        updateWork(index, { description: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Links */}
+        <section className="space-y-4">
+          <h3 className="text-foreground text-xl font-semibold">Links</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="portfolio">Portfolio URL</Label>
+              <Input
+                id="portfolio"
+                placeholder="https://yourportfolio.com"
+                value={profile.portfolioUrl}
+                onChange={(e) =>
+                  setProfile((p) => ({ ...p, portfolioUrl: e.target.value }))
+                }
+              />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="pt-comp">Part-time (USD / hour)</Label>
-            <div className="relative">
-              <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
-                $
+            <Label>Other links</Label>
+            <TagList
+              values={profile.otherLinks}
+              placeholder="https://example.com"
+              onChange={(otherLinks) =>
+                setProfile((p) => ({ ...p, otherLinks }))
+              }
+            />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Skills */}
+        <section className="space-y-4">
+          <h3 className="text-foreground text-xl font-semibold">Skills</h3>
+          <TagList
+            values={profile.skills}
+            placeholder="Add a skill and press Enter"
+            onChange={(skills) => setProfile((p) => ({ ...p, skills }))}
+          />
+        </section>
+
+        <Separator />
+
+        {/* Languages */}
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-foreground text-xl font-semibold">
+              Languages{" "}
+              <span className="text-muted-foreground text-sm font-normal">
+                (required)
               </span>
-              <Input
-                id="pt-comp"
-                className="pl-6"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step={0.01}
-                placeholder="15"
-                value={profile.partTimeCompensation ?? ""}
-                onChange={(e) =>
+            </h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              What languages can you natively speak, read, and write?
+            </p>
+          </div>
+          <TagList
+            values={profile.languages}
+            placeholder="Search and add languages…"
+            onChange={(languages) => setProfile((p) => ({ ...p, languages }))}
+          />
+        </section>
+
+        <Separator />
+
+        {/* Hobbies */}
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-foreground text-xl font-semibold">Hobbies</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Select all that apply:
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {HOBBY_PRESETS.map((hobby) => {
+              const selected = profile.hobbies.some(
+                (h) => h.toLowerCase() === hobby.toLowerCase(),
+              );
+              return (
+                <button
+                  key={hobby}
+                  type="button"
+                  onClick={() => toggleHobby(hobby)}
+                  className={cn(
+                    "border px-3 py-1.5 text-xs transition-colors",
+                    selected
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {hobby}
+                </button>
+              );
+            })}
+          </div>
+          <TagList
+            values={profile.hobbies.filter(
+              (h) =>
+                !HOBBY_PRESETS.some((p) => p.toLowerCase() === h.toLowerCase()),
+            )}
+            placeholder="Add a custom hobby"
+            onChange={(custom) =>
+              setProfile((p) => ({
+                ...p,
+                hobbies: [
+                  ...p.hobbies.filter((h) =>
+                    HOBBY_PRESETS.some(
+                      (preset) => preset.toLowerCase() === h.toLowerCase(),
+                    ),
+                  ),
+                  ...custom,
+                ],
+              }))
+            }
+          />
+        </section>
+
+        <Separator />
+
+        {/* Location */}
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-foreground text-xl font-semibold">Location</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Where you are based for most of the year.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="text-foreground text-sm font-semibold">
+              Location of residence
+            </h4>
+            <p className="text-muted-foreground text-xs">
+              Where you are based for most of the year. This might differ from
+              citizenship.
+            </p>
+            <fieldset disabled={identityLocked} className="min-w-0 space-y-3">
+              <ResidencePlaceFields
+                country={profile.residenceCountry}
+                state={profile.residenceState}
+                city={profile.residenceCity}
+                postalCode={profile.residencePostalCode}
+                onChange={(place) =>
                   setProfile((p) => ({
                     ...p,
-                    partTimeCompensation: readNullableFloat(e.target.value),
+                    residenceCountry: place.country,
+                    residenceState: place.state,
+                    residenceCity: place.city,
+                    residencePostalCode: place.postalCode,
                   }))
                 }
               />
-            </div>
+            </fieldset>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Preferred countries</Label>
             <p className="text-muted-foreground text-xs">
-              We won&apos;t reach out about roles below this.
+              Select one or more countries where you want to work.
+            </p>
+            <CountryMultiSelect
+              value={profile.preferredCountries}
+              onChange={(preferredCountries) =>
+                setProfile((p) => ({ ...p, preferredCountries }))
+              }
+            />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Work preferences */}
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-foreground text-xl font-semibold">
+              Work preferences
+            </h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Minimum expected compensation. Shown to recruiters when you apply.
             </p>
           </div>
-        </div>
-      </section>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="ft-comp">Full-time (USD / year)</Label>
+              <div className="relative">
+                <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
+                  $
+                </span>
+                <Input
+                  id="ft-comp"
+                  className="pl-6"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  placeholder="25000"
+                  value={profile.fullTimeCompensation ?? ""}
+                  onChange={(e) =>
+                    setProfile((p) => ({
+                      ...p,
+                      fullTimeCompensation: readNullableFloat(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+              <p className="text-muted-foreground text-xs">
+                We won&apos;t reach out about roles below this.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pt-comp">Part-time (USD / hour)</Label>
+              <div className="relative">
+                <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
+                  $
+                </span>
+                <Input
+                  id="pt-comp"
+                  className="pl-6"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.01}
+                  placeholder="15"
+                  value={profile.partTimeCompensation ?? ""}
+                  onChange={(e) =>
+                    setProfile((p) => ({
+                      ...p,
+                      partTimeCompensation: readNullableFloat(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+              <p className="text-muted-foreground text-xs">
+                We won&apos;t reach out about roles below this.
+              </p>
+            </div>
+          </div>
+        </section>
 
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+        {error ? <p className="text-destructive text-sm">{error}</p> : null}
       </div>
     </AppPage>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { AuthReturnNotice } from "@/components/auth/auth-return-notice";
 import { CandidateJourney } from "@/components/landing/candidate-journey";
 import { DitherLoginButton } from "@/components/landing/dither-login-button";
 import { HOME_IMAGES } from "@/components/landing/home-images";
@@ -13,7 +14,7 @@ import { TrustedBy } from "@/components/landing/trusted-by";
 export const metadata: Metadata = {
   title: "Blucollarz — AI hiring for skilled workers & recruiters",
   description:
-    "Blucollarz is an AI-native hiring platform for blue-collar and skilled workers. Build a profile, complete AI interviews, verify identity, and connect with recruiters hiring worldwide. Sign in with Google to create your account.",
+    "Blucollarz is an AI-native hiring platform for blue-collar and skilled workers. Build a profile, complete AI interviews, verify identity with DigiLocker, and connect with recruiters hiring worldwide.",
 };
 
 const HERO_STREAM = HOME_IMAGES.map((src) => ({ src }));
@@ -21,6 +22,9 @@ const HERO_STREAM = HOME_IMAGES.map((src) => ({ src }));
 export default function Page() {
   return (
     <>
+      <Suspense fallback={null}>
+        <AuthReturnNotice />
+      </Suspense>
       <ImageStreamHero
         images={HERO_STREAM}
         speed={32}

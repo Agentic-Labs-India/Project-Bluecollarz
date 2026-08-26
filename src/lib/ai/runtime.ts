@@ -72,7 +72,7 @@ export function renderOnboardingPrompt(
   })
     .replace(
       /NEVER ask for phone number, email, Aadhaar, PAN(?:, gender, or date of birth|, or gender)[^\n]*/g,
-      "NEVER ask for name, email, phone, location, gender, PAN, date of birth, or Aadhaar — DigiLocker KYC fills identity after this interview.",
+      "NEVER ask for name, email, phone, location, gender, PAN, date of birth, or Aadhaar — DigiLocker already filled identity at sign-in.",
     )
     .replace(/Age gate:[^\n]*\n?/g, "")
     .replace(

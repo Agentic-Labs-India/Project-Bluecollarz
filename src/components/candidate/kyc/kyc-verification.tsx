@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { ConsentNoticePanel } from "@/components/compliance/consent-notice-panel";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { APP_PAGE_MAX } from "@/components/layout/app-page";
@@ -39,11 +39,21 @@ function LegalFooterLinks() {
   return (
     <p className="text-muted-foreground text-xs leading-relaxed">
       Full wording:{" "}
-      <Link href="/privacy" target="_blank" rel="noreferrer" className={FOOTER_LINK}>
+      <Link
+        href="/privacy"
+        target="_blank"
+        rel="noreferrer"
+        className={FOOTER_LINK}
+      >
         Privacy Notice
       </Link>
       {" · "}
-      <Link href="/terms" target="_blank" rel="noreferrer" className={FOOTER_LINK}>
+      <Link
+        href="/terms"
+        target="_blank"
+        rel="noreferrer"
+        className={FOOTER_LINK}
+      >
         Terms
       </Link>
       {" · "}
@@ -118,20 +128,25 @@ function KycScrollDoc({
   );
 }
 
-function particulars(data: DigilockerKycView): { label: string; value: string }[] {
+function particulars(
+  data: DigilockerKycView,
+): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
   const push = (label: string, value?: string | null) => {
     if (value) rows.push({ label, value });
   };
   push("Name", data.name);
-  push("Date of birth", formatDateOnlyDisplay(data.dateOfBirth) || data.dateOfBirth);
+  push("DigiLocker ID", data.digilockerId);
+  push(
+    "Date of birth",
+    formatDateOnlyDisplay(data.dateOfBirth) || data.dateOfBirth,
+  );
   push("Gender", formatGender(data.gender));
   push(
     "Aadhaar (last 4)",
     data.aadhaarLast4 ? `XXXXXXXX${data.aadhaarLast4}` : null,
   );
   push("PAN", data.pan);
-  push("Email", data.email);
   push("Phone", data.phone);
   push("Address", data.address);
   return rows;
@@ -218,46 +233,46 @@ export function KycVerification() {
     return (
       <KycFrame>
         <KycScrollDoc seed="kyc-load-error" label="Not verified">
-            <header className="space-y-2">
-              <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
-                Identity record
-              </p>
-              <h2 className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
-                Identity not verified
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Blucollarz Technologies Private Limited · DigiLocker
-              </p>
-            </header>
-            <section className="space-y-3">
-              <ClauseLabel n="01">What happened</ClauseLabel>
-              <p className="text-foreground text-sm leading-relaxed">
-                {loadError}
-              </p>
-            </section>
-            <div className="border-border space-y-4 border-t pt-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto"
-                  onClick={() => void load()}
-                >
-                  Retry
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  asChild
-                >
-                  <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
-                    Ask me a question → OWRC {OWRC_HELP_LINE}
-                  </a>
-                </Button>
-              </div>
-              <LegalFooterLinks />
+          <header className="space-y-2">
+            <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
+              Identity record
+            </p>
+            <h2 className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
+              Identity not verified
+            </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Blucollarz Technologies Private Limited · DigiLocker
+            </p>
+          </header>
+          <section className="space-y-3">
+            <ClauseLabel n="01">What happened</ClauseLabel>
+            <p className="text-foreground text-sm leading-relaxed">
+              {loadError}
+            </p>
+          </section>
+          <div className="border-border space-y-4 border-t pt-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto"
+                onClick={() => void load()}
+              >
+                Retry
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+                asChild
+              >
+                <a href={`tel:${OWRC_HELP_LINE.replace(/\s/g, "")}`}>
+                  Ask me a question → OWRC {OWRC_HELP_LINE}
+                </a>
+              </Button>
             </div>
+            <LegalFooterLinks />
+          </div>
         </KycScrollDoc>
       </KycFrame>
     );
@@ -283,61 +298,61 @@ export function KycVerification() {
           label="Verified"
           labelledBy="kyc-verified-title"
         >
-            <header className="space-y-2">
-              <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
-                Identity record
-              </p>
-              <h2
-                id="kyc-verified-title"
-                className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl"
-              >
-                Identity verified
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Blucollarz Technologies Private Limited · recorded from{" "}
-                {formatProvider(data?.provider)}
-                {status?.verifiedAt
-                  ? ` · ${new Date(status.verifiedAt).toLocaleString()}`
-                  : null}
-              </p>
-            </header>
+          <header className="space-y-2">
+            <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
+              Identity record
+            </p>
+            <h2
+              id="kyc-verified-title"
+              className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl"
+            >
+              Identity verified
+            </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Blucollarz Technologies Private Limited · recorded from{" "}
+              {formatProvider(data?.provider)}
+              {status?.verifiedAt
+                ? ` · ${new Date(status.verifiedAt).toLocaleString()}`
+                : null}
+            </p>
+          </header>
 
-            {data ? (
-              <section className="space-y-3">
-                <ClauseLabel n="01">Particulars</ClauseLabel>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Name, date of birth, phone, location, gender, PAN, and Aadhaar
-                  are saved from DigiLocker. Employers see results, not these
-                  documents.
-                </p>
-                <dl className="border-border divide-border divide-y border-y">
-                  {particulars(data).map((row) => (
-                    <div
-                      key={row.label}
-                      className="grid grid-cols-1 gap-1 py-3.5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-6"
-                    >
-                      <dt className="text-mute text-[11px] font-medium tracking-[0.12em] uppercase">
-                        {row.label}
-                      </dt>
-                      <dd className="font-serif text-foreground text-[1.05rem] leading-snug wrap-break-word">
-                        {row.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
-            ) : null}
-
+          {data ? (
             <section className="space-y-3">
-              <ClauseLabel n="02">Source</ClauseLabel>
-              <p className="text-foreground text-sm leading-relaxed">
-                This record was issued by {formatProvider(data?.provider)}. It
-                is held by Blucollarz as Data Fiduciary. You can view, fix,
-                delete, or withdraw in Settings.
+              <ClauseLabel n="01">Particulars</ClauseLabel>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Name, date of birth, phone, location, gender, PAN, Aadhaar, and
+                DigiLocker ID are saved from DigiLocker. Employers see results,
+                not these documents.
               </p>
+              <dl className="border-border divide-border divide-y border-y">
+                {particulars(data).map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-1 gap-1 py-3.5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-6"
+                  >
+                    <dt className="text-mute text-[11px] font-medium tracking-[0.12em] uppercase">
+                      {row.label}
+                    </dt>
+                    <dd className="font-serif text-foreground text-[1.05rem] leading-snug wrap-break-word">
+                      {row.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </section>
+          ) : null}
 
-            <KycActions primaryHref="/candidate/home" primaryLabel="Continue" />
+          <section className="space-y-3">
+            <ClauseLabel n="02">Source</ClauseLabel>
+            <p className="text-foreground text-sm leading-relaxed">
+              This record was issued by {formatProvider(data?.provider)}. It is
+              held by Blucollarz as Data Fiduciary. You can view, fix, delete,
+              or withdraw in Settings.
+            </p>
+          </section>
+
+          <KycActions primaryHref="/candidate/home" primaryLabel="Continue" />
         </KycScrollDoc>
       ) : failed && !consentRequired ? (
         <KycScrollDoc
@@ -345,44 +360,40 @@ export function KycVerification() {
           label={declined ? "Declined" : "Not verified"}
           labelledBy="kyc-unverified-title"
         >
-            <header className="space-y-2">
-              <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
-                Identity record
-              </p>
-              <h2
-                id="kyc-unverified-title"
-                className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl"
-              >
-                Identity not verified
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Blucollarz Technologies Private Limited · DigiLocker
-              </p>
-            </header>
+          <header className="space-y-2">
+            <p className="text-mute text-xs font-medium tracking-[0.16em] uppercase">
+              Identity record
+            </p>
+            <h2
+              id="kyc-unverified-title"
+              className="font-heading text-foreground text-xl font-semibold tracking-tight sm:text-2xl"
+            >
+              Identity not verified
+            </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Blucollarz Technologies Private Limited · DigiLocker
+            </p>
+          </header>
 
-            <section className="space-y-3">
-              <ClauseLabel n="01">What happened</ClauseLabel>
-              <p className="text-foreground text-sm leading-relaxed">
-                {failMessage ||
-                  (declined
-                    ? "DigiLocker authorization was declined."
-                    : "DigiLocker could not complete verification.")}
-              </p>
-            </section>
+          <section className="space-y-3">
+            <ClauseLabel n="01">What happened</ClauseLabel>
+            <p className="text-foreground text-sm leading-relaxed">
+              {failMessage ||
+                (declined
+                  ? "DigiLocker authorization was declined."
+                  : "DigiLocker could not complete verification.")}
+            </p>
+          </section>
 
-            <section className="space-y-3">
-              <ClauseLabel n="02">Next step</ClauseLabel>
-              <p className="text-foreground text-sm leading-relaxed">
-                Reverify with DigiLocker. If purpose consent is missing, you
-                will be asked to grant it first. Employers never see your
-                documents.
-              </p>
-            </section>
+          <section className="space-y-3">
+            <ClauseLabel n="02">Next step</ClauseLabel>
+            <p className="text-foreground text-sm leading-relaxed">
+              Reverify with DigiLocker. If purpose consent is missing, you will
+              be asked to grant it first. Employers never see your documents.
+            </p>
+          </section>
 
-            <KycActions
-              primaryHref={DIGILOCKER_START}
-              primaryLabel="Reverify"
-            />
+          <KycActions primaryHref={DIGILOCKER_START} primaryLabel="Reverify" />
         </KycScrollDoc>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -391,10 +402,7 @@ export function KycVerification() {
               Turn on every purpose in the declaration, then Agree and Verify.
             </p>
           ) : null}
-          <ConsentNoticePanel
-            variant="kyc"
-            verifyHref={DIGILOCKER_START}
-          />
+          <ConsentNoticePanel variant="kyc" verifyHref={DIGILOCKER_START} />
         </div>
       )}
     </KycFrame>

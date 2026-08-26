@@ -8,7 +8,7 @@ import {
 } from "@/lib/compliance/consent";
 
 /**
- * The candidate app shell redirects unverified users to onboarding then KYC.
+ * The candidate app shell redirects unverified users to KYC then onboarding.
  * Any API that creates or exposes a real-world commitment — applying,
  * interviewing, medical scheduling, fitness reports — must enforce the same
  * gate, because the shell only protects pages.
@@ -18,20 +18,20 @@ export async function requireCandidateAppReady(): Promise<Guard> {
   if (!auth.ok) return auth;
 
   const { complete, kycVerified } = await getCandidateGateStatus(auth.user.id);
-  if (!complete) {
-    return {
-      ok: false,
-      error: "Complete your profile before continuing.",
-      status: 403,
-      code: "PROFILE_INCOMPLETE",
-    };
-  }
   if (!kycVerified) {
     return {
       ok: false,
       error: "Verify your identity with DigiLocker before continuing.",
       status: 403,
       code: "KYC_REQUIRED",
+    };
+  }
+  if (!complete) {
+    return {
+      ok: false,
+      error: "Complete your profile before continuing.",
+      status: 403,
+      code: "PROFILE_INCOMPLETE",
     };
   }
 

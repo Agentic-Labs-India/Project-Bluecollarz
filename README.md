@@ -70,25 +70,25 @@ There is **no AI document verification**. Identity is established through DigiLo
 
 ## Profiles and access
 
-Three account types. Google sign-in always creates a **`work`** (candidate) account. **`hire`** and **`admin`** are provisioned by an existing admin, or pre-seeded by email in `UserProvisions` and applied at first login. There is no public recruiter or admin signup.
+Three account types. Candidates sign in with **DigiLocker** (account + KYC). **`hire`** and **`admin`** sign in with Google via **Corporate Login** in the footer after an admin provisions that email in `UserProvisions`. There is no public recruiter or admin signup.
 
 | Profile | Who | How you get it | Lands on |
 |---|---|---|---|
-| **`work`** | Candidate | Any Google sign-in | `/candidate/onboarding` → `/candidate/kyc` → `/candidate/home` |
-| **`hire`** | Recruiter | Admin sets the profile, or an email invite is applied at signup | `/hire/roles` |
+| **`work`** | Candidate | DigiLocker sign-in | `/candidate/kyc` (already verified) → `/candidate/onboarding` → `/candidate/home` |
+| **`hire`** | Recruiter | Admin sets the profile, or an email invite is applied at Google signup | `/hire/roles` |
 | **`admin`** | Platform admin | Admin provisioning only | `/admin/recruiters` |
 
 Session routing and the pre-app allowlist live in `src/proxy.ts`. Unauthenticated API calls get a JSON `401`; page requests get a redirect.
 
 ```mermaid
 flowchart TD
-  Landing[Landing] --> Google[Google OAuth via Better Auth]
-  Google -->|new user, always work| Onboard["/candidate/onboarding"]
-  Onboard -->|profile complete| Kyc["/candidate/kyc"]
-  Kyc -->|DigiLocker verified| Home["/candidate/home"]
+  Landing[Landing] --> DL[DigiLocker OAuth]
+  Landing --> Corp[Footer Corporate Login]
+  DL -->|new or returning candidate| Onboard["/candidate/onboarding"]
+  Onboard -->|profile complete| Home["/candidate/home"]
 
-  Google -->|existing user| DB[(MongoDB profileType)]
-  DB -->|work| Home
+  Corp --> Google[Google OAuth via Better Auth]
+  Google -->|provisioned hire or admin| DB[(MongoDB profileType)]
   DB -->|hire| Roles["/hire/roles"]
   DB -->|admin| Admin["/admin/recruiters"]
 ```
@@ -200,7 +200,7 @@ Every candidate API that creates a real-world commitment — applying, interview
 
 ## Recruiter flow
 
-1. Sign in with Google after an admin sets the account to `hire`
+1. Open Corporate Login in the footer and sign in with Google after an admin sets the account to `hire`
 2. Complete the company onboarding pack (`/hire/onboarding`)
 3. Create and publish roles (`/hire/roles/new`), optionally drafting the overview with AI
 4. Review applicants: resume, interview scores, recordings and transcripts
@@ -503,12 +503,13 @@ bun dev
 |---|---|---|
 | `MONGODB_URI` | yes | Database connection |
 | `DB_NAME` | yes | Database name, and the blob path root |
-| `BETTER_AUTH_URL` | yes | Auth and DigiLocker callback base URL |
+| `BETTER_AUTH_URL` | yes | Auth base URL |
 | `BETTER_AUTH_SECRET` | yes | Session signing, and DigiLocker OAuth cookie sealing |
-| `GOOGLE_CLIENT_ID` | yes | Google sign-in |
-| `GOOGLE_CLIENT_SECRET` | yes | Google sign-in |
-| `DIGILOCKER_CLIENT_ID` | yes | DigiLocker KYC |
-| `DIGILOCKER_CLIENT_SECRET` | yes | DigiLocker KYC |
+| `GOOGLE_CLIENT_ID` | yes | Recruiter/admin Google sign-in |
+| `GOOGLE_CLIENT_SECRET` | yes | Recruiter/admin Google sign-in |
+| `DIGILOCKER_CLIENT_ID` | yes | Candidate DigiLocker login and KYC |
+| `DIGILOCKER_CLIENT_SECRET` | yes | Candidate DigiLocker login and KYC |
+| `DIGILOCKER_REDIRECT_URI` | optional | Exact MeriPehchaan redirect URI. Empty = current host + `/api/auth/digilocker/callback` |
 | `AI_GATEWAY_API_KEY` | yes | Vercel AI Gateway credentials |
 | `BLOB_READ_WRITE_TOKEN` | yes | Private Vercel Blob store (interviews, medical, company docs, blog, email) |
 | `SARVAM_API_KEY` | yes | Voice TTS and STT |

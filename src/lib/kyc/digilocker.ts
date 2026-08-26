@@ -15,8 +15,14 @@ interface DigilockerIssuedDoc {
   date: string;
 }
 
+function trimId(raw: string | null | undefined): string {
+  return (raw ?? "").trim();
+}
+
 /** In-memory DigiLocker gather result — written to Mongo, never cookied. */
 export interface DigilockerKycPayload {
+  /** Unique DigiLocker user id — candidate login key. */
+  digilockerId: string;
   name: string | null;
   dob: string | null;
   gender: string | null;
@@ -29,12 +35,12 @@ export interface DigilockerKycPayload {
 
 /** KYC page view — sourced from Users Mongo document. */
 export interface DigilockerKycView {
+  digilockerId: string | null;
   name: string | null;
   dateOfBirth: string | null;
   gender: string | null;
   aadhaarLast4: string | null;
   pan: string | null;
-  email: string | null;
   phone: string | null;
   address: string | null;
   provider: string | null;
@@ -53,10 +59,16 @@ export interface DigilockerStatusResponse {
 export const DIGILOCKER_OAUTH_COOKIE = "dl_oauth";
 export const OAUTH_MAX_AGE_SEC = 60 * 15;
 
+export type DigilockerOAuthIntent = "login" | "reverify";
+
 interface OAuthCookie {
   state: string;
   codeVerifier: string;
-  userId: string;
+  /** Exact redirect_uri sent to DigiLocker — reused on token exchange. */
+  redirectUri: string;
+  /** Set for logged-in reverify; omitted for candidate login/signup. */
+  userId?: string;
+  intent: DigilockerOAuthIntent;
   returnTo: string;
   createdAt: number;
 }
@@ -128,9 +140,37 @@ export function sealOAuthCookie(v: OAuthCookie) {
 export function openOAuthCookie(sealed?: string): OAuthCookie | null {
   if (!sealed) return null;
   const d = openJson<OAuthCookie>(sealed);
-  if (!d?.state || !d.codeVerifier || !d.userId) return null;
+  if (!d?.state || !d.codeVerifier || !d.redirectUri) return null;
+  const intent: DigilockerOAuthIntent =
+    d.intent === "reverify" || d.userId ? "reverify" : "login";
+  if (intent === "reverify" && !d.userId) return null;
   if (Date.now() - d.createdAt > OAUTH_MAX_AGE_SEC * 1000) return null;
-  return d;
+  return { ...d, intent, userId: d.userId };
+}
+
+export const DIGILOCKER_CALLBACK_PATH = "/api/auth/digilocker/callback";
+
+/** Host the browser actually used — not BETTER_AUTH_URL (often localhost in .env). */
+export function requestOrigin(headers: Headers, fallbackOrigin: string): string {
+  const fallback = new URL(fallbackOrigin);
+  const proto =
+    headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    fallback.protocol.replace(":", "");
+  const host =
+    headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    headers.get("host") ||
+    fallback.host;
+  return `${proto}://${host}`.replace(/\/$/, "");
+}
+
+/** Must match the redirect URI registered in the MeriPehchaan partner portal. */
+export function digilockerRedirectUri(
+  headers: Headers,
+  fallbackOrigin: string,
+): string {
+  const explicit = process.env.DIGILOCKER_REDIRECT_URI?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+  return `${requestOrigin(headers, fallbackOrigin)}${DIGILOCKER_CALLBACK_PATH}`;
 }
 
 function str(v: unknown): string | null {
@@ -151,9 +191,6 @@ function cfg() {
       "DIGILOCKER_CLIENT_ID and DIGILOCKER_CLIENT_SECRET required",
     );
   }
-  const base =
-    process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") ||
-    "http://localhost:3000";
   return {
     clientId,
     clientSecret,
@@ -163,9 +200,9 @@ function cfg() {
     eaadhaarUrl: `${DIGILOCKER_OAUTH_BASE}/3/xml/eaadhaar`,
     issuedUrl: `${DIGILOCKER_OAUTH_BASE}/2/files/issued`,
     xmlUriBase: `${DIGILOCKER_OAUTH_BASE}/1/xml`,
-    redirectUri: `${base}/api/auth/digilocker/callback`,
-    scope: "files.issueddocs openid userdetails email address picture",
-    acr: "aadhaar pan email mobile user_alias",
+    // Phone / PIN / OTP is DigiLocker's own login. Do not request email or username.
+    scope: "files.issueddocs openid userdetails address",
+    acr: "aadhaar pan mobile",
     amr: "all aadhaar pan",
     dlFlow: "signin",
     reqDoctype: "ADHAR PANCR",
@@ -188,12 +225,13 @@ async function apiError(res: Response, fallback: string) {
 export function buildAuthorizeUrl(opts: {
   state: string;
   codeChallenge: string;
+  redirectUri: string;
 }) {
   const c = cfg();
   const p = new URLSearchParams({
     response_type: "code",
     client_id: c.clientId,
-    redirect_uri: c.redirectUri,
+    redirect_uri: opts.redirectUri,
     state: opts.state,
     scope: c.scope,
     code_challenge: opts.codeChallenge,
@@ -209,6 +247,7 @@ export function buildAuthorizeUrl(opts: {
 export async function exchangeAuthorizationCode(opts: {
   code: string;
   codeVerifier: string;
+  redirectUri: string;
 }) {
   const c = cfg();
   const res = await fetch(c.tokenUrl, {
@@ -219,7 +258,7 @@ export async function exchangeAuthorizationCode(opts: {
       code: opts.code,
       client_id: c.clientId,
       client_secret: c.clientSecret,
-      redirect_uri: c.redirectUri,
+      redirect_uri: opts.redirectUri,
       code_verifier: opts.codeVerifier,
     }),
     cache: "no-store",
@@ -292,6 +331,16 @@ function decodeIdToken(idToken?: string) {
 function claim(claims: Record<string, unknown> | null, keys: string[]) {
   if (!claims) return null;
   for (const k of keys) {
+    if (
+      k === "email" ||
+      k === "email_verified" ||
+      k === "preferred_username" ||
+      k === "username" ||
+      k === "user_alias" ||
+      k === "picture"
+    ) {
+      continue;
+    }
     const v = str(claims[k]);
     if (v) return v;
   }
@@ -444,7 +493,8 @@ export async function gatherDigilockerKyc(opts: {
     error?: string;
     error_description?: string;
   };
-  if (!userRes.ok || !user.digilockerid) {
+  const digilockerId = trimId(user.digilockerid);
+  if (!userRes.ok || !digilockerId) {
     throw new Error(
       user.error_description ||
         user.error ||
@@ -459,6 +509,7 @@ export async function gatherDigilockerKyc(opts: {
   }
 
   const out: DigilockerKycPayload = {
+    digilockerId,
     name: claim(claims, ["given_name", "name"]) || str(user.name),
     dob: claim(claims, ["birthdate"]) || str(user.dob),
     gender: claim(claims, ["gender"]) || str(user.gender),

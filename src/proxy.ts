@@ -172,10 +172,10 @@ export async function proxy(req: NextRequest) {
     const profileType = normalizeProfileType(user.profileType ?? undefined);
     if (profileType === "work") {
       const { complete, kycVerified } = await getCandidateGate(req);
-      const next = !complete
-        ? "/candidate/onboarding"
-        : !kycVerified
-          ? "/candidate/kyc"
+      const next = !kycVerified
+        ? "/candidate/kyc"
+        : !complete
+          ? "/candidate/onboarding"
           : "/candidate/home";
       return NextResponse.redirect(new URL(next, req.url));
     }
@@ -206,20 +206,20 @@ export async function proxy(req: NextRequest) {
         );
       }
 
-      // Work candidates: onboarding, then DigiLocker KYC, then the app.
+      // Work candidates: DigiLocker KYC (from login), then voice onboarding, then the app.
       if (
         profileType === "work" &&
         pathname.startsWith("/candidate") &&
         !isCandidatePreAppAllowed(req)
       ) {
         const { complete, kycVerified } = await getCandidateGate(req);
+        if (!kycVerified) {
+          return NextResponse.redirect(new URL("/candidate/kyc", req.url));
+        }
         if (!complete) {
           return NextResponse.redirect(
             new URL("/candidate/onboarding", req.url),
           );
-        }
-        if (!kycVerified) {
-          return NextResponse.redirect(new URL("/candidate/kyc", req.url));
         }
       }
 

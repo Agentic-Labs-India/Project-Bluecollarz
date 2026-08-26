@@ -1,10 +1,12 @@
 /**
  * DigiLocker KYC on Users:
+ *   digilockerId: unique candidate login key (also stored as Users.email)
  *   isKycVerified: boolean
  *   kyc: { provider, verifiedAt, updatedAt, aadhaarLast4, pan, gender }
  *
  * Identity only (name, DOB, phone, location, PAN, Aadhaar last 4, gender).
- * Email stays from Google. Raw DigiLocker XML/JSON is never stored.
+ * Email and username are not requested or stored from DigiLocker.
+ * Raw DigiLocker XML/JSON is never stored.
  */
 
 export type { KycFields, UserKyc } from "@/lib/kyc/types";

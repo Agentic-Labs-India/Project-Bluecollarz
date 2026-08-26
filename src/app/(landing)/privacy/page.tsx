@@ -59,8 +59,12 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc space-y-2 ps-5">
             <li>
-              Google account name and email — create and sign in to your
-              account (contract).
+              DigiLocker user id — unique candidate account id used to sign in
+              and to identify you on the platform (contract).
+            </li>
+            <li>
+              Google account name and email — recruiter and admin sign-in via
+              Corporate Login (contract).
             </li>
             <li>
               Mobile number — account, OTP-style communication, and matching
@@ -70,8 +74,8 @@ export default function PrivacyPage() {
               PAN, Aadhaar (masked where required), name, date of birth, gender,
               address/location from DigiLocker / MeriPehchaan — verify identity,
               confirm you are 18 or older, and generate verification
-              conclusions. Collected only after you grant purpose consent
-              (consent: identity).
+              conclusions. Collected when you sign in with DigiLocker (consent:
+              identity). Email and username are not collected from DigiLocker.
             </li>
             <li>
               Profile, skills, education, work history, languages — match you to
@@ -106,26 +110,25 @@ export default function PrivacyPage() {
           </ul>
           <p>
             Employers see allowlisted resume fields and interview evidence — not
-            your raw DigiLocker documents, PAN, Aadhaar, email, phone, date of
-            birth, or address.
+            your raw DigiLocker documents, PAN, Aadhaar, DigiLocker user id,
+            phone, date of birth, or address.
           </p>
         </LegalSection>
 
         <LegalSection title="3. Consent">
           <p>
-            Verification and interview data are processed on consent. Before
-            DigiLocker you grant each purpose we use — identity, contact,
-            interview evaluation, and medical fitness — as separate switches in
-            one sitting. DigiLocker collection happens only after that notice
-            (read aloud) and recorded agreement. Interview scores, transcripts,
-            and recordings are shared with a hirer only while evaluation
-            consent is live. Medical fitness data is processed only while
-            medical consent is live, and only after an employer selects you.
-            Consent must be free, specific, informed, unconditional, and
-            unambiguous. You can withdraw it as easily as you gave it:
-            Settings → Data rights → Withdraw, or email the grievance desk.
-            Withdrawal does not undo processing already completed lawfully.
-            Account operation also relies on using the service (contract).
+            Verification and interview data are processed on consent. Signing in
+            with DigiLocker is identity verification. You grant each purpose we
+            use — identity, contact, interview evaluation, and medical fitness.
+            Interview scores, transcripts, and recordings are shared with a
+            hirer only while evaluation consent is live. Medical fitness data is
+            processed only while medical consent is live, and only after an
+            employer selects you. Consent must be free, specific, informed,
+            unconditional, and unambiguous. You can withdraw it as easily as you
+            gave it: Settings → Data rights → Withdraw, or email the grievance
+            desk. Withdrawal does not undo processing already completed
+            lawfully. Account operation also relies on using the service
+            (contract).
           </p>
         </LegalSection>
 
@@ -137,9 +140,9 @@ export default function PrivacyPage() {
             are required for the service. Optional analytics cookies (Google
             Analytics) measure usage and stay off unless you turn them on in
             Cookie settings. Agree and continue does not turn analytics on.
-            Reject All means you cannot Log in or Get Started until you agree
-            to the Terms, this notice, and the 18+ confirmation. We do not use
-            ads cookies. You can turn analytics off later in account Settings.
+            Reject All means you cannot Log in or Get Started until you agree to
+            the Terms, this notice, and the 18+ confirmation. We do not use ads
+            cookies. You can turn analytics off later in account Settings.
           </p>
         </LegalSection>
 
@@ -175,7 +178,8 @@ export default function PrivacyPage() {
             <li>
               Processors under contract: MongoDB (database), Vercel (hosting /
               Blob), AI providers via Vercel AI Gateway, Sarvam (voice), Resend
-              (email), Google (OAuth; Analytics only if you allow)
+              (email), DigiLocker / MeriPehchaan (candidate sign-in), Google
+              (recruiter/admin OAuth; Analytics only if you allow)
             </li>
             <li>Authorities where required by law</li>
           </ul>
@@ -190,9 +194,9 @@ export default function PrivacyPage() {
             applications, interviews, recordings, medical reports, hire company
             documents, consent events, and rights requests, then delete the
             stored files from private Blob (subject to any legal hold we must
-            honour, which we will explain if it applies). If we later erase
-            data because we no longer need it, DPDP Rules require 48 hours’
-            notice before that erasure; that countdown is not yet an automated
+            honour, which we will explain if it applies). If we later erase data
+            because we no longer need it, DPDP Rules require 48 hours’ notice
+            before that erasure; that countdown is not yet an automated
             worker-facing timer.
           </p>
         </LegalSection>
@@ -207,8 +211,9 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc space-y-2 ps-5">
             <li>
-              Signed-in: Settings → Data rights. We identify you by the email on
-              this account. After you submit, use the request ID in any
+              Signed-in: Settings → Data rights. Candidates are identified by
+              DigiLocker user id; recruiters and admins by the Google email on
+              the account. After you submit, use the request ID in any
               follow-up.
             </li>
             <li>
@@ -233,7 +238,8 @@ export default function PrivacyPage() {
               >
                 support@blucollarz.com
               </a>{" "}
-              with the email on the account.
+              with the email on a recruiter/admin account, or the DigiLocker
+              user id on a candidate account.
             </li>
             <li>
               We acknowledge promptly (target 72 hours) and resolve grievances
@@ -294,8 +300,8 @@ export default function PrivacyPage() {
         <LegalSection title="12. Automated scoring">
           <p>
             AI interview scores and summaries are stored on the interview and
-            shown to the hirer for that role while evaluation consent is live.
-            A human employer decides whether to proceed. You can ask for the
+            shown to the hirer for that role while evaluation consent is live. A
+            human employer decides whether to proceed. You can ask for the
             scores in an access export and raise a grievance if you contest
             them.
           </p>

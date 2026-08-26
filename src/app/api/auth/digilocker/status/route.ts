@@ -11,7 +11,7 @@ import type {
 
 type UserDoc = KycFields & {
   name?: string | null;
-  email?: string | null;
+  digilockerId?: string | null;
   dateOfBirth?: Date | null;
   phoneNumber?: number | null;
   phoneCountryCode?: number | null;
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
             isKycVerified: 1,
             kyc: 1,
             name: 1,
-            email: 1,
+            digilockerId: 1,
             dateOfBirth: 1,
             phoneNumber: 1,
             phoneCountryCode: 1,
@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
 
     const data: DigilockerKycView | null = isKycVerified
       ? {
+          digilockerId: user?.digilockerId ?? null,
           name: user?.name ?? null,
           dateOfBirth: user?.dateOfBirth
             ? formatDateOnly(user.dateOfBirth) || null
@@ -79,7 +80,6 @@ export async function GET(req: NextRequest) {
           gender: pack?.gender ?? null,
           aadhaarLast4: pack?.aadhaarLast4 ?? null,
           pan: pack?.pan ?? null,
-          email: user?.email ?? null,
           phone: phoneDisplay(user ?? {}),
           address: user?.location ?? null,
           provider: pack?.provider ?? null,

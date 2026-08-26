@@ -1,7 +1,8 @@
 /**
  * Pre-login site agreement (Terms, Privacy, 18+, cookies).
- * Login is blocked until this is "agreed". After Google, the same click is
- * stamped onto the user (no second dialog). KYC purpose consents stay separate.
+ * Login is blocked until this is "agreed". After DigiLocker (candidate) or
+ * Google (corporate), the same click is stamped onto the user (no second
+ * dialog). KYC purpose consents stay separate for reverify.
  * Key is versioned with PLATFORM_TERMS_VERSION so a notice bump re-prompts.
  */
 

@@ -126,7 +126,7 @@ export function DataRightsSection() {
         Access or export your data, request correction, withdraw consent (stops
         interview release to employers and medical booking), nominate someone,
         restrict or object to processing, or raise a grievance. We identify you
-        by the email on this signed-in account.
+        by the DigiLocker user id on this signed-in account.
         Correction is completed by updating your{" "}
         <a href="/candidate/profile" className="text-foreground underline">
           profile

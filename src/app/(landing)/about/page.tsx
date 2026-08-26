@@ -83,15 +83,15 @@ export default function AboutPage() {
             },
             {
               title: "Verified identity",
-              body: "DigiLocker after onboarding — name, date of birth, phone, location, gender, PAN, and Aadhaar.",
+              body: "DigiLocker at sign-in — name, date of birth, phone, location, gender, PAN, Aadhaar, and DigiLocker user id.",
             },
           ]}
         />
         <p>
-          Auth uses Google via Better Auth, with profile-scoped access so work
-          and hire surfaces stay separated. AI runs through the Vercel AI
-          Gateway; voice interviews use Sarvam for speech-to-text and
-          text-to-speech.
+          Auth: candidates use DigiLocker; recruiters and admins use Google via
+          Corporate Login, with profile-scoped access so work and hire surfaces
+          stay separated. AI runs through the Vercel AI Gateway; voice
+          interviews use Sarvam for speech-to-text and text-to-speech.
         </p>
       </DocSection>
 
@@ -114,7 +114,7 @@ export default function AboutPage() {
             [
               "work",
               "Candidate / worker",
-              "Landing “Get Job” → onboarding → DigiLocker KYC → home",
+              "Landing Log in / Get Started → DigiLocker (phone / PIN / OTP) → onboarding → home",
             ],
             [
               "hire",
@@ -130,16 +130,12 @@ export default function AboutPage() {
         <DocSteps
           steps={[
             {
-              title: "Sign in as work",
-              body: "Google OAuth creates or opens a candidate profile.",
+              title: "Sign in with DigiLocker",
+              body: "Phone, PIN, or OTP on DigiLocker creates or opens the candidate account and verifies identity. Email and username are not collected.",
             },
             {
               title: "Finish AI onboarding",
               body: "Optional resume PDF plus a voice agent that collects currently working as, years of experience, education, work experience, and languages.",
-            },
-            {
-              title: "DigiLocker KYC",
-              body: "Identity is filled from DigiLocker: name, date of birth, phone, location, gender, PAN, and Aadhaar.",
             },
             {
               title: "Explore and interview",
@@ -204,7 +200,7 @@ export default function AboutPage() {
             ],
             [
               "KYC verification",
-              "DigiLocker after onboarding — name, DOB 18+, phone, location, gender, PAN, Aadhaar",
+              "DigiLocker at sign-in — name, DOB 18+, phone, location, gender, PAN, Aadhaar, DigiLocker user id",
             ],
           ]}
         />
@@ -219,18 +215,19 @@ export default function AboutPage() {
 
       <DocSection id="identity-kyc" number="06" title="Identity & KYC">
         <p>
-          After voice onboarding, candidates verify with DigiLocker
-          (MeriPehchaan). Identity — name, date of birth (18+), phone, location,
-          gender, PAN, and Aadhaar — is written from DigiLocker. Email stays
-          from Google sign-in. Recruiters do not see KYC badges on job
-          applications; they see Submitted, Selected, or Rejected.
+          After DigiLocker sign-in, candidates complete voice onboarding.
+          Identity — name, date of birth (18+), phone, location, gender, PAN,
+          and Aadhaar — is written from DigiLocker. The DigiLocker user id is
+          the candidate account id. Email and username are not collected from
+          DigiLocker. Recruiters do not see KYC badges on job applications; they
+          see Submitted, Selected, or Rejected.
         </p>
         <DocList
           items={[
             "Onboarding collects currently working as, years of experience, education, work experience, and languages",
-            "DigiLocker is required before home and explore",
+            "DigiLocker sign-in verifies identity before home and explore",
             "Under-18 dates of birth from DigiLocker are rejected",
-            "DigiLocker writes name, DOB, phone, location, gender, PAN, Aadhaar last 4 — not passport or PCC",
+            "DigiLocker writes name, DOB, phone, location, gender, PAN, Aadhaar last 4, and DigiLocker user id — not email, username, passport, or PCC",
           ]}
         />
       </DocSection>

@@ -98,7 +98,7 @@ export default function ForRecruitersPage() {
             },
             {
               title: "DigiLocker KYC",
-              body: "Candidates verify identity after onboarding, before they apply. Recruiters review applications as Submitted, Selected, or Rejected.",
+              body: "Candidates verify identity with DigiLocker at sign-in, before they apply. Recruiters review applications as Submitted, Selected, or Rejected.",
             },
           ]}
         />
@@ -206,7 +206,7 @@ export default function ForRecruitersPage() {
             },
             {
               title: "Sign in and hire",
-              body: "Sign in with Google using that email, then post roles and review scored applicants.",
+              body: "Open Corporate Login in the footer and sign in with Google using that email, then post roles and review scored applicants.",
             },
           ]}
         />
@@ -242,7 +242,7 @@ export default function ForRecruitersPage() {
 
       <DocSection id="kyc" number="09" title="Identity">
         <p>
-          Candidates complete DigiLocker KYC after onboarding, before they
+          Candidates complete DigiLocker KYC when they sign in, before they
           browse roles. Identity is not a per-job step. Applicant status is
           Submitted, Selected, or Rejected.
         </p>

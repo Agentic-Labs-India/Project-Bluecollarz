@@ -8,7 +8,7 @@ import { PrimaryDither } from "@/components/landing/primary-dither";
 type FooterLink = {
   label: string;
   href?: string;
-  login?: boolean;
+  login?: "candidate" | "corporate";
 };
 
 const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
@@ -26,7 +26,8 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
     title: "Programs",
     links: [
       { label: "For Recruiters", href: "/for-recruiters" },
-      { label: "Find work", login: true },
+      { label: "Find work", login: "candidate" },
+      { label: "Corporate Login", login: "corporate" },
     ],
   },
   {
@@ -96,7 +97,10 @@ export function LandingFooter() {
                   {section.links.map((link) => (
                     <li key={link.label}>
                       {link.login ? (
-                        <LoginButton className="text-sm text-white/75 transition-colors hover:text-white md:text-[15px]">
+                        <LoginButton
+                          mode={link.login}
+                          className="text-sm text-white/75 transition-colors hover:text-white md:text-[15px]"
+                        >
                           {link.label}
                         </LoginButton>
                       ) : (

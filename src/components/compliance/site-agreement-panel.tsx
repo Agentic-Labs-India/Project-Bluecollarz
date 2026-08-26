@@ -49,7 +49,8 @@ function LegalLinks({ cookieAnchor }: { cookieAnchor?: boolean }) {
 
 /**
  * 18+ age gate + cookie notice. Overlay = web bottom bar. Inline = native /auth.
- * Agree and continue unlocks Google sign-in (Terms, Privacy, 18+). Analytics stay
+ * Agree and continue unlocks DigiLocker (candidates) or Google Corporate Login
+ * (recruiters/admins). Analytics stay
  * off unless turned on in Cookie settings.
  */
 export function SiteAgreementPanel({

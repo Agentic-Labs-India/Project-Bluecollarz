@@ -42,7 +42,7 @@ import { hasProhibitedOutput } from "@/lib/legal-safety/lexicon";
 export const maxDuration = 90;
 
 const GEO_PLACE_PROMPT = `Places (must use country-state-city official English names):
-- Do not interview location, residence, or identity — DigiLocker KYC fills those after onboarding.
+- Do not interview location, residence, or identity — DigiLocker already filled those at sign-in.
 - Do interview currently working as (save as headline) and years of experience (JSON number, including 0).
 - If you save preferredCountries from a resume, they must match the geo library — never invent names or use nicknames (e.g. use "United Arab Emirates" not "UAE"; "United States" not "USA").
 - Before saving preferredCountries, call listPlaceOptions to look up valid names.
@@ -353,7 +353,7 @@ async function applyResumeFromPdfBytes(userId: string, pdfBytes: Uint8Array) {
     // Skills only from resume PDF — never from voice interview.
     ...(skills.length ? { skills } : {}),
     preferredCountries,
-    // Identity (phone, location, DOB, name) comes from DigiLocker KYC — not the PDF.
+    // Identity (phone, location, DOB, name) comes from DigiLocker at sign-in — not the PDF.
     // Summary is AI-generated at the end of onboarding — do not take from PDF.
     ...(education.length ? { education } : {}),
     ...(typeof isECR === "boolean" ? { isECR } : {}),
@@ -421,7 +421,7 @@ Flow:
 3. If this is a brand-new empty profile (many fields missing) and they have not been offered a resume yet this session: say one short spoken sentence in their voice language asking if they have a resume PDF, then call selectResume. Wait for the picker. Skip the resume picker if most interview fields are already filled.
 4. If has_resume is true: PDF is parsed automatically (education, work, languages, and skills may come from PDF). Ask only remaining interview fields.
 5. If has_resume is false (or resume skipped): interview only missing interview fields, one at a time. Use updateCandidateProfile after each useful answer.
-6. As soon as missing is empty, congratulate them, say they will continue to DigiLocker KYC, and call finishOnboarding — do NOT ask them to dictate a summary; finishOnboarding writes it.
+6. As soon as missing is empty, congratulate them and call finishOnboarding — do NOT ask them to dictate a summary; finishOnboarding writes it.
 ${
   opts.languageCode
     ? "Do not call selectVoiceLanguage — language is already on the profile."
@@ -465,7 +465,7 @@ Call selectResume at most once per session.`;
       }),
       listPlaceOptions: tool({
         description:
-          "Look up valid country / state / city names from the country-state-city library for preferredCountries. Call before saving preferredCountries. Omit country to list countries; pass country to list states (or cities if none); pass country+state to list cities. Optional query filters the list. Do not collect residence or address — DigiLocker KYC fills location.",
+          "Look up valid country / state / city names from the country-state-city library for preferredCountries. Call before saving preferredCountries. Omit country to list countries; pass country to list states (or cities if none); pass country+state to list cities. Optional query filters the list. Do not collect residence or address — DigiLocker already filled location at sign-in.",
         inputSchema: z.object({
           country: z
             .string()

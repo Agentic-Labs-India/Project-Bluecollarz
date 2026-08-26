@@ -103,7 +103,7 @@ export function RoleCarousel({ roles }: { roles: LandingRole[] }) {
             No open roles right now. Check back soon or sign in to get notified.
           </p>
           <LoginButton className="text-primary mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline">
-            Continue with Google
+            Continue with DigiLocker
           </LoginButton>
         </div>
       </section>

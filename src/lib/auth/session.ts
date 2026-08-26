@@ -7,7 +7,9 @@ import {
 
 export interface AuthContext {
   id: string;
+  /** Hire/admin: Google email. Candidate: DigiLocker user id. */
   email: string;
+  digilockerId: string | null;
   name: string | null;
   profileType: ProfileType;
 }
@@ -44,14 +46,21 @@ async function getAuthContext(): Promise<AuthContext | null> {
         email?: string;
         name?: string | null;
         profileType?: string;
+        digilockerId?: string | null;
       }
     | undefined;
   if (!user?.id) return null;
+  const profileType = normalizeProfileType(user.profileType);
+  const digilockerId = user.digilockerId?.trim() || null;
   return {
     id: user.id,
-    email: (user.email ?? "").toLowerCase(),
+    email:
+      profileType === "work"
+        ? digilockerId || ""
+        : (user.email ?? "").trim(),
+    digilockerId,
     name: user.name?.trim() || null,
-    profileType: normalizeProfileType(user.profileType),
+    profileType,
   };
 }
 

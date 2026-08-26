@@ -12,13 +12,13 @@ const FAQS = [
     id: "sign-in",
     question: "How do I create a candidate account?",
     answer:
-      "Sign in with Google. New accounts start as candidates (work) by default — no separate signup form. After you land in your workspace, complete AI voice onboarding so your profile is ready for roles.",
+      "Sign in with DigiLocker. That creates your candidate account and verifies your identity in the same step. Then complete AI voice onboarding so your profile is ready for roles.",
   },
   {
     id: "onboarding",
     question: "What happens during AI onboarding?",
     answer:
-      "You talk through currently working as, years of experience, education, work experience, and languages. A resume PDF can fill those fields (and skills). Identity — name, date of birth, phone, location, gender, PAN, Aadhaar — comes next from DigiLocker, not this interview.",
+      "You talk through currently working as, years of experience, education, work experience, and languages. A resume PDF can fill those fields (and skills). Identity — name, date of birth, phone, location, gender, PAN, Aadhaar — already comes from DigiLocker at sign-in.",
   },
   {
     id: "roles",
@@ -36,7 +36,7 @@ const FAQS = [
     id: "selection",
     question: "When do I verify my identity?",
     answer:
-      "Right after voice onboarding you verify with DigiLocker. That fills name, date of birth (18+), phone, location, gender, PAN, and Aadhaar. We do not collect passport or police clearance here — a licensed Recruiting Agent handles emigration clearance outside this app.",
+      "You verify with DigiLocker when you sign in. That fills name, date of birth (18+), phone, location, gender, PAN, and Aadhaar, and your DigiLocker user id is your account id. We do not collect passport or police clearance here — a licensed Recruiting Agent handles emigration clearance outside this app.",
   },
   {
     id: "medical-visa",

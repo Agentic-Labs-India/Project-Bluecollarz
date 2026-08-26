@@ -166,7 +166,7 @@ export default function VisionPage() {
           items={[
             {
               title: "Auth",
-              body: "Google sign-in creates candidates by default; hire access is provisioned so surfaces stay intentional.",
+              body: "Candidates sign in with DigiLocker. Recruiters and admins use Corporate Login (Google) after provision.",
             },
             {
               title: "Voice + screen integrity",

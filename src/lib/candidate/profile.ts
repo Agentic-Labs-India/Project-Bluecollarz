@@ -95,7 +95,7 @@ export interface WorkFormEntry {
 
 export interface CandidateProfileData {
   name: string;
-  email: string;
+  digilockerId: string;
   image: string;
   phoneNumber: number | null;
   phoneCountryCode: number | null;
@@ -191,7 +191,7 @@ export function emptyWorkEntry(): WorkFormEntry {
 /** Empty candidate profile for UI defaults / null docs. */
 export const emptyCandidateProfileData = (): CandidateProfileData => ({
   name: "",
-  email: "",
+  digilockerId: "",
   image: "",
   phoneNumber: null,
   phoneCountryCode: null,
@@ -428,7 +428,7 @@ export function toCandidateProfileData(
   doc:
     | (CandidateProfileFields & {
         name?: string | null;
-        email?: string | null;
+        digilockerId?: string | null;
         image?: string | null;
       })
     | null
@@ -437,7 +437,7 @@ export function toCandidateProfileData(
   if (!doc) return emptyCandidateProfileData();
   return {
     name: doc.name ?? "",
-    email: doc.email ?? "",
+    digilockerId: doc.digilockerId?.trim() || "",
     image: doc.image ?? "",
     phoneNumber: asNullableNumber(doc.phoneNumber),
     phoneCountryCode: asNullableNumber(doc.phoneCountryCode),

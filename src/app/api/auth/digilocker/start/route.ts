@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { requireProfile } from "@/lib/auth/session";
-import { isCandidateOnboardingDone } from "@/lib/candidate/queries";
+import { requireUser } from "@/lib/auth/session";
 import {
   DIGILOCKER_REQUIRED_PURPOSES,
   hasGrantedPurposes,
@@ -13,45 +12,54 @@ import {
   createCodeVerifier,
   createOAuthState,
   DIGILOCKER_OAUTH_COOKIE,
+  type DigilockerOAuthIntent,
+  digilockerRedirectUri,
   OAUTH_MAX_AGE_SEC,
   sealOAuthCookie,
 } from "@/lib/kyc/digilocker";
+import { isNativeUserAgent } from "@/lib/native/platform";
 
-/** Redirects to DigiLocker MeriPehchaan authorize. */
+function loginReturnTo(req: NextRequest) {
+  return isNativeUserAgent(req.headers.get("user-agent")) ? "/auth" : "/";
+}
+
+/** Redirects to DigiLocker MeriPehchaan authorize (candidate login or reverify). */
 export async function GET(req: NextRequest) {
-  const auth = await requireProfile("work");
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const session = await requireUser();
+  const signedIn = session.ok;
+
+  if (signedIn && session.user.profileType !== "work") {
+    return NextResponse.json(
+      { error: "DigiLocker is for candidates only." },
+      { status: 403 },
+    );
   }
-  if (!auth.user.id) {
-    return NextResponse.json({ error: "Invalid user" }, { status: 400 });
-  }
+
+  const intent: DigilockerOAuthIntent = signedIn ? "reverify" : "login";
+  const returnTo = signedIn ? "/candidate/kyc" : loginReturnTo(req);
 
   try {
     await ensureIndexes();
-    if (!(await isCandidateOnboardingDone(auth.user.id))) {
-      return NextResponse.redirect(
-        new URL("/candidate/onboarding", req.nextUrl.origin),
-      );
-    }
 
-    const consented = await hasGrantedPurposes(
-      auth.user.id,
-      DIGILOCKER_REQUIRED_PURPOSES,
-    );
-    if (!consented) {
-      return NextResponse.redirect(
-        new URL("/candidate/kyc?consent=required", req.nextUrl.origin),
+    if (signedIn) {
+      const consented = await hasGrantedPurposes(
+        session.user.id,
+        DIGILOCKER_REQUIRED_PURPOSES,
       );
+      if (!consented) {
+        return NextResponse.redirect(
+          new URL("/candidate/kyc?consent=required", req.nextUrl.origin),
+        );
+      }
     }
-
-    const returnTo = "/candidate/kyc";
 
     const state = createOAuthState();
     const codeVerifier = createCodeVerifier();
+    const redirectUri = digilockerRedirectUri(req.headers, req.nextUrl.origin);
     const authorizeUrl = buildAuthorizeUrl({
       state,
       codeChallenge: createCodeChallenge(codeVerifier),
+      redirectUri,
     });
 
     const response = NextResponse.redirect(authorizeUrl);
@@ -60,7 +68,9 @@ export async function GET(req: NextRequest) {
       sealOAuthCookie({
         state,
         codeVerifier,
-        userId: auth.user.id,
+        redirectUri,
+        intent,
+        ...(signedIn ? { userId: session.user.id } : {}),
         returnTo,
         createdAt: Date.now(),
       }),
@@ -72,9 +82,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Could not start DigiLocker KYC",
+          error instanceof Error ? error.message : "Could not start DigiLocker",
       },
       { status: 500 },
     );

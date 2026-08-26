@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { consumeUserProvision } from "@/lib/admin/provisions";
 import { LegalHoldError } from "@/lib/compliance/legal-hold";
@@ -68,6 +68,12 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      /** Unique DigiLocker user id. Candidate login key (also stored as email). */
+      digilockerId: {
+        type: "string",
+        required: false,
+        input: false,
+      },
     },
     deleteUser: {
       enabled: true,
@@ -103,13 +109,42 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
+          const extra = user as Record<string, unknown>;
+          const rawId =
+            typeof extra.digilockerId === "string"
+              ? extra.digilockerId.trim()
+              : "";
+          if (rawId) {
+            return {
+              data: {
+                ...user,
+                email: rawId,
+                emailVerified: true,
+                digilockerId: rawId,
+                profileType: "work",
+                cookiesEnabled: false,
+                notificationsEnabled: true,
+              },
+            };
+          }
+
           const email = (user.email ?? "").toLowerCase().trim();
-          const provisioned = email ? await consumeUserProvision(email) : null;
+          if (!email) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Google account has no email.",
+            });
+          }
+          const provisioned = await consumeUserProvision(email);
+          if (!provisioned) {
+            throw new APIError("FORBIDDEN", {
+              message:
+                "Google sign-in is for recruiters and admins. Candidates sign in with DigiLocker.",
+            });
+          }
           return {
             data: {
               ...user,
-              // Organic Google signups are candidates; admin invites win when present.
-              profileType: provisioned ?? "work",
+              profileType: provisioned,
               cookiesEnabled: false,
               notificationsEnabled: true,
             },
@@ -117,6 +152,38 @@ export const auth = betterAuth({
         },
       },
     },
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const provider =
+        (ctx.params as { id?: string } | undefined)?.id ||
+        ctx.path.split("/").pop();
+      const isGoogleCallback =
+        provider === "google" &&
+        (ctx.path === "/callback/:id" ||
+          ctx.path === "/callback/google" ||
+          ctx.path.startsWith("/callback/"));
+      if (!isGoogleCallback) return;
+
+      const sessionUser = (ctx.context.newSession?.user ??
+        ctx.context.session?.user) as
+        | { id?: string; profileType?: string }
+        | undefined;
+      if (!sessionUser) return;
+      if (
+        sessionUser.profileType === "hire" ||
+        sessionUser.profileType === "admin"
+      ) {
+        return;
+      }
+      if (sessionUser.id) {
+        await ctx.context.internalAdapter.deleteSessions(sessionUser.id);
+      }
+      throw new APIError("FORBIDDEN", {
+        message:
+          "Google sign-in is for recruiters and admins. Candidates sign in with DigiLocker.",
+      });
+    }),
   },
   plugins: [nextCookies()],
 });

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { auth } from "@/lib/auth/auth";
 import { getCandidateGateStatus } from "@/lib/candidate/queries";
 
-/** Locked app surface — onboarding then DigiLocker KYC, then the rest. */
+/** Locked app surface — DigiLocker KYC then onboarding, then the rest. */
 export default function CandidateAppLayout({
   children,
 }: {
@@ -24,8 +24,8 @@ async function CandidateAppGate({ children }: { children: React.ReactNode }) {
   if (!user?.id) redirect("/");
 
   const { complete, kycVerified } = await getCandidateGateStatus(user.id);
-  if (!complete) redirect("/candidate/onboarding");
   if (!kycVerified) redirect("/candidate/kyc");
+  if (!complete) redirect("/candidate/onboarding");
 
   return children;
 }

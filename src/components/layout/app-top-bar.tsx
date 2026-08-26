@@ -33,7 +33,10 @@ export function AppTopBar({
         profileHref={profileHref}
         user={{
           name: user?.name || "Account",
-          email: user?.email || "",
+          email:
+            user?.profileType === "work"
+              ? user.digilockerId || user.email || ""
+              : user?.email || "",
           avatar: user?.image || "",
         }}
       />

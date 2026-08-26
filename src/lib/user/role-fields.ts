@@ -42,15 +42,10 @@ export const HIRE_ONLY_USER_FIELDS = [
 ] as const;
 
 /** DigiLocker KYC fields on Users. */
-export const KYC_USER_FIELDS = ["isKycVerified", "kyc"] as const;
-
-/** Removed / leftover fields that should never linger. */
-export const LEGACY_USER_FIELDS = [
-  "workAuthorization",
-  "workAuthConfirmed",
-  "workAuthStayAgreed",
-  "resumeUrl",
-  "resumeSource",
+export const KYC_USER_FIELDS = [
+  "isKycVerified",
+  "kyc",
+  "digilockerId",
 ] as const;
 
 export function unsetFields(keys: readonly string[]): Record<string, ""> {

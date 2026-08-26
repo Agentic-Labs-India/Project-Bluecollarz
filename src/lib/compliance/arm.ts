@@ -1,6 +1,6 @@
 /**
  * Hire-safe profile: employers receive allowlisted resume fields only —
- * never email, phone, PAN, Aadhaar, DOB, or address.
+ * never email, DigiLocker id, phone, PAN, Aadhaar, DOB, or address.
  */
 
 function asString(value: unknown): string {

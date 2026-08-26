@@ -12,13 +12,17 @@ import {
 import { getProfileHomePath } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
 
+export const DIGILOCKER_START_PATH = "/api/auth/digilocker/start";
+
 export function LoginButton({
   className,
   children = "Log in",
+  mode = "candidate",
   onBeforeOpen,
 }: {
   className?: string;
   children?: React.ReactNode;
+  mode?: "candidate" | "corporate";
   onBeforeOpen?: () => void;
 }) {
   const router = useRouter();
@@ -42,7 +46,11 @@ export function LoginButton({
 
     setLoading(true);
     try {
-      await signInWithGoogle();
+      if (mode === "corporate") {
+        await signInWithGoogle();
+        return;
+      }
+      window.location.assign(DIGILOCKER_START_PATH);
     } catch {
       setLoading(false);
     }

@@ -74,7 +74,7 @@ export async function GET(_req: Request, context: RouteContext) {
       .collection<
         CandidateProfileFields & {
           name?: string;
-          email?: string;
+          digilockerId?: string;
           image?: string;
         }
       >(COLLECTIONS.USERS_COLLECTION)
