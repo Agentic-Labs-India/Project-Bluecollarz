@@ -2,7 +2,7 @@ import "server-only";
 
 import { del } from "@vercel/blob";
 import { isVercelBlobUrl } from "@/lib/blob/pathname";
-import { blobReadWriteToken } from "@/lib/blob/token";
+import { blobReadWriteToken } from "@/lib/blob/server/token";
 
 /** Best-effort delete of Vercel Blob URLs (never throws). */
 export async function deleteBlobUrls(

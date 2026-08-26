@@ -24,7 +24,7 @@ import { uiMessageText } from "@/lib/ai/ui-message-text";
 import { languageLabel, type TtsLanguageCode } from "@/lib/ai/voice/languages";
 import { speakText } from "@/lib/ai/voice/speak";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
-import { uploadBlob } from "@/lib/blob/upload";
+import { uploadBlob } from "@/lib/blob/client/upload";
 import type { AiInterviewStageId } from "@/lib/interviews";
 import {
   interviewKickoffText,
@@ -267,8 +267,12 @@ export function AiInterview({
             );
           }
 
-          setStatus("Uploading recording to storage…");
+          setStatus("Preparing recording…");
           const { ext, contentType } = blobUploadMeta(blob);
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve());
+          });
+          setStatus("Uploading recording to storage…");
           const uploaded = await uploadBlob({
             file: blob,
             pathname: `interviews/${interviewId}/${Date.now()}.${ext}`,
@@ -278,7 +282,11 @@ export function AiInterview({
               interviewId,
             },
             onProgress: (percent) => {
-              setStatus(`Uploading recording… ${Math.round(percent)}%`);
+              setStatus(
+                percent <= 0
+                  ? "Uploading recording to storage…"
+                  : `Uploading recording… ${Math.round(percent)}%`,
+              );
             },
           });
           videoUrl = uploaded.url;

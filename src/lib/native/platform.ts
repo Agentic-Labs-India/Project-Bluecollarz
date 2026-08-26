@@ -13,3 +13,15 @@ export function isNativeApp(): boolean {
   if (typeof navigator === "undefined") return false;
   return isNativeUserAgent(navigator.userAgent);
 }
+
+/**
+ * WebKit and the Capacitor WebView hang on fetch() with a streamed request
+ * body, which @vercel/blob uses whenever onUploadProgress is set.
+ */
+export function blobUploadNeedsSimplePut(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (isNativeApp()) return true;
+  const ua = navigator.userAgent;
+  if (/iP(hone|ad|od)/i.test(ua)) return true;
+  return /Safari/i.test(ua) && !/Chrome|Chromium|Android/i.test(ua);
+}

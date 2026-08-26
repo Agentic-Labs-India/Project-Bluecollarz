@@ -9,6 +9,7 @@ import {
   type InterviewDocument,
   type InterviewStageId,
   interviewStartSchema,
+  isAiInterviewStage,
   isCustomQuestionsStage,
 } from "@/lib/interviews";
 import type { JobDocument } from "@/lib/jobs";
@@ -110,17 +111,25 @@ export async function POST(req: NextRequest) {
     } as never);
 
     if (existing?.status === "completed") {
-      return NextResponse.json({
-        interviewId: idHex(existing._id),
-        status: "completed",
-        alreadyComplete: true,
-        customQuestions: questionsPayload(
-          stageId,
-          existing.customQuestions?.length
-            ? existing.customQuestions
-            : jobQuestions,
-        ),
+      const missingRecording =
+        isAiInterviewStage(stageId) && !existing.videoUrl;
+      if (!missingRecording) {
+        return NextResponse.json({
+          interviewId: idHex(existing._id),
+          status: "completed",
+          alreadyComplete: true,
+          customQuestions: questionsPayload(
+            stageId,
+            existing.customQuestions?.length
+              ? existing.customQuestions
+              : jobQuestions,
+          ),
+        });
+      }
+      await interviews.updateOne({ _id: existing._id } as never, {
+        $set: { status: "in_progress", updatedAt: new Date() },
       });
+      existing.status = "in_progress";
     }
 
     if (existing?.status === "in_progress") {

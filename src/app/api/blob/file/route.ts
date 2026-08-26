@@ -1,4 +1,3 @@
-import { get } from "@vercel/blob";
 import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -9,7 +8,7 @@ import {
   blobPathRelativeToRoot,
   isPubliclyServedBlobKind,
 } from "@/lib/blob/pathname";
-import { blobReadWriteToken } from "@/lib/blob/token";
+import { getPrivateBlob } from "@/lib/blob/server/get";
 import {
   hasGrantedPurposes,
   INTERVIEW_RELEASE_REQUIRED_PURPOSES,
@@ -148,12 +147,12 @@ export async function GET(request: NextRequest) {
     const ifNoneMatch = request.headers.get("if-none-match") ?? undefined;
     const range = request.headers.get("range") ?? undefined;
 
-    const result = await get(pathname, {
-      access: "private",
-      token: blobReadWriteToken(),
+    const result = await getPrivateBlob(pathname, {
       abortSignal: request.signal,
-      ...(ifNoneMatch ? { ifNoneMatch } : {}),
-      ...(range ? { headers: { Range: range } } : {}),
+      // Skip CDN so a recording is readable immediately after upload.
+      useCache: false,
+      ifNoneMatch,
+      range,
     });
     if (!result) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

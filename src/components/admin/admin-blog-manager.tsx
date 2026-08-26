@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { blobFileUrl } from "@/lib/blob/pathname";
-import { uploadBlob } from "@/lib/blob/upload";
+import { uploadBlob } from "@/lib/blob/client/upload";
 import type { BlogDetail, BlogListItem, BlogStatus } from "@/lib/blog/types";
 import {
   BLOG_STATUSES,

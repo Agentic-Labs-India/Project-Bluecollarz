@@ -16,7 +16,7 @@ import {
   MEDICAL_REPORT_MAX_BYTES,
   MEDICAL_REPORT_MAX_MB,
 } from "@/lib/blob/pathname";
-import { uploadBlob } from "@/lib/blob/upload";
+import { uploadBlob } from "@/lib/blob/client/upload";
 import type { MedicalAppointmentListItem } from "@/lib/medical/types";
 
 const ACCEPT = "application/pdf,image/jpeg,image/png,image/webp";

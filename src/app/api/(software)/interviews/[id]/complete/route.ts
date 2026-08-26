@@ -64,31 +64,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
         { status: 400 },
       );
     }
-    if (interview.status === "completed") {
-      return NextResponse.json({
-        ok: true,
-        alreadyComplete: true,
-        interviewId: id,
-        stageId: interview.stageId,
-        analysis: interview.analysis,
-        videoUrl: interview.videoUrl,
-      });
-    }
 
-    // Client transcript has both roles; DB only stores user turns mid-chat.
-    // Prefer client when present to avoid duplicating user answers in scoring.
-    let transcript = interview.transcript ?? [];
-    if (Array.isArray(body.transcript) && body.transcript.length) {
-      transcript = body.transcript
-        .filter((t) => t?.text?.trim())
-        .map((t) => ({
-          role: t.role,
-          text: t.text.trim().slice(0, 4000),
-          at: new Date(),
-        }));
-    }
-
-    const videoUrl = body.videoUrl?.trim() || interview.videoUrl;
+    const incomingVideoUrl = body.videoUrl?.trim();
+    const videoUrl = incomingVideoUrl || interview.videoUrl;
     if (!videoUrl) {
       return NextResponse.json(
         {
@@ -109,6 +87,42 @@ export async function POST(req: NextRequest, context: RouteContext) {
       );
     }
 
+    const now = new Date();
+    const interviews = db.collection(COLLECTIONS.INTERVIEWS);
+
+    // Persist the blob URL before scoring. Analysis can hit maxDuration and
+    // abort the request; the recording must still land on the interview doc.
+    if (videoUrl !== interview.videoUrl) {
+      await interviews.updateOne(
+        { _id: matchId(id) as never },
+        { $set: { videoUrl, updatedAt: now } },
+      );
+    }
+
+    if (interview.status === "completed") {
+      return NextResponse.json({
+        ok: true,
+        alreadyComplete: true,
+        interviewId: id,
+        stageId: interview.stageId,
+        analysis: interview.analysis,
+        videoUrl,
+      });
+    }
+
+    // Client transcript has both roles; DB only stores user turns mid-chat.
+    // Prefer client when present to avoid duplicating user answers in scoring.
+    let transcript = interview.transcript ?? [];
+    if (Array.isArray(body.transcript) && body.transcript.length) {
+      transcript = body.transcript
+        .filter((t) => t?.text?.trim())
+        .map((t) => ({
+          role: t.role,
+          text: t.text.trim().slice(0, 4000),
+          at: new Date(),
+        }));
+    }
+
     const analysis = await analyzeInterviewTranscript({
       stageId: interview.stageId,
       jobTitle: interview.jobTitle,
@@ -116,9 +130,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       transcript,
     });
 
-    const now = new Date();
-
-    await db.collection(COLLECTIONS.INTERVIEWS).updateOne(
+    await interviews.updateOne(
       { _id: matchId(id) as never },
       {
         $set: {

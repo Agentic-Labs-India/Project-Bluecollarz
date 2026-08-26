@@ -6,6 +6,7 @@ import {
   mediaPermissionError,
   pickMediaRecorderMime,
 } from "@/lib/native/media-permissions";
+import { stopMediaRecorder } from "@/lib/native/stop-media-recorder";
 
 type RecorderState = {
   recorder: MediaRecorder | null;
@@ -47,9 +48,9 @@ export function useCameraRecorder() {
       const camera = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 24, max: 30 },
+          width: { ideal: 960, max: 1280 },
+          height: { ideal: 540, max: 720 },
+          frameRate: { ideal: 16, max: 24 },
         },
         audio: {
           echoCancellation: true,
@@ -68,9 +69,14 @@ export function useCameraRecorder() {
       const recorder = new MediaRecorder(
         mixed,
         mime
-          ? { mimeType: mime, videoBitsPerSecond: 1_500_000 }
+          ? {
+              mimeType: mime,
+              videoBitsPerSecond: 600_000,
+              audioBitsPerSecond: 48_000,
+            }
           : {
-              videoBitsPerSecond: 1_500_000,
+              videoBitsPerSecond: 600_000,
+              audioBitsPerSecond: 48_000,
             },
       );
 
@@ -83,7 +89,7 @@ export function useCameraRecorder() {
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) stateRef.current.chunks.push(e.data);
       };
-      recorder.start(2000);
+      recorder.start(3000);
       setCameraStream(camera);
       setRecording(true);
 
@@ -95,7 +101,8 @@ export function useCameraRecorder() {
         } catch {
           // ignore
         }
-        stopTracks();
+        setCameraStream(null);
+        setRecording(false);
       });
 
       const mic = new MediaStream(camera.getAudioTracks());
@@ -108,32 +115,9 @@ export function useCameraRecorder() {
   }, [stopTracks]);
 
   const stop = useCallback(async (): Promise<Blob | null> => {
-    const { recorder } = stateRef.current;
-    if (!recorder || recorder.state === "inactive") {
-      stopTracks();
-      return null;
-    }
-
-    try {
-      if (recorder.state === "recording") recorder.requestData();
-    } catch {
-      // ignore
-    }
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      recorder.onstop = () => {
-        const chunks = stateRef.current.chunks;
-        const type = recorder.mimeType || "video/webm";
-        resolve(chunks.length ? new Blob(chunks, { type }) : null);
-        stopTracks();
-      };
-      try {
-        recorder.stop();
-      } catch {
-        stopTracks();
-        resolve(null);
-      }
-    });
+    const { recorder, chunks } = stateRef.current;
+    const blob = await stopMediaRecorder(recorder, chunks, 8_000, "video/webm");
+    stopTracks();
     return blob;
   }, [stopTracks]);
 

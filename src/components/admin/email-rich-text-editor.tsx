@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { sanitizeEmailComposeHtml } from "@/lib/admin/email-html";
 import { blobFileUrl } from "@/lib/blob/pathname";
-import { uploadBlob } from "@/lib/blob/upload";
+import { uploadBlob } from "@/lib/blob/client/upload";
 import { cn } from "@/lib/utils";
 
 function isEditorAlive(editor: Editor | null): editor is Editor {

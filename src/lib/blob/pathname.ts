@@ -1,6 +1,12 @@
 /**
- * All Blob objects live under `{DB_NAME}/…` so envs (dev/staging/prod)
- * stay isolated in the same store.
+ * Shared path + URL helpers for the private Vercel Blob store.
+ * All objects live under `{DB_NAME}/…` so envs (dev/staging/prod) stay isolated.
+ *
+ * Uploads/deletes live in:
+ * - `@/lib/blob/client/upload` — browser PUT (`uploadBlob`)
+ * - `@/lib/blob/server/upload` — token minting for that PUT
+ * - `@/lib/blob/server/delete` — `deleteBlobUrls`
+ * - `@/lib/blob/server/get` — authorized/private reads
  */
 
 export const BLOB_MAX_BYTES = 500 * 1024 * 1024; // 500 MB
@@ -16,7 +22,7 @@ export const MEDICAL_REPORT_MAX_MB = 8;
 export const KNOWLEDGE_PDF_MAX_BYTES = 20 * 1024 * 1024;
 export const KNOWLEDGE_PDF_MAX_MB = 20;
 
-export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client-upload";
+export const BLOB_HANDLE_UPLOAD_URL = "/api/blob/client/upload";
 
 /** Strip codec / charset parameters so Blob `allowedContentTypes` can match. */
 export function normalizeBlobContentType(value: string | undefined): string {
@@ -137,10 +143,23 @@ export function blobAccessFromUrl(url: string): BlobAccess | null {
   }
 }
 
+/** Persistable private object. Rejects public hosts; allows unlabeled store URLs. */
+export function isStoredPrivateBlobUrl(url: string): boolean {
+  return isVercelBlobUrl(url) && blobAccessFromUrl(url) !== "public";
+}
+
+function safeDecodePath(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 /** Same-origin route that authorizes the viewer, then streams a private blob. */
 export function blobFileUrl(pathnameOrUrl: string): string {
   const raw = pathnameOrUrl.startsWith("http")
-    ? decodeURIComponent(new URL(pathnameOrUrl).pathname)
+    ? safeDecodePath(new URL(pathnameOrUrl).pathname)
     : pathnameOrUrl;
   return `/api/blob/file?path=${encodeURIComponent(raw.replace(/^\/+/, ""))}`;
 }
@@ -158,17 +177,16 @@ export function blobAbsoluteFileUrl(pathnameOrUrl: string): string {
 
 /**
  * Interview recordings must live under `{DB_NAME}/interviews/{interviewId}/…`
- * on Vercel Blob.
+ * on a private Vercel Blob store. Public URLs are rejected.
  */
 export function isInterviewRecordingUrl(
   url: string,
   interviewId: string,
 ): boolean {
-  if (blobAccessFromUrl(url) !== "private" || !interviewId) return false;
+  if (!interviewId || !isStoredPrivateBlobUrl(url)) return false;
   try {
     const root = getBlobRoot();
-    const { pathname } = new URL(url);
-    const decoded = decodeURIComponent(pathname);
+    const decoded = safeDecodePath(new URL(url).pathname);
     const marker = `/${root}/interviews/${interviewId}/`;
     return decoded.includes(marker);
   } catch {
@@ -210,11 +228,10 @@ export function isMedicalReportUrl(
   url: string,
   appointmentId: string,
 ): boolean {
-  if (blobAccessFromUrl(url) !== "private" || !appointmentId) return false;
+  if (!appointmentId || !isStoredPrivateBlobUrl(url)) return false;
   try {
     const root = getBlobRoot();
-    const { pathname } = new URL(url);
-    const decoded = decodeURIComponent(pathname);
+    const decoded = safeDecodePath(new URL(url).pathname);
     return decoded.includes(`/${root}/admin/medical/${appointmentId}/`);
   } catch {
     return false;
@@ -232,8 +249,7 @@ export function isBlogCoverImageUrl(url: string): boolean {
   if (!isVercelBlobUrl(url)) return false;
   try {
     const root = getBlobRoot();
-    const { pathname } = new URL(url);
-    const decoded = decodeURIComponent(pathname);
+    const decoded = safeDecodePath(new URL(url).pathname);
     return decoded.includes(`/${root}/admin/blog/`);
   } catch {
     return false;

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { normalizeBlobContentType } from "@/lib/blob/pathname";
-import { blobReadWriteToken } from "@/lib/blob/token";
+import { blobReadWriteToken } from "@/lib/blob/server/token";
 
 describe("normalizeBlobContentType", () => {
   test("strips codec parameters", () => {

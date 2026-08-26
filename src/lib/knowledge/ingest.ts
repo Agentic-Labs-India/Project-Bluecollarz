@@ -1,8 +1,7 @@
 import "server-only";
 
-import { get } from "@vercel/blob";
 import { embedMany } from "ai";
-import { blobReadWriteToken } from "@/lib/blob/token";
+import { getPrivateBlob } from "@/lib/blob/server/get";
 import { chunkPages } from "@/lib/knowledge/chunk";
 import { extractPdfPages } from "@/lib/knowledge/extract";
 import {
@@ -17,10 +16,7 @@ import { idHex } from "@/lib/utils";
 const EMBED_BATCH = 64;
 
 async function readBlobBytes(pathname: string): Promise<Uint8Array> {
-  const result = await get(pathname, {
-    access: "private",
-    token: blobReadWriteToken(),
-  });
+  const result = await getPrivateBlob(pathname);
   if (!result?.stream) {
     throw new Error("Could not read the uploaded PDF");
   }

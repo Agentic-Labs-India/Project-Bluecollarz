@@ -1,11 +1,11 @@
 import "server-only";
 import { ObjectId } from "mongodb";
 import { cache } from "react";
-import { deleteBlobUrls } from "@/lib/blob/delete";
+import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import {
-  blobAccessFromUrl,
   blobPathRelativeToRoot,
   isCompanyDocumentRelativePath,
+  isStoredPrivateBlobUrl,
 } from "@/lib/blob/pathname";
 import client, {
   COLLECTIONS,
@@ -83,7 +83,7 @@ function assertOwnCompanyDocument(
   userId: string,
 ): void {
   if (!doc) return;
-  if (blobAccessFromUrl(doc.url) !== "private") {
+  if (!isStoredPrivateBlobUrl(doc.url)) {
     throw new Error("Document must be stored as a private Vercel Blob");
   }
   const relative = blobPathRelativeToRoot(doc.pathname);

@@ -1,5 +1,7 @@
 "use client";
 
+import { asUploadableBlob } from "@/lib/native/media-blob";
+
 export type TranscribeResult = {
   ok: boolean;
   transcript?: string;
@@ -16,13 +18,15 @@ export async function transcribeBlob(
   languageCode: string,
 ): Promise<TranscribeResult> {
   try {
-    const form = new FormData();
-    const ext = blob.type.includes("wav")
+    const contentType = (blob.type || "audio/webm").split(";")[0].trim();
+    const ext = contentType.includes("wav")
       ? "wav"
-      : blob.type.includes("mp4") || blob.type.includes("m4a")
+      : contentType.includes("mp4") || contentType.includes("m4a")
         ? "m4a"
         : "webm";
-    form.append("audio", blob, `speech.${ext}`);
+    const audio = await asUploadableBlob(blob, contentType);
+    const form = new FormData();
+    form.append("audio", audio, `speech.${ext}`);
     form.append("language_code", languageCode);
     const res = await fetch("/api/voice/stt", { method: "POST", body: form });
     const data = (await res.json()) as {

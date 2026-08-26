@@ -19,7 +19,7 @@ import {
   KNOWLEDGE_PDF_MAX_BYTES,
   KNOWLEDGE_PDF_MAX_MB,
 } from "@/lib/blob/pathname";
-import { uploadBlob } from "@/lib/blob/upload";
+import { uploadBlob } from "@/lib/blob/client/upload";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import {
   KNOWLEDGE_DOC_TYPES,

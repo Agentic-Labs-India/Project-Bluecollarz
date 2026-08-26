@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { COMPANY_DOC_MAX_BYTES, COMPANY_DOC_MAX_MB } from "@/lib/blob/pathname";
-import { uploadBlob } from "@/lib/blob/upload";
+import { uploadBlob } from "@/lib/blob/client/upload";
 import {
   GCC_RULE_KEYS,
   GCC_RULE_LABELS,

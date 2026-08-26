@@ -1,6 +1,6 @@
 import "server-only";
 
-import { deleteBlobUrls } from "@/lib/blob/delete";
+import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import { assertNoLegalHold } from "@/lib/compliance/legal-hold";
 import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
 import { idHex } from "@/lib/utils";

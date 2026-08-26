@@ -359,7 +359,7 @@ Vercel Blob, with every path rooted under `DB_NAME`. Access is derived from the 
 | `email` | `{DB_NAME}/admin/email/…` | public |
 | `knowledge` | `{DB_NAME}/admin/knowledge/…` | private |
 
-Uploads go straight from the browser using a token minted by `POST /api/blob/client-upload`, which enforces the allowed prefixes. Private files are read through `GET /api/blob/file?path=…`, which authorizes the viewer before streaming: an interview is readable by its owner or by a hirer holding evaluation consent, a medical report by the candidate or an admin, a company document by its owner or an admin, a knowledge PDF by an admin.
+Uploads go straight from the browser via `uploadBlob()` (`src/lib/blob/client/upload.ts`) using a token minted by `POST /api/blob/client/upload` (`src/lib/blob/server/upload.ts`), which enforces the allowed prefixes. Deletes use `deleteBlobUrls()` (`src/lib/blob/server/delete.ts`). Private files are read through `GET /api/blob/file?path=…` (`src/lib/blob/server/get.ts`), which authorizes the viewer before streaming: an interview is readable by its owner or by a hirer holding evaluation consent, a medical report by the candidate or an admin, a company document by its owner or an admin, a knowledge PDF by an admin.
 
 ### Knowledge base (Atlas Vector Search)
 
@@ -455,7 +455,7 @@ Jobs are closed with `PATCH { action: "close" }`; there is no delete.
 | `/api/admin/settings` | GET, PATCH |
 
 ### Shared
-`/api/onboarding` (POST) · `/api/help/chat` (POST) · `/api/voice/stt` (POST) · `/api/voice/tts` (GET health, POST stream) · `/api/blob/client-upload` (POST) · `/api/blob/file` (GET) · `/api/user/preferences` (GET, PATCH) · `/api/recruiter-inquiries` (POST)
+`/api/onboarding` (POST) · `/api/help/chat` (POST) · `/api/voice/stt` (POST) · `/api/voice/tts` (GET health, POST stream) · `/api/blob/client/upload` (POST) · `/api/blob/file` (GET) · `/api/user/preferences` (GET, PATCH) · `/api/recruiter-inquiries` (POST)
 
 ---
 
@@ -524,7 +524,7 @@ bun dev
 | `DPDP_RIGHTS_ACK_HOURS` | optional | Rights acknowledgement deadline |
 | `DPDP_RIGHTS_RESOLVE_DAYS` | optional | Rights resolution deadline |
 
-`AI_GATEWAY_API_KEY` is read by the Vercel AI SDK. `BLOB_READ_WRITE_TOKEN` is read in `src/lib/blob/token.ts` and passed into the Blob SDK.
+`AI_GATEWAY_API_KEY` is read by the Vercel AI SDK. `BLOB_READ_WRITE_TOKEN` is read in `src/lib/blob/server/token.ts` and passed into the Blob SDK.
 
 ---
 

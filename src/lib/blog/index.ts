@@ -2,7 +2,7 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import { deleteBlobUrls } from "@/lib/blob/delete";
+import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import { isBlogCoverImageUrl } from "@/lib/blob/pathname";
 import {
   type BlogDetail,

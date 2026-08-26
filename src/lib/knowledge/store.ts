@@ -1,7 +1,7 @@
 import "server-only";
 
 import { ObjectId, type WithId } from "mongodb";
-import { deleteBlobUrls } from "@/lib/blob/delete";
+import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import {
   blobPathRelativeToRoot,
   isKnowledgePdfRelativePath,

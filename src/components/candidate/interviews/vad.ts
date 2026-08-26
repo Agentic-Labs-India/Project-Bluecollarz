@@ -5,6 +5,7 @@ import {
   ensureNativeMediaPermissions,
   pickMediaRecorderMime,
 } from "@/lib/native/media-permissions";
+import { stopMediaRecorder } from "@/lib/native/stop-media-recorder";
 
 /**
  * Simple energy-based VAD on a mic stream.
@@ -128,28 +129,14 @@ export async function startVadLoop(opts: {
 
   const endSegment = () => {
     const rec = segmentRecorder;
+    const chunks = segmentChunks;
     segmentRecorder = null;
-    if (!rec || rec.state === "inactive") return;
     flushing = true;
-    try {
-      if (rec.state === "recording") rec.requestData();
-    } catch {
-      // ignore
-    }
-    rec.onstop = () => {
-      const blob = new Blob(segmentChunks, {
-        type: rec.mimeType || "audio/webm",
-      });
+    void stopMediaRecorder(rec, chunks, 4000, "audio/webm").then((blob) => {
       segmentChunks = [];
-      // Accept shorter clips — slow one-word answers are still valid.
-      if (blob.size > 250) opts.onSpeechEnd(blob);
       flushing = false;
-    };
-    try {
-      rec.stop();
-    } catch {
-      flushing = false;
-    }
+      if (blob && blob.size > 250) opts.onSpeechEnd(blob);
+    });
   };
 
   const finishUtterance = () => {
