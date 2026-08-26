@@ -168,7 +168,6 @@ export async function POST(req: NextRequest) {
     const doc: Omit<InterviewDocument, "_id"> = {
       jobId,
       applicantId: auth.user.id,
-      applicantEmail: auth.user.email,
       stageId,
       status: "in_progress",
       jobTitle: job.title,

@@ -269,7 +269,6 @@ export type MedicalAppointmentListItem = {
   applicationId: string;
   applicantId: string;
   applicantName: string | null;
-  applicantEmail: string | null;
   jobId: string;
   jobTitle: string;
   centerId: string;
@@ -282,7 +281,6 @@ export type MedicalAppointmentListItem = {
   status: MedicalAppointmentStatus;
   notes: string | null;
   reports: MedicalReport[];
-  assignedByEmail: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -291,7 +289,6 @@ export type MedicalQueueItem = {
   applicationId: string;
   applicantId: string;
   applicantName: string | null;
-  applicantEmail: string | null;
   jobId: string;
   jobTitle: string;
   selectedAt: string;

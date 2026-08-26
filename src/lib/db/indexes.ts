@@ -31,6 +31,7 @@ const USER_PROVISION_INDEX_SPECS = [
 
 const SUPPORT_TICKET_INDEX_SPECS = [
   { key: { createdAt: -1 }, options: {} },
+  { key: { userId: 1, createdAt: -1 }, options: {} },
   { key: { status: 1, createdAt: -1 }, options: {} },
   { key: { profileType: 1, createdAt: -1 }, options: {} },
   { key: { priority: 1, createdAt: -1 }, options: {} },
@@ -50,7 +51,7 @@ const HIRE_ONBOARDING_INDEX_SPECS = [
 
 const USER_INDEX_SPECS = [
   { key: { profileType: 1, createdAt: -1 }, options: {} },
-  { key: { email: 1 }, options: {} },
+  { key: { email: 1 }, options: { unique: true, sparse: true } },
   {
     key: { digilockerId: 1 },
     options: { unique: true, sparse: true },

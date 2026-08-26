@@ -120,7 +120,7 @@ async function enrichApplicants(
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
       .find({
         jobId: jobIdHex,
-        applicantId: { $in: applicantHexes },
+        applicantId: { $in: matchIds(applicantHexes) },
       } as never)
       .project({
         applicantId: 1,

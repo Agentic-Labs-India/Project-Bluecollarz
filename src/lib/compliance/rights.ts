@@ -40,7 +40,6 @@ export interface RightsRequestDocument {
   _id?: ObjectId;
   requestId: string;
   dataPrincipalId: string;
-  email: string;
   type: RightsRequestType;
   status: RightsRequestStatus;
   details: string;
@@ -61,7 +60,6 @@ function col() {
 
 export async function createRightsRequest(input: {
   dataPrincipalId: string;
-  email: string;
   type: RightsRequestType;
   details: string;
   nomineeName?: string;
@@ -71,7 +69,6 @@ export async function createRightsRequest(input: {
   const doc: RightsRequestDocument = {
     requestId: new ObjectId().toHexString(),
     dataPrincipalId: input.dataPrincipalId,
-    email: input.email.trim().toLowerCase(),
     type: input.type,
     status: "received",
     details: input.details.trim(),
@@ -250,7 +247,6 @@ export function serializeRightsRequest(
     nomineeName: doc.nomineeName ?? null,
     nomineeEmail: doc.nomineeEmail ?? null,
     ...(opts?.includeAdminNotes ? { adminNotes: doc.adminNotes ?? null } : {}),
-    email: doc.email,
     dataPrincipalId: doc.dataPrincipalId,
     createdAt: doc.createdAt.toISOString(),
     acknowledgedAt: doc.acknowledgedAt

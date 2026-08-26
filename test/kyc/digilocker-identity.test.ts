@@ -71,7 +71,7 @@ describe("DigiLocker candidate identity", () => {
   test("profile set uses DigiLocker user id as the account key and never stores username or a DigiLocker email", () => {
     const { $set } = digilockerProfileSet(payload(), new Date("2026-08-26"));
     expect($set.digilockerId).toBe("dl-user-1");
-    expect($set.email).toBe("dl-user-1");
+    expect($set).not.toHaveProperty("email");
     expect($set).not.toHaveProperty("username");
     expect($set).not.toHaveProperty("user_alias");
     expect($set.isKycVerified).toBe(true);

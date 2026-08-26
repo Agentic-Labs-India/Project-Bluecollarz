@@ -59,7 +59,6 @@ export interface InterviewDocument {
   _id: unknown;
   jobId: string;
   applicantId: string;
-  applicantEmail: string;
   stageId: InterviewStageId;
   status: InterviewStatus;
   jobTitle: string;

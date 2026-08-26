@@ -66,9 +66,9 @@ export function AppRailSidebar({
             profileHref={profileHref}
             user={{
               name: loggedInUser.name || "",
-              email:
+              subtitle:
                 loggedInUser.profileType === "work"
-                  ? loggedInUser.digilockerId || loggedInUser.email || ""
+                  ? loggedInUser.headline?.trim() || "Candidate"
                   : loggedInUser.email || "",
               avatar: loggedInUser.image || "",
             }}

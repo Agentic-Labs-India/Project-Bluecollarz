@@ -19,7 +19,6 @@ export interface ApplicationDocument {
   _id: unknown;
   jobId: unknown;
   applicantId: unknown;
-  applicantEmail: string;
   status: ApplicationStatus;
   createdAt: Date;
 }

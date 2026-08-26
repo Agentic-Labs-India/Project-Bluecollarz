@@ -45,7 +45,7 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
 
   const ownAppointments = await db
     .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
-    .find({ applicantId: userId })
+    .find({ applicantId: matchId(userId) } as never)
     .project({ reports: 1 })
     .toArray();
   pushReportUrls(blobUrls, ownAppointments);
@@ -98,7 +98,7 @@ export async function cascadeDeleteUserData(userId: string): Promise<void> {
     .deleteMany({ applicantId: matchId(userId) });
   await db
     .collection(COLLECTIONS.MEDICAL_APPOINTMENTS)
-    .deleteMany({ applicantId: userId });
+    .deleteMany({ applicantId: matchId(userId) } as never);
   await db
     .collection(COLLECTIONS.SUPPORT_TICKETS)
     .deleteMany({ userId: matchId(userId) } as never);

@@ -1,6 +1,6 @@
 /**
  * DigiLocker KYC on Users:
- *   digilockerId: unique candidate login key (also stored as Users.email)
+ *   digilockerId: unique candidate login key
  *   isKycVerified: boolean
  *   kyc: { provider, verifiedAt, updatedAt, aadhaarLast4, pan, gender }
  *

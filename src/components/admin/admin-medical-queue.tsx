@@ -129,7 +129,7 @@ export function AdminMedicalQueue({
             {row.original.applicantName || "Candidate"}
           </p>
           <p className="text-muted-foreground truncate text-xs">
-            {row.original.applicantEmail || row.original.applicantId}
+            {row.original.applicantId}
           </p>
         </div>
       ),

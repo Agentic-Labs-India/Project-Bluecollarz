@@ -48,6 +48,7 @@ export type SupportAssignee = {
 export type SupportTicketListItem = {
   id: string;
   userId: string;
+  /** Contact mailbox from Users, if the filer has one (hire/admin). Empty for candidates. */
   email: string;
   profileType: ProfileType;
   summary: string;

@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
+import {
+  requireProfile,
+  rethrowIfPrerenderAbort,
+  toActorRef,
+} from "@/lib/auth/session";
 import {
   patchMedicalAppointment,
   scheduleMedicalAppointment,
@@ -27,10 +31,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const appointment = await scheduleMedicalAppointment(parsed.data, {
-      id: auth.user.id,
-      email: auth.user.email,
-    });
+    const appointment = await scheduleMedicalAppointment(
+      parsed.data,
+      toActorRef(auth.user),
+    );
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {
     rethrowIfPrerenderAbort(error);
@@ -57,10 +61,10 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const appointment = await patchMedicalAppointment(parsed.data, {
-      id: auth.user.id,
-      email: auth.user.email,
-    });
+    const appointment = await patchMedicalAppointment(
+      parsed.data,
+      toActorRef(auth.user),
+    );
     return NextResponse.json({ appointment });
   } catch (error) {
     rethrowIfPrerenderAbort(error);

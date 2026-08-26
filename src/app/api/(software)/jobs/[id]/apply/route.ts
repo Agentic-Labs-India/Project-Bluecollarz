@@ -81,7 +81,6 @@ export async function POST(_req: NextRequest, context: RouteContext) {
           $setOnInsert: {
             jobId,
             applicantId,
-            applicantEmail: auth.user.email,
             status: "applied",
             createdAt: new Date(),
           },

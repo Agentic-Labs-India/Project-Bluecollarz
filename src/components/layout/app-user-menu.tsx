@@ -46,7 +46,7 @@ const HelpDialog = dynamic(() =>
   })),
 );
 
-type AppUser = { name: string; email: string; avatar: string };
+type AppUser = { name: string; subtitle: string; avatar: string };
 
 function UserMenuDropdown({
   user,
@@ -104,7 +104,11 @@ function UserMenuDropdown({
                 />
               ) : null}
             </span>
-            <span className="text-muted-foreground text-xs">{user.email}</span>
+            {user.subtitle ? (
+              <span className="text-muted-foreground text-xs">
+                {user.subtitle}
+              </span>
+            ) : null}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

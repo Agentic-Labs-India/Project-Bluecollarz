@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
         resolveDays: RIGHTS_RESOLVE_DAYS,
       },
       identifiers: [
-        "Signed-in account email",
+        "Signed-in user id",
         "Rights request ID shown after you submit",
       ],
       contact: toGrievanceContactPayload(go),
@@ -99,7 +99,6 @@ export async function POST(req: NextRequest) {
 
     const doc = await createRightsRequest({
       dataPrincipalId: auth.user.id,
-      email: auth.user.email,
       type: parsed.data.type,
       details: parsed.data.details,
       nomineeName: parsed.data.nomineeName,
@@ -120,10 +119,7 @@ export async function POST(req: NextRequest) {
 
     // Access and portability return the package immediately as acknowledgment.
     let exportPack = null;
-    if (
-      parsed.data.type === "access" ||
-      parsed.data.type === "portability"
-    ) {
+    if (parsed.data.type === "access" || parsed.data.type === "portability") {
       exportPack = await buildAccessExport(auth.user.id);
     }
 

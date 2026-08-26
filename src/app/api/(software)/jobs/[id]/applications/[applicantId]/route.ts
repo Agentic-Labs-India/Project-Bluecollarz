@@ -71,13 +71,9 @@ export async function GET(_req: Request, context: RouteContext) {
     }
 
     const user = await db
-      .collection<
-        CandidateProfileFields & {
-          name?: string;
-          digilockerId?: string;
-          image?: string;
-        }
-      >(COLLECTIONS.USERS_COLLECTION)
+      .collection<CandidateProfileFields & { name?: string; image?: string }>(
+        COLLECTIONS.USERS_COLLECTION,
+      )
       .findOne({ _id: matchId(applicantId) as never });
 
     const rawProfile = toCandidateProfileData(user);
@@ -94,7 +90,7 @@ export async function GET(_req: Request, context: RouteContext) {
       .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
       .find({
         jobId: jobIdHex,
-        applicantId,
+        applicantId: matchId(applicantId),
       } as never)
       .sort({ startedAt: 1 })
       .toArray();

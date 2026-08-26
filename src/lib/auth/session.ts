@@ -7,11 +7,19 @@ import {
 
 export interface AuthContext {
   id: string;
-  /** Hire/admin: Google email. Candidate: DigiLocker user id. */
+  /** Hire/admin Google email. Empty for candidates. */
   email: string;
   digilockerId: string | null;
+  headline: string | null;
   name: string | null;
   profileType: ProfileType;
+}
+
+/** Who did the action. Join Users by `id` — never copy email/DigiLocker id onto other collections. */
+export type ActorRef = { id: string };
+
+export function toActorRef(user: { id: string }): ActorRef {
+  return { id: user.id };
 }
 
 export type Guard =
@@ -47,6 +55,7 @@ async function getAuthContext(): Promise<AuthContext | null> {
         name?: string | null;
         profileType?: string;
         digilockerId?: string | null;
+        headline?: string | null;
       }
     | undefined;
   if (!user?.id) return null;
@@ -54,11 +63,9 @@ async function getAuthContext(): Promise<AuthContext | null> {
   const digilockerId = user.digilockerId?.trim() || null;
   return {
     id: user.id,
-    email:
-      profileType === "work"
-        ? digilockerId || ""
-        : (user.email ?? "").trim(),
+    email: profileType === "work" ? "" : (user.email ?? "").trim(),
     digilockerId,
+    headline: user.headline?.trim() || null,
     name: user.name?.trim() || null,
     profileType,
   };

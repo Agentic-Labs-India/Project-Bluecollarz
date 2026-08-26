@@ -1,4 +1,4 @@
-import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
+import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import type { InterviewDocument, InterviewStageId } from "@/lib/interviews";
 import { idHex } from "@/lib/utils";
@@ -16,8 +16,8 @@ export async function getCompletedInterviewStagesByJob(opts: {
   const docs = await db
     .collection<InterviewDocument>(COLLECTIONS.INTERVIEWS)
     .find({
-      applicantId: opts.applicantId,
-      jobId: { $in: opts.jobIds },
+      applicantId: matchId(opts.applicantId),
+      jobId: { $in: matchIds(opts.jobIds) },
       status: "completed",
     } as never)
     .project({ jobId: 1, stageId: 1 })

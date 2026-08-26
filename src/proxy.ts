@@ -166,7 +166,7 @@ export async function proxy(req: NextRequest) {
 
   if ((pathname === "/" || pathname === "/auth") && sessionCookie) {
     const user = await getSessionUser(req);
-    if (!user?.email) {
+    if (!user?.id) {
       return clearSessionAndRedirect(req, signIn);
     }
     const profileType = normalizeProfileType(user.profileType ?? undefined);
@@ -193,7 +193,7 @@ export async function proxy(req: NextRequest) {
   if (isProtectedRoute(req) && sessionCookie) {
     try {
       const user = await getSessionUser(req);
-      if (!user?.email) {
+      if (!user?.id) {
         return clearSessionAndRedirect(req, signIn);
       }
 

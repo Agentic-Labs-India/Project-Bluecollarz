@@ -1,6 +1,7 @@
 import "server-only";
 
 import { ObjectId } from "mongodb";
+import type { ActorRef } from "@/lib/auth/session";
 import { isMedicalReportUrl } from "@/lib/blob/pathname";
 import {
   hasGrantedPurposes,
@@ -71,7 +72,6 @@ type MedicalAppointmentDocument = {
   notes: string | null;
   reports?: MedicalReportRecord[];
   assignedById: string;
-  assignedByEmail: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -79,7 +79,6 @@ type MedicalAppointmentDocument = {
 type UserLite = {
   _id: unknown;
   name?: string | null;
-  email?: string | null;
 };
 
 /**
@@ -169,7 +168,6 @@ function toListItem(
   doc: MedicalAppointmentDocument,
   extras: {
     applicantName: string | null;
-    applicantEmail: string | null;
     jobTitle: string;
     centerName: string;
     centerAddress: string;
@@ -183,7 +181,6 @@ function toListItem(
     applicationId: doc.applicationId,
     applicantId: doc.applicantId,
     applicantName: extras.applicantName,
-    applicantEmail: extras.applicantEmail,
     jobId: doc.jobId,
     jobTitle: extras.jobTitle,
     centerId: doc.centerId,
@@ -196,7 +193,6 @@ function toListItem(
     status: doc.status,
     notes: doc.notes,
     reports: serializeReports(doc.reports),
-    assignedByEmail: doc.assignedByEmail,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };
@@ -216,7 +212,7 @@ async function hydrateAppointments(
     applicantIds.length
       ? users()
           .find({ _id: { $in: matchIds(applicantIds) } as never })
-          .project({ name: 1, email: 1 })
+          .project({ name: 1 })
           .toArray()
       : Promise.resolve([]),
     jobIds.length
@@ -233,7 +229,6 @@ async function hydrateAppointments(
       idHex(user._id),
       {
         name: user.name?.trim() || null,
-        email: user.email?.trim().toLowerCase() || null,
       },
     ]),
   );
@@ -246,7 +241,6 @@ async function hydrateAppointments(
     const center = centers.get(doc.centerId);
     return toListItem(doc, {
       applicantName: user?.name ?? null,
-      applicantEmail: user?.email ?? null,
       jobTitle: jobById.get(doc.jobId) ?? "Role",
       centerName: center?.name ?? "Medical center",
       centerAddress: center?.address ?? "",
@@ -412,7 +406,7 @@ async function queueItemsFromApps(
     missingApplicantIds.length
       ? users()
           .find({ _id: { $in: matchIds(missingApplicantIds) } as never })
-          .project({ name: 1, email: 1 })
+          .project({ name: 1 })
           .toArray()
       : Promise.resolve([]),
     missingJobIds.length
@@ -431,7 +425,6 @@ async function queueItemsFromApps(
       idHex(user._id),
       {
         name: user.name?.trim() || null,
-        email: user.email?.trim().toLowerCase() || null,
       },
     ]),
   );
@@ -449,11 +442,6 @@ async function queueItemsFromApps(
       applicationId,
       applicantId,
       applicantName: appointment?.applicantName ?? user?.name ?? null,
-      applicantEmail:
-        appointment?.applicantEmail ??
-        user?.email ??
-        app.applicantEmail?.trim().toLowerCase() ??
-        null,
       jobId,
       jobTitle: appointment?.jobTitle ?? jobById.get(jobId) ?? "Role",
       selectedAt: selectedAtIso(app.createdAt),
@@ -533,7 +521,7 @@ export async function listSelectedMedicalQueue(
 
 export async function scheduleMedicalAppointment(
   input: ScheduleAppointmentInput,
-  actor: { id: string; email: string },
+  actor: ActorRef,
 ): Promise<MedicalAppointmentListItem> {
   await ensureIndexes();
   if (!isId(input.applicationId) || !isId(input.centerId)) {
@@ -582,7 +570,6 @@ export async function scheduleMedicalAppointment(
     status: "scheduled" as const,
     notes: input.notes?.trim() || null,
     assignedById: actor.id,
-    assignedByEmail: actor.email,
     updatedAt: now,
   };
 
@@ -617,7 +604,7 @@ export async function scheduleMedicalAppointment(
 
 export async function patchMedicalAppointment(
   input: PatchAppointmentInput,
-  actor: { id: string; email: string },
+  actor: ActorRef,
 ): Promise<MedicalAppointmentListItem> {
   await ensureIndexes();
   if (!isId(input.id)) throw new MedicalError("Invalid id");
@@ -631,7 +618,6 @@ export async function patchMedicalAppointment(
   const $set: Partial<MedicalAppointmentDocument> = {
     updatedAt: new Date(),
     assignedById: actor.id,
-    assignedByEmail: actor.email,
   };
 
   if (input.notes !== undefined) $set.notes = input.notes.trim() || null;
@@ -798,7 +784,7 @@ export async function getCandidateScheduleContext(
 export async function scheduleCandidateMedicalAppointment(
   userId: string,
   input: CandidateScheduleInput,
-  actor: { id: string; email: string },
+  actor: ActorRef,
 ): Promise<MedicalAppointmentListItem> {
   const app = await applications().findOne({
     applicantId: matchId(userId) as never,
@@ -824,7 +810,7 @@ const MAX_REPORTS = 10;
 
 export async function completeMedicalAppointment(
   input: CompleteMedicalInput,
-  actor: { id: string; email: string },
+  actor: ActorRef,
 ): Promise<MedicalAppointmentListItem> {
   await ensureIndexes();
   if (!isId(input.appointmentId)) throw new MedicalError("Invalid id");
@@ -869,7 +855,6 @@ export async function completeMedicalAppointment(
         status: "completed",
         reports,
         assignedById: actor.id,
-        assignedByEmail: actor.email,
         updatedAt: now,
       },
     },

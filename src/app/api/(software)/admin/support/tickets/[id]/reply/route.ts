@@ -148,6 +148,13 @@ export async function POST(
       );
     }
 
+    if (!z.string().email().safeParse(ticket.email).success) {
+      return NextResponse.json(
+        { error: "This account has no email to reply to. Use the ticket thread." },
+        { status: 400 },
+      );
+    }
+
     const subject = `Re: Blucollarz support — ${ticket.summary.slice(0, 80)}`;
     const from = formatSenderFrom(assignee.name, fromEmail);
 

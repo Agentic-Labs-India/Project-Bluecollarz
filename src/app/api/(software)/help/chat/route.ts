@@ -135,7 +135,6 @@ export async function POST(request: Request) {
 
           const ticket = await createSupportTicket({
             userId: auth.user.id,
-            email: auth.user.email,
             profileType: auth.user.profileType,
             transcript,
             summary,

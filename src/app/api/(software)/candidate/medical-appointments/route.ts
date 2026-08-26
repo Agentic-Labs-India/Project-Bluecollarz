@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireCandidateAppReady } from "@/lib/auth/candidate-guard";
-import { rethrowIfPrerenderAbort } from "@/lib/auth/session";
+import { rethrowIfPrerenderAbort, toActorRef } from "@/lib/auth/session";
 import {
   listCandidateMedicalAppointments,
   scheduleCandidateMedicalAppointment,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const appointment = await scheduleCandidateMedicalAppointment(
       auth.user.id,
       parsed.data,
-      { id: auth.user.id, email: auth.user.email },
+      toActorRef(auth.user),
     );
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {

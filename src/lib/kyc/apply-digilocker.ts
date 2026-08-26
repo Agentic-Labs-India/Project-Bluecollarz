@@ -169,8 +169,6 @@ export function digilockerProfileSet(
   if (phoneCountryCode !== null) $set.phoneCountryCode = phoneCountryCode;
   if (dl.address?.trim()) $set.location = dl.address.trim();
   $set.digilockerId = dl.digilockerId;
-  // Better Auth unique key — DigiLocker user id, not a DigiLocker email.
-  $set.email = dl.digilockerId;
 
   return { $set };
 }

@@ -1,5 +1,11 @@
 import { ObjectId } from "mongodb";
-import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
+import client, {
+  COLLECTIONS,
+  DB_NAME,
+  isId,
+  matchId,
+  matchIds,
+} from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import { screenWorkerText } from "@/lib/legal-safety/detect";
 import type {
@@ -19,7 +25,6 @@ import { idHex } from "@/lib/utils";
 type SupportTicketDoc = {
   _id: ObjectId;
   userId: string;
-  email: string;
   profileType: ProfileType;
   transcript: SupportTranscriptTurn[];
   summary: string;
@@ -46,7 +51,36 @@ function toAssignee(doc: SupportTicketDoc): SupportAssignee | null {
   };
 }
 
-function toListItem(doc: SupportTicketDoc): SupportTicketListItem {
+function contactEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (!email || email.endsWith("@users.invalid")) return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+async function contactEmailByUserIds(
+  userIds: string[],
+): Promise<Map<string, string>> {
+  const ids = [...new Set(userIds.filter(isId))];
+  if (!ids.length) return new Map();
+  const docs = await client
+    .db(DB_NAME)
+    .collection<{ _id: ObjectId; email?: string }>(COLLECTIONS.USERS_COLLECTION)
+    .find({ _id: { $in: matchIds(ids) } as never })
+    .project({ email: 1 })
+    .toArray();
+  const map = new Map<string, string>();
+  for (const doc of docs) {
+    const email = contactEmail(doc.email);
+    if (email) map.set(idHex(doc._id), email);
+  }
+  return map;
+}
+
+function toListItem(
+  doc: SupportTicketDoc,
+  filerEmail: string | null,
+): SupportTicketListItem {
   const assignee = toAssignee(doc);
   let status = normalizeSupportStatus(doc.status);
   // Assignee presence drives assigned/open when not terminal.
@@ -56,7 +90,7 @@ function toListItem(doc: SupportTicketDoc): SupportTicketListItem {
   return {
     id: idHex(doc._id),
     userId: doc.userId,
-    email: doc.email,
+    email: filerEmail ?? "",
     profileType: doc.profileType,
     summary: doc.summary,
     problemType: doc.problemType,
@@ -69,9 +103,22 @@ function toListItem(doc: SupportTicketDoc): SupportTicketListItem {
   };
 }
 
+async function toListItems(
+  docs: SupportTicketDoc[],
+): Promise<SupportTicketListItem[]> {
+  const emails = await contactEmailByUserIds(docs.map((doc) => doc.userId));
+  return docs.map((doc) => toListItem(doc, emails.get(doc.userId) ?? null));
+}
+
+async function toHydratedItem(
+  doc: SupportTicketDoc,
+): Promise<SupportTicketListItem> {
+  const [item] = await toListItems([doc]);
+  return item;
+}
+
 export async function createSupportTicket(input: {
   userId: string;
-  email: string;
   profileType: ProfileType;
   transcript: SupportTranscriptTurn[];
   summary: string;
@@ -85,7 +132,6 @@ export async function createSupportTicket(input: {
   const doc: SupportTicketDoc = {
     _id,
     userId: input.userId,
-    email: input.email.trim().toLowerCase(),
     profileType: input.profileType,
     transcript: input.transcript,
     summary: input.summary.trim(),
@@ -129,7 +175,7 @@ export async function createSupportTicket(input: {
     }
   }
 
-  return toListItem(doc);
+  return toHydratedItem(doc);
 }
 
 export async function listSupportTickets(opts?: {
@@ -159,9 +205,10 @@ export async function listSupportTickets(opts?: {
     .limit(limit + 1)
     .toArray();
 
+  const page = docs.slice(0, limit);
   const hasMore = docs.length > limit;
   return {
-    items: docs.slice(0, limit).map(toListItem),
+    items: await toListItems(page),
     hasMore,
   };
 }
@@ -178,7 +225,7 @@ export async function getSupportTicket(
 
   if (!doc) return null;
   return {
-    ...toListItem(doc),
+    ...(await toHydratedItem(doc)),
     transcript: doc.transcript ?? [],
   };
 }
@@ -198,7 +245,7 @@ export async function updateSupportTicketStatus(
       { returnDocument: "after" },
     );
 
-  return result ? toListItem(result) : null;
+  return result ? toHydratedItem(result) : null;
 }
 
 export type AssignTicketResult =
@@ -255,7 +302,7 @@ export async function assignSupportTicket(input: {
     { returnDocument: "after" },
   );
 
-  if (result) return { ok: true, item: toListItem(result) };
+  if (result) return { ok: true, item: await toHydratedItem(result) };
 
   const existing = await col.findOne({ _id: matchId(input.id) as never });
   if (!existing) return { ok: false, reason: "not_found" };

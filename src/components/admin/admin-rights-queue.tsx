@@ -9,7 +9,6 @@ type Item = {
   type: string;
   status: string;
   details: string;
-  email: string;
   dataPrincipalId: string;
   adminNotes: string | null;
   createdAt: string;
@@ -72,7 +71,8 @@ export function AdminRightsQueue() {
                 {item.status.replace("_", " ")}
               </span>
               <span className="text-muted-foreground text-xs">
-                {item.email} · {new Date(item.createdAt).toLocaleString()}
+                {item.dataPrincipalId} ·{" "}
+                {new Date(item.createdAt).toLocaleString()}
               </span>
             </div>
             <p className="text-sm whitespace-pre-wrap">{item.details}</p>

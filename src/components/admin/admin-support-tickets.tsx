@@ -297,7 +297,9 @@ export function AdminSupportTickets() {
 
       applyListItem(json.item);
       setReplyMessage("");
-      toast.success(`Reply sent to ${detail.email}`);
+      toast.success(
+        detail.email ? `Reply sent to ${detail.email}` : "Reply sent",
+      );
     } catch {
       toast.error("Could not send reply");
     } finally {
@@ -310,7 +312,7 @@ export function AdminSupportTickets() {
       {
         id: "search",
         accessorFn: (row) =>
-          `${row.id} ${row.email} ${row.summary} ${row.profileType} ${row.problemType} ${row.assignee?.name ?? ""} ${row.assignee?.email ?? ""}`,
+          `${row.id} ${row.userId} ${row.email} ${row.summary} ${row.profileType} ${row.problemType} ${row.assignee?.name ?? ""} ${row.assignee?.email ?? ""}`,
         header: "Ticket",
         cell: ({ row }) => (
           <div className="min-w-0 max-w-[200px]">
@@ -325,11 +327,11 @@ export function AdminSupportTickets() {
       },
       {
         id: "user",
-        accessorFn: (row) => row.email,
+        accessorFn: (row) => `${row.userId} ${row.email}`,
         header: "User",
         cell: ({ row }) => (
-          <p className="text-foreground truncate text-sm">
-            {row.original.email}
+          <p className="text-foreground truncate font-mono text-xs">
+            {row.original.userId}
           </p>
         ),
       },
@@ -516,7 +518,10 @@ export function AdminSupportTickets() {
                   <span className="block font-mono text-[11px]">
                     {detail.id}
                   </span>
-                  <span className="block">{detail.email}</span>
+                  <span className="block font-mono text-[11px]">
+                    {detail.userId}
+                    {detail.email ? ` · ${detail.email}` : ""}
+                  </span>
                   <span className="block capitalize">
                     Issue · {label(detail.problemType)}
                   </span>
@@ -650,37 +655,50 @@ export function AdminSupportTickets() {
                     </AccordionTrigger>
                     <AccordionContent className="text-foreground">
                       <div className="space-y-3">
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          Write a response for{" "}
-                          <span className="text-foreground font-medium">
-                            {detail.email}
-                          </span>{" "}
-                          about their{" "}
-                          <span className="capitalize">
-                            {label(detail.problemType)}
-                          </span>{" "}
-                          issue. Sending assigns this ticket to you.
-                        </p>
-                        <div className="space-y-2">
-                          <Label htmlFor="support-reply">Message</Label>
-                          <Textarea
-                            id="support-reply"
-                            value={replyMessage}
-                            onChange={(e) => setReplyMessage(e.target.value)}
-                            placeholder="Hi — thanks for reaching out. Here's how we can help…"
-                            className="min-h-28 text-sm"
-                            disabled={sendingReply}
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          disabled={
-                            sendingReply || replyMessage.trim().length === 0
-                          }
-                          onClick={() => void sendReply()}
-                        >
-                          {sendingReply ? "Sending…" : "Send reply & assign"}
-                        </Button>
+                        {detail.email ? (
+                          <>
+                            <p className="text-muted-foreground text-sm leading-relaxed">
+                              Write a response for{" "}
+                              <span className="text-foreground font-medium">
+                                {detail.email}
+                              </span>{" "}
+                              about their{" "}
+                              <span className="capitalize">
+                                {label(detail.problemType)}
+                              </span>{" "}
+                              issue. Sending assigns this ticket to you.
+                            </p>
+                            <div className="space-y-2">
+                              <Label htmlFor="support-reply">Message</Label>
+                              <Textarea
+                                id="support-reply"
+                                value={replyMessage}
+                                onChange={(e) =>
+                                  setReplyMessage(e.target.value)
+                                }
+                                placeholder="Hi — thanks for reaching out. Here's how we can help…"
+                                className="min-h-28 text-sm"
+                                disabled={sendingReply}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              disabled={
+                                sendingReply || replyMessage.trim().length === 0
+                              }
+                              onClick={() => void sendReply()}
+                            >
+                              {sendingReply
+                                ? "Sending…"
+                                : "Send reply & assign"}
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            This user has no mailbox. Continue in the ticket
+                            thread.
+                          </p>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>

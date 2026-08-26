@@ -45,6 +45,16 @@ function assertWorkCandidate(doc: UserDoc) {
   }
 }
 
+async function writeCandidateDoc(
+  userId: string,
+  $set: Record<string, unknown>,
+) {
+  await users().updateOne(
+    { _id: matchId(userId) as never },
+    { $set, $unset: { email: "" } },
+  );
+}
+
 async function refreshKyc(userId: string, doc: UserDoc, payload: DigilockerKycPayload, verifiedAt: Date) {
   const existingKyc = doc.kyc ?? null;
   const mismatches = identityMismatches(
@@ -62,7 +72,7 @@ async function refreshKyc(userId: string, doc: UserDoc, payload: DigilockerKycPa
     throw new Error(mismatches.join(" "));
   }
   const { $set } = digilockerProfileSet(payload, verifiedAt);
-  await users().updateOne({ _id: matchId(userId) as never }, { $set });
+  await writeCandidateDoc(userId, $set);
 }
 
 /**
@@ -100,8 +110,9 @@ export async function upsertCandidateFromDigilocker(input: {
       typeof $set.name === "string" && $set.name.trim()
         ? $set.name.trim()
         : "Candidate",
-    email: digilockerId,
-    emailVerified: true,
+    // Better Auth requires this column; it is unset on the next write.
+    email: `${digilockerId}@users.invalid`,
+    emailVerified: false,
     profileType: "work",
     digilockerId,
     isKycVerified: true,
@@ -112,7 +123,7 @@ export async function upsertCandidateFromDigilocker(input: {
   }
 
   try {
-    await users().updateOne({ _id: matchId(userId) as never }, { $set });
+    await writeCandidateDoc(userId, $set);
     await ctx.internalAdapter.createAccount({
       userId,
       accountId: digilockerId,
