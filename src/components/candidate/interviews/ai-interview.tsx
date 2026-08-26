@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart } from "ai";
-import { SquareIcon, XIcon } from "lucide-react";
+import { CheckCircle2Icon, SquareIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   InterviewReadyPanel,
@@ -384,7 +384,7 @@ export function AiInterview({
             />
           </div>
           <div className="border-border shrink-0 space-y-3 border-t px-4 py-4 md:px-8">
-            <div className="mx-auto w-full max-w-3xl space-y-3">
+            <div className="mx-auto w-full max-w-5xl space-y-3">
               {error ? (
                 <p className="text-destructive text-sm">{error}</p>
               ) : null}
@@ -402,6 +402,7 @@ export function AiInterview({
                   ? "Starting records camera and microphone in the background. You will not see your camera. Your profile voice language will be used."
                   : "Complete every system check before you can start."}
               </p>
+
             </div>
           </div>
         </div>

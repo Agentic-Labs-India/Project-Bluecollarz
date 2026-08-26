@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
 import { DataRightsSection } from "@/components/compliance/data-rights-section";
 import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
+import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { DeleteAccountSection } from "@/components/shared/delete-account-section";
 import {
@@ -24,7 +25,8 @@ export default function CandidateSettingsPage() {
     <AppPage>
       <AppPageTitle>Settings</AppPageTitle>
 
-      <section className="border-border/80 bg-card divide-border/60 mb-6 divide-y rounded-none border shadow-sm">
+      <section className="border-border/80 bg-card divide-border/60 mb-6 divide-y overflow-hidden rounded-none border shadow-sm">
+        <PrimaryDitherBand seed="candidate-settings-prefs" />
         <div className="flex items-center justify-between gap-4 p-5">
           <div>
             <Label className="text-foreground text-sm font-medium">
@@ -53,8 +55,9 @@ export default function CandidateSettingsPage() {
         </div>
       </section>
 
-      <section className="border-border/80 bg-card mb-6 rounded-none border px-5 shadow-sm">
-        <Accordion type="multiple">
+      <section className="border-border/80 bg-card mb-6 overflow-hidden rounded-none border shadow-sm">
+        <PrimaryDitherBand seed="candidate-settings-privacy" />
+        <Accordion type="multiple" className="px-5">
           <AccordionItem value="privacy">
             <AccordionTrigger className="hover:no-underline">
               <span className="block">
@@ -90,12 +93,18 @@ export default function CandidateSettingsPage() {
 
       <section
         id="delete-account"
-        className="border-destructive/20 bg-card rounded-none border p-5 shadow-sm"
+        className="border-destructive/20 bg-card overflow-hidden rounded-none border shadow-sm"
       >
-        <p className="text-destructive mb-4 text-xs font-medium tracking-wide uppercase">
-          Danger zone
-        </p>
-        <DeleteAccountSection profileType="work" />
+        <PrimaryDitherBand
+          seed="candidate-settings-danger"
+          tone="destructive"
+        />
+        <div className="p-5">
+          <p className="text-destructive mb-4 text-xs font-medium tracking-wide uppercase">
+            Danger zone
+          </p>
+          <DeleteAccountSection profileType="work" />
+        </div>
       </section>
     </AppPage>
   );

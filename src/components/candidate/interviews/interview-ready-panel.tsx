@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  CheckCircle2Icon,
-  CircleAlertIcon,
-  MicIcon,
-  SparklesIcon,
-  VideoIcon,
-  WifiIcon,
-} from "lucide-react";
+import { MicIcon, SparklesIcon, VideoIcon, WifiIcon } from "lucide-react";
 import {
   useEffect,
   useEffectEvent,
@@ -148,7 +141,7 @@ function CheckCard({
   return (
     <article
       className={cn(
-        "relative flex h-full min-h-42 min-w-0 flex-col overflow-hidden border p-4 sm:min-h-46 sm:p-5",
+        "relative flex h-full min-h-42 min-w-0 flex-col overflow-hidden border p-4 sm:p-5 md:min-h-0",
         failed
           ? "bg-destructive border-white/15"
           : "bg-primary border-white/15",
@@ -185,7 +178,7 @@ function InfoCard({
   markdown: string;
 }) {
   return (
-    <article className="border-border bg-card flex min-w-0 flex-col overflow-hidden border">
+    <article className="border-border bg-card flex h-full min-w-0 flex-col overflow-hidden border">
       <PrimaryDitherBand seed={seed} label={label} />
       <div className="p-4 sm:p-5">
         <Markdown className="text-foreground/90">{markdown}</Markdown>
@@ -393,54 +386,39 @@ export function InterviewReadyPanel({
   }, [allPassed, onReadyChange]);
 
   return (
-    <div className="h-full min-h-0 w-full overflow-y-auto px-4 py-5 md:px-8 md:py-6">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 md:gap-6">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-            System tests
-          </p>
-          {allPassed ? (
-            <span className="text-primary inline-flex items-center gap-1 text-xs">
-              <CheckCircle2Icon className="size-3.5" />
-              Ready
-            </span>
-          ) : anyFailed ? (
-            <span className="text-destructive inline-flex items-center gap-1 text-xs">
-              <CircleAlertIcon className="size-3.5" />
-              Fix & retry
-            </span>
+    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 py-5 md:px-8 md:py-6">
+      <div className="mx-auto grid w-full max-w-5xl grow grid-cols-1 gap-5 md:grid-cols-[20rem_minmax(0,1fr)] md:gap-6">
+        <section className="flex min-h-0 min-w-0 flex-col gap-3">
+          <ul className="grid min-h-0 flex-1 grid-cols-2 gap-3 md:grid-cols-1 md:grid-rows-4">
+            {CHECK_META.map((meta) => (
+              <li key={meta.id} className="min-h-0 min-w-0">
+                <CheckCard
+                  id={meta.id}
+                  label={meta.label}
+                  description={meta.description}
+                  icon={meta.icon}
+                  state={checks[meta.id]}
+                  micLevel={micLevel}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {anyFailed || (!running && !allPassed) ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              disabled={running}
+              onClick={() => void runChecks()}
+            >
+              Retry checks
+            </Button>
           ) : null}
-        </div>
+        </section>
 
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          {CHECK_META.map((meta) => (
-            <li key={meta.id} className="min-w-0">
-              <CheckCard
-                id={meta.id}
-                label={meta.label}
-                description={meta.description}
-                icon={meta.icon}
-                state={checks[meta.id]}
-                micLevel={micLevel}
-              />
-            </li>
-          ))}
-        </ul>
-
-        {anyFailed || (!running && !allPassed) ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full sm:w-auto"
-            disabled={running}
-            onClick={() => void runChecks()}
-          >
-            Retry checks
-          </Button>
-        ) : null}
-
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+        <section className="grid min-h-0 min-w-0 grid-cols-1 gap-3 md:grid-rows-2">
           <InfoCard
             seed="interview-environment"
             label="Environment"
@@ -451,7 +429,7 @@ export function InterviewReadyPanel({
             label="Guidelines"
             markdown={GUIDELINES_MD}
           />
-        </div>
+        </section>
       </div>
     </div>
   );

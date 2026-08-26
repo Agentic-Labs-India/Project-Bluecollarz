@@ -19,6 +19,14 @@ export const PRIMARY_DITHER = {
   watermark: "#8b9aff",
 } as const;
 
+/** Danger-zone dither — same grain, destructive red. */
+export const DESTRUCTIVE_DITHER = {
+  colorBack: "#9f1c24",
+  colorFront: "#d03238",
+} as const;
+
+export type DitherTone = "primary" | "destructive";
+
 /** Ticket texture preset sharing the same palette. */
 export const PRIMARY_TICKET_TEXTURE = {
   colorBack: PRIMARY_DITHER.colorBack,
@@ -182,6 +190,8 @@ export type PrimaryDitherProps = {
   wash?: boolean;
   /** When false, copy the shared shader once (admin cards). Default true. */
   animate?: boolean;
+  /** Recolor the shared grain. Default primary blue. */
+  tone?: DitherTone;
 };
 
 /**
@@ -198,11 +208,14 @@ export function PrimaryDither({
   blur = false,
   wash = true,
   animate = true,
+  tone = "primary",
 }: PrimaryDitherProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [visible, setVisible] = useState(false);
   const hash = hashString(seed);
+  const palette =
+    tone === "destructive" ? DESTRUCTIVE_DITHER : PRIMARY_DITHER;
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -253,6 +266,12 @@ export function PrimaryDither({
 
         ctx.clearRect(0, 0, w, h);
         ctx.drawImage(source, srcX, srcY, srcW, srcH, 0, 0, w, h);
+        if (tone === "destructive") {
+          ctx.globalCompositeOperation = "color";
+          ctx.fillStyle = DESTRUCTIVE_DITHER.colorBack;
+          ctx.fillRect(0, 0, w, h);
+          ctx.globalCompositeOperation = "source-over";
+        }
         if (!animate) {
           running = false;
           return;
@@ -266,7 +285,7 @@ export function PrimaryDither({
       running = false;
       window.cancelAnimationFrame(raf);
     };
-  }, [visible, hash, animate]);
+  }, [visible, hash, animate, tone]);
 
   return (
     <div ref={wrapRef} aria-hidden className={className}>
@@ -277,10 +296,16 @@ export function PrimaryDither({
             ? "absolute inset-0 h-full w-full blur-[0.6px]"
             : "absolute inset-0 h-full w-full"
         }
-        style={{ opacity, backgroundColor: PRIMARY_DITHER.colorBack }}
+        style={{ opacity, backgroundColor: palette.colorBack }}
       />
       {wash ? (
-        <div className="pointer-events-none absolute inset-0 bg-primary/15" />
+        <div
+          className={
+            tone === "destructive"
+              ? "pointer-events-none absolute inset-0 bg-destructive/15"
+              : "pointer-events-none absolute inset-0 bg-primary/15"
+          }
+        />
       ) : null}
     </div>
   );
@@ -291,18 +316,23 @@ export function PrimaryDitherBand({
   seed,
   label,
   className,
+  tone = "primary",
 }: {
   seed: string;
   label?: string;
   className?: string;
+  tone?: DitherTone;
 }) {
   return (
     <div
       className={
-        className ?? "bg-primary relative h-6 shrink-0 overflow-hidden"
+        className ??
+        (tone === "destructive"
+          ? "bg-destructive relative h-6 shrink-0 overflow-hidden"
+          : "bg-primary relative h-6 shrink-0 overflow-hidden")
       }
     >
-      <PrimaryDither seed={seed} opacity={0.9} blur />
+      <PrimaryDither seed={seed} opacity={0.9} blur tone={tone} />
       {label ? (
         <span className="font-heading pointer-events-none absolute inset-y-0 right-0 z-10 flex max-w-[70%] items-center truncate px-2.5 text-[9px] font-semibold tracking-[0.08em] text-white/92 uppercase">
           {label}
