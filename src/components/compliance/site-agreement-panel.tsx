@@ -56,9 +56,12 @@ function LegalLinks({ cookieAnchor }: { cookieAnchor?: boolean }) {
 export function SiteAgreementPanel({
   variant,
   onDismiss,
+  onContinue,
 }: {
   variant: "overlay" | "inline";
   onDismiss?: () => void;
+  /** Native: Agree and continue also starts sign-in. */
+  onContinue?: () => void;
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [analyticsOn, setAnalyticsOn] = useState(false);
@@ -113,6 +116,7 @@ export function SiteAgreementPanel({
     setAgreed(true);
     setSettingsOpen(false);
     onDismiss?.();
+    onContinue?.();
   };
 
   const rejectAll = async () => {
@@ -223,38 +227,66 @@ export function SiteAgreementPanel({
             Agree and continue, you confirm you are 18 or older and agree to our{" "}
             <LegalLinks cookieAnchor />.
           </p>
-          {inline && agreed ? (
-            <p className="text-foreground mt-4 text-sm font-medium">
-              You confirmed you are 18 or older. Essential cookies stay on.
-            </p>
+          {inline ? (
+            <div className="mt-4 flex flex-col gap-2">
+              {agreed ? (
+                <p className="text-foreground text-sm font-medium">
+                  You confirmed you are 18 or older. Essential cookies stay on.
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setSettingsOpen(true)}
+              >
+                Cookie settings
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  void rejectAll();
+                }}
+              >
+                Reject all
+              </Button>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => {
+                  if (agreed) {
+                    onContinue?.();
+                    return;
+                  }
+                  void accept();
+                }}
+              >
+                Agree and continue
+              </Button>
+            </div>
           ) : (
-            <div
-              className={cn(
-                "mt-4 flex flex-wrap items-center gap-2",
-                inline ? "flex-col items-stretch" : "justify-between",
-              )}
-            >
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setSettingsOpen(true)}
               >
-                Cookies Settings
+                Cookie settings
               </Button>
-              <div className={cn("flex flex-wrap gap-2", inline && "w-full")}>
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  className={inline ? "flex-1" : undefined}
                   onClick={() => {
                     void rejectAll();
                   }}
                 >
-                  Reject All
+                  Reject all
                 </Button>
                 <Button
                   type="button"
-                  className={inline ? "flex-1" : undefined}
                   onClick={() => {
                     void accept();
                   }}
