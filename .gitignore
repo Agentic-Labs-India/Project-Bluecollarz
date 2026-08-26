@@ -9,3 +9,14 @@ node_modules/*
 .vscode
 .cursorrules
 .cursorignore
+
+# Capacitor native projects (source is committed; cap sync fills the rest)
+ios/App/Pods
+ios/App/App/public
+android/.gradle
+android/app/build
+android/build
+android/app/src/main/assets/public
+android/capacitor-cordova-android-plugins
+*.iml
+.idea/

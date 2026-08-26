@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ensureNativeMediaPermissions,
+  mediaPermissionError,
+  pickMediaRecorderMime,
+} from "@/lib/native/media-permissions";
 
 type RecorderState = {
   recorder: MediaRecorder | null;
@@ -38,6 +43,7 @@ export function useCameraRecorder() {
   const start = useCallback(async (): Promise<CameraRecorderStartResult> => {
     setError("");
     try {
+      await ensureNativeMediaPermissions("camera-and-microphone");
       const camera = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
@@ -57,11 +63,7 @@ export function useCameraRecorder() {
         ...camera.getAudioTracks(),
       ]);
 
-      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-        ? "video/webm;codecs=vp9,opus"
-        : MediaRecorder.isTypeSupported("video/webm")
-          ? "video/webm"
-          : "";
+      const mime = pickMediaRecorderMime("video");
 
       const recorder = new MediaRecorder(
         mixed,
@@ -100,9 +102,7 @@ export function useCameraRecorder() {
       return { camera, mic };
     } catch (e) {
       stopTracks();
-      setError(
-        e instanceof Error ? e.message : "Camera and microphone are required.",
-      );
+      setError(mediaPermissionError(e, "camera"));
       throw e;
     }
   }, [stopTracks]);
@@ -123,7 +123,7 @@ export function useCameraRecorder() {
     const blob = await new Promise<Blob | null>((resolve) => {
       recorder.onstop = () => {
         const chunks = stateRef.current.chunks;
-        const type = "video/webm";
+        const type = recorder.mimeType || "video/webm";
         resolve(chunks.length ? new Blob(chunks, { type }) : null);
         stopTracks();
       };

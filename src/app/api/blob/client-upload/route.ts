@@ -57,6 +57,8 @@ export async function POST(request: Request): Promise<NextResponse> {
           "video/mp4",
           "video/quicktime",
           "audio/webm",
+          "audio/mp4",
+          "audio/aac",
           "audio/mpeg",
           "audio/wav",
         ];

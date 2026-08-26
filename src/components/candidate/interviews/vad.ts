@@ -1,6 +1,10 @@
 "use client";
 
 import { STT_LISTEN_CAP_MS } from "@/lib/ai/voice/stt-limits";
+import {
+  ensureNativeMediaPermissions,
+  pickMediaRecorderMime,
+} from "@/lib/native/media-permissions";
 
 /**
  * Simple energy-based VAD on a mic stream.
@@ -50,6 +54,10 @@ export async function startVadLoop(opts: {
   const onsetHangoverMs = 280;
   const ownsStream = !opts.stream;
 
+  if (ownsStream) {
+    await ensureNativeMediaPermissions("microphone");
+  }
+
   const stream =
     opts.stream ??
     (await navigator.mediaDevices.getUserMedia({
@@ -90,9 +98,7 @@ export async function startVadLoop(opts: {
   let segmentRecorder: MediaRecorder | null = null;
   let segmentChunks: Blob[] = [];
 
-  const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-    ? "audio/webm;codecs=opus"
-    : "audio/webm";
+  const mime = pickMediaRecorderMime("audio");
 
   const startSegment = () => {
     segmentChunks = [];

@@ -1,6 +1,7 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 import { PROFILE_BASE_ROUTES } from "@/lib/core/routes";
+import { isNativeUserAgent } from "@/lib/native/platform";
 import {
   getProfileBasePath,
   getProfileHomePath,
@@ -26,6 +27,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/blob/file",
   "/api/recruiter-inquiries",
   "/",
+  "/auth",
   "/about",
   "/mission",
   "/vision",
@@ -121,6 +123,14 @@ function isPathAllowedForProfile(pathname: string, profileType: ProfileType) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
+function isNativeRequest(req: NextRequest): boolean {
+  return isNativeUserAgent(req.headers.get("user-agent"));
+}
+
+function signInPath(req: NextRequest): string {
+  return isNativeRequest(req) ? "/auth" : "/";
+}
+
 function clearSessionAndRedirect(req: NextRequest, to: string) {
   const res = NextResponse.redirect(new URL(to, req.url));
   for (const name of [
@@ -135,18 +145,29 @@ function clearSessionAndRedirect(req: NextRequest, to: string) {
 export async function proxy(req: NextRequest) {
   const sessionCookie = getSessionCookie(req);
   const pathname = req.nextUrl.pathname;
+  const native = isNativeRequest(req);
+  const signIn = signInPath(req);
+
+  // /auth is the Capacitor shell only. Browsers stay on the marketing site.
+  if (pathname === "/auth" && !native) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
 
   if (!isPublicRoute(req) && !sessionCookie) {
     // API clients get a status they can branch on; pages get sent to sign-in.
     return pathname.startsWith("/api/")
       ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      : NextResponse.redirect(new URL("/", req.url));
+      : NextResponse.redirect(new URL(signIn, req.url));
   }
 
-  if (pathname === "/" && sessionCookie) {
+  if (pathname === "/" && native && !sessionCookie) {
+    return NextResponse.redirect(new URL("/auth", req.url));
+  }
+
+  if ((pathname === "/" || pathname === "/auth") && sessionCookie) {
     const user = await getSessionUser(req);
     if (!user?.email) {
-      return clearSessionAndRedirect(req, "/");
+      return clearSessionAndRedirect(req, signIn);
     }
     const profileType = normalizeProfileType(user.profileType ?? undefined);
     if (profileType === "work") {
@@ -173,7 +194,7 @@ export async function proxy(req: NextRequest) {
     try {
       const user = await getSessionUser(req);
       if (!user?.email) {
-        return clearSessionAndRedirect(req, "/");
+        return clearSessionAndRedirect(req, signIn);
       }
 
       const profileType = normalizeProfileType(user.profileType ?? undefined);
@@ -212,7 +233,7 @@ export async function proxy(req: NextRequest) {
         }
       }
     } catch {
-      return clearSessionAndRedirect(req, "/");
+      return clearSessionAndRedirect(req, signIn);
     }
   }
 

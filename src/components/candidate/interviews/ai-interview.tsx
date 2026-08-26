@@ -31,6 +31,7 @@ import {
   interviewStageLabel,
   interviewStageTitle,
 } from "@/lib/interviews/labels";
+import { blobUploadMeta } from "@/lib/native/media-permissions";
 
 type LocalTurn = { role: "assistant" | "user"; text: string };
 
@@ -267,10 +268,11 @@ export function AiInterview({
           }
 
           setStatus("Uploading recording to storage…");
+          const { ext, contentType } = blobUploadMeta(blob);
           const uploaded = await uploadBlob({
             file: blob,
-            pathname: `interviews/${interviewId}/${Date.now()}.webm`,
-            contentType: "video/webm",
+            pathname: `interviews/${interviewId}/${Date.now()}.${ext}`,
+            contentType,
             clientPayload: {
               kind: "interview-video",
               interviewId,

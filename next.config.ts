@@ -37,6 +37,13 @@ const nextConfig: NextConfig = {
     DB_NAME: process.env.DB_NAME,
   },
   serverExternalPackages: ["unpdf", "pdf-parse"],
+  transpilePackages: [
+    "@capacitor/core",
+    "@capacitor/app",
+    "@capacitor/keyboard",
+    "@capacitor/status-bar",
+    "@capacitor/splash-screen",
+  ],
   images: {
     remotePatterns: [
       {

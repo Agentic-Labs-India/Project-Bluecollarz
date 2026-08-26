@@ -21,7 +21,7 @@ export default function robots(): MetadataRoute.Robots {
           "/about",
           "/contact",
         ],
-        disallow: ["/candidate", "/hire", "/admin", "/api/"],
+        disallow: ["/auth", "/candidate", "/hire", "/admin", "/api/"],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,

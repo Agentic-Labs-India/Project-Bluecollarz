@@ -14,6 +14,10 @@ import {
 } from "@/components/landing/primary-dither";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
+import {
+  ensureNativeMediaPermissions,
+  mediaPermissionError,
+} from "@/lib/native/media-permissions";
 import { cn } from "@/lib/utils";
 
 type CheckId = "internet" | "camera" | "voice" | "ai";
@@ -72,7 +76,7 @@ const ENVIRONMENT_MD = `Set this up before you tap start:
 - Quiet, well-lit room with a plain background
 - Stable Wi‑Fi or ethernet — avoid hotspot switching
 - A device with a working camera and microphone
-- Allow camera and microphone in the browser`;
+- Allow camera and microphone when prompted`;
 
 const GUIDELINES_MD = `Breaking these can cause the AI to **end or reject** your interview.
 
@@ -238,6 +242,7 @@ export function InterviewReadyPanel({
 
     setCheck("camera", { status: "running", detail: "Requesting camera…" });
     try {
+      await ensureNativeMediaPermissions("camera");
       const camera = await withTimeout(
         navigator.mediaDevices.getUserMedia({
           video: {
@@ -264,12 +269,13 @@ export function InterviewReadyPanel({
       if (cancelledRef.current) return;
       setCheck("camera", {
         status: "fail",
-        detail: e instanceof Error ? e.message : "Camera access required",
+        detail: mediaPermissionError(e, "camera"),
       });
     }
 
     setCheck("voice", { status: "running", detail: "Speak briefly…" });
     try {
+      await ensureNativeMediaPermissions("microphone");
       const mic = await withTimeout(
         navigator.mediaDevices.getUserMedia({
           audio: {
@@ -340,7 +346,7 @@ export function InterviewReadyPanel({
       if (cancelledRef.current) return;
       setCheck("voice", {
         status: "fail",
-        detail: e instanceof Error ? e.message : "Microphone access required",
+        detail: mediaPermissionError(e, "microphone"),
       });
     }
 
