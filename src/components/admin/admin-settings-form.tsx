@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { AdminAiFlow } from "@/components/admin/admin-ai-flow";
 import { AdminKnowledgeDocuments } from "@/components/admin/admin-knowledge-documents";
 import { AdminPromptCards } from "@/components/admin/admin-prompt-cards";
 import { Input } from "@/components/ui/input";
@@ -224,7 +223,6 @@ export type AdminSettingsSection =
   | "llm"
   | "grievance"
   | "prompts"
-  | "flow"
   | "knowledge";
 
 export function AdminSettingsForm({
@@ -319,17 +317,15 @@ export function AdminSettingsForm({
 
   return (
     <div className="space-y-8">
-      {section !== "flow" ? (
-        <p className="text-muted-foreground text-xs">
-          {status === "saving"
-            ? "Saving…"
-            : status === "saved"
-              ? "Saved. New AI and voice requests use these values."
-              : form.updatedAt
-                ? `Last saved ${new Date(form.updatedAt).toLocaleString()}`
-                : "Using defaults. Edits save automatically."}
-        </p>
-      ) : null}
+      <p className="text-muted-foreground text-xs">
+        {status === "saving"
+          ? "Saving…"
+          : status === "saved"
+            ? "Saved. New AI and voice requests use these values."
+            : form.updatedAt
+              ? `Last saved ${new Date(form.updatedAt).toLocaleString()}`
+              : "Using defaults. Edits save automatically."}
+      </p>
       {status === "error" && error ? (
         <p className="text-destructive text-sm">{error}</p>
       ) : null}
@@ -432,7 +428,7 @@ export function AdminSettingsForm({
           <Field
             id="llm-model"
             label="Gateway model id"
-            hint="Vercel AI Gateway id, e.g. openai/gpt-4o. Knowledge Base Test and RAG (when a surface switch is on) use this chat model."
+            hint="Vercel AI Gateway id, e.g. openai/gpt-4o. Preview AI and RAG (when a surface switch is on) use this chat model."
           >
             <Input
               id="llm-model"
@@ -448,7 +444,7 @@ export function AdminSettingsForm({
           <Field
             id="llm-embedding"
             label="Embedding model id"
-            hint="Used for knowledge-base RAG (Test tab and any surface switch that is on). Default openai/text-embedding-3-small is 1536 dimensions — keep the Atlas index in sync if you change it."
+            hint="Used for knowledge-base RAG (Preview AI and any surface switch that is on). Default openai/text-embedding-3-small is 1536 dimensions — keep the Atlas index in sync if you change it."
           >
             <Input
               id="llm-embedding"
@@ -663,7 +659,6 @@ export function AdminSettingsForm({
           onChange={onPromptChange}
         />
       ) : null}
-      {section === "flow" ? <AdminAiFlow settings={form} /> : null}
     </div>
   );
 }

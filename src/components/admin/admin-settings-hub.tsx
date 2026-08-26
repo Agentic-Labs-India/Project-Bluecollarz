@@ -21,30 +21,23 @@ import { placeholderKeys } from "@/lib/utils";
 const TABS = [
   { value: "admins", label: "Admin" },
   { value: "knowledge", label: "Knowledge Base" },
-  { value: "test", label: "Test" },
+  { value: "test", label: "Preview AI" },
   { value: "voice", label: "Voice (Sarvam)" },
   { value: "llm", label: "Language Model" },
   { value: "grievance", label: "Grievance Officer" },
-  { value: "prompts", label: "System Prompts" },
-  { value: "flow", label: "Flow" },
+  { value: "prompts", label: "AI Agents" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["value"];
 
 const COPY: Record<Tab, string> = {
-  admins:
-    "Add by email to promote an existing user or queue an invite for first sign-in.",
-  knowledge:
-    "Upload PDFs and switch RAG on for Help, onboarding, and interviews. Off until you turn a surface on.",
-  test: "Ask in text or voice. Voice uses Sarvam STT/TTS and the language you pick. Answers use the Language Model and uploaded PDFs.",
-  voice:
-    "Sarvam TTS and STT. Knowledge Base Test uses these for voice. Changes save automatically and apply on the next voice request.",
-  llm: "Vercel AI Gateway chat and embedding models, plus per-surface temperature. Knowledge Base Test and RAG use this chat model, the embedding model, and the knowledge temperature.",
-  grievance:
-    "Shown on /grievance. Email is published; add a named officer, phone, and street address when appointed.",
-  prompts:
-    "System prompts for help, onboarding, interviews, scoring, writers, and the knowledge base.",
-  flow: "Candidate, recruiter, and admin — the real sequence, and where this page feeds every AI call.",
+  admins: "Promote or invite admins by email.",
+  knowledge: "PDFs and RAG switches for Help, onboarding, and interviews.",
+  test: "Preview the knowledge base in text or voice.",
+  voice: "Sarvam TTS and STT for spoken agents.",
+  llm: "Chat model, embeddings, and temperatures.",
+  grievance: "Officer details shown on /grievance.",
+  prompts: "Prompts for every AI agent.",
 };
 
 function isConfigSection(tab: Tab): tab is AdminSettingsSection {
@@ -52,20 +45,6 @@ function isConfigSection(tab: Tab): tab is AdminSettingsSection {
 }
 
 function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
-  if (section === "flow") {
-    return (
-      <div className="grid grid-cols-3 gap-2">
-        {placeholderKeys(3, "col").map((colKey) => (
-          <div key={colKey} className="space-y-2">
-            <Skeleton className="h-3 w-16" />
-            {placeholderKeys(8, colKey).map((key) => (
-              <Skeleton key={key} className="h-10 w-full" />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  }
   if (section === "prompts") {
     return (
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

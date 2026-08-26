@@ -360,7 +360,8 @@ export function AdminKnowledgeDocuments({
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
             <section className="space-y-3">
               <p className="text-muted-foreground text-xs leading-relaxed">
-                Off until you enable a surface. Test always searches these PDFs.
+                Off until you enable a surface. Preview AI always searches these
+                PDFs.
               </p>
               {RAG_SWITCHES.map((item) => {
                 const id = `rag-${item.key}`;

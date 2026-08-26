@@ -222,7 +222,7 @@ Access requires `profileType === "admin"`. Nav is defined in `src/lib/core/route
 | Email | `/admin/email` | Resend outbound and inbound desk |
 | Support | `/admin/support` | Ticket queue from the help agent |
 | Blog | `/admin/blog` | Post authoring |
-| Settings | `/admin/settings` | Admin, knowledge base, test, voice, language model, grievance officer, system prompts, flow |
+| Settings | `/admin/settings` | Admin, knowledge base, Preview AI, voice, language model, grievance officer, AI agents |
 
 Legal-safety cases and legal holds are **API only** at present (`/api/admin/legal-safety/*`); there is no console page yet.
 
@@ -376,7 +376,7 @@ Chunks live in Mongo `KnowledgeChunks` (`text`, `embedding`, `source`, `docType`
 - Path: `embedding`, cosine, 1536 dimensions (must match `openai/text-embedding-3-small`; change both if you swap embedding models)
 - Filter fields: `docType`, `source`
 
-Settings → Test streams answers from `POST /api/admin/knowledge/chat`. The model must call `searchDocuments` (`$vectorSearch`, top 5 by default, max 4 retrieval rounds) and cite `[filename p.N]`. Legal chunks always add that the output is not legal advice.
+Settings → Preview AI streams answers from `POST /api/admin/knowledge/chat`. The model must call `searchDocuments` (`$vectorSearch`, top 5 by default, max 4 retrieval rounds) and cite `[filename p.N]`. Legal chunks always add that the output is not legal advice.
 
 ---
 
