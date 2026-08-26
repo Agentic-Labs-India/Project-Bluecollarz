@@ -11,6 +11,7 @@ describe("consent playback scope", () => {
     expect(text).toContain("digilocker");
     expect(text).toContain("interview");
     expect(text).toContain("fitness");
+    expect(text).toContain("human");
     expect(text).not.toContain("passport");
     expect(text).not.toContain("emigration");
     expect(text).not.toContain("recruiter");

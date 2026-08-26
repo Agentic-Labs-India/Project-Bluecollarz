@@ -58,14 +58,14 @@ Google. There is no email/password signup. There is no public recruiter signup.
 ## 1. First-paint notice (every page)
 
 **UI:** `CookieBanner` in the root layout (`src/app/layout.tsx`). Grok-style
-dark bottom bar: **Cookies Settings**, **Reject All**, **Accept All Cookies**,
+dark bottom bar: **Cookies Settings**, **Reject All**, **Agree and continue**,
 plus 18+ in the copy. Purpose consents still come later at KYC.
 
 **Copy:**
 
 > You must be 18 or older. Essential cookies keep the site working and stay on.
-> Optional analytics help with performance — accept, reject, or manage them.
-> We do not use advertising cookies. By clicking Accept All Cookies, you
+> Optional analytics stay off unless you turn them on in Cookie settings.
+> We do not use advertising cookies. By clicking Agree and continue, you
 > confirm you are 18 or older and agree to our Cookie Policy, Privacy Notice,
 > and Terms of Service.
 
@@ -74,12 +74,12 @@ plus 18+ in the copy. Purpose consents still come later at KYC.
 
 | Action | What happens |
 | --- | --- |
-| Do nothing | Banner stays. `blucollarz_site_agreement` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
+| Do nothing | Banner stays. `blucollarz_site_agreement_v2` is unset. Log in / Get Started is blocked. Analytics script does **not** load. |
 | **X** | Banner hides. Login stays blocked until they accept. Trying Log in re-opens the banner. |
-| **Accept All Cookies** | Writes `agreed`. Covers Terms, Privacy, 18+, essential cookies, and turns analytics **on**. Log in / Get Started can run. |
+| **Agree and continue** | Writes `agreed`. Covers Terms, Privacy, 18+, essential cookies. Does **not** turn analytics on. Log in / Get Started can run. |
 | **Cookies Settings → Accept** | Same 18+ / Terms / Privacy / essential. Analytics only if the switch is on (starts off). |
 | **Reject All** | Writes `declined`. Banner hides. Log in / Get Started stays blocked. If they were signed in, they are signed out. Trying Log in again re-opens the same banner. |
-| After Google | Signed-in **Privacy & terms** modal records agreement on the user (`platformTermsAcceptedAt`). Not inferred from this banner. |
+| After Google | Signed-in stamp records current `PLATFORM_TERMS_VERSION` on the user (`platformTermsAcceptedAt`). A terms bump re-prompts this banner. |
 | Analytics later | Signed-in desktop rail: cookie icon → `PreferenceDialog`. PATCH `/api/user/preferences` `{ cookiesEnabled }`. |
 
 18+ here is a **self-attestation**. KYC still rejects under-18 from DigiLocker
@@ -111,7 +111,7 @@ If a session cookie already exists and they hit `/`, `src/proxy.ts` sends:
 - hire complete → `/hire/roles`
 
 Google can still create a session **before** DigiLocker DOB is known. The
-first-paint banner requires **Accept All Cookies** or **Cookies Settings →
+first-paint banner requires **Agree and continue** or **Cookies Settings →
 Accept** (Terms, Privacy, 18+) before Log in / Get Started. Under-18 is still
 refused at DigiLocker. Reject All blocks OAuth until they accept.
 

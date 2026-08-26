@@ -1,6 +1,7 @@
 import "server-only";
 
 import { ObjectId } from "mongodb";
+import { blobFileUrl } from "@/lib/blob/pathname";
 import { getCandidateProfileByUserId } from "@/lib/candidate/queries";
 import { listConsentEvents } from "@/lib/compliance/consent";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
@@ -13,6 +14,9 @@ export const RIGHTS_REQUEST_TYPES = [
   "withdraw",
   "nominate",
   "grievance",
+  "restriction",
+  "objection",
+  "portability",
 ] as const;
 
 export type RightsRequestType = (typeof RIGHTS_REQUEST_TYPES)[number];
@@ -200,6 +204,8 @@ export async function buildAccessExport(userId: string) {
       stageId: i.stageId,
       status: i.status,
       hasRecording: Boolean(i.videoUrl),
+      recordingFile:
+        typeof i.videoUrl === "string" ? blobFileUrl(i.videoUrl) : null,
       startedAt:
         i.startedAt instanceof Date
           ? i.startedAt.toISOString()
@@ -218,11 +224,10 @@ export async function buildAccessExport(userId: string) {
         m.scheduledAt instanceof Date
           ? m.scheduledAt.toISOString()
           : String(m.scheduledAt),
-      // Names and dates only; the report files themselves are fetched through
-      // the authorized download route, never embedded in an export payload.
       reports: (Array.isArray(m.reports) ? m.reports : []).map(
-        (r: { name?: string; uploadedAt?: unknown }) => ({
+        (r: { name?: string; url?: string; uploadedAt?: unknown }) => ({
           name: typeof r?.name === "string" ? r.name : "Report",
+          file: typeof r?.url === "string" ? blobFileUrl(r.url) : null,
           uploadedAt:
             r?.uploadedAt instanceof Date
               ? r.uploadedAt.toISOString()

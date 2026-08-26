@@ -87,10 +87,10 @@ export function DeleteAccountSection({
             <AlertDialogDescription>
               This cannot be undone. Your account, sessions, and related
               {profileType === "hire"
-                ? " roles, applicants, and interview data"
+                ? " roles, applicants, interview data, and company documents"
                 : profileType === "admin"
                   ? " admin data, support history, and provisions"
-                  : " applications, interviews, and recordings"}{" "}
+                  : " applications, interviews, recordings, and medical reports"}{" "}
               will be removed. You can create a new account with Google
               afterwards.
             </AlertDialogDescription>

@@ -49,7 +49,8 @@ must **prove** notice was given and consent was given (s.6(10)).
 
 **In code:**
 
-- Public `/privacy` is written as a standalone DPDP notice (v1.4).
+- Public `/privacy` is written as a standalone DPDP notice (v1.5), with GDPR
+  rights listed where they apply. No EU representative is appointed.
 - In-app notice is one sitting before DigiLocker: identity, contact,
   evaluation, and medical as **separate switches**. Passport, PCC, and
   educational certificates are not collected.
@@ -58,7 +59,8 @@ must **prove** notice was given and consent was given (s.6(10)).
   enough. Ledger is append-only `ConsentEvents`.
 - Withdrawal is a Settings button (easier than grant, which is what s.6(4)
   asks for). Withdrawing medical cancels a scheduled appointment.
-- Rights queue: access, correction, erasure, nomination, grievance.
+- Rights queue: access, correction, erasure, nomination, grievance,
+  restriction, objection, portability.
 - Grievance contact is on `/grievance`. Env defaults: ack 72h, resolve 90 days
   (Rules grievance window).
 
@@ -83,10 +85,11 @@ do **not** offer parental-consent onboarding. That is the correct product
 stance for overseas hiring.
 
 **Gap:** Google sign-in can still create a session before DigiLocker DOB is
-known. The first-paint banner requires Accept All Cookies or Cookies Settings
+known. The first-paint banner requires Agree and continue or Cookies Settings
 → Accept (Terms, Privacy, 18+) before Log in / Get Started (Reject All blocks
-OAuth). That is not verifiable parental consent and a minor can still click
-Accept. Commitment APIs
+OAuth). Analytics stay off unless turned on in Cookie settings. That is not
+verifiable parental consent and a minor can still click
+Agree. Commitment APIs
 (`requireCandidateAppReady`) still need KYC, which rejects minors.
 
 ### Storage, minimisation, erasure

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** Current Privacy Notice + Terms acknowledgment. Integer so Mongo stores a number. */
-export const PLATFORM_TERMS_VERSION = 1;
+export const PLATFORM_TERMS_VERSION = 2;
 
 /** Account-level product prefs stored on the Users document. */
 export interface UserPreferencesFields {

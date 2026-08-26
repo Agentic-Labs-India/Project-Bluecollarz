@@ -4,9 +4,10 @@ import { del } from "@vercel/blob";
 import { isVercelBlobUrl } from "@/lib/blob/pathname";
 import { blobReadWriteToken } from "@/lib/blob/server/token";
 
-/** Best-effort delete of Vercel Blob URLs (never throws). */
+/** Delete Vercel Blob URLs. Best-effort unless `required` is set. */
 export async function deleteBlobUrls(
   urls: Array<string | null | undefined>,
+  opts?: { required?: boolean },
 ): Promise<void> {
   const unique = [
     ...new Set(
@@ -20,5 +21,6 @@ export async function deleteBlobUrls(
     await del(unique, { token: blobReadWriteToken() });
   } catch (error) {
     console.warn("deleteBlobUrls:", error);
+    if (opts?.required) throw error;
   }
 }

@@ -2,9 +2,12 @@
  * Pre-login site agreement (Terms, Privacy, 18+, cookies).
  * Login is blocked until this is "agreed". After Google, the same click is
  * stamped onto the user (no second dialog). KYC purpose consents stay separate.
+ * Key is versioned with PLATFORM_TERMS_VERSION so a notice bump re-prompts.
  */
 
-export const SITE_AGREEMENT_KEY = "blucollarz_site_agreement";
+import { PLATFORM_TERMS_VERSION } from "@/lib/user/preferences";
+
+export const SITE_AGREEMENT_KEY = `blucollarz_site_agreement_v${PLATFORM_TERMS_VERSION}`;
 export const SITE_AGREEMENT_SHOW_EVENT = "blucollarz:site-agreement-show";
 
 export type SiteAgreement = "agreed" | "declined" | null;

@@ -78,20 +78,20 @@ Hero **Get Started** and nav **Log in** both start Google. Applying from a publi
 
 ### 5.2 First banner (every page, including after login if they never agreed on this browser)
 
-Buttons: **Cookies Settings** (outline) / **Reject All** / **Accept All Cookies**. Dark floating bar, 18+ in the copy, X closes without agreeing.
+Buttons: **Cookies Settings** (outline) / **Reject All** / **Agree and continue**. Dark floating bar, 18+ in the copy, X closes without agreeing.
 
 Exact idea of the copy:
 
-> You must be 18 or older. Essential cookies keep the site working and stay on. Optional analytics help with performance — accept, reject, or manage them. We do not use advertising cookies. By clicking Accept All Cookies, you confirm you are 18 or older and agree to our Cookie Policy, Privacy Notice, and Terms of Service.
+> You must be 18 or older. Essential cookies keep the site working and stay on. Optional analytics stay off unless you turn them on in Cookie settings. We do not use advertising cookies. By clicking Agree and continue, you confirm you are 18 or older and agree to our Cookie Policy, Privacy Notice, and Terms of Service.
 
 | They click | What happens |
 | --- | --- |
 | Nothing / X | Banner hides on X. Login stays blocked until they accept. Google Analytics does not load. |
-| Accept All Cookies | Stored **in this browser only**. Login can start. Analytics **on**. |
+| Agree and continue | Stored **in this browser only**. Login can start. Analytics stay **off**. |
 | Cookies Settings → Accept | Same 18+ / Terms / Privacy. Analytics only if they turn that switch on (starts off). |
 | Reject All | Writes `declined`. Banner hides. Login stays blocked. If they were signed in, they are signed out. Clicking Log in again brings the **same** banner back. |
 
-This click is **not** DigiLocker proof of age and **not** the purpose-consent sitting. A child can still click Accept. The recorded Terms on the **account** happen later (section 5.4).
+This click is **not** DigiLocker proof of age and **not** the purpose-consent sitting. A child can still click Agree. The recorded Terms on the **account** happen later (section 5.4).
 
 The sidebar “open/closed” cookie is only UI. It is not analytics.
 
@@ -206,7 +206,7 @@ Centres have a licence number, address, hours.
 
 Appearance, language, the same consent notice (compact: read aloud, I agree, Withdraw), data rights, delete account.
 
-Cookie and notification toggles also sit in the account menu. Analytics stay **off** unless they clicked Accept All Cookies or allowed analytics in Cookies Settings / account Settings.
+Cookie and notification toggles also sit in the account menu. Analytics stay **off** unless they allowed analytics in Cookies Settings / account Settings.
 
 Delete account is refused if a **legal hold** is on (serious-offence review still open).
 
@@ -216,7 +216,7 @@ Delete account is refused if a **legal hold** is on (serious-offence review stil
 
 If a dispute asks “did they consent?”, name the layer.
 
-**Layer A — browser accept (before login).** Terms + Privacy + “I am 18+” + essential cookies. Lives in **this browser**. Accept All Cookies also turns analytics on; Cookies Settings can leave analytics off. A minor can click it. Not DigiLocker age. Not purpose consent.
+**Layer A — browser accept (before login).** Terms + Privacy + “I am 18+” + essential cookies. Lives in **this browser**. Agree and continue does not turn analytics on; Cookies Settings can allow analytics. A minor can click it. Not DigiLocker age. Not purpose consent.
 
 **Layer B — platform terms on the account (after Google).** Checkbox, saved on the user. No Reject. Needed for the voice agent. Still not purpose consent.
 

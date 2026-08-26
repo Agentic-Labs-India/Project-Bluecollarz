@@ -279,7 +279,7 @@ Modules live in `src/lib/compliance/`.
 
 | Module | Purpose |
 |---|---|
-| `consent.ts` | Append-only consent events, purpose-scoped. Notice version `1.4`. Grant requires a server `playbackId` |
+| `consent.ts` | Append-only consent events, purpose-scoped. Notice version `1.5`. Grant requires a server `playbackId` |
 | `rights.ts` | Data principal requests: access, correction, erasure, withdrawal, nomination, grievance |
 | `breach.ts` | Personal data breach register |
 | `legal-hold.ts` | Blocks erasure while material must be preserved |

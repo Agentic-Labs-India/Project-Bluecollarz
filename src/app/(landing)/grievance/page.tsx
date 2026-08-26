@@ -14,7 +14,7 @@ export default async function GrievancePage() {
     <main className="mx-auto w-full max-w-5xl px-6 pt-28 pb-8 md:px-8 md:pt-32">
       <LegalDoc
         title="Grievance Officer"
-        updated="August 15, 2026 · DPDP Rules, 2025"
+        updated="August 26, 2026 · DPDP Rules, 2025"
       >
         <LegalSection title="Contact">
           <p>
@@ -81,7 +81,8 @@ export default async function GrievancePage() {
             </li>
             <li>
               Rights: access, correction/completion, erasure, withdraw consent,
-              nominate another person, or raise a grievance.
+              nominate another person, restriction, objection, portability, or
+              raise a grievance.
             </li>
           </ol>
         </LegalSection>
@@ -94,6 +95,11 @@ export default async function GrievancePage() {
               the same email.
             </li>
             <li>You may complain to the Data Protection Board of India.</li>
+            <li>
+              If the GDPR applies to you, you may also complain to your local
+              supervisory authority. We have not appointed an EU Article 27
+              representative.
+            </li>
           </ol>
         </LegalSection>
 

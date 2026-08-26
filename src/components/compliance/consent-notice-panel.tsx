@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
   type ConsentPlaybackScope,
+  CONSENT_NOTICE_VERSION,
   KYC_NOTICE,
 } from "@/lib/compliance/consent-notices";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ const PURPOSE_ITEMS: Record<string, { title: string; detail: string }> = {
   evaluation: {
     title: "Evaluation",
     detail:
-      "AI interviews, transcripts, and optional recording — to evaluate you for a role",
+      "AI interviews, transcripts, scores, and optional recording — to evaluate you for a role. Scores assist a human employer.",
   },
   medical: {
     title: "Medical",
@@ -146,7 +147,7 @@ export function ConsentNoticePanel({
   const [saving, setSaving] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState("");
-  const [noticeVersion, setNoticeVersion] = useState("1.4");
+  const [noticeVersion, setNoticeVersion] = useState(CONSENT_NOTICE_VERSION);
   const [available, setAvailable] = useState<string[]>(
     Object.keys(PURPOSE_ITEMS),
   );

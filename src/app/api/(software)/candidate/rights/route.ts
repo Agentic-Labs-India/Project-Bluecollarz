@@ -118,9 +118,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Access requests can return the package immediately as acknowledgment.
+    // Access and portability return the package immediately as acknowledgment.
     let exportPack = null;
-    if (parsed.data.type === "access") {
+    if (
+      parsed.data.type === "access" ||
+      parsed.data.type === "portability"
+    ) {
       exportPack = await buildAccessExport(auth.user.id);
     }
 
@@ -144,7 +147,17 @@ export async function POST(req: NextRequest) {
                 message:
                   "Erasure request recorded. Use Delete account on this page to complete erasure after identity checks.",
               }
-            : {}),
+            : parsed.data.type === "restriction"
+              ? {
+                  message:
+                    "Restriction request recorded. The grievance desk will action it; processing is not frozen automatically.",
+                }
+              : parsed.data.type === "objection"
+                ? {
+                    message:
+                      "Objection recorded. The grievance desk will action it.",
+                  }
+                : {}),
     });
   } catch (error) {
     rethrowIfPrerenderAbort(error);

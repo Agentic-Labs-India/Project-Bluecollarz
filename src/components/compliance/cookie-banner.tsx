@@ -16,7 +16,8 @@ function onNativeAuthPath(): boolean {
 /**
  * First-paint bar: 18+ warning, essential cookies, optional analytics.
  * Hidden on native /auth — that screen has the same notice inline.
- * Reject All still blocks Log in.
+ * Reject All still blocks Log in until Terms, Privacy, and 18+ are agreed.
+ * Analytics stay off unless the person turns them on in Cookie settings.
  */
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);

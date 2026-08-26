@@ -49,7 +49,8 @@ function LegalLinks({ cookieAnchor }: { cookieAnchor?: boolean }) {
 
 /**
  * 18+ age gate + cookie notice. Overlay = web bottom bar. Inline = native /auth.
- * Accept All is the only action that unlocks Google sign-in.
+ * Agree and continue unlocks Google sign-in (Terms, Privacy, 18+). Analytics stay
+ * off unless turned on in Cookie settings.
  */
 export function SiteAgreementPanel({
   variant,
@@ -96,9 +97,11 @@ export function SiteAgreementPanel({
     }
   };
 
-  const accept = async (withAnalytics: boolean) => {
+  const accept = async (withAnalytics?: boolean) => {
     writeSiteAgreement("agreed");
-    await persistAnalytics(withAnalytics);
+    if (withAnalytics !== undefined) {
+      await persistAnalytics(withAnalytics);
+    }
     if (session?.user) {
       try {
         await stampPlatformTermsFromSiteAgreement();
@@ -214,9 +217,9 @@ export function SiteAgreementPanel({
             )}
           >
             You must be 18 or older. Essential cookies keep the site working and
-            stay on. Optional analytics help with performance — accept, reject,
-            or manage them. We do not use advertising cookies. By clicking
-            Accept All Cookies, you confirm you are 18 or older and agree to our{" "}
+            stay on. Optional analytics stay off unless you turn them on in
+            Cookie settings. We do not use advertising cookies. By clicking
+            Agree and continue, you confirm you are 18 or older and agree to our{" "}
             <LegalLinks cookieAnchor />.
           </p>
           {inline && agreed ? (
@@ -252,10 +255,10 @@ export function SiteAgreementPanel({
                   type="button"
                   className={inline ? "flex-1" : undefined}
                   onClick={() => {
-                    void accept(true);
+                    void accept();
                   }}
                 >
-                  Accept All Cookies
+                  Agree and continue
                 </Button>
               </div>
             </div>

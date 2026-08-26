@@ -20,7 +20,7 @@ type Tab = (typeof TABS)[number]["value"];
 
 const COPY: Record<Tab, string> = {
   rights:
-    "Acknowledge and resolve access, correction, erasure, withdrawal, nomination, and grievance.",
+    "Acknowledge and resolve access, correction, erasure, withdrawal, nomination, restriction, objection, portability, and grievance.",
   breaches:
     "Log personal data breaches, prepare Board / Data Principal notices, and track acknowledgment.",
   legal:

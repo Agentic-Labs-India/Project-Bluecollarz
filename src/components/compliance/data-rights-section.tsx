@@ -16,6 +16,9 @@ const TYPES = [
     label: "Withdraw consent (stops interview release to employers and medical booking)",
   },
   { value: "nominate", label: "Nominate someone" },
+  { value: "restriction", label: "Restrict processing" },
+  { value: "objection", label: "Object to processing" },
+  { value: "portability", label: "Data portability (JSON export)" },
   { value: "grievance", label: "Grievance" },
 ] as const;
 
@@ -92,7 +95,11 @@ export function DataRightsSection() {
         a.download = `blucollarz-data-export-${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        setMessage("Access request recorded. Export downloaded.");
+        setMessage(
+          type === "portability"
+            ? "Portability request recorded. Export downloaded."
+            : "Access request recorded. Export downloaded.",
+        );
       } else {
         setMessage(
           json.message || `Request ${json.item?.requestId ?? ""} submitted.`,
@@ -118,8 +125,8 @@ export function DataRightsSection() {
       <p className="text-muted-foreground text-sm">
         Access or export your data, request correction, withdraw consent (stops
         interview release to employers and medical booking), nominate someone,
-        or raise a grievance. We identify you by the email on this signed-in
-        account.
+        restrict or object to processing, or raise a grievance. We identify you
+        by the email on this signed-in account.
         Correction is completed by updating your{" "}
         <a href="/candidate/profile" className="text-foreground underline">
           profile

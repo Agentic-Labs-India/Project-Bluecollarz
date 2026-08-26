@@ -64,18 +64,28 @@ function toIso(value: Date | null | undefined): string | null {
   return value instanceof Date ? value.toISOString() : null;
 }
 
-function collectDocumentUrls(data: HireOnboardingSaveInput): string[] {
+/** Blob URLs stored on a hire onboarding pack (account-delete cascade). */
+export function collectHireOnboardingBlobUrls(data: {
+  documents?: {
+    establishmentCard?: { url?: string | null } | null;
+    immigrationFile?: { url?: string | null } | null;
+  } | null;
+  legalLicences?: Array<{ document?: { url?: string | null } | null }>;
+}): string[] {
   const urls: string[] = [];
-  if (data.documents.establishmentCard?.url) {
-    urls.push(data.documents.establishmentCard.url);
-  }
-  if (data.documents.immigrationFile?.url) {
-    urls.push(data.documents.immigrationFile.url);
-  }
-  for (const licence of data.legalLicences) {
-    if (licence.document?.url) urls.push(licence.document.url);
+  const card = data.documents?.establishmentCard?.url;
+  const immigration = data.documents?.immigrationFile?.url;
+  if (typeof card === "string") urls.push(card);
+  if (typeof immigration === "string") urls.push(immigration);
+  for (const licence of data.legalLicences ?? []) {
+    const url = licence.document?.url;
+    if (typeof url === "string") urls.push(url);
   }
   return urls;
+}
+
+function collectDocumentUrls(data: HireOnboardingSaveInput): string[] {
+  return collectHireOnboardingBlobUrls(data);
 }
 
 function assertOwnCompanyDocument(
