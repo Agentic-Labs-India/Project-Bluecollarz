@@ -33,7 +33,8 @@ type Wording = {
 };
 
 /**
- * POL-0005 when a legal-review case is open. POL-0007 is part of Privacy & terms.
+ * POL-0005 when a legal-review case is open. POL-0007 is recorded when the
+ * first-load banner is stamped onto the account — not a second dialog.
  * Read and tap continue. This is not a test, and it is not consent (POL-0006).
  */
 export function SafetyNoticeGate() {

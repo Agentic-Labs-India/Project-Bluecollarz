@@ -3,6 +3,7 @@
 import { XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { stampPlatformTermsFromSiteAgreement } from "@/components/compliance/platform-terms-gate";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { authClient } from "@/lib/auth/auth-client";
@@ -76,6 +77,13 @@ export function CookieBanner() {
   const accept = async (withAnalytics: boolean) => {
     writeSiteAgreement("agreed");
     await persistAnalytics(withAnalytics);
+    if (session?.user) {
+      try {
+        await stampPlatformTermsFromSiteAgreement();
+      } catch {
+        /* banner already recorded; account stamp retries on next load */
+      }
+    }
     setVisible(false);
     setSettingsOpen(false);
   };

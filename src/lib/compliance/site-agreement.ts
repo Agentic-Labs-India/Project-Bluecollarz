@@ -1,4 +1,8 @@
-/** Pre-login site agreement (Terms, Privacy, 18+). Account terms + KYC consents come later. */
+/**
+ * Pre-login site agreement (Terms, Privacy, 18+, cookies).
+ * Login is blocked until this is "agreed". After Google, the same click is
+ * stamped onto the user (no second dialog). KYC purpose consents stay separate.
+ */
 
 export const SITE_AGREEMENT_KEY = "blucollarz_site_agreement";
 export const SITE_AGREEMENT_SHOW_EVENT = "blucollarz:site-agreement-show";
