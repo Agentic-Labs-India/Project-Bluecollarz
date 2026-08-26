@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { OnboardingAgent } from "@/components/candidate/onboarding-agent";
+import { KycPageSkeleton } from "@/components/layout/page-skeleton";
 import { auth } from "@/lib/auth/auth";
 import { getCandidateGateStatus } from "@/lib/candidate/queries";
 import {
@@ -11,7 +12,7 @@ import {
 
 export default function CandidateOnboardingPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<KycPageSkeleton />}>
       <OnboardingPageGate />
     </Suspense>
   );

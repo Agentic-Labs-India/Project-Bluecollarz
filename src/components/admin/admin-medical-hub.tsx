@@ -9,7 +9,7 @@ import {
   AdminPageTabs,
   useAdminTab,
 } from "@/components/admin/admin-page-tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 import type { MedicalCenterListItem } from "@/lib/medical/types";
 
 const TABS = [
@@ -75,28 +75,8 @@ function AdminMedicalHubInner() {
 
 export function AdminMedicalHub() {
   return (
-    <Suspense fallback={<AdminMedicalHubSkeleton />}>
+    <Suspense fallback={<AdminHubSkeleton />}>
       <AdminMedicalHubInner />
     </Suspense>
-  );
-}
-
-function AdminMedicalHubSkeleton() {
-  return (
-    <>
-      <div className="mb-6 space-y-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-80 max-w-full" />
-      </div>
-      <div className="mb-6 flex gap-4">
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-8 w-20" />
-      </div>
-      <div className="space-y-3">
-        {["r1", "r2", "r3", "r4", "r5", "r6"].map((id) => (
-          <Skeleton key={id} className="h-12 w-full" />
-        ))}
-      </div>
-    </>
   );
 }

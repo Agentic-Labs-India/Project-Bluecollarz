@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminShell } from "@/app/(software)/admin/admin-shell";
+import { AdminHubPageSkeleton } from "@/components/layout/page-skeleton";
 import { auth } from "@/lib/auth/auth";
 import {
   getProfileHomePath,
@@ -14,7 +15,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AdminHubPageSkeleton />}>
       <AdminAuthGate>{children}</AdminAuthGate>
     </Suspense>
   );

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CandidateShell } from "@/app/(software)/candidate/candidate-shell";
+import { HomePageSkeleton } from "@/components/layout/page-skeleton";
 import { auth } from "@/lib/auth/auth";
 import {
   getProfileHomePath,
@@ -19,7 +20,7 @@ export default function CandidateLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<HomePageSkeleton />}>
       <CandidateAuthGate>{children}</CandidateAuthGate>
     </Suspense>
   );

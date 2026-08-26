@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HireShell } from "@/app/(software)/hire/hire-shell";
+import { TablePageSkeleton } from "@/components/layout/page-skeleton";
 import { auth } from "@/lib/auth/auth";
 import {
   getProfileHomePath,
@@ -19,7 +20,7 @@ export default function HireLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<TablePageSkeleton />}>
       <HireAuthGate>{children}</HireAuthGate>
     </Suspense>
   );

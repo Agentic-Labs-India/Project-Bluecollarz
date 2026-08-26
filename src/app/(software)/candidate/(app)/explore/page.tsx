@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { Suspense } from "react";
+import { ExplorePageSkeleton } from "@/components/layout/page-skeleton";
 import { ExploreOpportunities } from "@/components/work/explore-opportunities";
 import { auth } from "@/lib/auth/auth";
 import { isId } from "@/lib/db";
@@ -43,7 +44,7 @@ export default async function ExplorePage({
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ExplorePageSkeleton />}>
       <ExploreOpportunities
         initialOpportunities={initialOpportunities}
         initialApplicationStatuses={initialApplicationStatuses}

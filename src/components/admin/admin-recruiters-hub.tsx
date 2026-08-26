@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/admin-page-tabs";
 import { AdminRecruiterInquiries } from "@/components/admin/admin-recruiter-inquiries";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
+import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 import type { AdminUserListItem } from "@/lib/admin/queries";
 
 const TABS = [
@@ -58,7 +59,7 @@ export function AdminRecruitersHub({
   initialItems: AdminUserListItem[];
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AdminHubSkeleton />}>
       <AdminRecruitersHubInner initialItems={initialItems} />
     </Suspense>
   );

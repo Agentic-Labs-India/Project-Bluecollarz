@@ -11,6 +11,7 @@ import {
   type AdminSettingsSection,
 } from "@/components/admin/admin-settings-form";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
+import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import type { AdminUserListItem } from "@/lib/admin/queries";
@@ -159,7 +160,7 @@ export function AdminSettingsHub({
   initialItems: AdminUserListItem[];
 }) {
   return (
-    <Suspense fallback={<SettingsSkeleton section="voice" />}>
+    <Suspense fallback={<AdminHubSkeleton />}>
       <AdminSettingsHubInner initialItems={initialItems} />
     </Suspense>
   );

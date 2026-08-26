@@ -2,6 +2,7 @@
 
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { AppLanguageSetting } from "@/components/candidate/app-language-setting";
 import { DataRightsSection } from "@/components/compliance/data-rights-section";
 import { PrivacyTermsAcknowledgment } from "@/components/compliance/privacy-terms-acknowledgment";
@@ -16,10 +17,16 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CandidateSettingsPage() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <AppPage>
@@ -36,18 +43,22 @@ export default function CandidateSettingsPage() {
               Switch between light and dark mode.
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="w-40 shrink-0"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-          >
-            {isDark ? (
-              <SunIcon className="size-4" />
-            ) : (
-              <MoonIcon className="size-4" />
-            )}
-            {isDark ? "Light mode" : "Dark mode"}
-          </Button>
+          {mounted ? (
+            <Button
+              variant="outline"
+              className="w-40 shrink-0"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+            >
+              {isDark ? (
+                <SunIcon className="size-4" />
+              ) : (
+                <MoonIcon className="size-4" />
+              )}
+              {isDark ? "Light mode" : "Dark mode"}
+            </Button>
+          ) : (
+            <Skeleton className="h-9 w-40 shrink-0" />
+          )}
         </div>
 
         <div className="p-5">

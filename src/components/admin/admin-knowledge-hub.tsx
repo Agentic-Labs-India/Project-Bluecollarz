@@ -8,7 +8,7 @@ import {
   AdminPageTabs,
   useAdminTab,
 } from "@/components/admin/admin-page-tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 
 const TABS = [
   { value: "documents", label: "Documents" },
@@ -22,15 +22,6 @@ const COPY: Record<Tab, string> = {
     "Upload PDFs and they ingest in the background. Re-uploading the same filename replaces its chunks.",
   ask: "Answers come only from ingested PDFs, with filename and page citations. Not legal advice.",
 };
-
-function KnowledgeSkeleton() {
-  return (
-    <div className="space-y-3">
-      <Skeleton className="h-9 w-48" />
-      <Skeleton className="h-64 w-full" />
-    </div>
-  );
-}
 
 function AdminKnowledgeBody() {
   const [tab, setTab] = useAdminTab(TABS, "documents");
@@ -50,7 +41,7 @@ function AdminKnowledgeBody() {
 
 export function AdminKnowledgeHub() {
   return (
-    <Suspense fallback={<KnowledgeSkeleton />}>
+    <Suspense fallback={<AdminHubSkeleton />}>
       <AdminKnowledgeBody />
     </Suspense>
   );

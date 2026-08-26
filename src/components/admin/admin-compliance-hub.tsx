@@ -9,6 +9,7 @@ import {
   useAdminTab,
 } from "@/components/admin/admin-page-tabs";
 import { AdminRightsQueue } from "@/components/admin/admin-rights-queue";
+import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 
 const TABS = [
   { value: "rights", label: "Rights" },
@@ -47,7 +48,7 @@ function AdminComplianceHubInner() {
 
 export function AdminComplianceHub() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AdminHubSkeleton />}>
       <AdminComplianceHubInner />
     </Suspense>
   );
