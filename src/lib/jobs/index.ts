@@ -24,7 +24,7 @@ import {
   resolveStepTemplates,
   STAGE_BY_ID,
 } from "@/lib/jobs/stages";
-import { asNumber, formatZodError, idHex } from "@/lib/utils";
+import { formatZodError, idHex } from "@/lib/utils";
 
 export { DEFAULT_CURRENCY } from "@/lib/core/money/currencies";
 export type { CustomQuestion } from "@/lib/jobs/custom-questions";
@@ -272,16 +272,6 @@ export function pageBounds(
   const safePage = Math.max(1, Math.trunc(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Math.trunc(limit) || 10));
   return { page: safePage, limit: safeLimit, skip: (safePage - 1) * safeLimit };
-}
-
-export function parsePagination(
-  searchParams: URLSearchParams,
-  defaults: { page?: number; limit?: number } = {},
-) {
-  return pageBounds(
-    asNumber(searchParams.get("page"), defaults.page ?? 1),
-    asNumber(searchParams.get("limit"), defaults.limit ?? 10),
-  );
 }
 
 export function toJobListItem(

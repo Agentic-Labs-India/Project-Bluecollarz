@@ -47,16 +47,6 @@ export async function getCandidateProfileByUserId(
   return toCandidateProfileData(doc);
 }
 
-export async function isCandidateOnboardingDone(
-  userId: string,
-): Promise<boolean> {
-  const profile = await getCandidateProfileByUserId(userId);
-  if (!profile) return false;
-  // Always validate live mandatory fields (not only the stored flag),
-  // so newly required fields re-open onboarding for incomplete profiles.
-  return isCandidateProfileComplete(profile);
-}
-
 export async function getCandidateGateStatus(userId: string): Promise<{
   complete: boolean;
   kycVerified: boolean;
