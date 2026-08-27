@@ -1,3 +1,4 @@
+/// <reference types="@capacitor/splash-screen" />
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const DEFAULT_ORIGIN = "https://www.blucollarz.com";
@@ -52,8 +53,9 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 1200,
       launchAutoHide: true,
+      launchFadeOutDuration: 200,
       backgroundColor: "#ffffffff",
-      androidScaleType: "CENTER_CROP",
+      androidScaleType: "CENTER",
       showSpinner: false,
     },
     SystemBars: {
