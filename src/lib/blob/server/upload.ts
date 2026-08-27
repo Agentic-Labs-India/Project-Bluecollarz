@@ -138,26 +138,26 @@ export async function handleBlobClientUpload(
             "image/webp",
           ];
         } else if (kind === "users") {
-          if (segments[1] !== auth.user.id || segments.length < 3) {
-            throw new Error("User uploads must be under your own folder");
+          // `users/{id}/company/…` is the only readable user path
+          // (see blobKindFromRelative); reject anything else outright.
+          if (segments[1] !== auth.user.id || segments[2] !== "company") {
+            throw new Error(
+              "User uploads must be under your own company folder",
+            );
           }
-          if (segments[2] === "company") {
-            if (auth.user.profileType !== "hire") {
-              throw new Error(
-                "Company document uploads require a hire profile",
-              );
-            }
-            if (!isCompanyDocumentRelativePath(relative, auth.user.id)) {
-              throw new Error("Invalid company document path");
-            }
-            maximumSizeInBytes = COMPANY_DOC_MAX_BYTES;
-            allowedContentTypes = [
-              "application/pdf",
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-            ];
+          if (auth.user.profileType !== "hire") {
+            throw new Error("Company document uploads require a hire profile");
           }
+          if (!isCompanyDocumentRelativePath(relative, auth.user.id)) {
+            throw new Error("Invalid company document path");
+          }
+          maximumSizeInBytes = COMPANY_DOC_MAX_BYTES;
+          allowedContentTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+          ];
         } else {
           throw new Error("Upload path not allowed");
         }

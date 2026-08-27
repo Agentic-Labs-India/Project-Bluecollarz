@@ -4,16 +4,20 @@ import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
 import { requirePageProfile } from "@/lib/auth/session";
 import { getCandidateProfileByUserId } from "@/lib/candidate/queries";
 
-export default async function ProfilePage() {
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<ProfilePageSkeleton />}>
+      <ProfileBody />
+    </Suspense>
+  );
+}
+
+async function ProfileBody() {
   const user = await requirePageProfile("work");
   const profile = await getCandidateProfileByUserId(user.id);
   if (!profile) {
     throw new Error("Candidate user record is missing");
   }
 
-  return (
-    <Suspense fallback={<ProfilePageSkeleton />}>
-      <CandidateProfileView initialProfile={profile} />
-    </Suspense>
-  );
+  return <CandidateProfileView initialProfile={profile} />;
 }

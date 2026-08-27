@@ -286,10 +286,6 @@ export function AiInterview({
             file: blob,
             pathname: `interviews/${interviewId}/${Date.now()}.${ext}`,
             contentType,
-            clientPayload: {
-              kind: "interview-video",
-              interviewId,
-            },
           });
           videoUrl = uploaded.url;
           setStatus(`Video saved — scoring ${stageLabel}…`);

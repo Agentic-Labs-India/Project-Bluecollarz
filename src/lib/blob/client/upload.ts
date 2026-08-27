@@ -23,8 +23,6 @@ export type BlobUploadOptions = {
    */
   pathname: string;
   contentType?: string;
-  /** Extra JSON for the token route (auth / bookkeeping). */
-  clientPayload?: Record<string, unknown>;
   /** Override the default 500 MB cap (e.g. company docs = 4 MB). */
   maxBytes?: number;
 };
@@ -84,9 +82,6 @@ export async function uploadBlob(
       contentType,
       multipart: opts.file.size > BLOB_MULTIPART_THRESHOLD,
       abortSignal: controller.signal,
-      clientPayload: opts.clientPayload
-        ? JSON.stringify(opts.clientPayload)
-        : undefined,
     });
     return {
       url: result.url,

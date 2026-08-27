@@ -5,7 +5,19 @@ import { requirePageProfile } from "@/lib/auth/session";
 import { isId } from "@/lib/db";
 import { getPublishedOpportunities } from "@/lib/jobs/queries";
 
-export default async function ExplorePage({
+export default function ExplorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ jobId?: string }>;
+}) {
+  return (
+    <Suspense fallback={<ExplorePageSkeleton />}>
+      <ExploreBody searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ExploreBody({
   searchParams,
 }: {
   searchParams: Promise<{ jobId?: string }>;
@@ -24,14 +36,12 @@ export default async function ExplorePage({
   });
 
   return (
-    <Suspense fallback={<ExplorePageSkeleton />}>
-      <ExploreOpportunities
-        initialOpportunities={result.items}
-        initialApplicationStatuses={result.applicationStatuses}
-        initialProfileComplete={result.profileComplete}
-        initialPageCount={result.pageCount}
-        initialJobId={initialJobId}
-      />
-    </Suspense>
+    <ExploreOpportunities
+      initialOpportunities={result.items}
+      initialApplicationStatuses={result.applicationStatuses}
+      initialProfileComplete={result.profileComplete}
+      initialPageCount={result.pageCount}
+      initialJobId={initialJobId}
+    />
   );
 }
