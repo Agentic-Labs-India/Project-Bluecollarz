@@ -4,30 +4,20 @@ import {
   CircleCheckIcon,
   CircleXIcon,
 } from "lucide-react";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { CandidateApplicationsList } from "@/components/candidate/applications-list";
 import { CandidateMedicalAppointmentCard } from "@/components/candidate/candidate-medical-appointment-card";
 import { AppPage, AppPageTitle } from "@/components/layout/app-page";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth/auth";
+import { requirePageProfile } from "@/lib/auth/session";
 import { getCandidateDashboard } from "@/lib/candidate/queries";
-import type { CandidateApplicationListItem } from "@/lib/jobs/applications";
-import type { CandidateMedicalAppointment } from "@/lib/medical/types";
 
 export default async function HomePage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as { id?: string; name?: string } | undefined;
-  const firstName = user?.name?.split(" ")[0] || "there";
-
-  const { stats, applications, medicalAppointments } = user?.id
-    ? await getCandidateDashboard(user.id)
-    : {
-        stats: { active: 0, selected: 0, closed: 0, total: 0 },
-        applications: [] as CandidateApplicationListItem[],
-        medicalAppointments: [] as CandidateMedicalAppointment[],
-      };
+  const user = await requirePageProfile("work");
+  const firstName = user.name?.split(" ")[0] || "there";
+  const { stats, applications, medicalAppointments } =
+    await getCandidateDashboard(user.id);
 
   const cards = [
     { label: "Active roles", value: stats.active, icon: BriefcaseIcon },

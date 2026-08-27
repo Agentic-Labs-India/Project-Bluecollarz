@@ -8,8 +8,6 @@ import {
   blobPathname,
   normalizeBlobContentType,
 } from "@/lib/blob/pathname";
-import { asUploadableBlob } from "@/lib/native/media-blob";
-import { blobUploadNeedsSimplePut } from "@/lib/native/platform";
 
 export type BlobUploadResult = {
   url: string;
@@ -29,7 +27,6 @@ export type BlobUploadOptions = {
   clientPayload?: Record<string, unknown>;
   /** Override the default 500 MB cap (e.g. company docs = 4 MB). */
   maxBytes?: number;
-  onProgress?: (percent: number) => void;
 };
 
 const UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
@@ -51,8 +48,8 @@ function uploadErrorMessage(error: unknown): string {
 }
 
 /**
- * Upload any file from the browser straight to Vercel Blob.
- * Supports large files (up to 500 MB) via multipart; bytes never hit Next.js.
+ * Browser → Vercel Blob. Bytes never hit Next.js.
+ * https://vercel.com/docs/vercel-blob/client-upload
  */
 export async function uploadBlob(
   opts: BlobUploadOptions,
@@ -72,35 +69,25 @@ export async function uploadBlob(
     );
   }
 
-  const simplePut = blobUploadNeedsSimplePut();
-  const body = await asUploadableBlob(opts.file, contentType);
-
   const controller = new AbortController();
   const timeoutId = window.setTimeout(
     () => controller.abort(),
     UPLOAD_TIMEOUT_MS,
   );
-  opts.onProgress?.(0);
 
   try {
-    const result = await upload(pathname, body, {
+    // Body is passed straight to the SDK. `upload()` streams/slices the
+    // Blob itself — multipart splits large files into parallel, retried parts.
+    const result = await upload(pathname, opts.file, {
       access: "private",
       handleUploadUrl: BLOB_HANDLE_UPLOAD_URL,
       contentType,
-      // Streaming multipart + progress hangs in WKWebView / Safari.
-      multipart: !simplePut && body.size > BLOB_MULTIPART_THRESHOLD,
+      multipart: opts.file.size > BLOB_MULTIPART_THRESHOLD,
       abortSignal: controller.signal,
       clientPayload: opts.clientPayload
         ? JSON.stringify(opts.clientPayload)
         : undefined,
-      onUploadProgress:
-        simplePut || !opts.onProgress
-          ? undefined
-          : (e) => {
-              opts.onProgress?.(e.percentage);
-            },
     });
-
     return {
       url: result.url,
       pathname: result.pathname,

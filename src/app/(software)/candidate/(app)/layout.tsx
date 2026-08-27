@@ -1,8 +1,7 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HomePageSkeleton } from "@/components/layout/page-skeleton";
-import { auth } from "@/lib/auth/auth";
+import { requirePageProfile } from "@/lib/auth/session";
 import { getCandidateGateStatus } from "@/lib/candidate/queries";
 
 /** Locked app surface — DigiLocker KYC then onboarding, then the rest. */
@@ -19,14 +18,9 @@ export default function CandidateAppLayout({
 }
 
 async function CandidateAppGate({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as { id?: string } | undefined;
-
-  if (!user?.id) redirect("/");
-
+  const user = await requirePageProfile("work");
   const { complete, kycVerified } = await getCandidateGateStatus(user.id);
   if (!kycVerified) redirect("/candidate/kyc");
   if (!complete) redirect("/candidate/onboarding");
-
   return children;
 }

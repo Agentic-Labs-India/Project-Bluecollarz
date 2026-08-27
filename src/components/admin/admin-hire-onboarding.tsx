@@ -34,6 +34,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeShort } from "@/lib/core/dates";
 import { countryName } from "@/lib/core/geo/places";
+import {
+  listHireOnboardingsAction,
+  reviewHireOnboardingAction,
+} from "@/lib/hire/onboarding/actions";
 import type {
   HireOnboardingListItem,
   HireOnboardingStatus,
@@ -77,19 +81,13 @@ export function AdminHireOnboarding() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/admin/hire-onboardings?status=${encodeURIComponent(status)}`,
-      );
-      const json = (await res.json().catch(() => ({}))) as {
-        items?: HireOnboardingListItem[];
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(json.error || "Failed to load onboarding");
+      const result = await listHireOnboardingsAction(status);
+      if (!result.ok) {
+        toast.error(result.error);
         setItems([]);
         return;
       }
-      setItems(json.items ?? []);
+      setItems(result.items);
     } catch {
       toast.error("Failed to load onboarding");
       setItems([]);
@@ -111,20 +109,12 @@ export function AdminHireOnboarding() {
     }
     setActionLoading(next);
     try {
-      const res = await fetch(`/api/admin/hire-onboardings/${selectedId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: next,
-          ...(next === "rejected" ? { adminNote: note } : {}),
-        }),
+      const result = await reviewHireOnboardingAction(selectedId, {
+        status: next,
+        ...(next === "rejected" ? { adminNote: note } : {}),
       });
-      const json = (await res.json().catch(() => ({}))) as {
-        item?: HireOnboardingListItem;
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(json.error || "Update failed");
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
       toast.success(

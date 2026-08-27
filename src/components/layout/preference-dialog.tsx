@@ -9,6 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  getUserPreferencesAction,
+  updateUserPreferencesAction,
+} from "@/lib/user/actions";
 import type {
   UserPreferences,
   UserPreferencesUpdate,
@@ -103,25 +107,15 @@ export function PreferenceDialog({
 }
 
 export async function fetchUserPreferences(): Promise<UserPreferences> {
-  const res = await fetch("/api/user/preferences");
-  if (!res.ok) {
-    throw new Error("Failed to load preferences");
-  }
-  const data = (await res.json()) as { preferences: UserPreferences };
-  return data.preferences;
+  const result = await getUserPreferencesAction();
+  if (!result.ok) throw new Error(result.error);
+  return result.preferences;
 }
 
 export async function patchUserPreferences(
   patch: UserPreferencesUpdate,
 ): Promise<UserPreferences> {
-  const res = await fetch("/api/user/preferences", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
-  });
-  if (!res.ok) {
-    throw new Error("Failed to save preferences");
-  }
-  const data = (await res.json()) as { preferences: UserPreferences };
-  return data.preferences;
+  const result = await updateUserPreferencesAction(patch);
+  if (!result.ok) throw new Error(result.error);
+  return result.preferences;
 }

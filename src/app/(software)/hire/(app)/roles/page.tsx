@@ -1,14 +1,7 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { HireJobsTable } from "@/components/hire/jobs-table";
 import { AppPage } from "@/components/layout/app-page";
-import { auth } from "@/lib/auth/auth";
 
-export default async function HireRolesPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as { id?: string } | undefined;
-  if (!user?.id) redirect("/");
-
+export default function HireRolesPage() {
   return (
     <AppPage>
       <div className="mb-8">

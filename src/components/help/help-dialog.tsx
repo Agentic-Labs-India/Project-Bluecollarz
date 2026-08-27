@@ -33,8 +33,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { uiMessageText } from "@/lib/ai/ui-message-text";
+import { getCandidateVoiceLanguageAction } from "@/lib/candidate/actions";
 import {
-  fetchProfileVoiceLanguage,
   languageLabel,
   type TtsLanguageCode,
 } from "@/lib/ai/voice/languages";
@@ -42,6 +42,7 @@ import { speakText } from "@/lib/ai/voice/speak";
 import { TTS_VOICE } from "@/lib/ai/voice/style";
 import { transcribeBlob } from "@/lib/ai/voice/transcribe";
 import { authClient } from "@/lib/auth/auth-client";
+import { parseProfileType } from "@/lib/user/profile-types";
 import { HELP_SUGGESTIONS, type HelpInputMode } from "@/lib/support/prompt";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +55,7 @@ export function HelpDialog({
 }) {
   const chatUser = useChatUserAvatar();
   const { data: session } = authClient.useSession();
-  const profileType = session?.user?.profileType as string | undefined;
+  const profileType = parseProfileType(session?.user?.profileType);
 
   const [text, setText] = useState("");
   const [mode, setMode] = useState<HelpInputMode>("text");
@@ -122,8 +123,12 @@ export function HelpDialog({
     try {
       const code =
         profileType === "hire" || profileType === "admin"
-          ? ("en-IN" as TtsLanguageCode)
-          : ((await fetchProfileVoiceLanguage()) ?? "en-IN");
+          ? TTS_VOICE.languageCode
+          : await (async () => {
+              const result = await getCandidateVoiceLanguageAction();
+              if (!result.ok) throw new Error(result.error);
+              return result.language ?? TTS_VOICE.languageCode;
+            })();
       voiceLanguageRef.current = code;
       languageReadyRef.current = true;
       setVoiceLanguage(code);

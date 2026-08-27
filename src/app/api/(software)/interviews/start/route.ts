@@ -13,7 +13,7 @@ import {
   isCustomQuestionsStage,
 } from "@/lib/interviews";
 import type { JobDocument } from "@/lib/jobs";
-import { normalizeCustomQuestions, normalizeStepTemplates } from "@/lib/jobs";
+import { parseCustomQuestions, resolveStepTemplates } from "@/lib/jobs";
 import type { CustomQuestion } from "@/lib/jobs/custom-questions";
 import { idHex } from "@/lib/utils";
 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     }
     const voiceLanguage = parseTtsLanguage(userDoc?.voiceLanguage) || "en-IN";
 
-    const stages = normalizeStepTemplates(job.applicationStepTemplates);
+    const stages = resolveStepTemplates(job.applicationStepTemplates);
     if (!stages.some((s) => s.id === stageId)) {
       return NextResponse.json(
         { error: "This interview stage is not enabled for the role." },
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     const jobQuestions = isCustomQuestionsStage(stageId)
-      ? normalizeCustomQuestions(job.customQuestions)
+      ? parseCustomQuestions(job.customQuestions)
       : [];
     if (isCustomQuestionsStage(stageId) && jobQuestions.length === 0) {
       return NextResponse.json(

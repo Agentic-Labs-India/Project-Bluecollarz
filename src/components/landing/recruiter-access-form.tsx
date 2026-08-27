@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { listCountries } from "@/lib/core/geo/places";
+import { createRecruiterInquiryAction } from "@/lib/hire/inquiries/actions";
 import {
   COMPANY_SIZES,
   RECRUITER_INDUSTRIES,
@@ -49,10 +50,7 @@ export function RecruiterAccessForm() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/recruiter-inquiries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const result = await createRecruiterInquiryAction({
           contactName,
           companyName,
           email,
@@ -63,10 +61,8 @@ export function RecruiterAccessForm() {
           companySize,
           website,
           about,
-        }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) throw new Error(json.error || "Could not submit request");
+        });
+      if (!result.ok) throw new Error(result.error);
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not submit request");

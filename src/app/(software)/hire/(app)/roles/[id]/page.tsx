@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import type { InterviewStageId } from "@/lib/interviews";
 import { JOB_STATUS_LABELS } from "@/lib/jobs";
+import { listJobApplicantsAction } from "@/lib/jobs/actions";
 import {
   APPLICATION_STATUS_LABELS,
   type ApplicantInterviewScore,
@@ -89,29 +90,20 @@ export default function RoleCandidatesPage() {
     setLoading(true);
     setError("");
     try {
-      const searchParams = new URLSearchParams({
-        page: String(pagination.pageIndex + 1),
-        limit: String(pagination.pageSize),
+      const result = await listJobApplicantsAction(params.id, {
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        search: search.trim() || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        communication:
+          communicationFilter !== "all" ? communicationFilter : undefined,
+        domain: domainFilter !== "all" ? domainFilter : undefined,
       });
-      if (search.trim()) searchParams.set("search", search.trim());
-      if (statusFilter !== "all") searchParams.set("status", statusFilter);
-      if (communicationFilter !== "all") {
-        searchParams.set("communication", communicationFilter);
-      }
-      if (domainFilter !== "all") {
-        searchParams.set("domain", domainFilter);
-      }
-
-      const res = await fetch(
-        `/api/jobs/${params.id}/applications?${searchParams.toString()}`,
-      );
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Failed to load candidates");
-      const payload = json as PaginatedApplicantsResponse;
-      setData(payload.items);
-      setJob(payload.job);
-      setPageCount(payload.pageCount);
-      setTotalItems(payload.total);
+      if (!result.ok) throw new Error(result.error);
+      setData(result.items);
+      setJob(result.job);
+      setPageCount(result.pageCount);
+      setTotalItems(result.total);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load candidates");
       setData([]);

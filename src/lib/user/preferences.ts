@@ -31,14 +31,6 @@ export function asTermsVersion(value: unknown): number | null {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) {
     return value;
   }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed === "v1") return 1;
-    if (/^\d+$/.test(trimmed)) {
-      const n = Number(trimmed);
-      return n > 0 ? n : null;
-    }
-  }
   return null;
 }
 

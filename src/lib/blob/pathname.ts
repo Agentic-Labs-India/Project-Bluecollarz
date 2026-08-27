@@ -10,8 +10,8 @@
  */
 
 export const BLOB_MAX_BYTES = 500 * 1024 * 1024; // 500 MB
-/** Multipart kicks in above this (Vercel serverless body limit ~4.5 MB). */
-export const BLOB_MULTIPART_THRESHOLD = 4 * 1024 * 1024;
+/** Client `upload({ multipart: true })` — docs recommend this above 100 MB. */
+export const BLOB_MULTIPART_THRESHOLD = 100 * 1024 * 1024;
 /** Company onboarding docs — hard cap (client + token route). */
 export const COMPANY_DOC_MAX_BYTES = 4 * 1024 * 1024;
 export const COMPANY_DOC_MAX_MB = 4;

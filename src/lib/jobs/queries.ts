@@ -430,20 +430,16 @@ export async function listPublishedJobsForSitemap(): Promise<
   cacheLife("days");
   cacheTag(PUBLISHED_JOBS_CACHE_TAG);
 
-  try {
-    const docs = await client
-      .db(DB_NAME)
-      .collection<JobDocument>(COLLECTIONS.JOBS)
-      .find({ status: "published" }, { projection: { updatedAt: 1 } })
-      .sort({ publishedAt: -1 })
-      .limit(1000)
-      .toArray();
+  const docs = await client
+    .db(DB_NAME)
+    .collection<JobDocument>(COLLECTIONS.JOBS)
+    .find({ status: "published" }, { projection: { updatedAt: 1 } })
+    .sort({ publishedAt: -1 })
+    .limit(1000)
+    .toArray();
 
-    return docs.map((doc) => ({
-      id: idHex(doc._id),
-      updatedAt: doc.updatedAt.toISOString(),
-    }));
-  } catch {
-    return [];
-  }
+  return docs.map((doc) => ({
+    id: idHex(doc._id),
+    updatedAt: doc.updatedAt.toISOString(),
+  }));
 }

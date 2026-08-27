@@ -16,6 +16,7 @@ import {
   SITE_AGREEMENT_SHOW_EVENT,
   writeSiteAgreement,
 } from "@/lib/compliance/site-agreement";
+import { updateUserPreferencesAction } from "@/lib/user/actions";
 import { cn } from "@/lib/utils";
 
 function LegalLinks({ cookieAnchor }: { cookieAnchor?: boolean }) {
@@ -87,11 +88,7 @@ export function SiteAgreementPanel({
     writeAnalyticsConsent(granted ? "granted" : "denied");
     applyGtagConsent(granted);
     if (!session?.user) return;
-    void fetch("/api/user/preferences", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cookiesEnabled: granted }),
-    }).catch(() => {
+    void updateUserPreferencesAction({ cookiesEnabled: granted }).catch(() => {
       /* local consent already applied */
     });
   };

@@ -71,13 +71,23 @@ export function mediaPermissionError(
   return deniedMessage(kind);
 }
 
-/** Prefer mp4 on iOS WebView; webm on Chromium. */
+function prefersMp4Recorder(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  if (/iP(hone|ad|od)/i.test(ua)) return true;
+  return /Safari/i.test(ua) && !/Chrome|Chromium|Android/i.test(ua);
+}
+
+/** Prefer mp4 on iOS / Safari; webm on Chromium (Chrome now reports mp4 first). */
 export function pickMediaRecorderMime(kind: "audio" | "video"): string {
   if (typeof MediaRecorder === "undefined") return "";
-  const candidates =
-    kind === "video"
-      ? ["video/mp4", "video/webm;codecs=vp9,opus", "video/webm"]
-      : ["audio/mp4", "audio/aac", "audio/webm;codecs=opus", "audio/webm"];
+  const videoCandidates = prefersMp4Recorder()
+    ? ["video/mp4", "video/webm;codecs=vp9,opus", "video/webm"]
+    : ["video/webm;codecs=vp9,opus", "video/webm", "video/mp4"];
+  const audioCandidates = prefersMp4Recorder()
+    ? ["audio/mp4", "audio/aac", "audio/webm;codecs=opus", "audio/webm"]
+    : ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"];
+  const candidates = kind === "video" ? videoCandidates : audioCandidates;
   return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? "";
 }
 
@@ -85,7 +95,7 @@ export function blobUploadMeta(blob: Blob): {
   ext: string;
   contentType: string;
 } {
-  const contentType = (blob.type || "video/webm").split(";")[0].trim();
+  const contentType = (blob.type || "video/webm").split(";")[0].trim().toLowerCase();
   const ext = contentType.includes("mp4")
     ? "mp4"
     : contentType.includes("quicktime")

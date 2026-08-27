@@ -1,13 +1,7 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminShell } from "@/app/(software)/admin/admin-shell";
 import { AdminHubPageSkeleton } from "@/components/layout/page-skeleton";
-import { auth } from "@/lib/auth/auth";
-import {
-  getProfileHomePath,
-  normalizeProfileType,
-} from "@/lib/user/profile-types";
+import { requirePageProfile } from "@/lib/auth/session";
 
 export default function AdminLayout({
   children,
@@ -22,17 +16,6 @@ export default function AdminLayout({
 }
 
 async function AdminAuthGate({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as
-    | { id?: string; profileType?: string }
-    | undefined;
-
-  if (!user?.id) redirect("/");
-
-  const profileType = normalizeProfileType(user.profileType);
-  if (profileType !== "admin") {
-    redirect(getProfileHomePath(profileType));
-  }
-
+  await requirePageProfile("admin");
   return <AdminShell>{children}</AdminShell>;
 }

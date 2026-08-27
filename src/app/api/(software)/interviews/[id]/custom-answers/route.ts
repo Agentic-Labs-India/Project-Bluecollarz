@@ -8,7 +8,7 @@ import {
 } from "@/lib/interviews";
 import {
   type CustomQuestionAnswer,
-  normalizeCustomQuestions,
+  parseCustomQuestions,
   validateCustomAnswer,
 } from "@/lib/jobs/custom-questions";
 
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     // Prefer frozen snapshot on the interview; never re-read live job config.
-    const questions = normalizeCustomQuestions(interview.customQuestions);
+    const questions = parseCustomQuestions(interview.customQuestions);
     if (!questions.length) {
       return NextResponse.json(
         {

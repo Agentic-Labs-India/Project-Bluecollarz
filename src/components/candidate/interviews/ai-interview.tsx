@@ -35,6 +35,15 @@ import { blobUploadMeta } from "@/lib/native/media-permissions";
 
 type LocalTurn = { role: "assistant" | "user"; text: string };
 
+const interviewFinalizeLocks = new Set<string>();
+
+function recordingSizeLabel(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function toVoiceMode({
   phase,
   listening,
@@ -251,6 +260,8 @@ export function AiInterview({
       busyUtteranceRef.current = false;
 
       if (finished) {
+        if (interviewFinalizeLocks.has(interviewId)) return;
+        interviewFinalizeLocks.add(interviewId);
         closingRef.current = true;
         setPhase("finalizing");
         setStatus(`Uploading recording and scoring ${stageLabel}…`);
@@ -267,12 +278,10 @@ export function AiInterview({
             );
           }
 
-          setStatus("Preparing recording…");
           const { ext, contentType } = blobUploadMeta(blob);
-          await new Promise<void>((resolve) => {
-            requestAnimationFrame(() => resolve());
-          });
-          setStatus("Uploading recording to storage…");
+          setStatus(
+            `Uploading recording (${recordingSizeLabel(blob.size)})…`,
+          );
           const uploaded = await uploadBlob({
             file: blob,
             pathname: `interviews/${interviewId}/${Date.now()}.${ext}`,
@@ -281,17 +290,11 @@ export function AiInterview({
               kind: "interview-video",
               interviewId,
             },
-            onProgress: (percent) => {
-              setStatus(
-                percent <= 0
-                  ? "Uploading recording to storage…"
-                  : `Uploading recording… ${Math.round(percent)}%`,
-              );
-            },
           });
           videoUrl = uploaded.url;
           setStatus(`Video saved — scoring ${stageLabel}…`);
         } catch (e) {
+          interviewFinalizeLocks.delete(interviewId);
           setPhase("error");
           setError(
             e instanceof Error
@@ -324,6 +327,7 @@ export function AiInterview({
             videoUrl: data.videoUrl ?? videoUrl,
           });
         } catch (e) {
+          interviewFinalizeLocks.delete(interviewId);
           setPhase("error");
           setError(e instanceof Error ? e.message : "Finalize failed");
         }
@@ -351,6 +355,7 @@ export function AiInterview({
   }, []);
 
   const endEarly = () => {
+    interviewFinalizeLocks.delete(interviewId);
     closingRef.current = true;
     pausedRef.current = true;
     vadRef.current?.stop();

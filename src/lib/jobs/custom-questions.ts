@@ -102,30 +102,17 @@ export const customQuestionsSchema = z
   })
   .transform((questions) => questions.map(toCustomQuestion));
 
-/**
- * Soft read/normalize for stored docs — drops invalid rows.
- * Use `customQuestionsSchema` on write boundaries.
- */
-export function normalizeCustomQuestions(value: unknown): CustomQuestion[] {
-  if (!Array.isArray(value)) return [];
-  const out: CustomQuestion[] = [];
-  const seen = new Set<string>();
-  for (const raw of value) {
-    const parsed = customQuestionSchema.safeParse(raw);
-    if (!parsed.success) continue;
-    if (seen.has(parsed.data.id)) continue;
-    seen.add(parsed.data.id);
-    out.push(toCustomQuestion(parsed.data));
-  }
-  return out;
+/** Strict read of stored questions — invalid documents fail closed. */
+export function parseCustomQuestions(
+  value: CustomQuestion[] | undefined | null,
+): CustomQuestion[] {
+  if (!value?.length) return [];
+  return customQuestionsSchema.parse(value);
 }
 
 export function emptyCustomQuestion(): CustomQuestion {
   return {
-    id:
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: crypto.randomUUID(),
     prompt: "",
     type: "text",
     required: true,

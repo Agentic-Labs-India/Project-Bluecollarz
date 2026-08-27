@@ -19,7 +19,9 @@ import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 
 /**
  * Mint a client-upload token after checking the caller owns the path.
- * Bytes never touch this server — the browser PUTs straight to Vercel Blob.
+ * Bytes never touch this server — the browser uploads straight to Vercel Blob.
+ *
+ * https://vercel.com/docs/vercel-blob/client-upload
  *
  * Allowed prefixes:
  * - `interviews/{interviewId}/…` (work; must own the interview)
@@ -165,10 +167,6 @@ export async function handleBlobClientUpload(
           maximumSizeInBytes,
           addRandomSuffix: true,
           ...(validUntil ? { validUntil } : {}),
-          tokenPayload: JSON.stringify({
-            userId: auth.user.id,
-            profileType: auth.user.profileType,
-          }),
         };
       },
     });

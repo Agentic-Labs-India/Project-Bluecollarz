@@ -48,8 +48,7 @@ import {
   JOB_TABS,
   type JobCreateInput,
   type JobPayType,
-  normalizeCustomQuestions,
-  normalizeStepTemplates,
+  resolveStepTemplates,
   sanitizePayAmountInput,
 } from "@/lib/jobs";
 import { customQuestionsSchema } from "@/lib/jobs/custom-questions";
@@ -131,13 +130,11 @@ export function JobForm({
       initialValues?.payAmount != null
         ? String(initialValues.payAmount)
         : defaultValues.payAmount,
-    applicationStepTemplates: normalizeStepTemplates(
+    applicationStepTemplates: resolveStepTemplates(
       initialValues?.applicationStepTemplates ??
         DEFAULT_APPLICATION_STEP_TEMPLATES,
     ),
-    customQuestions: normalizeCustomQuestions(
-      initialValues?.customQuestions ?? [],
-    ),
+    customQuestions: initialValues?.customQuestions ?? [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -213,7 +210,7 @@ export function JobForm({
         : without;
       return {
         ...prev,
-        applicationStepTemplates: normalizeStepTemplates(next),
+        applicationStepTemplates: resolveStepTemplates(next),
       };
     });
   };
@@ -222,7 +219,7 @@ export function JobForm({
     setBusy(true);
     setError("");
     try {
-      const templates = normalizeStepTemplates(values.applicationStepTemplates);
+      const templates = resolveStepTemplates(values.applicationStepTemplates);
       let customQuestions = templates.some((s) => s.id === "custom-questions")
         ? (values.customQuestions ?? [])
         : [];

@@ -10,6 +10,7 @@ import {
 } from "@/components/hire/job-form";
 import { AppPage } from "@/components/layout/app-page";
 import { Button } from "@/components/ui/button";
+import { createJobAction } from "@/lib/jobs/actions";
 
 export function NewRoleClient() {
   const router = useRouter();
@@ -25,21 +26,16 @@ export function NewRoleClient() {
   }, []);
 
   async function createJob(values: JobFormValues, publish: boolean) {
-    const res = await fetch("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jobFormPayload(values, publish)),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      if (json.code === "ONBOARDING_INCOMPLETE") {
+    const result = await createJobAction(jobFormPayload(values, publish));
+    if (!result.ok) {
+      if (result.code === "ONBOARDING_INCOMPLETE") {
         router.push("/hire/onboarding");
         return;
       }
-      throw new Error(json.error || "Failed to create role");
+      throw new Error(result.error);
     }
     setFormKey(Date.now());
-    router.push(`/hire/roles/${json.id}`);
+    router.push(`/hire/roles/${result.id}`);
   }
 
   return (

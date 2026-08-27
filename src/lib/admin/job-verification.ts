@@ -16,8 +16,8 @@ import {
   JOB_LOCATION_LABELS,
   type JobDocument,
   type JobListItem,
-  normalizeCustomQuestions,
-  normalizeStepTemplates,
+  parseCustomQuestions,
+  resolveStepTemplates,
   toJobListItem,
 } from "@/lib/jobs";
 import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
@@ -86,10 +86,10 @@ function toDetailItem(
     locationLabel: doc.location ? JOB_LOCATION_LABELS[doc.location] : null,
     countryLabel: countryName(doc.countryCode) || null,
     stateLabel: stateName(doc.countryCode, doc.stateCode) || null,
-    stages: normalizeStepTemplates(doc.applicationStepTemplates).map(
+    stages: resolveStepTemplates(doc.applicationStepTemplates).map(
       (step) => step.label,
     ),
-    customQuestions: normalizeCustomQuestions(doc.customQuestions).map(
+    customQuestions: parseCustomQuestions(doc.customQuestions).map(
       (q) => q.prompt,
     ),
     raRcNumber: doc.raRcNumber ?? null,

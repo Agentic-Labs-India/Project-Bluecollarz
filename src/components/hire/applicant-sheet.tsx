@@ -21,57 +21,22 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { blobFileUrl } from "@/lib/blob/pathname";
-import type { CandidateProfileData } from "@/lib/candidate/profile";
-import type { CommunicationAnalysis, InterviewStageId } from "@/lib/interviews";
 import { interviewStageTitle } from "@/lib/interviews/labels";
+import type { CommunicationAnalysis } from "@/lib/interviews";
+import {
+  getOwnedApplicantDetailAction,
+  updateApplicantStatusAction,
+} from "@/lib/jobs/actions";
 import {
   APPLICATION_STATUS_LABELS,
+  type ApplicantDetail,
+  type ApplicantInterviewDetail,
   type ApplicationStatus,
 } from "@/lib/jobs/applications";
 import {
-  type CustomQuestion,
   type CustomQuestionAnswer,
   formatCustomAnswerDisplay,
 } from "@/lib/jobs/custom-questions";
-
-type InterviewDetail = {
-  id: string;
-  stageId: InterviewStageId;
-  status: string;
-  jobTitle: string;
-  analysis: CommunicationAnalysis | null;
-  videoUrl: string | null;
-  customQuestions: CustomQuestion[];
-  customAnswers: CustomQuestionAnswer[];
-  transcript: Array<{ role: "assistant" | "user"; text: string; at: string }>;
-  startedAt: string;
-  completedAt: string | null;
-};
-
-type ApplicantDetailResponse = {
-  job: { id: string; title: string };
-  application: { id: string; status: string; appliedAt: string };
-  profile: {
-    name: string;
-    image: string;
-    headline: string;
-    yearsExperience: number | null;
-    skills: string[];
-    preferredCountries: string[];
-    summary: string;
-    education: CandidateProfileData["education"];
-    workExperience: CandidateProfileData["workExperience"];
-    portfolioUrl: string;
-    otherLinks: string[];
-    languages: string[];
-    hobbies: string[];
-    isECR: boolean | null;
-    fullTimeCompensation: number | null;
-    partTimeCompensation: number | null;
-  };
-  interviewRelease?: boolean;
-  interviews: InterviewDetail[];
-};
 
 function initialsFor(name: string, fallback = "?"): string {
   const source = name.trim() || fallback;
@@ -162,7 +127,7 @@ function TagList({ label, items }: { label: string; items: string[] }) {
 function ResumeAccordionBody({
   profile,
 }: {
-  profile: ApplicantDetailResponse["profile"];
+  profile: ApplicantDetail["profile"];
 }) {
   return (
     <div className="space-y-5">
@@ -290,7 +255,11 @@ function ResumeAccordionBody({
   );
 }
 
-function InterviewAccordionBody({ interview }: { interview: InterviewDetail }) {
+function InterviewAccordionBody({
+  interview,
+}: {
+  interview: ApplicantInterviewDetail;
+}) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
@@ -380,7 +349,7 @@ function InterviewAccordionBody({ interview }: { interview: InterviewDetail }) {
 function CustomQuestionsAccordionBody({
   interview,
 }: {
-  interview: InterviewDetail;
+  interview: ApplicantInterviewDetail;
 }) {
   const questions = interview.customQuestions ?? [];
   const byId = new Map(
@@ -449,7 +418,7 @@ export function ApplicantSheet({
   const [actionLoading, setActionLoading] = useState<ApplicationStatus | null>(
     null,
   );
-  const [data, setData] = useState<ApplicantDetailResponse | null>(null);
+  const [data, setData] = useState<ApplicantDetail | null>(null);
 
   const load = useCallback(async () => {
     if (!jobId || !applicantId) return;
@@ -457,10 +426,9 @@ export function ApplicantSheet({
     setError("");
     setActionError("");
     try {
-      const res = await fetch(`/api/jobs/${jobId}/applications/${applicantId}`);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Failed to load candidate");
-      setData(json as ApplicantDetailResponse);
+      const result = await getOwnedApplicantDetailAction(jobId, applicantId);
+      if (!result.ok) throw new Error(result.error);
+      setData(result);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load candidate");
       setData(null);
@@ -485,17 +453,13 @@ export function ApplicantSheet({
     setActionLoading(status);
     setActionError("");
     try {
-      const res = await fetch(
-        `/api/jobs/${jobId}/applications/${applicantId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status }),
-        },
+      const result = await updateApplicantStatusAction(
+        jobId,
+        applicantId,
+        status,
       );
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Failed to update status");
-      const nextStatus = json.application.status as ApplicationStatus;
+      if (!result.ok) throw new Error(result.error);
+      const nextStatus = result.application.status;
       setData((prev) =>
         prev
           ? {

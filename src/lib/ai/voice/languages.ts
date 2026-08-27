@@ -156,37 +156,6 @@ export function resumeVoicePrompt(code: string | null | undefined): string {
   return resumePickCopy(code).title;
 }
 
-/** Load profile.voiceLanguage for work candidates (null if unset). */
-export async function fetchProfileVoiceLanguage(): Promise<TtsLanguageCode | null> {
-  try {
-    const res = await fetch("/api/candidate/profile");
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      profile?: { voiceLanguage?: string | null };
-    };
-    const raw = data.profile?.voiceLanguage?.trim();
-    return parseTtsLanguage(raw);
-  } catch {
-    return null;
-  }
-}
-
-export async function saveProfileVoiceLanguage(
-  code: TtsLanguageCode,
-): Promise<void> {
-  const res = await fetch("/api/candidate/voice-language", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language_code: code }),
-  });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as {
-      error?: string;
-    } | null;
-    throw new Error(data?.error || "Failed to save language");
-  }
-}
-
 export function voiceLanguagePrompt(languageCode?: string | null): string {
   const selected = languageCode?.trim();
   const simplicity = `Vocabulary: use simple, well-known everyday words. Keep sentences short. Avoid rare or overly formal words.`;

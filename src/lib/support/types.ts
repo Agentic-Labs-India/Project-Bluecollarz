@@ -65,18 +65,15 @@ export type SupportTicketDetail = SupportTicketListItem & {
   transcript: SupportTranscriptTurn[];
 };
 
-export function normalizeSupportStatus(
-  value: string | null | undefined,
-): SupportStatus {
-  const normalized = value?.toLowerCase().trim();
-  if (normalized === "in_progress") return "assigned";
-  if (
-    normalized === "open" ||
-    normalized === "assigned" ||
-    normalized === "resolved" ||
-    normalized === "closed"
-  ) {
-    return normalized;
-  }
-  return "open";
+export function isSupportStatus(value: unknown): value is SupportStatus {
+  return (
+    value === "open" ||
+    value === "assigned" ||
+    value === "resolved" ||
+    value === "closed"
+  );
+}
+
+export function parseSupportStatus(value: unknown): SupportStatus | null {
+  return isSupportStatus(value) ? value : null;
 }

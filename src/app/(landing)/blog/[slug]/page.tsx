@@ -6,15 +6,27 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BlogPostCta } from "@/components/landing/blog-post-cta";
 import { RichTextContent } from "@/components/ui/rich-text-content";
-import { getBlogBySlug } from "@/lib/blog";
 import {
   blobAbsoluteFileUrl,
   blobFileUrl,
 } from "@/lib/blob/pathname";
+import { getBlogBySlug, listPublishedBlogsForSitemap } from "@/lib/blog";
+import {
+  CACHE_COMPONENTS_BLOG_SAMPLE,
+  staticParamsOrSample,
+} from "@/lib/core/static-params";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateStaticParams() {
+  const posts = await listPublishedBlogsForSitemap();
+  return staticParamsOrSample(
+    posts.map((post) => ({ slug: post.slug })),
+    CACHE_COMPONENTS_BLOG_SAMPLE,
+  );
+}
 
 function formatBlogDate(iso: string): string {
   const d = new Date(iso);

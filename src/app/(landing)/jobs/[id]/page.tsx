@@ -6,12 +6,24 @@ import { LoginButton } from "@/components/auth/login-button";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import { formatJobPlaceLabel } from "@/lib/core/geo/places";
 import { htmlToPlainText } from "@/lib/core/rich-text";
+import {
+  CACHE_COMPONENTS_JOB_SAMPLE,
+  staticParamsOrSample,
+} from "@/lib/core/static-params";
 import { JOB_LOCATION_LABELS, type JobLocation } from "@/lib/jobs";
-import { getPublishedJobPublic } from "@/lib/jobs/queries";
+import { getPublishedJobPublic, listPublishedJobsForSitemap } from "@/lib/jobs/queries";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
+
+export async function generateStaticParams() {
+  const jobs = await listPublishedJobsForSitemap();
+  return staticParamsOrSample(
+    jobs.map((job) => ({ id: job.id })),
+    CACHE_COMPONENTS_JOB_SAMPLE,
+  );
+}
 
 function seoDescriptionFromOverview(overview: string): string {
   const plain = htmlToPlainText(overview).replace(/\s+/g, " ").trim();

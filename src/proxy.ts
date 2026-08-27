@@ -1,11 +1,15 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
+import { getCandidateGateStatus } from "@/lib/candidate/queries";
 import { PROFILE_BASE_ROUTES } from "@/lib/core/routes";
+import { getHireOnboardingStatus } from "@/lib/hire/onboarding";
+import { isHireOnboardingVerified } from "@/lib/hire/onboarding/types";
 import { isNativeUserAgent } from "@/lib/native/platform";
 import {
   getProfileBasePath,
   getProfileHomePath,
-  normalizeProfileType,
+  parseProfileType,
   type ProfileType,
 } from "@/lib/user/profile-types";
 
@@ -25,7 +29,6 @@ const createRouteMatcher = (patterns: string[]) => {
 const isPublicRoute = createRouteMatcher([
   "/api/auth(.*)",
   "/api/blob/file",
-  "/api/recruiter-inquiries",
   "/",
   "/auth",
   "/about",
@@ -58,64 +61,9 @@ const isHirePreAppAllowed = createRouteMatcher([
   "/hire/settings",
 ]);
 
-type SessionUser = {
-  id?: string | null;
-  email?: string | null;
-  profileType?: string | null;
-};
-
-async function getSessionUser(req: NextRequest): Promise<SessionUser | null> {
-  try {
-    const origin = req.nextUrl.origin;
-    const res = await fetch(`${origin}/api/auth/get-session`, {
-      headers: { cookie: req.headers.get("cookie") || "" },
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      return data?.user ?? null;
-    }
-  } catch (error) {
-    console.error("Middleware session lookup failed:", error);
-  }
-  return null;
-}
-
-async function getCandidateGate(req: NextRequest): Promise<{
-  complete: boolean;
-  kycVerified: boolean;
-}> {
-  try {
-    const origin = req.nextUrl.origin;
-    const res = await fetch(`${origin}/api/candidate/onboarding-status`, {
-      headers: { cookie: req.headers.get("cookie") || "" },
-    });
-    if (!res.ok) return { complete: false, kycVerified: false };
-    const data = (await res.json()) as {
-      complete?: boolean;
-      kycVerified?: boolean;
-    };
-    return {
-      complete: Boolean(data.complete),
-      kycVerified: Boolean(data.kycVerified),
-    };
-  } catch {
-    return { complete: false, kycVerified: false };
-  }
-}
-
-async function getHireGate(req: NextRequest): Promise<{ complete: boolean }> {
-  try {
-    const origin = req.nextUrl.origin;
-    const res = await fetch(`${origin}/api/hire/onboarding-status`, {
-      headers: { cookie: req.headers.get("cookie") || "" },
-    });
-    if (!res.ok) return { complete: false };
-    const data = (await res.json()) as { complete?: boolean };
-    return { complete: Boolean(data.complete) };
-  } catch {
-    return { complete: false };
-  }
+async function getSessionUser(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: req.headers });
+  return session?.user ?? null;
 }
 
 function isPathAllowedForProfile(pathname: string, profileType: ProfileType) {
@@ -148,13 +96,11 @@ export async function proxy(req: NextRequest) {
   const native = isNativeRequest(req);
   const signIn = signInPath(req);
 
-  // /auth is the Capacitor shell only. Browsers stay on the marketing site.
   if (pathname === "/auth" && !native) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
   if (!isPublicRoute(req) && !sessionCookie) {
-    // API clients get a status they can branch on; pages get sent to sign-in.
     return pathname.startsWith("/api/")
       ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       : NextResponse.redirect(new URL(signIn, req.url));
@@ -169,9 +115,12 @@ export async function proxy(req: NextRequest) {
     if (!user?.id) {
       return clearSessionAndRedirect(req, signIn);
     }
-    const profileType = normalizeProfileType(user.profileType ?? undefined);
+    const profileType = parseProfileType(user.profileType);
+    if (!profileType) {
+      return clearSessionAndRedirect(req, signIn);
+    }
     if (profileType === "work") {
-      const { complete, kycVerified } = await getCandidateGate(req);
+      const { complete, kycVerified } = await getCandidateGateStatus(user.id);
       const next = !kycVerified
         ? "/candidate/kyc"
         : !complete
@@ -180,9 +129,12 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL(next, req.url));
     }
     if (profileType === "hire") {
-      const { complete } = await getHireGate(req);
+      const status = await getHireOnboardingStatus(user.id);
       return NextResponse.redirect(
-        new URL(complete ? "/hire/roles" : "/hire/onboarding", req.url),
+        new URL(
+          isHireOnboardingVerified(status) ? "/hire/roles" : "/hire/onboarding",
+          req.url,
+        ),
       );
     }
     return NextResponse.redirect(
@@ -197,22 +149,23 @@ export async function proxy(req: NextRequest) {
         return clearSessionAndRedirect(req, signIn);
       }
 
-      const profileType = normalizeProfileType(user.profileType ?? undefined);
+      const profileType = parseProfileType(user.profileType);
+      if (!profileType) {
+        return clearSessionAndRedirect(req, signIn);
+      }
 
-      // Each profile type stays in its own app area.
       if (!isPathAllowedForProfile(pathname, profileType)) {
         return NextResponse.redirect(
           new URL(getProfileHomePath(profileType), req.url),
         );
       }
 
-      // Work candidates: DigiLocker KYC (from login), then voice onboarding, then the app.
       if (
         profileType === "work" &&
         pathname.startsWith("/candidate") &&
         !isCandidatePreAppAllowed(req)
       ) {
-        const { complete, kycVerified } = await getCandidateGate(req);
+        const { complete, kycVerified } = await getCandidateGateStatus(user.id);
         if (!kycVerified) {
           return NextResponse.redirect(new URL("/candidate/kyc", req.url));
         }
@@ -224,7 +177,8 @@ export async function proxy(req: NextRequest) {
       }
 
       if (profileType === "hire" && pathname.startsWith("/hire")) {
-        const { complete } = await getHireGate(req);
+        const status = await getHireOnboardingStatus(user.id);
+        const complete = isHireOnboardingVerified(status);
         if (!complete && !isHirePreAppAllowed(req)) {
           return NextResponse.redirect(new URL("/hire/onboarding", req.url));
         }

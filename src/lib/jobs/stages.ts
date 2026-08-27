@@ -45,13 +45,14 @@ export function isApplicationStageId(id: string): id is ApplicationStageId {
 }
 
 /** Resume is always first; only known optional stages may follow. */
-export function normalizeStepTemplates(
+export function resolveStepTemplates(
   templates: Array<{ id: string }> | undefined,
 ): ApplicationStepTemplate[] {
   const selected = new Set<ApplicationStageId>(["resume"]);
   for (const step of templates ?? []) {
-    const id = String(step.id ?? "").trim();
-    if (isApplicationStageId(id) && id !== "resume") selected.add(id);
+    if (isApplicationStageId(step.id) && step.id !== "resume") {
+      selected.add(step.id);
+    }
   }
 
   return APPLICATION_STAGE_OPTIONS.filter((stage) =>

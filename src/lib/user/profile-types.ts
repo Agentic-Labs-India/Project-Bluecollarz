@@ -26,34 +26,22 @@ const PROFILE_ID_LABELS: Record<ProfileType, string> = {
   admin: "Admin",
 };
 
-export function getProfileIdLabel(
-  profileType: string | null | undefined,
-): string {
-  return PROFILE_ID_LABELS[normalizeProfileType(profileType)];
+export function isProfileType(value: unknown): value is ProfileType {
+  return value === "work" || value === "hire" || value === "admin";
 }
 
-export function normalizeProfileType(
-  value: string | null | undefined,
-): ProfileType {
-  const normalized = value?.toLowerCase().trim();
-  if (
-    normalized === "hire" ||
-    normalized === "work" ||
-    normalized === "admin"
-  ) {
-    return normalized;
-  }
-  return DEFAULT_PROFILE_TYPE;
+export function parseProfileType(value: unknown): ProfileType | null {
+  return isProfileType(value) ? value : null;
 }
 
-export function getProfileBasePath(
-  profileType: string | null | undefined,
-): string {
-  return PROFILE_BASES[normalizeProfileType(profileType)];
+export function getProfileIdLabel(profileType: ProfileType): string {
+  return PROFILE_ID_LABELS[profileType];
 }
 
-export function getProfileHomePath(
-  profileType: string | null | undefined,
-): string {
-  return PROFILE_HOMES[normalizeProfileType(profileType)];
+export function getProfileBasePath(profileType: ProfileType): string {
+  return PROFILE_BASES[profileType];
+}
+
+export function getProfileHomePath(profileType: ProfileType): string {
+  return PROFILE_HOMES[profileType];
 }

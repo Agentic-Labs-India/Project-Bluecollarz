@@ -1,13 +1,7 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HireShell } from "@/app/(software)/hire/hire-shell";
 import { TablePageSkeleton } from "@/components/layout/page-skeleton";
-import { auth } from "@/lib/auth/auth";
-import {
-  getProfileHomePath,
-  normalizeProfileType,
-} from "@/lib/user/profile-types";
+import { requirePageProfile } from "@/lib/auth/session";
 
 /**
  * Hire area: only `hire` profiles. Others are sent to their home.
@@ -27,17 +21,6 @@ export default function HireLayout({
 }
 
 async function HireAuthGate({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as
-    | { id?: string; profileType?: string }
-    | undefined;
-
-  if (!user?.id) redirect("/");
-
-  const profileType = normalizeProfileType(user.profileType);
-  if (profileType !== "hire") {
-    redirect(getProfileHomePath(profileType));
-  }
-
+  await requirePageProfile("hire");
   return <HireShell>{children}</HireShell>;
 }

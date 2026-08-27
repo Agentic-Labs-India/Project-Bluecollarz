@@ -230,21 +230,17 @@ export async function listPublishedBlogsForSitemap(): Promise<
   cacheLife(BLOG_CACHE_LIFE);
   cacheTag(PUBLISHED_BLOGS_CACHE_TAG);
 
-  try {
-    const docs = await client
-      .db(DB_NAME)
-      .collection<BlogDoc>(COLLECTIONS.BLOGS)
-      .find({ status: "published" }, { projection: { slug: 1, updatedAt: 1 } })
-      .sort({ publishedAt: -1 })
-      .limit(500)
-      .toArray();
-    return docs.map((d) => ({
-      slug: d.slug,
-      updatedAt: d.updatedAt.toISOString(),
-    }));
-  } catch {
-    return [];
-  }
+  const docs = await client
+    .db(DB_NAME)
+    .collection<BlogDoc>(COLLECTIONS.BLOGS)
+    .find({ status: "published" }, { projection: { slug: 1, updatedAt: 1 } })
+    .sort({ publishedAt: -1 })
+    .limit(500)
+    .toArray();
+  return docs.map((d) => ({
+    slug: d.slug,
+    updatedAt: d.updatedAt.toISOString(),
+  }));
 }
 
 export async function getBlogBySlug(

@@ -1,4 +1,4 @@
-/** Client analytics consent helpers (anonymous + signed-in sync). */
+import { getUserPreferencesAction, updateUserPreferencesAction } from "@/lib/user/actions";
 
 export const ANALYTICS_CONSENT_KEY = "blucollarz_analytics_consent_v1";
 
@@ -50,21 +50,14 @@ export async function syncAnalyticsConsentWithAccount(): Promise<
   if (typeof window === "undefined") return null;
   const local = readAnalyticsConsent();
   try {
-    const res = await fetch("/api/user/preferences");
-    if (!res.ok) return null;
-    const json = (await res.json()) as {
-      preferences?: { cookiesEnabled?: boolean };
-    };
-    const serverGranted = json.preferences?.cookiesEnabled === true;
+    const loaded = await getUserPreferencesAction();
+    if (!loaded.ok) return null;
+    const serverGranted = loaded.preferences.cookiesEnabled === true;
 
     if (local === "granted" || local === "denied") {
       const want = local === "granted";
       if (want !== serverGranted) {
-        await fetch("/api/user/preferences", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cookiesEnabled: want }),
-        });
+        await updateUserPreferencesAction({ cookiesEnabled: want });
       }
       applyGtagConsent(want);
       return want;

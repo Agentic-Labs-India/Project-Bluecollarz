@@ -9,7 +9,7 @@ import {
   hasAgreedToSite,
   requestSiteAgreement,
 } from "@/lib/compliance/site-agreement";
-import { getProfileHomePath } from "@/lib/user/profile-types";
+import { getProfileHomePath, parseProfileType } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
 
 export const DIGILOCKER_START_PATH = "/api/auth/digilocker/start";
@@ -34,7 +34,8 @@ export function LoginButton({
     onBeforeOpen?.();
 
     if (session?.user) {
-      router.push(getProfileHomePath(session.user.profileType));
+      const profileType = parseProfileType(session.user.profileType);
+      if (profileType) router.push(getProfileHomePath(profileType));
       return;
     }
 

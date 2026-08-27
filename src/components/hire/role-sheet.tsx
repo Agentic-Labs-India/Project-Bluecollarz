@@ -19,9 +19,33 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { JobListItem } from "@/lib/jobs";
-import { JOB_STATUS_LABELS } from "@/lib/jobs";
+import { getOwnedJobEditorAction, updateJobAction } from "@/lib/jobs/actions";
+import {
+  DEFAULT_CURRENCY,
+  DEFAULT_PAY_TYPE,
+  JOB_STATUS_LABELS,
+  type JobEditorForm,
+  type JobListItem,
+} from "@/lib/jobs";
 import { placeholderKeys } from "@/lib/utils";
+
+function toJobFormValues(form: JobEditorForm): JobFormValues {
+  return {
+    title: form.title,
+    payAmount: form.payAmount != null ? String(form.payAmount) : "",
+    payType: form.payType ?? DEFAULT_PAY_TYPE,
+    payCurrency: form.payCurrency ?? DEFAULT_CURRENCY,
+    tab: form.tab,
+    overview: form.overview,
+    location: form.location ?? "on-site",
+    countryCode: form.countryCode,
+    stateCode: form.stateCode,
+    priority: form.priority,
+    applicationStepTemplates: form.applicationStepTemplates,
+    customQuestions: form.customQuestions,
+    raRcNumber: form.raRcNumber,
+  };
+}
 
 function RoleFormSkeleton() {
   return (
@@ -73,11 +97,10 @@ export function RoleSheet({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/jobs/${jobId}`);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Role not found");
-      setItem(json.item);
-      setFormValues(json.form);
+      const result = await getOwnedJobEditorAction(jobId);
+      if (!result.ok) throw new Error(result.error);
+      setItem(result.item);
+      setFormValues(toJobFormValues(result.form));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load role");
     } finally {
@@ -98,14 +121,12 @@ export function RoleSheet({
 
   async function updateJob(values: JobFormValues, publish: boolean) {
     if (!jobId) return;
-    const res = await fetch(`/api/jobs/${jobId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jobFormPayload(values, publish)),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || "Failed to update role");
-    setItem(json.item);
+    const result = await updateJobAction(
+      jobId,
+      jobFormPayload(values, publish),
+    );
+    if (!result.ok) throw new Error(result.error);
+    setItem(result.item);
     setFormValues({
       ...values,
       customQuestions: values.customQuestions ?? [],
@@ -118,14 +139,9 @@ export function RoleSheet({
     setActionLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/jobs/${jobId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Action failed");
-      setItem(json.item);
+      const result = await updateJobAction(jobId, { action });
+      if (!result.ok) throw new Error(result.error);
+      setItem(result.item);
       onChanged?.();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Action failed");

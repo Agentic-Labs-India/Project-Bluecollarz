@@ -1,4 +1,9 @@
-import type { InterviewStageId, InterviewStatus } from "@/lib/interviews";
+import type { CommunicationAnalysis, InterviewStageId, InterviewStatus } from "@/lib/interviews";
+import type { HireSafeProfile } from "@/lib/compliance/arm";
+import type {
+  CustomQuestion,
+  CustomQuestionAnswer,
+} from "@/lib/jobs/custom-questions";
 
 const APPLICATION_STATUSES = ["applied", "selected", "rejected"] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
@@ -98,3 +103,25 @@ export interface PaginatedApplicantsResponse {
   limit: number;
   pageCount: number;
 }
+
+export type ApplicantInterviewDetail = {
+  id: string;
+  stageId: InterviewStageId;
+  status: string;
+  jobTitle: string;
+  analysis: CommunicationAnalysis | null;
+  videoUrl: string | null;
+  customQuestions: CustomQuestion[];
+  customAnswers: CustomQuestionAnswer[];
+  transcript: Array<{ role: "assistant" | "user"; text: string; at: string }>;
+  startedAt: string;
+  completedAt: string | null;
+};
+
+export type ApplicantDetail = {
+  job: { id: string; title: string };
+  application: { id: string; status: ApplicationStatus; appliedAt: string };
+  profile: HireSafeProfile;
+  interviewRelease: boolean;
+  interviews: ApplicantInterviewDetail[];
+};

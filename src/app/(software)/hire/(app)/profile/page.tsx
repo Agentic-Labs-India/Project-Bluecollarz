@@ -1,22 +1,13 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { HireProfileView } from "@/components/hire/hire-profile-view";
-import { auth } from "@/lib/auth/auth";
+import { requirePageProfile } from "@/lib/auth/session";
 import { getHireOnboarding } from "@/lib/hire/onboarding";
 import { getHireOverview } from "@/lib/hire/queries";
 
 export default async function HireProfilePage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user as { id?: string; email?: string } | undefined;
-  if (!user?.id) redirect("/");
-
+  const user = await requirePageProfile("hire");
   const [overview, onboarding] = await Promise.all([
-    getHireOverview({
-      id: user.id,
-      email: user.email ?? "",
-    }),
+    getHireOverview({ id: user.id, email: user.email }),
     getHireOnboarding(user.id),
   ]);
-
   return <HireProfileView overview={overview} onboarding={onboarding} />;
 }

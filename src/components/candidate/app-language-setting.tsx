@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  fetchProfileVoiceLanguage,
-  saveProfileVoiceLanguage,
+  getCandidateVoiceLanguageAction,
+  saveCandidateVoiceLanguageAction,
+} from "@/lib/candidate/actions";
+import {
+  isTtsLanguageCode,
   type TtsLanguageCode,
   VOICE_LANGUAGE_OPTIONS,
 } from "@/lib/ai/voice/languages";
@@ -31,9 +34,10 @@ export function AppLanguageSetting() {
       setLoading(true);
       setError("");
       try {
-        const code = await fetchProfileVoiceLanguage();
+        const result = await getCandidateVoiceLanguageAction();
+        if (!result.ok) throw new Error(result.error);
         if (!cancelled) {
-          setValue(code ?? TTS_VOICE.languageCode);
+          setValue(result.language ?? TTS_VOICE.languageCode);
         }
       } catch {
         if (!cancelled) setError("Could not load language.");
@@ -47,13 +51,18 @@ export function AppLanguageSetting() {
   }, []);
 
   const onChange = async (next: string) => {
-    const code = (next as TtsLanguageCode) || TTS_VOICE.languageCode;
+    if (!isTtsLanguageCode(next)) {
+      setError("Invalid language.");
+      return;
+    }
+    const code = next;
     const previous = value;
     setValue(code);
     setSaving(true);
     setError("");
     try {
-      await saveProfileVoiceLanguage(code);
+      const saved = await saveCandidateVoiceLanguageAction(code);
+      if (!saved.ok) throw new Error(saved.error);
     } catch {
       setValue(previous);
       setError("Could not save language. Try again.");

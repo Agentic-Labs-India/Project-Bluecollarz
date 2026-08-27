@@ -37,7 +37,7 @@ import {
   writeAnalyticsConsent,
 } from "@/lib/compliance/analytics";
 import type { UserPreferences } from "@/lib/user/preferences";
-import { getProfileIdLabel } from "@/lib/user/profile-types";
+import { getProfileIdLabel, parseProfileType } from "@/lib/user/profile-types";
 import { cn } from "@/lib/utils";
 
 const HelpDialog = dynamic(() =>
@@ -62,7 +62,8 @@ function UserMenuDropdown({
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { data: session } = authClient.useSession();
-  const profileTypeLabel = getProfileIdLabel(session?.user?.profileType);
+  const profileType = parseProfileType(session?.user?.profileType);
+  const profileTypeLabel = profileType ? getProfileIdLabel(profileType) : null;
   const initial = user.name?.charAt(0)?.toUpperCase() || "U";
 
   const handleLogout = async () => {
@@ -115,7 +116,7 @@ function UserMenuDropdown({
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => router.push(profileHref)}>
             <IdCardIcon />
-            Profile : {profileTypeLabel} 😄
+            Profile : {profileTypeLabel ?? "Account"} 😄
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

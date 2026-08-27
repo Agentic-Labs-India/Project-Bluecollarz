@@ -43,6 +43,7 @@ import {
   type Opportunity,
   type OpportunityTab,
 } from "@/lib/jobs/opportunities";
+import { applyToJobAction, listPublishedOpportunitiesAction } from "@/lib/jobs/actions";
 import { cn } from "@/lib/utils";
 
 function isJobId(id: string): boolean {
@@ -408,26 +409,15 @@ export function ExploreOpportunities({
   }, [initialJobId]);
 
   const applyJobsResponse = (json: {
-    items?: Opportunity[];
-    applicationStatuses?: Record<string, ApplicationStatus>;
-    appliedJobIds?: string[];
-    profileComplete?: boolean;
-    pageCount?: number;
+    items: Opportunity[];
+    applicationStatuses: Record<string, ApplicationStatus>;
+    profileComplete: boolean;
+    pageCount: number;
   }) => {
-    setOpportunities((json.items ?? []).slice(0, EXPLORE_PAGE_SIZE));
-    if (json.applicationStatuses) {
-      setApplicationStatuses(json.applicationStatuses);
-    } else if (json.appliedJobIds) {
-      const next: Record<string, ApplicationStatus> = {};
-      for (const id of json.appliedJobIds) next[id] = "applied";
-      setApplicationStatuses(next);
-    } else {
-      setApplicationStatuses({});
-    }
-    if (typeof json.profileComplete === "boolean") {
-      setProfileComplete(json.profileComplete);
-    }
-    if (typeof json.pageCount === "number" && json.pageCount >= 1) {
+    setOpportunities(json.items.slice(0, EXPLORE_PAGE_SIZE));
+    setApplicationStatuses(json.applicationStatuses);
+    setProfileComplete(json.profileComplete);
+    if (json.pageCount >= 1) {
       setPageCount(json.pageCount);
     }
   };
@@ -461,38 +451,32 @@ export function ExploreOpportunities({
     }
     skipInitialFetch.current = false;
 
-    const controller = new AbortController();
+    let cancelled = false;
     void (async () => {
       setLoading(true);
       setFetchError("");
       try {
-        const params = new URLSearchParams({
-          scope: "public",
-          page: String(page),
-          limit: String(EXPLORE_PAGE_SIZE),
+        const result = await listPublishedOpportunitiesAction({
+          page,
+          limit: EXPLORE_PAGE_SIZE,
+          tab: workType !== "all" ? workType : "",
+          search: searchDebounced,
+          priority: priority !== "all" ? priority : "",
         });
-        if (workType !== "all") params.set("tab", workType);
-        if (searchDebounced) params.set("search", searchDebounced);
-        if (priority !== "all") params.set("priority", priority);
-
-        const res = await fetch(`/api/jobs?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Failed to load opportunities");
-        applyJobsResponse(
-          (await res.json()) as Parameters<typeof applyJobsResponse>[0],
-        );
-      } catch (e: unknown) {
-        if (e instanceof Error && e.name === "AbortError") return;
+        if (cancelled) return;
+        if (!result.ok) throw new Error(result.error);
+        applyJobsResponse(result);
+      } catch {
+        if (cancelled) return;
         setFetchError("Could not load opportunities. Try again.");
         setOpportunities([]);
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
 
     return () => {
-      controller.abort();
+      cancelled = true;
     };
   }, [workType, searchDebounced, priority, page]);
 
@@ -521,32 +505,28 @@ export function ExploreOpportunities({
     }
     pinFetchAttempted.current = selectedId;
 
-    const controller = new AbortController();
+    let cancelled = false;
     void (async () => {
       try {
-        const params = new URLSearchParams({
-          scope: "public",
-          page: "1",
-          limit: String(EXPLORE_PAGE_SIZE),
+        const result = await listPublishedOpportunitiesAction({
+          page: 1,
+          limit: EXPLORE_PAGE_SIZE,
           pinJobId: selectedId,
         });
-        const res = await fetch(`/api/jobs?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) {
+        if (cancelled) return;
+        if (!result.ok) {
           selectJob(null);
           return;
         }
-        applyJobsResponse(
-          (await res.json()) as Parameters<typeof applyJobsResponse>[0],
-        );
-      } catch (e: unknown) {
-        if (e instanceof Error && e.name === "AbortError") return;
-        selectJob(null);
+        applyJobsResponse(result);
+      } catch {
+        if (!cancelled) selectJob(null);
       }
     })();
 
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pin keyed by selectedId + current page list
   }, [
     selectedId,
@@ -561,10 +541,9 @@ export function ExploreOpportunities({
   const applyToJob = async (jobId: string) => {
     setApplying(true);
     try {
-      const res = await fetch(`/api/jobs/${jobId}/apply`, { method: "POST" });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(json.error || "Could not submit application");
+      const result = await applyToJobAction(jobId);
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
       setApplicationStatuses((prev) => ({ ...prev, [jobId]: "applied" }));

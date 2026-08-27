@@ -24,6 +24,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AdminUserListItem } from "@/lib/admin/queries";
+import {
+  cancelAdminInviteAction,
+  listAdminUsersAction,
+  provisionAdminUserAction,
+} from "@/lib/admin/actions";
 import { getProfileIdLabel } from "@/lib/user/profile-types";
 
 function initials(name: string | null, email: string) {
@@ -56,12 +61,12 @@ export function AdminUsersTable({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/users?type=${type}`);
-      const json = (await res.json().catch(() => ({}))) as {
-        items?: AdminUserListItem[];
-      };
-      if (res.ok) setData(json.items ?? []);
-      else toast.error("Could not refresh list");
+      const result = await listAdminUsersAction(type);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setData(result.items);
     } catch {
       toast.error("Could not refresh list");
     } finally {
@@ -74,24 +79,18 @@ export function AdminUsersTable({
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), profileType: type }),
+      const result = await provisionAdminUserAction({
+        email: email.trim(),
+        profileType: type,
       });
-      const json = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        item?: AdminUserListItem;
-        created?: boolean;
-      };
-      if (!res.ok) {
-        setError(json.error || "Could not add user");
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
       setAddOpen(false);
       setEmail("");
       toast.success(
-        json.created
+        result.created
           ? `${roleLabel} invite saved — they’ll get access on Corporate Login (Google)`
           : `Updated to ${roleLabel.toLowerCase()}`,
       );
@@ -107,17 +106,9 @@ export function AdminUsersTable({
     if (!user.pending) return;
     setRowBusyId(user.id);
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "pending",
-          email: user.email,
-        }),
-      });
-      if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(json.error || "Could not cancel invite");
+      const result = await cancelAdminInviteAction({ email: user.email });
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
       setData((prev) => prev.filter((row) => row.id !== user.id));

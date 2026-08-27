@@ -20,17 +20,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   type CandidateProfileData,
   type EducationFormEntry,
-  emptyCandidateProfileData,
   emptyEducationEntry,
   emptyWorkEntry,
   HOBBY_PRESETS,
   type WorkFormEntry,
 } from "@/lib/candidate/profile";
-import {
-  countryCodeFromName,
-  normalizeCountryNames,
-  normalizeResidencePlace,
-} from "@/lib/core/geo/places";
+import { countryCodeFromName } from "@/lib/core/geo/places";
+import { saveCandidateProfileAction } from "@/lib/candidate/actions";
 import { cn } from "@/lib/utils";
 
 const AUTOSAVE_DEBOUNCE_MS = 700;
@@ -182,67 +178,26 @@ function workTitle(entry: WorkFormEntry) {
   return role || company || "Work experience";
 }
 
-export function CandidateProfileView() {
-  const [profile, setProfile] = useState<CandidateProfileData>(
-    emptyCandidateProfileData(),
-  );
-  const [loading, setLoading] = useState(true);
-  const [ready, setReady] = useState(false);
+export function CandidateProfileView({
+  initialProfile,
+}: {
+  initialProfile: CandidateProfileData;
+}) {
+  const [profile, setProfile] = useState<CandidateProfileData>(initialProfile);
+  const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
   const profileRef = useRef(profile);
-  const lastSavedJsonRef = useRef<string | null>(null);
+  const lastSavedJsonRef = useRef<string | null>(
+    JSON.stringify(buildProfileSavePayload(initialProfile)),
+  );
   const saveRequestIdRef = useRef(0);
-  const readyRef = useRef(false);
+  const readyRef = useRef(true);
 
   profileRef.current = profile;
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/candidate/profile");
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to load");
-        if (cancelled) return;
-        const next = data.profile as CandidateProfileData;
-        next.preferredCountries = normalizeCountryNames(
-          next.preferredCountries ?? [],
-        );
-        const place = normalizeResidencePlace({
-          country: next.residenceCountry,
-          state: next.residenceState,
-          city: next.residenceCity,
-        });
-        next.residenceCountry = place.country;
-        next.residenceState = place.state;
-        next.residenceCity = place.city;
-        setProfile(next);
-        lastSavedJsonRef.current = JSON.stringify(
-          buildProfileSavePayload(next),
-        );
-        readyRef.current = true;
-        setReady(true);
-      } catch (e) {
-        if (!cancelled) {
-          const message =
-            e instanceof Error ? e.message : "Failed to load profile";
-          setError(
-            message.includes("work")
-              ? "This page is for Candidate accounts. Sign in with a Candidate (work) profile to continue onboarding."
-              : message,
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (!ready || loading) return;
@@ -262,14 +217,9 @@ export function CandidateProfileView() {
       setError("");
       void (async () => {
         try {
-          const res = await fetch("/api/candidate/profile", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: bodyJson,
-          });
-          const data = await res.json();
+          const result = await saveCandidateProfileAction(body);
           if (requestId !== saveRequestIdRef.current) return;
-          if (!res.ok) throw new Error(data.error || "Save failed");
+          if (!result.ok) throw new Error(result.error);
           lastSavedJsonRef.current = bodyJson;
           setSaved(true);
         } catch (e) {
@@ -294,12 +244,7 @@ export function CandidateProfileView() {
       const body = buildProfileSavePayload(profileRef.current);
       const bodyJson = JSON.stringify(body);
       if (bodyJson === lastSavedJsonRef.current) return;
-      void fetch("/api/candidate/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: bodyJson,
-        keepalive: true,
-      });
+      void saveCandidateProfileAction(body);
     };
   }, []);
 

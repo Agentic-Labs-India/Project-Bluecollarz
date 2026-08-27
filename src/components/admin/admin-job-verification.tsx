@@ -30,6 +30,11 @@ import type {
   AdminJobVerificationItem,
   AdminJobVerificationListItem,
 } from "@/lib/admin/job-verification";
+import {
+  getJobUnderVerificationAction,
+  listJobsUnderVerificationAction,
+  reviewJobVerificationAction,
+} from "@/lib/admin/actions";
 import { JOB_STATUS_LABELS } from "@/lib/jobs";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
@@ -78,17 +83,13 @@ export function AdminJobVerification() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/jobs");
-      const json = (await res.json().catch(() => ({}))) as {
-        items?: AdminJobVerificationListItem[];
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(json.error || "Failed to load jobs");
+      const result = await listJobsUnderVerificationAction();
+      if (!result.ok) {
+        toast.error(result.error);
         setItems([]);
         return;
       }
-      setItems(json.items ?? []);
+      setItems(result.items);
     } catch {
       toast.error("Failed to load jobs");
       setItems([]);
@@ -113,19 +114,15 @@ export function AdminJobVerification() {
 
     void (async () => {
       try {
-        const res = await fetch(`/api/admin/jobs/${selectedId}`);
-        const json = (await res.json().catch(() => ({}))) as {
-          item?: AdminJobVerificationItem;
-          error?: string;
-        };
+        const result = await getJobUnderVerificationAction(selectedId);
         if (cancelled) return;
-        if (!res.ok || !json.item) {
-          toast.error(json.error || "Failed to load job details");
+        if (!result.ok) {
+          toast.error(result.error);
           setSelectedId(null);
           return;
         }
-        setDetail(json.item);
-        setRaRcNumber(json.item.raRcNumber ?? "");
+        setDetail(result.item);
+        setRaRcNumber(result.item.raRcNumber ?? "");
       } catch {
         if (!cancelled) {
           toast.error("Failed to load job details");
@@ -145,17 +142,12 @@ export function AdminJobVerification() {
     if (!selectedId) return;
     setActionLoading("approve");
     try {
-      const res = await fetch(`/api/admin/jobs/${selectedId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "approve",
-          raRcNumber: raRcNumber.trim() || undefined,
-        }),
+      const result = await reviewJobVerificationAction(selectedId, {
+        action: "approve",
+        raRcNumber: raRcNumber.trim() || undefined,
       });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(json.error || "Accept failed");
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
       toast.success("Accepted — job is live and recruiter emailed");
@@ -177,14 +169,12 @@ export function AdminJobVerification() {
     }
     setActionLoading("deny");
     try {
-      const res = await fetch(`/api/admin/jobs/${selectedId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "deny", reason }),
+      const result = await reviewJobVerificationAction(selectedId, {
+        action: "deny",
+        reason,
       });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(json.error || "Decline failed");
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
       toast.success("Declined — moved to draft and recruiter emailed");

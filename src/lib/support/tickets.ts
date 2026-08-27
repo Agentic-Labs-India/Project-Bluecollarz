@@ -18,7 +18,7 @@ import type {
   SupportTicketListItem,
   SupportTranscriptTurn,
 } from "@/lib/support/types";
-import { normalizeSupportStatus } from "@/lib/support/types";
+import { parseSupportStatus } from "@/lib/support/types";
 import type { ProfileType } from "@/lib/user/profile-types";
 import { idHex } from "@/lib/utils";
 
@@ -31,7 +31,7 @@ type SupportTicketDoc = {
   problemType: SupportProblemType;
   seriousness: SupportSeriousness;
   priority: SupportPriority;
-  status: SupportStatus | "in_progress";
+  status: SupportStatus;
   assigneeId?: string | null;
   assigneeName?: string | null;
   assigneeEmail?: string | null;
@@ -82,7 +82,11 @@ function toListItem(
   filerEmail: string | null,
 ): SupportTicketListItem {
   const assignee = toAssignee(doc);
-  let status = normalizeSupportStatus(doc.status);
+  const parsed = parseSupportStatus(doc.status);
+  if (!parsed) {
+    throw new Error(`Invalid support ticket status: ${String(doc.status)}`);
+  }
+  let status = parsed;
   // Assignee presence drives assigned/open when not terminal.
   if (status !== "resolved" && status !== "closed") {
     status = assignee ? "assigned" : "open";

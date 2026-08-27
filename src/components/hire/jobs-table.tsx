@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { JobListItem, PaginatedJobsResponse } from "@/lib/jobs";
-import { JOB_STATUS_LABELS, JOB_STATUSES } from "@/lib/jobs";
+import { listHireJobsAction } from "@/lib/jobs/actions";
+import { JOB_STATUS_LABELS, JOB_STATUSES, type JobListItem } from "@/lib/jobs";
 
 const STATUS_VARIANT: Record<
   JobListItem["status"],
@@ -44,20 +44,16 @@ export function HireJobsTable() {
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        scope: "mine",
-        page: String(pagination.pageIndex + 1),
-        limit: String(pagination.pageSize),
+      const result = await listHireJobsAction({
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        search: search.trim() || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
       });
-      if (search.trim()) params.set("search", search.trim());
-      if (statusFilter !== "all") params.set("status", statusFilter);
-
-      const res = await fetch(`/api/jobs?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to load roles");
-      const json = (await res.json()) as PaginatedJobsResponse;
-      setData(json.items);
-      setPageCount(json.pageCount);
-      setTotalItems(json.total);
+      if (!result.ok) throw new Error(result.error);
+      setData(result.items);
+      setPageCount(result.pageCount);
+      setTotalItems(result.total);
     } catch {
       setData([]);
       setPageCount(1);

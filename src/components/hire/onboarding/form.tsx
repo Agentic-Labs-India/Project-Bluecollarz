@@ -22,6 +22,10 @@ import {
 import { COMPANY_DOC_MAX_BYTES, COMPANY_DOC_MAX_MB } from "@/lib/blob/pathname";
 import { uploadBlob } from "@/lib/blob/client/upload";
 import {
+  saveHireOnboardingAction,
+  submitHireOnboardingAction,
+} from "@/lib/hire/onboarding/actions";
+import {
   GCC_RULE_KEYS,
   GCC_RULE_LABELS,
   type GccRuleKey,
@@ -97,23 +101,15 @@ export function HireOnboardingForm({
       setError("");
       void (async () => {
         try {
-          const res = await fetch("/api/hire/onboarding", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: bodyJson,
-          });
-          const jsonRes = (await res.json().catch(() => ({}))) as {
-            item?: HireOnboardingData;
-            error?: string;
-          };
-          if (requestId !== saveRequestIdRef.current) return;
-          if (!res.ok || !jsonRes.item) {
-            throw new Error(jsonRes.error || "Save failed");
-          }
-          lastSavedJsonRef.current = JSON.stringify(
-            toHireOnboardingSave(jsonRes.item),
+          const result = await saveHireOnboardingAction(
+            toHireOnboardingSave(current),
           );
-          setData(jsonRes.item);
+          if (requestId !== saveRequestIdRef.current) return;
+          if (!result.ok) throw new Error(result.error);
+          lastSavedJsonRef.current = JSON.stringify(
+            toHireOnboardingSave(result.item),
+          );
+          setData(result.item);
           setSaved(true);
         } catch (e) {
           if (requestId !== saveRequestIdRef.current) return;
@@ -134,12 +130,7 @@ export function HireOnboardingForm({
       if (!isHireOnboardingEditable(current.status)) return;
       const bodyJson = JSON.stringify(toHireOnboardingSave(current));
       if (bodyJson === lastSavedJsonRef.current) return;
-      void fetch("/api/hire/onboarding", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: bodyJson,
-        keepalive: true,
-      });
+      void saveHireOnboardingAction(toHireOnboardingSave(current));
     };
   }, []);
 
@@ -212,33 +203,14 @@ export function HireOnboardingForm({
     setSubmitting(true);
     setError("");
     try {
-      const bodyJson = JSON.stringify(toHireOnboardingSave(data));
-      const saveRes = await fetch("/api/hire/onboarding", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: bodyJson,
-      });
-      const savedJson = (await saveRes.json().catch(() => ({}))) as {
-        item?: HireOnboardingData;
-        error?: string;
-      };
-      if (!saveRes.ok || !savedJson.item) {
-        throw new Error(savedJson.error || "Save failed");
-      }
+      const saved = await saveHireOnboardingAction(toHireOnboardingSave(data));
+      if (!saved.ok) throw new Error(saved.error);
 
-      const res = await fetch("/api/hire/onboarding/submit", {
-        method: "POST",
-      });
-      const json = (await res.json().catch(() => ({}))) as {
-        item?: HireOnboardingData;
-        error?: string;
-      };
-      if (!res.ok || !json.item) {
-        throw new Error(json.error || "Submit failed");
-      }
-      setData(json.item);
+      const submitted = await submitHireOnboardingAction();
+      if (!submitted.ok) throw new Error(submitted.error);
+      setData(submitted.item);
       lastSavedJsonRef.current = JSON.stringify(
-        toHireOnboardingSave(json.item),
+        toHireOnboardingSave(submitted.item),
       );
       setSaved(true);
     } catch (e) {

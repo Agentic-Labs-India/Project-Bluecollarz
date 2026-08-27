@@ -116,7 +116,7 @@ export function useCameraRecorder() {
 
   const stop = useCallback(async (): Promise<Blob | null> => {
     const { recorder, chunks } = stateRef.current;
-    const blob = await stopMediaRecorder(recorder, chunks, 8_000, "video/webm");
+    const blob = await stopMediaRecorder(recorder, chunks, 20_000, "video/webm");
     stopTracks();
     return blob;
   }, [stopTracks]);

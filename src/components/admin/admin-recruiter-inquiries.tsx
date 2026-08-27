@@ -24,6 +24,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeShort } from "@/lib/core/dates";
+import {
+  listRecruiterInquiriesAction,
+  reviewRecruiterInquiryAction,
+} from "@/lib/hire/inquiries/actions";
 import type {
   RecruiterInquiryListItem,
   RecruiterInquiryStatus,
@@ -77,19 +81,13 @@ export function AdminRecruiterInquiries() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/admin/recruiter-inquiries?status=${encodeURIComponent(status)}`,
-      );
-      const json = (await res.json().catch(() => ({}))) as {
-        items?: RecruiterInquiryListItem[];
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(json.error || "Failed to load inquiries");
+      const result = await listRecruiterInquiriesAction(status);
+      if (!result.ok) {
+        toast.error(result.error);
         setItems([]);
         return;
       }
-      setItems(json.items ?? []);
+      setItems(result.items);
     } catch {
       toast.error("Failed to load inquiries");
       setItems([]);
@@ -106,17 +104,12 @@ export function AdminRecruiterInquiries() {
     if (!selectedId) return;
     setActionLoading(next);
     try {
-      const res = await fetch(`/api/admin/recruiter-inquiries/${selectedId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next, adminNote }),
+      const result = await reviewRecruiterInquiryAction(selectedId, {
+        status: next,
+        adminNote,
       });
-      const json = (await res.json().catch(() => ({}))) as {
-        item?: RecruiterInquiryListItem;
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(json.error || "Update failed");
+      if (!result.ok) {
+        toast.error(result.error);
         return;
       }
       toast.success(

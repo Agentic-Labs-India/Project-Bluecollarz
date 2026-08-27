@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AdminKnowledgeChat } from "@/components/admin/admin-knowledge-chat";
 import {
   AdminHubHeader,
@@ -13,10 +13,8 @@ import {
 } from "@/components/admin/admin-settings-form";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import type { AdminUserListItem } from "@/lib/admin/queries";
-import { placeholderKeys } from "@/lib/utils";
 
 const TABS = [
   { value: "admins", label: "Admin" },
@@ -44,66 +42,15 @@ function isConfigSection(tab: Tab): tab is AdminSettingsSection {
   return tab !== "admins" && tab !== "test";
 }
 
-function SettingsSkeleton({ section }: { section: AdminSettingsSection }) {
-  if (section === "prompts") {
-    return (
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {placeholderKeys(6).map((key) => (
-          <Skeleton key={key} className="h-28 w-full" />
-        ))}
-      </div>
-    );
-  }
-  if (section === "knowledge") {
-    return <Skeleton className="h-64 w-full" />;
-  }
-  return (
-    <div className="max-w-xl space-y-4">
-      {placeholderKeys(6).map((key) => (
-        <div key={key} className="space-y-1.5">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-9 w-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function AdminConfigurationPanel({
   section,
+  settings,
+  defaults,
 }: {
   section: AdminSettingsSection;
+  settings: PlatformSettingsPublic;
+  defaults: PlatformSettingsPublic;
 }) {
-  const [settings, setSettings] = useState<PlatformSettingsPublic | null>(null);
-  const [defaults, setDefaults] = useState<PlatformSettingsPublic | null>(null);
-  const [error, setError] = useState("");
-
-  const load = useCallback(async () => {
-    setError("");
-    const res = await fetch("/api/admin/settings");
-    const json = (await res.json().catch(() => ({}))) as {
-      settings?: PlatformSettingsPublic;
-      defaults?: PlatformSettingsPublic;
-      error?: string;
-    };
-    if (!res.ok || !json.settings || !json.defaults) {
-      setError(json.error || "Failed to load settings");
-      return;
-    }
-    setSettings(json.settings);
-    setDefaults(json.defaults);
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  if (error) {
-    return <p className="text-destructive text-sm">{error}</p>;
-  }
-  if (!settings || !defaults) {
-    return <SettingsSkeleton section={section} />;
-  }
   return (
     <AdminSettingsForm
       initial={settings}
@@ -115,8 +62,12 @@ function AdminConfigurationPanel({
 
 function AdminSettingsHubInner({
   initialItems,
+  initialSettings,
+  initialDefaults,
 }: {
   initialItems: AdminUserListItem[];
+  initialSettings: PlatformSettingsPublic;
+  initialDefaults: PlatformSettingsPublic;
 }) {
   const [tab, setTab] = useAdminTab(TABS, "admins");
   const configOpen = isConfigSection(tab);
@@ -141,7 +92,11 @@ function AdminSettingsHubInner({
       </div>
       {configSeen ? (
         <div hidden={!configOpen}>
-          <AdminConfigurationPanel section={configOpen ? tab : lastConfig} />
+          <AdminConfigurationPanel
+            section={configOpen ? tab : lastConfig}
+            settings={initialSettings}
+            defaults={initialDefaults}
+          />
         </div>
       ) : null}
       {testSeen ? (
@@ -155,12 +110,20 @@ function AdminSettingsHubInner({
 
 export function AdminSettingsHub({
   initialItems,
+  initialSettings,
+  initialDefaults,
 }: {
   initialItems: AdminUserListItem[];
+  initialSettings: PlatformSettingsPublic;
+  initialDefaults: PlatformSettingsPublic;
 }) {
   return (
     <Suspense fallback={<AdminHubSkeleton />}>
-      <AdminSettingsHubInner initialItems={initialItems} />
+      <AdminSettingsHubInner
+        initialItems={initialItems}
+        initialSettings={initialSettings}
+        initialDefaults={initialDefaults}
+      />
     </Suspense>
   );
 }

@@ -4,7 +4,7 @@ import { htmlToPlainText, sanitizeRichTextHtml } from "@/lib/core/rich-text";
 import {
   type CustomQuestion,
   customQuestionsSchema,
-  normalizeCustomQuestions,
+  parseCustomQuestions,
 } from "@/lib/jobs/custom-questions";
 import {
   type ApplicationStep,
@@ -21,14 +21,14 @@ import {
 import {
   type ApplicationStepTemplate,
   isApplicationStageId,
-  normalizeStepTemplates,
+  resolveStepTemplates,
   STAGE_BY_ID,
 } from "@/lib/jobs/stages";
 import { asNumber, formatZodError, idHex } from "@/lib/utils";
 
 export { DEFAULT_CURRENCY } from "@/lib/core/money/currencies";
 export type { CustomQuestion } from "@/lib/jobs/custom-questions";
-export { normalizeCustomQuestions } from "@/lib/jobs/custom-questions";
+export { parseCustomQuestions } from "@/lib/jobs/custom-questions";
 export {
   DEFAULT_PAY_TYPE,
   formatJobPay,
@@ -42,7 +42,7 @@ export {
   type ApplicationStageId,
   type ApplicationStepTemplate,
   isApplicationStageId,
-  normalizeStepTemplates,
+  resolveStepTemplates,
 } from "@/lib/jobs/stages";
 
 export const JOB_STATUSES = [
@@ -125,6 +125,27 @@ export interface PaginatedJobsResponse {
   page: number;
   limit: number;
   pageCount: number;
+}
+
+export interface JobEditorForm {
+  title: string;
+  payAmount?: number;
+  payType?: JobPayType;
+  payCurrency?: string;
+  tab: OpportunityTab;
+  overview: string;
+  location?: JobLocation;
+  countryCode?: string;
+  stateCode?: string;
+  priority?: JobPriority;
+  applicationStepTemplates: ApplicationStepTemplate[];
+  customQuestions: CustomQuestion[];
+  raRcNumber: string | null;
+}
+
+export interface JobEditorPayload {
+  item: JobListItem;
+  form: JobEditorForm;
 }
 
 const stepTemplateSchema = z.object({
@@ -244,19 +265,23 @@ export const DEFAULT_APPLICATION_STEP_TEMPLATES: ApplicationStepTemplate[] = [
   { id: "resume", label: "Resume" },
 ];
 
+export function pageBounds(
+  page: number,
+  limit: number,
+): { page: number; limit: number; skip: number } {
+  const safePage = Math.max(1, Math.trunc(page) || 1);
+  const safeLimit = Math.min(50, Math.max(1, Math.trunc(limit) || 10));
+  return { page: safePage, limit: safeLimit, skip: (safePage - 1) * safeLimit };
+}
+
 export function parsePagination(
   searchParams: URLSearchParams,
   defaults: { page?: number; limit?: number } = {},
 ) {
-  const page = Math.max(
-    1,
+  return pageBounds(
     asNumber(searchParams.get("page"), defaults.page ?? 1),
+    asNumber(searchParams.get("limit"), defaults.limit ?? 10),
   );
-  const limit = Math.min(
-    50,
-    Math.max(1, asNumber(searchParams.get("limit"), defaults.limit ?? 10)),
-  );
-  return { page, limit, skip: (page - 1) * limit };
 }
 
 export function toJobListItem(
@@ -308,7 +333,7 @@ export function templatesToApplicationSteps(
     completedStageIds?: Iterable<string>;
   },
 ): ApplicationStep[] {
-  const normalized = normalizeStepTemplates(templates);
+  const normalized = resolveStepTemplates(templates);
   const profileComplete = opts?.profileComplete === true;
   const completed = new Set(opts?.completedStageIds ?? []);
 
@@ -336,7 +361,7 @@ export function toOpportunity(
     doc.publishedAt != null &&
     Date.now() - doc.publishedAt.getTime() < 7 * 24 * 60 * 60 * 1000;
 
-  const templates = normalizeStepTemplates(doc.applicationStepTemplates);
+  const templates = resolveStepTemplates(doc.applicationStepTemplates);
   const steps = templatesToApplicationSteps(templates, opts);
   const includeCustom = steps.some((s) => s.id === "custom-questions");
 
@@ -353,7 +378,7 @@ export function toOpportunity(
     isNew: isNew || undefined,
     applicationSteps: steps,
     ...(includeCustom
-      ? { customQuestions: normalizeCustomQuestions(doc.customQuestions) }
+      ? { customQuestions: parseCustomQuestions(doc.customQuestions) }
       : {}),
   };
 }
@@ -364,7 +389,7 @@ export function buildJobDocument(
 ): Omit<JobDocument, "_id"> {
   const now = new Date();
   const publish = input.publish === true;
-  const templates = normalizeStepTemplates(input.applicationStepTemplates);
+  const templates = resolveStepTemplates(input.applicationStepTemplates);
   const customQuestions = templates.some((s) => s.id === "custom-questions")
     ? (input.customQuestions ?? [])
     : [];

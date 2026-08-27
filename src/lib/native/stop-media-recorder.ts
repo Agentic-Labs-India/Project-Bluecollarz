@@ -22,8 +22,12 @@ export function stopMediaRecorder(
       resolve(assemble());
     };
     timeoutId = window.setTimeout(finish, timeoutMs);
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
     recorder.onstop = finish;
     try {
+      if (recorder.state === "recording") recorder.requestData();
       recorder.stop();
     } catch {
       finish();

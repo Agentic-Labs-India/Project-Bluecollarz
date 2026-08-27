@@ -22,14 +22,17 @@ import {
   OnboardingVoiceDock,
   type OnboardingVoiceMode,
 } from "@/components/candidate/onboarding-voice-dock";
+import {
+  getCandidateGateAction,
+  getCandidateVoiceLanguageAction,
+  saveCandidateVoiceLanguageAction,
+} from "@/lib/candidate/actions";
 import { uiMessageText } from "@/lib/ai/ui-message-text";
 import {
-  fetchProfileVoiceLanguage,
   isTtsLanguageCode,
   LANGUAGE_PICK_PROMPT,
   languageLabel,
   resumeVoicePrompt,
-  saveProfileVoiceLanguage,
   type TtsLanguageCode,
 } from "@/lib/ai/voice/languages";
 import { speakText } from "@/lib/ai/voice/speak";
@@ -279,7 +282,9 @@ export function OnboardingAgent() {
     setMicError("");
     setStatus("Loading your voice language…");
     try {
-      const existingLanguage = await fetchProfileVoiceLanguage();
+      const languageResult = await getCandidateVoiceLanguageAction();
+      if (!languageResult.ok) throw new Error(languageResult.error);
+      const existingLanguage = languageResult.language;
       if (existingLanguage) {
         lockLanguage(existingLanguage);
       }
@@ -452,11 +457,8 @@ export function OnboardingAgent() {
 
       // Fallback: server may be complete even if the model skipped finishOnboarding.
       try {
-        const res = await fetch("/api/candidate/onboarding-status");
-        const json = (await res.json().catch(() => ({}))) as {
-          complete?: boolean;
-        };
-        if (res.ok && json.complete === true) {
+        const status = await getCandidateGateAction();
+        if (status.ok && status.complete) {
           markCompleteAndGoHome(800);
           return;
         }
@@ -481,7 +483,8 @@ export function OnboardingAgent() {
     setPendingLanguagePick(false);
     void (async () => {
       try {
-        await saveProfileVoiceLanguage(code);
+        const saved = await saveCandidateVoiceLanguageAction(code);
+        if (!saved.ok) throw new Error(saved.error);
       } catch {
         // TTS already uses the locked language.
       }

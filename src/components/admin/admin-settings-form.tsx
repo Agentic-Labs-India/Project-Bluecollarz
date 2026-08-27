@@ -26,6 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { savePlatformSettingsAction } from "@/lib/admin/actions";
 import {
   type LlmTemperatureKey,
   type PlatformSettingsPublic,
@@ -245,7 +246,6 @@ export function AdminSettingsForm({
   const formRef = useRef(form);
   formRef.current = form;
   const lastSent = useRef(JSON.stringify(payloadOf(initial)));
-  const abortRef = useRef<AbortController | null>(null);
   const saveGen = useRef(0);
   const go = form.grievanceOfficer;
   const voice = form.voice;
@@ -260,53 +260,34 @@ export function AdminSettingsForm({
 
     setError("");
     const handle = window.setTimeout(() => {
-      const body = JSON.stringify(payloadOf(formRef.current));
+      const payload = payloadOf(formRef.current);
+      const body = JSON.stringify(payload);
       if (body === lastSent.current) return;
 
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
       const gen = ++saveGen.current;
       setStatus("saving");
-      void fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body,
-        signal: controller.signal,
-      })
-        .then(async (res) => {
-          const json = (await res.json().catch(() => ({}))) as {
-            settings?: PlatformSettingsPublic;
-            error?: string;
-          };
+      void (async () => {
+        try {
+          const result = await savePlatformSettingsAction(payload);
           if (gen !== saveGen.current) return;
-          if (!res.ok || !json.settings) {
-            throw new Error(json.error || "Save failed");
-          }
+          if (!result.ok) throw new Error(result.error);
           lastSent.current = body;
-          const saved = json.settings;
           setForm((prev) => ({
             ...prev,
-            updatedAt: saved.updatedAt,
-            updatedBy: saved.updatedBy,
+            updatedAt: result.settings.updatedAt,
+            updatedBy: result.settings.updatedBy,
           }));
           setStatus("saved");
           setError("");
-        })
-        .catch((e: unknown) => {
+        } catch (e: unknown) {
           if (gen !== saveGen.current) return;
-          if (e instanceof DOMException && e.name === "AbortError") return;
           setStatus("error");
           setError(e instanceof Error ? e.message : "Save failed");
-        });
+        }
+      })();
     }, SAVE_DEBOUNCE_MS);
 
-    return () => window.clearTimeout(handle);
   }, [form]);
-
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
 
   const onPromptChange = useCallback((key: PromptKey, value: string) => {
     setForm((p) => ({

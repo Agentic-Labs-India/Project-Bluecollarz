@@ -10,13 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fetchProfileVoiceLanguage } from "@/lib/ai/voice/languages";
+import { getCandidateVoiceLanguageAction } from "@/lib/candidate/actions";
 import { authClient } from "@/lib/auth/auth-client";
 import {
   asTermsVersion,
   hasAcceptedPlatformTerms,
   toAcceptedAtIso,
 } from "@/lib/user/preferences";
+import { parseProfileType } from "@/lib/user/profile-types";
 
 type Status = {
   pol0007Required: boolean;
@@ -39,17 +40,10 @@ type Wording = {
  */
 export function SafetyNoticeGate() {
   const { data: session } = authClient.useSession();
-  const sessionUser = session?.user as
-    | {
-        profileType?: string;
-        platformTermsVersion?: number | string | null;
-        platformTermsAcceptedAt?: Date | string | null;
-      }
-    | undefined;
-  const profileType = sessionUser?.profileType;
+  const profileType = parseProfileType(session?.user?.profileType);
   const termsAccepted = hasAcceptedPlatformTerms(
-    asTermsVersion(sessionUser?.platformTermsVersion),
-    toAcceptedAtIso(sessionUser?.platformTermsAcceptedAt),
+    asTermsVersion(session?.user?.platformTermsVersion),
+    toAcceptedAtIso(session?.user?.platformTermsAcceptedAt),
   );
   const [status, setStatus] = useState<Status | null>(null);
   const [wording, setWording] = useState<Wording | null>(null);
@@ -83,13 +77,16 @@ export function SafetyNoticeGate() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const code = await fetchProfileVoiceLanguage();
-      if (!cancelled && code) setLanguage(code);
+      if (profileType !== "work") return;
+      const result = await getCandidateVoiceLanguageAction();
+      if (!cancelled && result.ok && result.language) {
+        setLanguage(result.language);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [profileType]);
 
   useEffect(() => {
     if (!notice) {
