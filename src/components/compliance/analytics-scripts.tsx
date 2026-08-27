@@ -10,10 +10,10 @@ import {
 const GA_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 /**
- * Loads gtag unless the person explicitly rejected analytics.
+ * Loads gtag only after analytics consent is granted (default off).
  */
 export function AnalyticsScripts() {
-  const [allowed, setAllowed] = useState(true);
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     const sync = () => {

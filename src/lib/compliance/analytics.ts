@@ -15,9 +15,9 @@ export function readAnalyticsConsent(): AnalyticsConsent {
   return null;
 }
 
-/** Unset counts as on. Only an explicit Reject turns analytics off. */
+/** Only an explicit Allow counts. Unset and Reject both keep analytics off. */
 export function isAnalyticsGranted(): boolean {
-  return readAnalyticsConsent() !== "denied";
+  return readAnalyticsConsent() === "granted";
 }
 
 export function writeAnalyticsConsent(value: "granted" | "denied") {
@@ -42,7 +42,7 @@ declare global {
 
 /**
  * Local choice wins when the user already Allow/Reject'd.
- * Unset defaults to analytics on.
+ * Unset stays off until they opt in (DPDP s.6 affirmative consent).
  */
 export async function syncAnalyticsConsentWithAccount(): Promise<
   boolean | null
@@ -55,21 +55,28 @@ export async function syncAnalyticsConsentWithAccount(): Promise<
     const json = (await res.json()) as {
       preferences?: { cookiesEnabled?: boolean };
     };
-    const serverGranted = json.preferences?.cookiesEnabled !== false;
-    const want = local !== "denied";
+    const serverGranted = json.preferences?.cookiesEnabled === true;
 
-    if (local === null && want) {
+    if (local === "granted" || local === "denied") {
+      const want = local === "granted";
+      if (want !== serverGranted) {
+        await fetch("/api/user/preferences", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cookiesEnabled: want }),
+        });
+      }
+      applyGtagConsent(want);
+      return want;
+    }
+
+    if (serverGranted) {
       writeAnalyticsConsent("granted");
+      applyGtagConsent(true);
+      return true;
     }
-    if (want !== serverGranted) {
-      await fetch("/api/user/preferences", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cookiesEnabled: want }),
-      });
-    }
-    applyGtagConsent(want);
-    return want;
+    applyGtagConsent(false);
+    return false;
   } catch {
     return null;
   }

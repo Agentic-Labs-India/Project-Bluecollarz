@@ -49,7 +49,8 @@ function LegalLinks({ cookieAnchor }: { cookieAnchor?: boolean }) {
 /**
  * 18+ age gate + cookie notice. Overlay = web bottom bar. Inline = native /auth.
  * Agree and continue unlocks DigiLocker (candidates) or Google Corporate Login
- * (recruiters/admins) in the same tap. Analytics are on unless rejected.
+ * (recruiters/admins) in the same tap. Analytics stay off unless turned on
+ * in Cookie settings (DPDP s.6 affirmative consent).
  */
 export function SiteAgreementPanel({
   variant,
@@ -62,7 +63,7 @@ export function SiteAgreementPanel({
   onContinue?: () => void;
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [analyticsOn, setAnalyticsOn] = useState(true);
+  const [analyticsOn, setAnalyticsOn] = useState(false);
   const { data: session } = authClient.useSession();
   const inline = variant === "inline";
 
@@ -95,9 +96,11 @@ export function SiteAgreementPanel({
     });
   };
 
-  const accept = (withAnalytics = true) => {
+  const accept = (analyticsChoice?: boolean) => {
     writeSiteAgreement("agreed");
-    persistAnalytics(withAnalytics);
+    if (analyticsChoice !== undefined) {
+      persistAnalytics(analyticsChoice);
+    }
     setSettingsOpen(false);
     onDismiss?.();
     onContinue?.();
@@ -155,7 +158,7 @@ export function SiteAgreementPanel({
           </p>
           <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
             You must be 18 or older to use Blucollarz. Essential cookies stay
-            on. Analytics are on unless you turn them off. We do not use
+            on. Optional analytics are off until you allow them. We do not use
             advertising cookies. Accepting here agrees to our <LegalLinks />.
           </p>
           <div className="mt-4 space-y-2">
@@ -172,7 +175,7 @@ export function SiteAgreementPanel({
               <div>
                 <p className="text-foreground text-sm font-medium">Analytics</p>
                 <p className="text-muted-foreground text-xs">
-                  Google Analytics. On unless you turn it off.
+                  Google Analytics. Off unless you allow.
                 </p>
               </div>
               <Switch
@@ -204,10 +207,10 @@ export function SiteAgreementPanel({
               variant === "overlay" && "pr-8",
             )}
           >
-            You must be 18 or older. Essential cookies keep the app working and
-            stay on. Analytics are on unless you turn them off in Cookie
-            settings. We do not use advertising cookies. By clicking Agree and
-            continue, you confirm you are 18 or older and agree to our{" "}
+            You must be 18 or older. Essential cookies keep the site working and
+            stay on. Optional analytics stay off unless you turn them on in
+            Cookie settings. We do not use advertising cookies. By clicking
+            Agree and continue, you confirm you are 18 or older and agree to our{" "}
             <LegalLinks cookieAnchor />.
           </p>
           {inline ? (

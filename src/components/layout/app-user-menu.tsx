@@ -148,7 +148,7 @@ export function AppUserMenu({
   const [openKind, setOpenKind] = React.useState<PreferenceKind | null>(null);
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [prefs, setPrefs] = React.useState<UserPreferences>({
-    cookiesEnabled: true,
+    cookiesEnabled: false,
     notificationsEnabled: true,
     platformTermsAccepted: false,
     platformTermsVersion: null,
