@@ -9,11 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import { authClient } from "@/lib/auth/auth-client";
 import {
   applyGtagConsent,
-  readAnalyticsConsent,
+  isAnalyticsGranted,
   writeAnalyticsConsent,
 } from "@/lib/compliance/analytics";
 import {
-  hasAgreedToSite,
   SITE_AGREEMENT_SHOW_EVENT,
   writeSiteAgreement,
 } from "@/lib/compliance/site-agreement";
@@ -50,8 +49,7 @@ function LegalLinks({ cookieAnchor }: { cookieAnchor?: boolean }) {
 /**
  * 18+ age gate + cookie notice. Overlay = web bottom bar. Inline = native /auth.
  * Agree and continue unlocks DigiLocker (candidates) or Google Corporate Login
- * (recruiters/admins). Analytics stay
- * off unless turned on in Cookie settings.
+ * (recruiters/admins) in the same tap. Analytics are on unless rejected.
  */
 export function SiteAgreementPanel({
   variant,
@@ -64,14 +62,12 @@ export function SiteAgreementPanel({
   onContinue?: () => void;
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [analyticsOn, setAnalyticsOn] = useState(false);
-  const [agreed, setAgreed] = useState(false);
+  const [analyticsOn, setAnalyticsOn] = useState(true);
   const { data: session } = authClient.useSession();
   const inline = variant === "inline";
 
   useEffect(() => {
-    setAnalyticsOn(readAnalyticsConsent() === "granted");
-    setAgreed(hasAgreedToSite());
+    setAnalyticsOn(isAnalyticsGranted());
   }, []);
 
   useEffect(() => {
@@ -86,47 +82,39 @@ export function SiteAgreementPanel({
     return () => window.removeEventListener(SITE_AGREEMENT_SHOW_EVENT, show);
   }, [inline]);
 
-  const persistAnalytics = async (granted: boolean) => {
+  const persistAnalytics = (granted: boolean) => {
     writeAnalyticsConsent(granted ? "granted" : "denied");
     applyGtagConsent(granted);
     if (!session?.user) return;
-    try {
-      await fetch("/api/user/preferences", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cookiesEnabled: granted }),
-      });
-    } catch {
+    void fetch("/api/user/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cookiesEnabled: granted }),
+    }).catch(() => {
       /* local consent already applied */
-    }
+    });
   };
 
-  const accept = async (withAnalytics?: boolean) => {
+  const accept = (withAnalytics = true) => {
     writeSiteAgreement("agreed");
-    if (withAnalytics !== undefined) {
-      await persistAnalytics(withAnalytics);
-    }
-    if (session?.user) {
-      try {
-        await stampPlatformTermsFromSiteAgreement();
-      } catch {
-        /* banner already recorded; account stamp retries on next load */
-      }
-    }
-    setAgreed(true);
+    persistAnalytics(withAnalytics);
     setSettingsOpen(false);
     onDismiss?.();
     onContinue?.();
+    if (session?.user) {
+      void stampPlatformTermsFromSiteAgreement().catch(() => {
+        /* banner already recorded; account stamp retries on next load */
+      });
+    }
   };
 
-  const rejectAll = async () => {
+  const rejectAll = () => {
     writeSiteAgreement("declined");
-    await persistAnalytics(false);
-    setAgreed(false);
+    persistAnalytics(false);
     setSettingsOpen(false);
     onDismiss?.();
     if (session?.user) {
-      await authClient.signOut();
+      void authClient.signOut();
     }
     toast.message("Please agree to continue.");
   };
@@ -167,7 +155,7 @@ export function SiteAgreementPanel({
           </p>
           <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
             You must be 18 or older to use Blucollarz. Essential cookies stay
-            on. Optional analytics are off until you allow them. We do not use
+            on. Analytics are on unless you turn them off. We do not use
             advertising cookies. Accepting here agrees to our <LegalLinks />.
           </p>
           <div className="mt-4 space-y-2">
@@ -184,7 +172,7 @@ export function SiteAgreementPanel({
               <div>
                 <p className="text-foreground text-sm font-medium">Analytics</p>
                 <p className="text-muted-foreground text-xs">
-                  Google Analytics. Off unless you allow.
+                  Google Analytics. On unless you turn it off.
                 </p>
               </div>
               <Switch
@@ -202,12 +190,7 @@ export function SiteAgreementPanel({
             >
               Back
             </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                void accept(analyticsOn);
-              }}
-            >
+            <Button type="button" onClick={() => accept(analyticsOn)}>
               Accept
             </Button>
           </div>
@@ -221,19 +204,14 @@ export function SiteAgreementPanel({
               variant === "overlay" && "pr-8",
             )}
           >
-            You must be 18 or older. Essential cookies keep the site working and
-            stay on. Optional analytics stay off unless you turn them on in
-            Cookie settings. We do not use advertising cookies. By clicking
-            Agree and continue, you confirm you are 18 or older and agree to our{" "}
+            You must be 18 or older. Essential cookies keep the app working and
+            stay on. Analytics are on unless you turn them off in Cookie
+            settings. We do not use advertising cookies. By clicking Agree and
+            continue, you confirm you are 18 or older and agree to our{" "}
             <LegalLinks cookieAnchor />.
           </p>
           {inline ? (
             <div className="mt-4 flex flex-col gap-2">
-              {agreed ? (
-                <p className="text-foreground text-sm font-medium">
-                  You confirmed you are 18 or older. Essential cookies stay on.
-                </p>
-              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -246,23 +224,11 @@ export function SiteAgreementPanel({
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => {
-                  void rejectAll();
-                }}
+                onClick={rejectAll}
               >
                 Reject all
               </Button>
-              <Button
-                type="button"
-                className="w-full"
-                onClick={() => {
-                  if (agreed) {
-                    onContinue?.();
-                    return;
-                  }
-                  void accept();
-                }}
-              >
+              <Button type="button" className="w-full" onClick={() => accept()}>
                 Agree and continue
               </Button>
             </div>
@@ -276,21 +242,10 @@ export function SiteAgreementPanel({
                 Cookie settings
               </Button>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    void rejectAll();
-                  }}
-                >
+                <Button type="button" variant="outline" onClick={rejectAll}>
                   Reject all
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    void accept();
-                  }}
-                >
+                <Button type="button" onClick={() => accept()}>
                   Agree and continue
                 </Button>
               </div>

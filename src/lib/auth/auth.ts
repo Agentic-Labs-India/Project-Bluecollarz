@@ -42,7 +42,7 @@ export const auth = betterAuth({
       cookiesEnabled: {
         type: "boolean",
         required: false,
-        defaultValue: false,
+        defaultValue: true,
         input: false,
       },
       notificationsEnabled: {
@@ -126,7 +126,7 @@ export const auth = betterAuth({
                 ...user,
                 digilockerId: rawId,
                 profileType: "work",
-                cookiesEnabled: false,
+                cookiesEnabled: true,
                 notificationsEnabled: true,
               },
             };
@@ -149,7 +149,7 @@ export const auth = betterAuth({
             data: {
               ...user,
               profileType: provisioned,
-              cookiesEnabled: false,
+              cookiesEnabled: true,
               notificationsEnabled: true,
             },
           };

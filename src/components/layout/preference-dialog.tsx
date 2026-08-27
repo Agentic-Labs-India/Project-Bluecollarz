@@ -28,13 +28,13 @@ const COPY: Record<
   cookies: {
     title: "Cookie preferences",
     description:
-      "Essential cookies keep you signed in. Optional analytics cookies are off until you allow them.",
+      "Essential cookies keep you signed in. Analytics cookies are on unless you turn them off.",
     details: [
       "Essential cookies keep you logged in and protect your account.",
-      "Analytics cookies (Google Analytics) measure usage only if you Allow them.",
-      "Reject or turn analytics off anytime — same control, as easy as Allow. You stay signed in.",
+      "Analytics cookies (Google Analytics) measure usage. They start on; you can turn them off anytime.",
+      "Turn analytics off anytime — same control. You stay signed in.",
     ],
-    toggleLabel: "Allow analytics cookies",
+    toggleLabel: "Analytics cookies",
   },
   notifications: {
     title: "Notification preferences",

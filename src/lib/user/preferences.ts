@@ -64,14 +64,14 @@ export function hasAcceptedPlatformTerms(
   );
 }
 
-/** Analytics cookies default off; notifications default on. */
+/** Analytics cookies and notifications default on. */
 export function toUserPreferences(
   doc: UserPreferencesFields | null | undefined,
 ): UserPreferences {
   const version = asTermsVersion(doc?.platformTermsVersion);
   const acceptedAt = toAcceptedAtIso(doc?.platformTermsAcceptedAt);
   return {
-    cookiesEnabled: doc?.cookiesEnabled === true,
+    cookiesEnabled: doc?.cookiesEnabled !== false,
     notificationsEnabled: doc?.notificationsEnabled !== false,
     platformTermsAccepted: hasAcceptedPlatformTerms(version, acceptedAt),
     platformTermsVersion: version,

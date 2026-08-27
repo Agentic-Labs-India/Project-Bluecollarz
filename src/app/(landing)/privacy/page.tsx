@@ -104,8 +104,8 @@ export default function PrivacyPage() {
               debug the service. Processing logs are kept for one year.
             </li>
             <li>
-              Optional analytics (Google Analytics): page usage after you allow
-              analytics cookies. Off until you allow them.
+              Optional analytics (Google Analytics): page usage. On unless you
+              turn them off in Cookie settings.
             </li>
           </ul>
           <p>
@@ -137,12 +137,12 @@ export default function PrivacyPage() {
             Before you sign in, the first banner requires you to confirm you are
             18 or older and agree to these Terms and this Privacy Notice.
             Essential cookies keep you signed in and protect the account. They
-            are required for the service. Optional analytics cookies (Google
-            Analytics) measure usage and stay off unless you turn them on in
-            Cookie settings. Agree and continue does not turn analytics on.
-            Reject All means you cannot Log in or Get Started until you agree to
-            the Terms, this notice, and the 18+ confirmation. We do not use ads
-            cookies. You can turn analytics off later in account Settings.
+            are required for the service. Analytics cookies (Google Analytics)
+            measure usage and are on unless you turn them off in Cookie
+            settings. Agree and continue turns analytics on. Reject All means
+            you cannot Log in or Get Started until you agree to the Terms, this
+            notice, and the 18+ confirmation. We do not use ads cookies. You can
+            turn analytics off later in account Settings.
           </p>
         </LegalSection>
 

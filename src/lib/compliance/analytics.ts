@@ -15,6 +15,11 @@ export function readAnalyticsConsent(): AnalyticsConsent {
   return null;
 }
 
+/** Unset counts as on. Only an explicit Reject turns analytics off. */
+export function isAnalyticsGranted(): boolean {
+  return readAnalyticsConsent() !== "denied";
+}
+
 export function writeAnalyticsConsent(value: "granted" | "denied") {
   try {
     localStorage.setItem(ANALYTICS_CONSENT_KEY, value);
@@ -36,8 +41,8 @@ declare global {
 }
 
 /**
- * Browser choice wins when the user already Allow/Reject'd.
- * If they have not chosen on this device, pull the signed-in account.
+ * Local choice wins when the user already Allow/Reject'd.
+ * Unset defaults to analytics on.
  */
 export async function syncAnalyticsConsentWithAccount(): Promise<
   boolean | null
@@ -50,27 +55,21 @@ export async function syncAnalyticsConsentWithAccount(): Promise<
     const json = (await res.json()) as {
       preferences?: { cookiesEnabled?: boolean };
     };
-    const serverGranted = json.preferences?.cookiesEnabled === true;
+    const serverGranted = json.preferences?.cookiesEnabled !== false;
+    const want = local !== "denied";
 
-    if (local === "granted" || local === "denied") {
-      const want = local === "granted";
-      if (want !== serverGranted) {
-        await fetch("/api/user/preferences", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cookiesEnabled: want }),
-        });
-      }
-      applyGtagConsent(want);
-      return want;
-    }
-
-    if (serverGranted) {
+    if (local === null && want) {
       writeAnalyticsConsent("granted");
-      applyGtagConsent(true);
-      return true;
     }
-    return false;
+    if (want !== serverGranted) {
+      await fetch("/api/user/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cookiesEnabled: want }),
+      });
+    }
+    applyGtagConsent(want);
+    return want;
   } catch {
     return null;
   }

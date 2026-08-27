@@ -4,21 +4,20 @@ import Script from "next/script";
 import { useEffect, useState } from "react";
 import {
   applyGtagConsent,
-  readAnalyticsConsent,
+  isAnalyticsGranted,
 } from "@/lib/compliance/analytics";
 
 const GA_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 /**
- * Loads gtag only after analytics consent is granted (default off).
+ * Loads gtag unless the person explicitly rejected analytics.
  */
 export function AnalyticsScripts() {
-  const [allowed, setAllowed] = useState(false);
+  const [allowed, setAllowed] = useState(true);
 
   useEffect(() => {
     const sync = () => {
-      const consent = readAnalyticsConsent();
-      const granted = consent === "granted";
+      const granted = isAnalyticsGranted();
       setAllowed(granted);
       applyGtagConsent(granted);
     };
