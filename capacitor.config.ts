@@ -1,12 +1,11 @@
 /// <reference types="@capacitor/splash-screen" />
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const DEFAULT_ORIGIN = "https://www.blucollarz.com";
+const DEFAULT_ORIGIN = process.env.CAPACITOR_SERVER_URL ||"https://www.blucollarz.com";
 
 function nativeStartUrl(): string {
-  const raw = process.env.CAPACITOR_SERVER_URL?.trim() || DEFAULT_ORIGIN;
   try {
-    const url = new URL(raw);
+    const url = new URL(DEFAULT_ORIGIN);
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return `${DEFAULT_ORIGIN}/auth`;
     }
