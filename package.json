@@ -27,7 +27,7 @@
     "@langchain/core": "^1.2.9",
     "@langchain/textsplitters": "^1.0.1",
     "@rive-app/react-webgl2": "^4.32.0",
-    "@shadcn/react": "^0.2.1",
+    "@shadcn/react": "0.3.0",
     "@streamdown/code": "^1.1.1",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/extension-image": "^3.28.0",
