@@ -12,7 +12,6 @@ export interface AuthContext {
   id: string;
   /** Hire/admin Google email. Empty for candidates. */
   email: string;
-  digilockerId: string | null;
   headline: string | null;
   name: string | null;
   profileType: ProfileType;
@@ -59,12 +58,9 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   if (!user?.id) return null;
   const profileType = parseProfileType(user.profileType);
   if (!profileType) return null;
-  const digilockerId =
-    typeof user.digilockerId === "string" ? user.digilockerId.trim() || null : null;
   return {
     id: user.id,
     email: profileType === "work" ? "" : (user.email ?? "").trim(),
-    digilockerId,
     headline:
       typeof user.headline === "string" ? user.headline.trim() || null : null,
     name: user.name?.trim() || null,

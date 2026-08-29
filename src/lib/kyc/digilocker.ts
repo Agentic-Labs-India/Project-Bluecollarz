@@ -33,9 +33,8 @@ export interface DigilockerKycPayload {
   phone: string | null;
 }
 
-/** KYC page view — sourced from Users Mongo document. */
+/** KYC page view — sourced from Users Mongo document. Never includes DigiLocker user id. */
 export interface DigilockerKycView {
-  digilockerId: string | null;
   name: string | null;
   dateOfBirth: string | null;
   gender: string | null;

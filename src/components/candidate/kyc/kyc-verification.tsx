@@ -136,7 +136,6 @@ function particulars(
     if (value) rows.push({ label, value });
   };
   push("Name", data.name);
-  push("DigiLocker ID", data.digilockerId);
   push(
     "Date of birth",
     formatDateOnlyDisplay(data.dateOfBirth) || data.dateOfBirth,
@@ -321,9 +320,9 @@ export function KycVerification() {
             <section className="space-y-3">
               <ClauseLabel n="01">Particulars</ClauseLabel>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Name, date of birth, phone, location, gender, PAN, Aadhaar, and
-                DigiLocker ID are saved from DigiLocker. Employers see results,
-                not these documents.
+                Name, date of birth, phone, location, gender, PAN, and Aadhaar
+                are saved from DigiLocker. Employers see results, not these
+                documents.
               </p>
               <dl className="border-border divide-border divide-y border-y">
                 {particulars(data).map((row) => (

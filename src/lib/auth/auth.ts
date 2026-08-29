@@ -68,11 +68,12 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
-      /** Unique DigiLocker user id. Candidate login key. */
+      /** Unique DigiLocker user id. Candidate login key. Never sent to the client. */
       digilockerId: {
         type: "string",
         required: false,
         input: false,
+        returned: false,
       },
       /** Onboarding “currently working as” — shown in the account menu. */
       headline: {

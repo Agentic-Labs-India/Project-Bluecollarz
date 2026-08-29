@@ -372,10 +372,6 @@ export function CandidateProfileView({
         <section className="space-y-4">
           <h3 className="text-foreground text-xl font-semibold">Basics</h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="digilocker-id">DigiLocker ID</Label>
-              <Input id="digilocker-id" value={profile.digilockerId} disabled />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
               <PhoneNumberInput

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { toCandidateProfileData } from "@/lib/candidate/profile";
 import {
   digilockerProfileSet,
   identityMismatches,
@@ -75,5 +76,15 @@ describe("DigiLocker candidate identity", () => {
     expect($set).not.toHaveProperty("username");
     expect($set).not.toHaveProperty("user_alias");
     expect($set.isKycVerified).toBe(true);
+  });
+
+  test("candidate profile payload never includes DigiLocker user id", () => {
+    const mapped = toCandidateProfileData({
+      name: "Test Worker",
+      digilockerId: "dl-user-1",
+      isKycVerified: true,
+    } as never);
+    expect(mapped).not.toHaveProperty("digilockerId");
+    expect(JSON.stringify(mapped)).not.toContain("dl-user-1");
   });
 });

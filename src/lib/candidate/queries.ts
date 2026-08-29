@@ -30,7 +30,6 @@ import { idHex } from "@/lib/utils";
 type UserDoc = CandidateProfileFields & {
   _id: unknown;
   name?: string;
-  digilockerId?: string;
   image?: string;
   profileType?: string;
 };

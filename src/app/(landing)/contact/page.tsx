@@ -246,7 +246,7 @@ export default function ContactPage() {
             ],
             [
               "Support email (fallback)",
-              "DigiLocker user id (candidates) or Google email (recruiters/admins), profile type, URL, steps to reproduce, screenshots if safe",
+              "Signed-in account, profile type, URL, steps to reproduce, screenshots if safe",
             ],
             [
               "Recruiter access",
