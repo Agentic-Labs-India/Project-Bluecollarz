@@ -9,40 +9,15 @@ import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import client, { COLLECTIONS, DB_NAME, isId, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
+  type KnowledgeChunkDocument,
   type KnowledgeDocType,
+  type KnowledgeSourceDocument,
   type KnowledgeSourceListItem,
-  type KnowledgeSourceStatus,
   knowledgeSourceKey,
   normalizeKnowledgeSource,
   parseKnowledgeDocType,
 } from "@/lib/knowledge/types";
 import { idHex } from "@/lib/utils";
-
-export type KnowledgeSourceDocument = {
-  source: string;
-  sourceKey: string;
-  docType: KnowledgeDocType;
-  blobUrl: string;
-  blobPathname: string;
-  status: KnowledgeSourceStatus;
-  error: string | null;
-  chunkCount: number;
-  pageCount: number;
-  uploadedBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type KnowledgeChunkDocument = {
-  text: string;
-  embedding: number[];
-  source: string;
-  sourceId: string;
-  docType: KnowledgeDocType;
-  page: number;
-  chunkIndex: number;
-  createdAt: Date;
-};
 
 function sourcesCol() {
   return client

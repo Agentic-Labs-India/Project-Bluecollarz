@@ -15,6 +15,7 @@ import type {
   SupportSeriousness,
   SupportStatus,
   SupportTicketDetail,
+  SupportTicketDocument,
   SupportTicketListItem,
   SupportTranscriptTurn,
 } from "@/lib/support/types";
@@ -22,23 +23,7 @@ import { parseSupportStatus } from "@/lib/support/types";
 import type { ProfileType } from "@/lib/user/profile-types";
 import { idHex } from "@/lib/utils";
 
-type SupportTicketDoc = {
-  _id: ObjectId;
-  userId: string;
-  profileType: ProfileType;
-  transcript: SupportTranscriptTurn[];
-  summary: string;
-  problemType: SupportProblemType;
-  seriousness: SupportSeriousness;
-  priority: SupportPriority;
-  status: SupportStatus;
-  assigneeId?: string | null;
-  assigneeName?: string | null;
-  assigneeEmail?: string | null;
-  assignedAt?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type SupportTicketDoc = SupportTicketDocument;
 
 function toAssignee(doc: SupportTicketDoc): SupportAssignee | null {
   const id = doc.assigneeId?.trim();

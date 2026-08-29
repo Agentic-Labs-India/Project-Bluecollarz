@@ -6,33 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  RIGHTS_REQUEST_TYPE_LABELS,
+  RIGHTS_REQUEST_TYPES,
+  type RightsRequestPublic,
+  type RightsRequestType,
+} from "@/lib/compliance/types";
 
-const TYPES = [
-  { value: "access", label: "Access / export my data" },
-  { value: "correction", label: "Correction / completion" },
-  { value: "erasure", label: "Request erasure (use Delete account to erase)" },
-  {
-    value: "withdraw",
-    label: "Withdraw consent (stops interview release to employers and medical booking)",
-  },
-  { value: "nominate", label: "Nominate someone" },
-  { value: "restriction", label: "Restrict processing" },
-  { value: "objection", label: "Object to processing" },
-  { value: "portability", label: "Data portability (JSON export)" },
-  { value: "grievance", label: "Grievance" },
-] as const;
-
-type RightsItem = {
-  requestId: string;
-  type: string;
-  status: string;
-  details: string;
-  createdAt: string;
-};
+const TYPES = RIGHTS_REQUEST_TYPES.map((value) => ({
+  value,
+  label: RIGHTS_REQUEST_TYPE_LABELS[value],
+}));
 
 export function DataRightsSection() {
-  const [items, setItems] = useState<RightsItem[]>([]);
-  const [type, setType] = useState<(typeof TYPES)[number]["value"]>("access");
+  const [items, setItems] = useState<RightsRequestPublic[]>([]);
+  const [type, setType] = useState<RightsRequestType>("access");
   const [details, setDetails] = useState("");
   const [nomineeName, setNomineeName] = useState("");
   const [nomineeEmail, setNomineeEmail] = useState("");
@@ -46,7 +34,7 @@ export function DataRightsSection() {
     try {
       const res = await fetch("/api/candidate/rights");
       const json = (await res.json().catch(() => ({}))) as {
-        items?: RightsItem[];
+        items?: RightsRequestPublic[];
         error?: string;
       };
       if (!res.ok) throw new Error(json.error || "Failed to load");
@@ -80,7 +68,7 @@ export function DataRightsSection() {
       const json = (await res.json().catch(() => ({}))) as {
         error?: string;
         export?: unknown;
-        item?: RightsItem;
+        item?: RightsRequestPublic;
         message?: string;
       };
       if (!res.ok) throw new Error(json.error || "Could not submit");
@@ -147,7 +135,7 @@ export function DataRightsSection() {
           className="border-input bg-background h-9 w-full border px-2 text-sm"
           value={type}
           onChange={(e) =>
-            setType(e.target.value as (typeof TYPES)[number]["value"])
+            setType(e.target.value as RightsRequestType)
           }
         >
           {TYPES.map((t) => (

@@ -6,51 +6,27 @@ import { getCandidateProfileByUserId } from "@/lib/candidate/queries";
 import { listConsentEvents } from "@/lib/compliance/consent";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { toKycPublicState } from "@/lib/kyc";
+import {
+  RIGHTS_REQUEST_STATUSES,
+  type RightsRequestDocument,
+  type RightsRequestPublic,
+  type RightsRequestStatus,
+  type RightsRequestType,
+} from "@/lib/compliance/types";
 
-export const RIGHTS_REQUEST_TYPES = [
-  "access",
-  "correction",
-  "erasure",
-  "withdraw",
-  "nominate",
-  "grievance",
-  "restriction",
-  "objection",
-  "portability",
-] as const;
-
-export type RightsRequestType = (typeof RIGHTS_REQUEST_TYPES)[number];
-
-export const RIGHTS_REQUEST_STATUSES = [
-  "received",
-  "acknowledged",
-  "in_progress",
-  "resolved",
-  "rejected",
-] as const;
-
-export type RightsRequestStatus = (typeof RIGHTS_REQUEST_STATUSES)[number];
+export {
+  RIGHTS_REQUEST_STATUSES,
+  RIGHTS_REQUEST_TYPES,
+  type RightsRequestDocument,
+  type RightsRequestPublic,
+  type RightsRequestStatus,
+  type RightsRequestType,
+} from "@/lib/compliance/types";
 
 export {
   RIGHTS_ACKNOWLEDGE_HOURS,
   RIGHTS_RESOLVE_DAYS,
 } from "@/lib/compliance/timelines";
-
-export interface RightsRequestDocument {
-  _id?: ObjectId;
-  requestId: string;
-  dataPrincipalId: string;
-  type: RightsRequestType;
-  status: RightsRequestStatus;
-  details: string;
-  nomineeName?: string | null;
-  nomineeEmail?: string | null;
-  adminNotes?: string | null;
-  createdAt: Date;
-  acknowledgedAt?: Date | null;
-  resolvedAt?: Date | null;
-  updatedAt: Date;
-}
 
 function col() {
   return client
@@ -238,7 +214,7 @@ export async function buildAccessExport(userId: string) {
 export function serializeRightsRequest(
   doc: RightsRequestDocument,
   opts?: { includeAdminNotes?: boolean },
-) {
+): RightsRequestPublic {
   return {
     requestId: doc.requestId,
     type: doc.type,

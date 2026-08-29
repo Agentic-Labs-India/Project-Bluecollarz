@@ -9,32 +9,13 @@ import {
 } from "@/lib/hire/apply-inquiry-profile";
 import type {
   RecruiterInquiryCreateInput,
+  RecruiterInquiryDocument,
   RecruiterInquiryListItem,
   RecruiterInquiryStatus,
 } from "@/lib/hire/inquiries/types";
 import { idHex } from "@/lib/utils";
 
-type RecruiterInquiryDoc = {
-  _id: ObjectId;
-  contactName: string;
-  companyName: string;
-  email: string;
-  phoneCountryCode: number;
-  phoneNumber: number;
-  industry: string;
-  country: string;
-  companySize: string;
-  website: string;
-  about: string;
-  status: RecruiterInquiryStatus;
-  adminNote: string;
-  reviewedAt: Date | null;
-  reviewedById: string | null;
-  reviewedByEmail: string | null;
-  reviewedByName: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type RecruiterInquiryDoc = RecruiterInquiryDocument;
 
 function toListItem(doc: RecruiterInquiryDoc): RecruiterInquiryListItem {
   return {

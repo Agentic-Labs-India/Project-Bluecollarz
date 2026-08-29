@@ -1,4 +1,5 @@
 import type { CustomQuestion } from "@/lib/jobs/custom-questions";
+import type { JobLocation, JobPriority } from "@/lib/jobs/enums";
 
 export const OPPORTUNITY_TABS = [
   "project",
@@ -33,8 +34,8 @@ export interface Opportunity {
   pay: string;
   tab: OpportunityTab;
   isNew?: boolean;
-  priority?: "high" | "medium" | "low";
-  location?: "remote" | "on-site";
+  priority?: JobPriority;
+  location?: JobLocation;
   countryCode?: string;
   stateCode?: string;
   overview: string;

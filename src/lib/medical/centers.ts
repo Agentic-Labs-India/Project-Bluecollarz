@@ -12,6 +12,7 @@ import client, {
 import { ensureIndexes } from "@/lib/db/indexes";
 import { formatOperatingSummary, toMedicalHours } from "@/lib/medical/time";
 import {
+  type MedicalCenterDocument,
   type MedicalCenterInput,
   type MedicalCenterListItem,
   MedicalError,
@@ -20,27 +21,7 @@ import {
 } from "@/lib/medical/types";
 import { idHex } from "@/lib/utils";
 
-export type MedicalCenterDocument = {
-  _id: unknown;
-  name: string;
-  licenseNumber: string;
-  licenseAuthority: string | null;
-  licenseExpiry: Date | null;
-  address: string;
-  countryCode: string;
-  stateCode: string | null;
-  city: string;
-  phone: string | null;
-  email: string | null;
-  mapsUrl: string | null;
-  notes: string | null;
-  operatingDays: number[];
-  openTime: string;
-  closeTime: string;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type { MedicalCenterDocument };
 
 function collection() {
   return client

@@ -7,7 +7,10 @@ import {
 } from "@/lib/admin/provisions";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
+import type { AdminUserListItem } from "@/lib/admin/types";
 import type { ProfileType } from "@/lib/user/profile-types";
+
+export type { AdminUserListItem } from "@/lib/admin/types";
 import {
   CANDIDATE_ONLY_USER_FIELDS,
   HIRE_ONLY_USER_FIELDS,
@@ -15,17 +18,6 @@ import {
   unsetFields,
 } from "@/lib/user/role-fields";
 import { idHex } from "@/lib/utils";
-
-export interface AdminUserListItem {
-  id: string;
-  name: string | null;
-  email: string;
-  image: string | null;
-  profileType: ProfileType;
-  createdAt: string | null;
-  /** True when invited but has not signed in with Google yet. */
-  pending: boolean;
-}
 
 type UserDoc = {
   _id: unknown;

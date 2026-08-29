@@ -214,6 +214,54 @@ export type MedicalReport = {
   uploadedAt: string;
 };
 
+/** Mongo document on MedicalCenters. */
+export type MedicalCenterDocument = {
+  _id: unknown;
+  name: string;
+  licenseNumber: string;
+  licenseAuthority: string | null;
+  licenseExpiry: Date | null;
+  address: string;
+  countryCode: string;
+  stateCode: string | null;
+  city: string;
+  phone: string | null;
+  email: string | null;
+  mapsUrl: string | null;
+  notes: string | null;
+  operatingDays: number[];
+  openTime: string;
+  closeTime: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Stored report file on a medical appointment. */
+export type MedicalReportRecord = {
+  id: string;
+  name: string;
+  url: string;
+  contentType: string;
+  uploadedAt: Date;
+};
+
+/** Mongo document on MedicalAppointments. */
+export type MedicalAppointmentDocument = {
+  _id: unknown;
+  applicationId: string;
+  applicantId: string;
+  jobId: string;
+  centerId: string;
+  scheduledAt: Date;
+  status: MedicalAppointmentStatus;
+  notes: string | null;
+  reports?: MedicalReportRecord[];
+  assignedById: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export const MEDICAL_QUEUE_STATUSES = [
   "unscheduled",
   "scheduled",

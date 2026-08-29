@@ -3,19 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-
-type Item = {
-  requestId: string;
-  type: string;
-  status: string;
-  details: string;
-  dataPrincipalId: string;
-  adminNotes: string | null;
-  createdAt: string;
-};
+import type {
+  RightsRequestPublic,
+  RightsRequestStatus,
+} from "@/lib/compliance/types";
 
 export function AdminRightsQueue() {
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<RightsRequestPublic[]>([]);
   const [error, setError] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
 
@@ -24,7 +18,7 @@ export function AdminRightsQueue() {
     try {
       const res = await fetch("/api/admin/rights");
       const json = (await res.json().catch(() => ({}))) as {
-        items?: Item[];
+        items?: RightsRequestPublic[];
         error?: string;
       };
       if (!res.ok) throw new Error(json.error || "Failed to load");
@@ -38,7 +32,7 @@ export function AdminRightsQueue() {
     void load();
   }, [load]);
 
-  const patch = async (requestId: string, status: string) => {
+  const patch = async (requestId: string, status: RightsRequestStatus) => {
     const res = await fetch("/api/admin/rights", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

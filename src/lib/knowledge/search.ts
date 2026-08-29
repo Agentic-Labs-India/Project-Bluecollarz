@@ -2,8 +2,10 @@ import "server-only";
 
 import { embed } from "ai";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
-import type { KnowledgeChunkDocument } from "@/lib/knowledge/store";
-import type { KnowledgeHit } from "@/lib/knowledge/types";
+import type {
+  KnowledgeChunkDocument,
+  KnowledgeHit,
+} from "@/lib/knowledge/types";
 import {
   rankByEmbedding,
   type VectorSearchFilter,

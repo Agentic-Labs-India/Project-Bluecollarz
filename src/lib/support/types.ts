@@ -65,6 +65,25 @@ export type SupportTicketDetail = SupportTicketListItem & {
   transcript: SupportTranscriptTurn[];
 };
 
+/** Mongo document on SupportTickets. */
+export type SupportTicketDocument = {
+  _id: unknown;
+  userId: string;
+  profileType: ProfileType;
+  transcript: SupportTranscriptTurn[];
+  summary: string;
+  problemType: SupportProblemType;
+  seriousness: SupportSeriousness;
+  priority: SupportPriority;
+  status: SupportStatus;
+  assigneeId?: string | null;
+  assigneeName?: string | null;
+  assigneeEmail?: string | null;
+  assignedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export function isSupportStatus(value: unknown): value is SupportStatus {
   return (
     value === "open" ||

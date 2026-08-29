@@ -15,30 +15,21 @@ import client, {
 import {
   JOB_LOCATION_LABELS,
   type JobDocument,
-  type JobListItem,
   parseCustomQuestions,
   resolveStepTemplates,
   toJobListItem,
 } from "@/lib/jobs";
 import { revalidatePublishedJobsCache } from "@/lib/jobs/queries";
+import type {
+  AdminJobVerificationItem,
+  AdminJobVerificationListItem,
+} from "@/lib/admin/types";
 import { idHex } from "@/lib/utils";
 
-/** Table row — keep the list payload light. */
-export type AdminJobVerificationListItem = JobListItem & {
-  ownerEmail: string | null;
-  ownerName: string | null;
-};
-
-/** Sheet detail — loaded on demand. */
-export type AdminJobVerificationItem = AdminJobVerificationListItem & {
-  overviewHtml: string;
-  locationLabel: string | null;
-  countryLabel: string | null;
-  stateLabel: string | null;
-  stages: string[];
-  customQuestions: string[];
-  raRcNumber: string | null;
-};
+export type {
+  AdminJobVerificationItem,
+  AdminJobVerificationListItem,
+} from "@/lib/admin/types";
 
 type UserEmailDoc = {
   _id?: unknown;

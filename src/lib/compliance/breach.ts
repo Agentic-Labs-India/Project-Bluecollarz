@@ -2,32 +2,19 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 import { getGrievanceOfficer } from "@/lib/compliance/grievance";
+import type {
+  BreachIncidentDocument,
+  BreachIncidentPublic,
+  BreachStatus,
+} from "@/lib/compliance/types";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 
-export const BREACH_STATUSES = [
-  "detected",
-  "investigating",
-  "notified",
-  "closed",
-] as const;
-
-export type BreachStatus = (typeof BREACH_STATUSES)[number];
-
-export interface BreachIncidentDocument {
-  _id?: ObjectId;
-  incidentId: string;
-  title: string;
-  summary: string;
-  status: BreachStatus;
-  affectedPrincipalIds: string[];
-  notifyBoard: boolean;
-  notifyPrincipals: boolean;
-  boardNotifiedAt?: Date | null;
-  principalsNotifiedAt?: Date | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export {
+  BREACH_STATUSES,
+  type BreachIncidentDocument,
+  type BreachIncidentPublic,
+  type BreachStatus,
+} from "@/lib/compliance/types";
 
 function col() {
   return client
@@ -114,7 +101,9 @@ export async function breachNotificationCopy(incident: BreachIncidentDocument) {
   };
 }
 
-export async function serializeBreach(doc: BreachIncidentDocument) {
+export async function serializeBreach(
+  doc: BreachIncidentDocument,
+): Promise<BreachIncidentPublic> {
   return {
     incidentId: doc.incidentId,
     title: doc.title,

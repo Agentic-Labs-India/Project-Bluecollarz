@@ -6,6 +6,7 @@ import { deleteBlobUrls } from "@/lib/blob/server/delete";
 import { isBlogCoverImageUrl } from "@/lib/blob/pathname";
 import {
   type BlogDetail,
+  type BlogDocument,
   type BlogListItem,
   type BlogStatus,
   slugifyBlogTitle,
@@ -54,22 +55,7 @@ function revalidatePublishedBlogsCache() {
   revalidateTag(PUBLISHED_BLOGS_CACHE_TAG, "max");
 }
 
-type BlogDoc = {
-  _id: ObjectId;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  coverImageUrl: string | null;
-  status: BlogStatus;
-  seoTitle: string;
-  seoDescription: string;
-  authorId: string;
-  authorEmail: string;
-  publishedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type BlogDoc = BlogDocument;
 
 function excerptFromContent(content: string, max = 180): string {
   const plain = htmlToPlainText(content).replace(/\s+/g, " ").trim();
@@ -89,7 +75,7 @@ function normalizeCoverImageUrl(
 }
 
 function toListItem(doc: {
-  _id: ObjectId;
+  _id: unknown;
   slug: string;
   title: string;
   excerpt: string;

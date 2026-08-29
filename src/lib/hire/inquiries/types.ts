@@ -55,6 +55,29 @@ export type RecruiterInquiryCreateInput = z.infer<
   typeof recruiterInquiryCreateSchema
 >;
 
+/** Mongo document on RecruiterInquiries. */
+export type RecruiterInquiryDocument = {
+  _id: unknown;
+  contactName: string;
+  companyName: string;
+  email: string;
+  phoneCountryCode: number;
+  phoneNumber: number;
+  industry: string;
+  country: string;
+  companySize: string;
+  website: string;
+  about: string;
+  status: RecruiterInquiryStatus;
+  adminNote: string;
+  reviewedAt: Date | null;
+  reviewedById: string | null;
+  reviewedByEmail: string | null;
+  reviewedByName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export interface RecruiterInquiryListItem {
   id: string;
   contactName: string;

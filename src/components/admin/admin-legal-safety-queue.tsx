@@ -3,32 +3,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-
-type CaseItem = {
-  caseId: string;
-  state: string;
-  subjectUserId: string;
-  indicators: string[];
-  legalHoldId: string | null;
-  createdAt: string;
-  updatedAt: string;
-  evidence: { sourceKind: string; excerpt: string; capturedAt: string }[];
-  transitions: { to: string; actorEmail: string; note: string; at: string }[];
-};
+import type { CaseState, SeriousOffenceCasePublic } from "@/lib/legal-safety/types";
 
 const HUMAN_OUTCOMES = [
   {
-    to: "no_statutory_trigger" as const,
+    to: "no_statutory_trigger" as CaseState,
     label: "No statutory trigger",
   },
   {
-    to: "mandatory_report_triggered" as const,
+    to: "mandatory_report_triggered" as CaseState,
     label: "Mark mandatory report required",
   },
 ];
 
 export function AdminLegalSafetyQueue() {
-  const [items, setItems] = useState<CaseItem[]>([]);
+  const [items, setItems] = useState<SeriousOffenceCasePublic[]>([]);
   const [error, setError] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
 
@@ -37,7 +26,7 @@ export function AdminLegalSafetyQueue() {
     try {
       const res = await fetch("/api/admin/legal-safety/cases");
       const json = (await res.json().catch(() => ({}))) as {
-        items?: CaseItem[];
+        items?: SeriousOffenceCasePublic[];
         error?: string;
       };
       if (!res.ok) throw new Error(json.error || "Failed to load");

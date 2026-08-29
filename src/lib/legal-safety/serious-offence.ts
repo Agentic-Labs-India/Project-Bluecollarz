@@ -4,69 +4,23 @@ import { ObjectId } from "mongodb";
 import { placeLegalHold, releaseLegalHold } from "@/lib/compliance/legal-hold";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
 import { assertEncodable } from "@/lib/legal-safety/registry";
+import type {
+  CaseState,
+  CaseTransition,
+  S143Indicator,
+  SeriousOffenceCase,
+  SeriousOffenceCasePublic,
+} from "@/lib/legal-safety/types";
 
-/**
- * The serious-offence gate — v0.2 three states, the only permitted
- * classifications.
- *
- * The machine may move a case into `legal_review_required`. It may never move
- * a case into `mandatory_report_triggered`, and it may never move a case out
- * of `legal_review_required`. Those two acts are human, logged with identity.
- */
-export const CASE_STATES = [
-  "legal_review_required",
-  "no_statutory_trigger",
-  "mandatory_report_triggered",
-] as const;
-
-export type CaseState = (typeof CASE_STATES)[number];
-
-/**
- * BNS s.143 elements, held as neutral observations. An indicator is a fact the
- * platform observed, never a conclusion about the section being made out.
- */
-export const S143_INDICATORS = [
-  "document_retention",
-  "worker_paid_fee",
-  "debt_bondage_terms",
-  "movement_restriction",
-  "contract_substitution",
-  "wage_withholding",
-  "identity_misrepresentation",
-  "minor_involved",
-  "isolation_from_contact",
-] as const;
-
-export type S143Indicator = (typeof S143_INDICATORS)[number];
-
-export interface CaseTransition {
-  from: CaseState | null;
-  to: CaseState;
-  actorId: string;
-  actorEmail: string;
-  note: string;
-  at: Date;
-}
-
-export interface SeriousOffenceCase {
-  _id?: ObjectId;
-  caseId: string;
-  state: CaseState;
-  /** Data principal the observations concern. */
-  subjectUserId: string;
-  indicators: S143Indicator[];
-  /** Verbatim source material, preserved unedited. */
-  evidence: {
-    sourceKind: "interview" | "chat" | "application" | "report";
-    sourceId: string;
-    excerpt: string;
-    capturedAt: Date;
-  }[];
-  legalHoldId: string | null;
-  transitions: CaseTransition[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+export {
+  CASE_STATES,
+  S143_INDICATORS,
+  type CaseState,
+  type CaseTransition,
+  type S143Indicator,
+  type SeriousOffenceCase,
+  type SeriousOffenceCasePublic,
+} from "@/lib/legal-safety/types";
 
 export class SeriousOffenceError extends Error {
   readonly status = 409;
@@ -125,7 +79,7 @@ function iso(value: Date | string): string {
 }
 
 /** Admin JSON view. Strips Mongo `_id` so ObjectId does not leak into the client. */
-export function toPublicCase(doc: SeriousOffenceCase) {
+export function toPublicCase(doc: SeriousOffenceCase): SeriousOffenceCasePublic {
   return {
     caseId: doc.caseId,
     state: doc.state,

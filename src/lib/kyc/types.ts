@@ -16,3 +16,14 @@ export interface KycFields {
   isKycVerified?: boolean;
   kyc?: UserKyc | null;
 }
+
+/** Client-safe KYC snapshot — never includes DigiLocker user id. */
+export interface KycPublicState {
+  isKycVerified: boolean;
+  provider: string | null;
+  verifiedAt: string | null;
+  updatedAt: string | null;
+  gender: string | null;
+  pan: string | null;
+  aadhaarLast4: string | null;
+}

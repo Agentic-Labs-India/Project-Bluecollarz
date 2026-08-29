@@ -21,6 +21,24 @@ export type BlogDetail = BlogListItem & {
   authorEmail: string;
 };
 
+/** Mongo document on Blogs. */
+export type BlogDocument = {
+  _id: unknown;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  coverImageUrl: string | null;
+  status: BlogStatus;
+  seoTitle: string;
+  seoDescription: string;
+  authorId: string;
+  authorEmail: string;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 /** Slug for URLs — lowercase, hyphenated, ASCII-ish. */
 export function slugifyBlogTitle(title: string): string {
   return title

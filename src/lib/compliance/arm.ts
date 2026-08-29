@@ -3,7 +3,11 @@
  * never email, DigiLocker id, phone, PAN, Aadhaar, DOB, or address.
  */
 
-import type { CandidateProfileData } from "@/lib/candidate/profile";
+import type {
+  CandidateProfileData,
+  EducationFormEntry,
+  WorkFormEntry,
+} from "@/lib/candidate/profile";
 
 /** Allowlisted hire profile fields (matching / evaluation only). */
 export type HireSafeProfile = {
@@ -14,23 +18,8 @@ export type HireSafeProfile = {
   skills: string[];
   preferredCountries: string[];
   summary: string;
-  education: Array<{
-    school: string;
-    degree: string;
-    startYear: number | null;
-    endYear: number | null;
-    major: string;
-    gpa: number | null;
-  }>;
-  workExperience: Array<{
-    company: string;
-    role: string;
-    startYear: number | null;
-    endYear: number | null;
-    city: string;
-    country: string;
-    description: string;
-  }>;
+  education: EducationFormEntry[];
+  workExperience: WorkFormEntry[];
   portfolioUrl: string;
   otherLinks: string[];
   languages: string[];

@@ -6,20 +6,10 @@ import {
 import {
   emptyHireOnboardingSave,
   type HireOnboardingSaveInput,
+  type HireOnboardingUser,
 } from "@/lib/hire/onboarding/types";
 
-/** Access-request fields on Users — locked during company onboarding. */
-export type HireOnboardingUser = {
-  companyName?: string;
-  website?: string;
-  industry?: string;
-  location?: string;
-  contactName?: string;
-  name?: string | null;
-  email?: string | null;
-  phoneNumber?: number | null;
-  phoneCountryCode?: number | null;
-};
+export type { HireOnboardingUser };
 
 function asIndustry(raw: string): RecruiterIndustry | null {
   return (RECRUITER_INDUSTRIES as readonly string[]).includes(raw)

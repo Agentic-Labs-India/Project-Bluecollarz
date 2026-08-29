@@ -5,21 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-type Item = {
-  incidentId: string;
-  title: string;
-  summary: string;
-  status: string;
-  affectedCount: number;
-  boardNotifiedAt: string | null;
-  principalsNotifiedAt: string | null;
-  createdAt: string;
-  notificationPreview: { subject: string; body: string };
-};
+import type {
+  BreachIncidentPublic,
+  BreachStatus,
+} from "@/lib/compliance/types";
 
 export function AdminBreachRegister() {
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<BreachIncidentPublic[]>([]);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +20,7 @@ export function AdminBreachRegister() {
     setError("");
     const res = await fetch("/api/admin/breaches");
     const json = (await res.json().catch(() => ({}))) as {
-      items?: Item[];
+      items?: BreachIncidentPublic[];
       error?: string;
     };
     if (!res.ok) {
@@ -60,7 +52,7 @@ export function AdminBreachRegister() {
 
   const patch = async (
     incidentId: string,
-    status: string,
+    status: BreachStatus,
     flags?: { markBoardNotified?: boolean; markPrincipalsNotified?: boolean },
   ) => {
     await fetch("/api/admin/breaches", {

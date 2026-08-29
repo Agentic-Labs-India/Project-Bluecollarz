@@ -88,6 +88,34 @@ export type KnowledgeCitation = {
   page: number;
 };
 
+/** Mongo document on KnowledgeSources. */
+export type KnowledgeSourceDocument = {
+  source: string;
+  sourceKey: string;
+  docType: KnowledgeDocType;
+  blobUrl: string;
+  blobPathname: string;
+  status: KnowledgeSourceStatus;
+  error: string | null;
+  chunkCount: number;
+  pageCount: number;
+  uploadedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Mongo document on KnowledgeChunks. */
+export type KnowledgeChunkDocument = {
+  text: string;
+  embedding: number[];
+  source: string;
+  sourceId: string;
+  docType: KnowledgeDocType;
+  page: number;
+  chunkIndex: number;
+  createdAt: Date;
+};
+
 export function normalizeKnowledgeSource(filename: string): string {
   const base = filename.replace(/\\/g, "/").split("/").pop() ?? filename;
   return base.trim().slice(0, 200);

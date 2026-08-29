@@ -1,9 +1,16 @@
-import type { CommunicationAnalysis, InterviewStageId, InterviewStatus } from "@/lib/interviews";
 import type { HireSafeProfile } from "@/lib/compliance/arm";
+import type {
+  CommunicationAnalysis,
+  InterviewStageId,
+  InterviewStatus,
+  InterviewTranscriptTurn,
+} from "@/lib/interviews";
 import type {
   CustomQuestion,
   CustomQuestionAnswer,
 } from "@/lib/jobs/custom-questions";
+import type { JobStatus } from "@/lib/jobs/enums";
+import type { MedicalPipelineStatus } from "@/lib/medical/types";
 
 const APPLICATION_STATUSES = ["applied", "selected", "rejected"] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
@@ -60,7 +67,7 @@ export interface CandidateApplicationListItem {
   jobId: string;
   jobTitle: string;
   jobPay: string;
-  jobStatus: "published" | "draft" | "underVerification" | "closed" | "missing";
+  jobStatus: JobStatus | "missing";
   status: CandidatePipelineStatus;
   /** Formal apply date, or first interview start when not yet applied. */
   appliedAt: string;
@@ -68,7 +75,7 @@ export interface CandidateApplicationListItem {
   /** Hirer-enabled stage ids (resume always; others optional). */
   stageIds: string[];
   /** Post-select medical fitness step, when the application is selected. */
-  medicalStatus?: "pending" | "scheduled" | "completed" | "failed";
+  medicalStatus?: MedicalPipelineStatus;
 }
 
 /** Compact interview scores for the applicants table. */
@@ -113,7 +120,7 @@ export type ApplicantInterviewDetail = {
   videoUrl: string | null;
   customQuestions: CustomQuestion[];
   customAnswers: CustomQuestionAnswer[];
-  transcript: Array<{ role: "assistant" | "user"; text: string; at: string }>;
+  transcript: Array<Omit<InterviewTranscriptTurn, "at"> & { at: string }>;
   startedAt: string;
   completedAt: string | null;
 };

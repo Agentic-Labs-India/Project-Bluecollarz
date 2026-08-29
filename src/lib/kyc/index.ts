@@ -9,19 +9,9 @@
  * Raw DigiLocker XML/JSON is never stored.
  */
 
-export type { KycFields, UserKyc } from "@/lib/kyc/types";
+export type { KycFields, KycPublicState, UserKyc } from "@/lib/kyc/types";
 
-import type { KycFields } from "@/lib/kyc/types";
-
-export interface KycPublicState {
-  isKycVerified: boolean;
-  provider: string | null;
-  verifiedAt: string | null;
-  updatedAt: string | null;
-  gender: string | null;
-  pan: string | null;
-  aadhaarLast4: string | null;
-}
+import type { KycFields, KycPublicState } from "@/lib/kyc/types";
 
 function asIso(value: Date | null | undefined): string | null {
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) return null;

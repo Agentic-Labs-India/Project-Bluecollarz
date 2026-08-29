@@ -1,7 +1,7 @@
+import type { ProvisionProfileType } from "@/lib/admin/types";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
-import type { ProfileType } from "@/lib/user/profile-types";
 
-export type ProvisionProfileType = Extract<ProfileType, "hire" | "admin">;
+export type { ProvisionProfileType } from "@/lib/admin/types";
 
 type ProvisionDoc = {
   email: string;

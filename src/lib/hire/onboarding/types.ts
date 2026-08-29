@@ -208,6 +208,34 @@ export const hireOnboardingSaveSchema = z.object({
 });
 export type HireOnboardingSaveInput = z.infer<typeof hireOnboardingSaveSchema>;
 
+/** Access-request fields on Users — locked during company onboarding. */
+export type HireOnboardingUser = {
+  companyName?: string;
+  website?: string;
+  industry?: string;
+  location?: string;
+  contactName?: string;
+  name?: string | null;
+  email?: string | null;
+  phoneNumber?: number | null;
+  phoneCountryCode?: number | null;
+};
+
+/** Mongo document on HireOnboardings. File uploads use HireOnboardingDocument. */
+export type HireOnboardingRecord = HireOnboardingSaveInput & {
+  _id: unknown;
+  userId: unknown;
+  status: HireOnboardingStatus;
+  adminNote: string;
+  submittedAt: Date | null;
+  reviewedAt: Date | null;
+  reviewedById: string | null;
+  reviewedByEmail: string | null;
+  reviewedByName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export interface HireOnboardingData extends HireOnboardingSaveInput {
   id: string;
   userId: string;

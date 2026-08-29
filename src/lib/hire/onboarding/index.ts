@@ -16,7 +16,6 @@ import client, {
 } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import {
-  type HireOnboardingUser,
   lockAccessRequestFields,
   seedHireOnboardingFromUser,
 } from "@/lib/hire/onboarding/access-request";
@@ -25,8 +24,10 @@ import {
   type HireOnboardingData,
   type HireOnboardingDocument,
   type HireOnboardingListItem,
+  type HireOnboardingRecord,
   type HireOnboardingSaveInput,
   type HireOnboardingStatus,
+  type HireOnboardingUser,
   hireOnboardingSaveSchema,
   isHireOnboardingComplete,
   isHireOnboardingEditable,
@@ -35,19 +36,7 @@ import {
 import type { HireProfileFields } from "@/lib/hire/profile";
 import { idHex } from "@/lib/utils";
 
-type HireOnboardingDoc = HireOnboardingSaveInput & {
-  _id: ObjectId;
-  userId: ObjectId | string;
-  status: HireOnboardingStatus;
-  adminNote: string;
-  submittedAt: Date | null;
-  reviewedAt: Date | null;
-  reviewedById: string | null;
-  reviewedByEmail: string | null;
-  reviewedByName: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type HireOnboardingDoc = HireOnboardingRecord;
 
 type HireUserLite = HireProfileFields &
   HireOnboardingUser & {
