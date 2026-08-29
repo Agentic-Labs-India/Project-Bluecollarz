@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { Resend } from "resend";
 import {
   formatSenderFrom,
@@ -25,11 +27,6 @@ import type {
   AdminJobVerificationListItem,
 } from "@/lib/admin/types";
 import { idHex } from "@/lib/utils";
-
-export type {
-  AdminJobVerificationItem,
-  AdminJobVerificationListItem,
-} from "@/lib/admin/types";
 
 type UserEmailDoc = {
   _id?: unknown;

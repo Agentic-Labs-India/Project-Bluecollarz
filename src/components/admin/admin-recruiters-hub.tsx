@@ -11,7 +11,7 @@ import {
 import { AdminRecruiterInquiries } from "@/components/admin/admin-recruiter-inquiries";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
-import type { AdminUserListItem } from "@/lib/admin/queries";
+import type { AdminUserListItem } from "@/lib/admin/types";
 
 const TABS = [
   { value: "accounts", label: "Accounts" },

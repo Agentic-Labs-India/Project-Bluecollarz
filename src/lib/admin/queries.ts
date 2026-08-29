@@ -1,16 +1,18 @@
+import "server-only";
+
 import { connection } from "next/server";
 import {
   deleteUserProvision,
   listUserProvisions,
-  type ProvisionProfileType,
   upsertUserProvision,
 } from "@/lib/admin/provisions";
 import client, { COLLECTIONS, DB_NAME, matchId } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
-import type { AdminUserListItem } from "@/lib/admin/types";
+import type {
+  AdminUserListItem,
+  ProvisionProfileType,
+} from "@/lib/admin/types";
 import type { ProfileType } from "@/lib/user/profile-types";
-
-export type { AdminUserListItem } from "@/lib/admin/types";
 import {
   CANDIDATE_ONLY_USER_FIELDS,
   HIRE_ONLY_USER_FIELDS,

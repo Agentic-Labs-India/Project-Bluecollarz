@@ -16,7 +16,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { HireOverview } from "@/lib/hire";
+import type { HireOverview } from "@/lib/hire/types";
 import type { HireOnboardingData } from "@/lib/hire/onboarding/types";
 
 const STATUS_LABELS: Record<string, string> = {

@@ -55,8 +55,6 @@ function revalidatePublishedBlogsCache() {
   revalidateTag(PUBLISHED_BLOGS_CACHE_TAG, "max");
 }
 
-type BlogDoc = BlogDocument;
-
 function excerptFromContent(content: string, max = 180): string {
   const plain = htmlToPlainText(content).replace(/\s+/g, " ").trim();
   if (plain.length <= max) return plain;
@@ -102,7 +100,7 @@ function toListItem(doc: {
   };
 }
 
-function toDetail(doc: BlogDoc): BlogDetail {
+function toDetail(doc: BlogDocument): BlogDetail {
   return {
     ...toListItem(doc),
     content: doc.content,
@@ -120,7 +118,7 @@ async function uniqueSlugFromTitle(
   excludeId?: string,
 ): Promise<string> {
   const root = slugifyBlogTitle(title) || "post";
-  const col = client.db(DB_NAME).collection<BlogDoc>(COLLECTIONS.BLOGS);
+  const col = client.db(DB_NAME).collection<BlogDocument>(COLLECTIONS.BLOGS);
   let candidate = root;
   let n = 1;
   for (;;) {
@@ -152,7 +150,7 @@ export async function listBlogs(opts?: {
   const filter =
     opts?.status && opts.status !== "all" ? { status: opts.status } : {};
 
-  const col = client.db(DB_NAME).collection<BlogDoc>(COLLECTIONS.BLOGS);
+  const col = client.db(DB_NAME).collection<BlogDocument>(COLLECTIONS.BLOGS);
   const [total, docs] = await Promise.all([
     col.countDocuments(filter),
     col
@@ -189,7 +187,7 @@ export async function listPublishedBlogsPublic(opts: {
   const limit = Math.min(Math.max(opts.limit ?? 10, 1), 50);
   const page = Math.max(opts.page ?? 1, 1);
   const filter = { status: "published" as const };
-  const col = client.db(DB_NAME).collection<BlogDoc>(COLLECTIONS.BLOGS);
+  const col = client.db(DB_NAME).collection<BlogDocument>(COLLECTIONS.BLOGS);
 
   const [total, docs] = await Promise.all([
     col.countDocuments(filter),
@@ -218,7 +216,7 @@ export async function listPublishedBlogsForSitemap(): Promise<
 
   const docs = await client
     .db(DB_NAME)
-    .collection<BlogDoc>(COLLECTIONS.BLOGS)
+    .collection<BlogDocument>(COLLECTIONS.BLOGS)
     .find({ status: "published" }, { projection: { slug: 1, updatedAt: 1 } })
     .sort({ publishedAt: -1 })
     .limit(500)
@@ -243,7 +241,7 @@ export async function getBlogBySlug(
   await ensureIndexes();
   const doc = await client
     .db(DB_NAME)
-    .collection<BlogDoc>(COLLECTIONS.BLOGS)
+    .collection<BlogDocument>(COLLECTIONS.BLOGS)
     .findOne({ slug: clean });
   return doc ? toDetail(doc) : null;
 }
@@ -257,7 +255,7 @@ async function getPublishedBlogBySlugCached(
 
   const doc = await client
     .db(DB_NAME)
-    .collection<BlogDoc>(COLLECTIONS.BLOGS)
+    .collection<BlogDocument>(COLLECTIONS.BLOGS)
     .findOne({ slug, status: "published" });
   return doc ? toDetail(doc) : null;
 }
@@ -267,7 +265,7 @@ export async function getBlogById(id: string): Promise<BlogDetail | null> {
   await ensureIndexes();
   const doc = await client
     .db(DB_NAME)
-    .collection<BlogDoc>(COLLECTIONS.BLOGS)
+    .collection<BlogDocument>(COLLECTIONS.BLOGS)
     .findOne({ _id: matchId(id) as never });
   return doc ? toDetail(doc) : null;
 }
@@ -294,7 +292,7 @@ export async function createBlog(input: {
   const now = new Date();
   const status = input.status;
   const _id = new ObjectId();
-  const doc: BlogDoc = {
+  const doc: BlogDocument = {
     _id,
     slug,
     title,
@@ -312,7 +310,7 @@ export async function createBlog(input: {
   };
   await client
     .db(DB_NAME)
-    .collection<BlogDoc>(COLLECTIONS.BLOGS)
+    .collection<BlogDocument>(COLLECTIONS.BLOGS)
     .insertOne(doc);
   if (status === "published") {
     revalidatePublishedBlogsCache();
@@ -337,7 +335,7 @@ export async function updateBlog(
 ): Promise<BlogDetail | null> {
   if (!isId(id)) return null;
   await ensureIndexes();
-  const col = client.db(DB_NAME).collection<BlogDoc>(COLLECTIONS.BLOGS);
+  const col = client.db(DB_NAME).collection<BlogDocument>(COLLECTIONS.BLOGS);
   const existing = await col.findOne({ _id: matchId(id) as never });
   if (!existing) return null;
 
@@ -402,7 +400,7 @@ export async function updateBlog(
 export async function deleteBlog(id: string): Promise<boolean> {
   if (!isId(id)) return false;
   await ensureIndexes();
-  const col = client.db(DB_NAME).collection<BlogDoc>(COLLECTIONS.BLOGS);
+  const col = client.db(DB_NAME).collection<BlogDocument>(COLLECTIONS.BLOGS);
   const existing = await col.findOne({ _id: matchId(id) as never });
   if (!existing) return false;
 

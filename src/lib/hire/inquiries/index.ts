@@ -15,9 +15,7 @@ import type {
 } from "@/lib/hire/inquiries/types";
 import { idHex } from "@/lib/utils";
 
-type RecruiterInquiryDoc = RecruiterInquiryDocument;
-
-function toListItem(doc: RecruiterInquiryDoc): RecruiterInquiryListItem {
+function toListItem(doc: RecruiterInquiryDocument): RecruiterInquiryListItem {
   return {
     id: idHex(doc._id),
     contactName: doc.contactName,
@@ -42,7 +40,7 @@ function toListItem(doc: RecruiterInquiryDoc): RecruiterInquiryListItem {
 function collection() {
   return client
     .db(DB_NAME)
-    .collection<RecruiterInquiryDoc>(COLLECTIONS.RECRUITER_INQUIRIES);
+    .collection<RecruiterInquiryDocument>(COLLECTIONS.RECRUITER_INQUIRIES);
 }
 
 export async function createRecruiterInquiry(
@@ -82,7 +80,7 @@ export async function createRecruiterInquiry(
   }
 
   const _id = new ObjectId();
-  const doc: RecruiterInquiryDoc = {
+  const doc: RecruiterInquiryDocument = {
     _id,
     contactName: input.contactName.trim(),
     companyName: input.companyName.trim(),

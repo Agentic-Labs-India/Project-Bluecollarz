@@ -3,8 +3,6 @@ import "server-only";
 import { Resend } from "resend";
 import type { AdminEmailDetail, AdminEmailListItem } from "@/lib/admin/types";
 
-export type { AdminEmailDetail, AdminEmailListItem } from "@/lib/admin/types";
-
 /** Prefer RESEND_API_KEY; RESEND_API accepted as an alias. */
 function getResendApiKey(): string | null {
   const key =

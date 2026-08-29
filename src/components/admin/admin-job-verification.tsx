@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type {
   AdminJobVerificationItem,
   AdminJobVerificationListItem,
-} from "@/lib/admin/job-verification";
+} from "@/lib/admin/types";
 import {
   getJobUnderVerificationAction,
   listJobsUnderVerificationAction,

@@ -34,7 +34,7 @@ import {
   extractEmailAddress,
   sanitizeEmailViewHtml,
 } from "@/lib/admin/email-html";
-import type { AdminEmailDetail, AdminEmailListItem } from "@/lib/admin/resend";
+import type { AdminEmailDetail, AdminEmailListItem } from "@/lib/admin/types";
 import { authClient } from "@/lib/auth/auth-client";
 import { formatDateTimeShort } from "@/lib/core/dates";
 

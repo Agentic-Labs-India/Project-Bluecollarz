@@ -1,7 +1,7 @@
+import "server-only";
+
 import type { ProvisionProfileType } from "@/lib/admin/types";
 import client, { COLLECTIONS, DB_NAME } from "@/lib/db";
-
-export type { ProvisionProfileType } from "@/lib/admin/types";
 
 type ProvisionDoc = {
   email: string;

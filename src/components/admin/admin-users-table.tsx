@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { AdminUserListItem } from "@/lib/admin/queries";
+import type { AdminUserListItem } from "@/lib/admin/types";
 import {
   cancelAdminInviteAction,
   listAdminUsersAction,

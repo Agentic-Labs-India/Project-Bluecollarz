@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LoginButton } from "@/components/auth/login-button";
 import { PrimaryDitherBand } from "@/components/landing/primary-dither";
 import { stateName } from "@/lib/core/geo/places";
-import type { LandingRole } from "@/lib/jobs/queries";
+import type { LandingRole } from "@/lib/jobs";
 import { cn } from "@/lib/utils";
 
 const AVATAR_COLORS = [

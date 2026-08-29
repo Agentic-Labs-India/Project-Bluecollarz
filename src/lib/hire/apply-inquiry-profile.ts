@@ -40,12 +40,6 @@ function hireCompanySetFromInquiry(
   return $set;
 }
 
-/** Drop legacy editable hire fields when locking to inquiry data. */
-const LEGACY_HIRE_UNSET = {
-  tagline: "" as const,
-  certificates: "" as const,
-};
-
 export async function applyHireProfileToUserByEmail(
   email: string,
   profile: HireProfileFromInquiry,
@@ -69,7 +63,7 @@ export async function applyHireProfileToUserByEmail(
 
   await users.updateOne(
     { _id: existing._id as never },
-    { $set, $unset: LEGACY_HIRE_UNSET },
+    { $set },
   );
   return true;
 }
@@ -93,7 +87,7 @@ async function applyHireProfileToUserById(
 
   await users.updateOne(
     { _id: existing._id as never },
-    { $set, $unset: LEGACY_HIRE_UNSET },
+    { $set },
   );
   return true;
 }

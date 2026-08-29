@@ -94,6 +94,17 @@ export interface JobDocument {
   updatedAt: Date;
 }
 
+/** Published role card on the marketing landing page. */
+export interface LandingRole {
+  id: string;
+  title: string;
+  pay: string;
+  location?: JobLocation;
+  countryCode?: string;
+  stateCode?: string;
+  applicantCount: number;
+}
+
 export interface JobListItem {
   id: string;
   ownerId: string;

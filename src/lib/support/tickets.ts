@@ -1,3 +1,5 @@
+import "server-only";
+
 import { ObjectId } from "mongodb";
 import client, {
   COLLECTIONS,
@@ -23,9 +25,7 @@ import { parseSupportStatus } from "@/lib/support/types";
 import type { ProfileType } from "@/lib/user/profile-types";
 import { idHex } from "@/lib/utils";
 
-type SupportTicketDoc = SupportTicketDocument;
-
-function toAssignee(doc: SupportTicketDoc): SupportAssignee | null {
+function toAssignee(doc: SupportTicketDocument): SupportAssignee | null {
   const id = doc.assigneeId?.trim();
   const email = doc.assigneeEmail?.trim().toLowerCase();
   if (!id || !email) return null;
@@ -63,7 +63,7 @@ async function contactEmailByUserIds(
 }
 
 function toListItem(
-  doc: SupportTicketDoc,
+  doc: SupportTicketDocument,
   filerEmail: string | null,
 ): SupportTicketListItem {
   const assignee = toAssignee(doc);
@@ -93,14 +93,14 @@ function toListItem(
 }
 
 async function toListItems(
-  docs: SupportTicketDoc[],
+  docs: SupportTicketDocument[],
 ): Promise<SupportTicketListItem[]> {
   const emails = await contactEmailByUserIds(docs.map((doc) => doc.userId));
   return docs.map((doc) => toListItem(doc, emails.get(doc.userId) ?? null));
 }
 
 async function toHydratedItem(
-  doc: SupportTicketDoc,
+  doc: SupportTicketDocument,
 ): Promise<SupportTicketListItem> {
   const [item] = await toListItems([doc]);
   return item;
@@ -118,7 +118,7 @@ export async function createSupportTicket(input: {
   await ensureIndexes();
   const now = new Date();
   const _id = new ObjectId();
-  const doc: SupportTicketDoc = {
+  const doc: SupportTicketDocument = {
     _id,
     userId: input.userId,
     profileType: input.profileType,
@@ -138,7 +138,7 @@ export async function createSupportTicket(input: {
 
   await client
     .db(DB_NAME)
-    .collection<SupportTicketDoc>(COLLECTIONS.SUPPORT_TICKETS)
+    .collection<SupportTicketDocument>(COLLECTIONS.SUPPORT_TICKETS)
     .insertOne(doc);
 
   // Screen what the worker wrote, not the assistant's replies or the model's
@@ -188,7 +188,7 @@ export async function listSupportTickets(opts?: {
 
   const docs = await client
     .db(DB_NAME)
-    .collection<SupportTicketDoc>(COLLECTIONS.SUPPORT_TICKETS)
+    .collection<SupportTicketDocument>(COLLECTIONS.SUPPORT_TICKETS)
     .find(filter)
     .sort({ createdAt: -1 })
     .limit(limit + 1)
@@ -209,7 +209,7 @@ export async function getSupportTicket(
   await ensureIndexes();
   const doc = await client
     .db(DB_NAME)
-    .collection<SupportTicketDoc>(COLLECTIONS.SUPPORT_TICKETS)
+    .collection<SupportTicketDocument>(COLLECTIONS.SUPPORT_TICKETS)
     .findOne({ _id: matchId(id) as never });
 
   if (!doc) return null;
@@ -227,7 +227,7 @@ export async function updateSupportTicketStatus(
   await ensureIndexes();
   const result = await client
     .db(DB_NAME)
-    .collection<SupportTicketDoc>(COLLECTIONS.SUPPORT_TICKETS)
+    .collection<SupportTicketDocument>(COLLECTIONS.SUPPORT_TICKETS)
     .findOneAndUpdate(
       { _id: matchId(id) as never },
       { $set: { status, updatedAt: new Date() } },
@@ -254,7 +254,7 @@ export async function assignSupportTicket(input: {
   await ensureIndexes();
   const col = client
     .db(DB_NAME)
-    .collection<SupportTicketDoc>(COLLECTIONS.SUPPORT_TICKETS);
+    .collection<SupportTicketDocument>(COLLECTIONS.SUPPORT_TICKETS);
 
   const now = new Date();
   const email = input.assignee.email.trim().toLowerCase();

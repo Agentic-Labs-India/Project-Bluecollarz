@@ -36,8 +36,6 @@ import {
 import type { HireProfileFields } from "@/lib/hire/profile";
 import { idHex } from "@/lib/utils";
 
-type HireOnboardingDoc = HireOnboardingRecord;
-
 type HireUserLite = HireProfileFields &
   HireOnboardingUser & {
     _id: unknown;
@@ -46,7 +44,7 @@ type HireUserLite = HireProfileFields &
 function collection() {
   return client
     .db(DB_NAME)
-    .collection<HireOnboardingDoc>(COLLECTIONS.HIRE_ONBOARDINGS);
+    .collection<HireOnboardingRecord>(COLLECTIONS.HIRE_ONBOARDINGS);
 }
 
 function toIso(value: Date | null | undefined): string | null {
@@ -99,7 +97,7 @@ function assertOwnDocuments(data: HireOnboardingSaveInput, userId: string) {
   }
 }
 
-function toData(doc: HireOnboardingDoc): HireOnboardingData {
+function toData(doc: HireOnboardingRecord): HireOnboardingData {
   const empty = emptyHireOnboardingSave();
   return {
     id: idHex(doc._id),
@@ -137,7 +135,7 @@ function toData(doc: HireOnboardingDoc): HireOnboardingData {
 }
 
 function toClient(
-  doc: HireOnboardingDoc,
+  doc: HireOnboardingRecord,
   user: HireUserLite | null,
 ): HireOnboardingData {
   const data = toData(doc);
@@ -145,7 +143,7 @@ function toClient(
 }
 
 function toListItem(
-  doc: HireOnboardingDoc,
+  doc: HireOnboardingRecord,
   user: HireUserLite | null,
 ): HireOnboardingListItem {
   const data = toData(doc);
@@ -184,7 +182,7 @@ export async function getOrCreateHireOnboarding(
   if (existing) return toClient(existing, user);
 
   const now = new Date();
-  const doc: HireOnboardingDoc = {
+  const doc: HireOnboardingRecord = {
     _id: new ObjectId(),
     userId: new ObjectId(userId),
     status: "draft",

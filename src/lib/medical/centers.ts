@@ -21,8 +21,6 @@ import {
 } from "@/lib/medical/types";
 import { idHex } from "@/lib/utils";
 
-export type { MedicalCenterDocument };
-
 function collection() {
   return client
     .db(DB_NAME)

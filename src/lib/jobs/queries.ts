@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import {
   type CandidateProfileFields,
@@ -20,6 +22,7 @@ import {
   type JobDocument,
   type JobLocation,
   type JobPriority,
+  type LandingRole,
   toOpportunity,
 } from "@/lib/jobs";
 import type {
@@ -35,17 +38,6 @@ export const PUBLISHED_JOBS_CACHE_TAG = "published-jobs";
 /** Bust published-job caches after hire mutates roles (Route Handler safe). */
 export function revalidatePublishedJobsCache() {
   revalidateTag(PUBLISHED_JOBS_CACHE_TAG, "max");
-}
-
-/** Published role card on the marketing landing page. */
-export interface LandingRole {
-  id: string;
-  title: string;
-  pay: string;
-  location?: JobLocation;
-  countryCode?: string;
-  stateCode?: string;
-  applicantCount: number;
 }
 
 export interface OpportunitiesResult {

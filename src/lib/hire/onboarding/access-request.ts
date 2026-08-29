@@ -9,8 +9,6 @@ import {
   type HireOnboardingUser,
 } from "@/lib/hire/onboarding/types";
 
-export type { HireOnboardingUser };
-
 function asIndustry(raw: string): RecruiterIndustry | null {
   return (RECRUITER_INDUSTRIES as readonly string[]).includes(raw)
     ? (raw as RecruiterIndustry)

@@ -6,9 +6,12 @@ import {
   denyJobVerification,
   getJobUnderVerification,
   listJobsUnderVerification,
-  type AdminJobVerificationItem,
-  type AdminJobVerificationListItem,
 } from "@/lib/admin/job-verification";
+import type {
+  AdminJobVerificationItem,
+  AdminJobVerificationListItem,
+  AdminUserListItem,
+} from "@/lib/admin/types";
 import {
   platformSettingsPatchSchema,
   savePlatformSettings,
@@ -18,7 +21,6 @@ import { deleteUserProvision } from "@/lib/admin/provisions";
 import {
   listUsersByProfileType,
   upsertUserProfileTypeByEmail,
-  type AdminUserListItem,
 } from "@/lib/admin/queries";
 import { guardToActionFail, requireProfile, rethrowIfPrerenderAbort } from "@/lib/auth/session";
 import { actionFail, actionOk, type ActionResult } from "@/lib/core/action";

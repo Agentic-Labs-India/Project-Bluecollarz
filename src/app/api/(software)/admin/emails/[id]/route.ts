@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  type AdminEmailDetail,
   asStringArray,
   getResendClient,
   mapReceivedListItem,
   mapSentListItem,
 } from "@/lib/admin/resend";
+import type { AdminEmailDetail } from "@/lib/admin/types";
 import { requireProfile } from "@/lib/auth/session";
 import { formatZodError } from "@/lib/utils";
 

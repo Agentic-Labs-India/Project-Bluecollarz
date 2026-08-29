@@ -1,3 +1,5 @@
+import "server-only";
+
 import client, { COLLECTIONS, DB_NAME, matchId, matchIds } from "@/lib/db";
 import { ensureIndexes } from "@/lib/db/indexes";
 import type { HireActiveRole, HireOverview } from "@/lib/hire/types";
