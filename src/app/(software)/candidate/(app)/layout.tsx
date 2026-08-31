@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { HomePageSkeleton } from "@/components/layout/page-skeleton";
 import { requirePageProfile } from "@/lib/auth/session";
 import { getCandidateGateStatus } from "@/lib/candidate/queries";
 
@@ -11,7 +10,7 @@ export default function CandidateAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<HomePageSkeleton />}>
+    <Suspense fallback={null}>
       <CandidateAppGate>{children}</CandidateAppGate>
     </Suspense>
   );

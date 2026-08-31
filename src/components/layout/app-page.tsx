@@ -13,6 +13,12 @@ export const APP_PAGE_GUTTER = "px-4 md:px-8 lg:px-10";
 /** Same inset as AppShell pages (home, profile, settings). */
 export const APP_PAGE_PAD = "p-4 md:p-8 lg:p-10";
 
+/** Matches AppShell `<main>` padding for standard (non–full-bleed) routes. */
+export const APP_SHELL_MAIN_CLASS = cn(
+  APP_PAGE_PAD,
+  "pt-[calc(3.5rem+1rem)] pb-24",
+);
+
 export const APP_PAGE_TITLE_CLASS =
   "font-heading text-foreground min-w-0 text-2xl leading-tight font-semibold tracking-tight md:text-3xl";
 

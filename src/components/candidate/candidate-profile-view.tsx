@@ -10,7 +10,6 @@ import { PhoneNumberInput } from "@/components/candidate/phone-number-input";
 import { ResidencePlaceFields } from "@/components/candidate/residence-place-fields";
 import { PrimaryDither } from "@/components/landing/primary-dither";
 import { AppPage, AppPageTitle } from "@/components/layout/app-page";
-import { ProfilePageSkeleton } from "@/components/layout/page-skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,8 +183,6 @@ export function CandidateProfileView({
   initialProfile: CandidateProfileData;
 }) {
   const [profile, setProfile] = useState<CandidateProfileData>(initialProfile);
-  const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -195,13 +192,10 @@ export function CandidateProfileView({
     JSON.stringify(buildProfileSavePayload(initialProfile)),
   );
   const saveRequestIdRef = useRef(0);
-  const readyRef = useRef(true);
 
   profileRef.current = profile;
 
   useEffect(() => {
-    if (!ready || loading) return;
-
     const payload = buildProfileSavePayload(profile);
     const json = JSON.stringify(payload);
     if (json === lastSavedJsonRef.current) return;
@@ -235,12 +229,11 @@ export function CandidateProfileView({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [profile, ready, loading]);
+  }, [profile]);
 
   // Flush pending edits if the user leaves mid-debounce.
   useEffect(() => {
     return () => {
-      if (!readyRef.current) return;
       const body = buildProfileSavePayload(profileRef.current);
       const bodyJson = JSON.stringify(body);
       if (bodyJson === lastSavedJsonRef.current) return;
@@ -282,10 +275,6 @@ export function CandidateProfileView({
       };
     });
   };
-
-  if (loading) {
-    return <ProfilePageSkeleton />;
-  }
 
   const initial = profile.name?.charAt(0) || "U";
   const identityLocked = profile.isKycVerified === true;

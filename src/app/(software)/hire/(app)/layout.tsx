@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { TablePageSkeleton } from "@/components/layout/page-skeleton";
 import { requirePageProfile } from "@/lib/auth/session";
 import { isHireCompanyVerified } from "@/lib/hire/onboarding";
 
@@ -11,7 +10,7 @@ export default function HireAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<TablePageSkeleton />}>
+    <Suspense fallback={null}>
       <HireAppGate>{children}</HireAppGate>
     </Suspense>
   );

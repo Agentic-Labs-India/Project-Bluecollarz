@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { AdminHireOnboarding } from "@/components/admin/admin-hire-onboarding";
 import { AdminJobVerification } from "@/components/admin/admin-job-verification";
 import {
@@ -10,7 +9,6 @@ import {
 } from "@/components/admin/admin-page-tabs";
 import { AdminRecruiterInquiries } from "@/components/admin/admin-recruiter-inquiries";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
-import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 import type { AdminUserListItem } from "@/lib/admin/types";
 
 const TABS = [
@@ -32,7 +30,7 @@ const COPY: Record<Tab, string> = {
     "Company packs after access is approved. Verify to unlock the hire app; reject sends the recruiter back to edit.",
 };
 
-function AdminRecruitersHubInner({
+export function AdminRecruitersHub({
   initialItems,
 }: {
   initialItems: AdminUserListItem[];
@@ -50,17 +48,5 @@ function AdminRecruitersHubInner({
       {tab === "inquiries" ? <AdminRecruiterInquiries /> : null}
       {tab === "onboarding" ? <AdminHireOnboarding /> : null}
     </>
-  );
-}
-
-export function AdminRecruitersHub({
-  initialItems,
-}: {
-  initialItems: AdminUserListItem[];
-}) {
-  return (
-    <Suspense fallback={<AdminHubSkeleton />}>
-      <AdminRecruitersHubInner initialItems={initialItems} />
-    </Suspense>
   );
 }

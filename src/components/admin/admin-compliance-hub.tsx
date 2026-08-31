@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { AdminBreachRegister } from "@/components/admin/admin-breach-register";
 import { AdminLegalSafetyQueue } from "@/components/admin/admin-legal-safety-queue";
 import {
@@ -9,7 +8,6 @@ import {
   useAdminTab,
 } from "@/components/admin/admin-page-tabs";
 import { AdminRightsQueue } from "@/components/admin/admin-rights-queue";
-import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 
 const TABS = [
   { value: "rights", label: "Rights" },
@@ -25,10 +23,10 @@ const COPY: Record<Tab, string> = {
   breaches:
     "Log personal data breaches, prepare Board / Data Principal notices, and track acknowledgment.",
   legal:
-    "Serious-offence cases. The machine may only open legal review. Filing is a named human act. The accused is not notified.",
+    "Serious-offence cases. The machine may only open legal review. Filing is a human act. The accused is not notified.",
 };
 
-function AdminComplianceHubInner() {
+export function AdminComplianceHub() {
   const [tab, setTab] = useAdminTab(TABS, "rights");
 
   return (
@@ -43,13 +41,5 @@ function AdminComplianceHubInner() {
         <AdminLegalSafetyQueue />
       )}
     </>
-  );
-}
-
-export function AdminComplianceHub() {
-  return (
-    <Suspense fallback={<AdminHubSkeleton />}>
-      <AdminComplianceHubInner />
-    </Suspense>
   );
 }

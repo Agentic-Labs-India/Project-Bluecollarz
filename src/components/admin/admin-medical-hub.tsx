@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminMedicalCenters } from "@/components/admin/admin-medical-centers";
 import { AdminMedicalQueue } from "@/components/admin/admin-medical-queue";
@@ -9,7 +9,6 @@ import {
   AdminPageTabs,
   useAdminTab,
 } from "@/components/admin/admin-page-tabs";
-import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 import type { MedicalCenterListItem } from "@/lib/medical/types";
 
 const TABS = [
@@ -26,7 +25,7 @@ const COPY: Record<Tab, string> = {
     "Medical centers used for fitness tests — license, address, and hours.",
 };
 
-function AdminMedicalHubInner() {
+export function AdminMedicalHub() {
   const [tab, setTab] = useAdminTab(TABS, "candidates");
   const [centers, setCenters] = useState<MedicalCenterListItem[]>([]);
   const [centersLoading, setCentersLoading] = useState(true);
@@ -70,13 +69,5 @@ function AdminMedicalHubInner() {
         />
       ) : null}
     </>
-  );
-}
-
-export function AdminMedicalHub() {
-  return (
-    <Suspense fallback={<AdminHubSkeleton />}>
-      <AdminMedicalHubInner />
-    </Suspense>
   );
 }

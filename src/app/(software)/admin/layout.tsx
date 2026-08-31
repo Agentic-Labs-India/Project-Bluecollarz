@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import { AdminShell } from "@/app/(software)/admin/admin-shell";
-import { AdminHubPageSkeleton } from "@/components/layout/page-skeleton";
+import {
+  AdminHubPageSkeleton,
+  AppShellMainFrame,
+} from "@/components/layout/page-skeleton";
 import { requirePageProfile } from "@/lib/auth/session";
 
 export default function AdminLayout({
@@ -9,7 +12,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<AdminHubPageSkeleton />}>
+    <Suspense
+      fallback={
+        <AppShellMainFrame>
+          <AdminHubPageSkeleton />
+        </AppShellMainFrame>
+      }
+    >
       <AdminAuthGate>{children}</AdminAuthGate>
     </Suspense>
   );

@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import { CandidateShell } from "@/app/(software)/candidate/candidate-shell";
-import { HomePageSkeleton } from "@/components/layout/page-skeleton";
+import {
+  AppShellMainFrame,
+  HomePageSkeleton,
+} from "@/components/layout/page-skeleton";
 import { requirePageProfile } from "@/lib/auth/session";
 
 /**
@@ -14,7 +17,13 @@ export default function CandidateLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<HomePageSkeleton />}>
+    <Suspense
+      fallback={
+        <AppShellMainFrame>
+          <HomePageSkeleton />
+        </AppShellMainFrame>
+      }
+    >
       <CandidateAuthGate>{children}</CandidateAuthGate>
     </Suspense>
   );

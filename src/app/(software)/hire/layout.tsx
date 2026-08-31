@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import { HireShell } from "@/app/(software)/hire/hire-shell";
-import { TablePageSkeleton } from "@/components/layout/page-skeleton";
+import {
+  AppShellMainFrame,
+  TablePageSkeleton,
+} from "@/components/layout/page-skeleton";
 import { requirePageProfile } from "@/lib/auth/session";
 
 /**
@@ -14,7 +17,13 @@ export default function HireLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<TablePageSkeleton />}>
+    <Suspense
+      fallback={
+        <AppShellMainFrame>
+          <TablePageSkeleton />
+        </AppShellMainFrame>
+      }
+    >
       <HireAuthGate>{children}</HireAuthGate>
     </Suspense>
   );

@@ -1,23 +1,9 @@
-import { Suspense } from "react";
-import { ExplorePageSkeleton } from "@/components/layout/page-skeleton";
 import { ExploreOpportunities } from "@/components/work/explore-opportunities";
 import { requirePageProfile } from "@/lib/auth/session";
 import { isId } from "@/lib/db";
 import { getPublishedOpportunities } from "@/lib/jobs/queries";
 
-export default function ExplorePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ jobId?: string }>;
-}) {
-  return (
-    <Suspense fallback={<ExplorePageSkeleton />}>
-      <ExploreBody searchParams={searchParams} />
-    </Suspense>
-  );
-}
-
-async function ExploreBody({
+export default async function ExplorePage({
   searchParams,
 }: {
   searchParams: Promise<{ jobId?: string }>;

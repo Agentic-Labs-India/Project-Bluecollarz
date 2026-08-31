@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminKnowledgeChat } from "@/components/admin/admin-knowledge-chat";
 import {
   AdminHubHeader,
@@ -12,7 +12,6 @@ import {
   type AdminSettingsSection,
 } from "@/components/admin/admin-settings-form";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
-import { AdminHubSkeleton } from "@/components/layout/page-skeleton";
 import type { PlatformSettingsPublic } from "@/lib/admin/platform-settings-types";
 import type { AdminUserListItem } from "@/lib/admin/types";
 
@@ -60,7 +59,7 @@ function AdminConfigurationPanel({
   );
 }
 
-function AdminSettingsHubInner({
+export function AdminSettingsHub({
   initialItems,
   initialSettings,
   initialDefaults,
@@ -105,25 +104,5 @@ function AdminSettingsHubInner({
         </div>
       ) : null}
     </>
-  );
-}
-
-export function AdminSettingsHub({
-  initialItems,
-  initialSettings,
-  initialDefaults,
-}: {
-  initialItems: AdminUserListItem[];
-  initialSettings: PlatformSettingsPublic;
-  initialDefaults: PlatformSettingsPublic;
-}) {
-  return (
-    <Suspense fallback={<AdminHubSkeleton />}>
-      <AdminSettingsHubInner
-        initialItems={initialItems}
-        initialSettings={initialSettings}
-        initialDefaults={initialDefaults}
-      />
-    </Suspense>
   );
 }

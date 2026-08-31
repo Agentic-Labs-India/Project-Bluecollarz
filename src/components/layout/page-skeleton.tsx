@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import {
   APP_PAGE_MAX,
   APP_PAGE_PAD,
+  APP_SHELL_MAIN_CLASS,
   AppPage,
 } from "@/components/layout/app-page";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +10,20 @@ import { cn, placeholderKeys } from "@/lib/utils";
 
 const EXPLORE_CARD_IDS = ["e1", "e2", "e3", "e4", "e5", "e6"] as const;
 const HOME_ROW_IDS = ["r1", "r2", "r3"] as const;
+
+/** Wraps page skeletons rendered before AppShell mounts (layout Suspense fallbacks). */
+export function AppShellMainFrame({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "bg-background flex min-h-svh w-full min-w-0 flex-1 flex-col",
+        APP_SHELL_MAIN_CLASS,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 /** Profile header + form fields skeleton. */
 export function ProfilePageSkeleton() {
@@ -272,8 +288,8 @@ export function TablePageSkeleton() {
   );
 }
 
-/** Header + tabs + rows. Used inside an existing AppPage. */
-export function AdminHubSkeleton() {
+/** Header + tabs + rows. Used inside AdminHubPageSkeleton. */
+function AdminHubSkeleton() {
   return (
     <>
       <PageTitleSkeleton wide />

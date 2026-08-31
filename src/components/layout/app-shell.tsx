@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { AppBottomNav } from "@/components/layout/app-bottom-nav";
-import { APP_PAGE_PAD } from "@/components/layout/app-page";
+import { APP_SHELL_MAIN_CLASS } from "@/components/layout/app-page";
 import { AppRailSidebar } from "@/components/layout/app-rail-sidebar";
 import { AppTopBar } from "@/components/layout/app-top-bar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -59,7 +59,7 @@ export function AppShell({
                     ? "h-dvh max-h-dvh"
                     : "h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)]",
                 )
-              : cn(APP_PAGE_PAD, "pt-[calc(3.5rem+1rem)] pb-24"),
+              : APP_SHELL_MAIN_CLASS,
           )}
         >
           {children}
